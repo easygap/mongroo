@@ -1,0 +1,32 @@
+# env / secrets
+.env
+*.env.local
+
+# python
+__pycache__/
+*.pyc
+.venv/
+
+# 데이터셋 원본 (AI Hub 라이선스상 재배포 금지)
+ai/data/
+# 학습 모델 가중치 (용량)
+ai/**/checkpoints/
+*.safetensors
+*.gguf
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# local deployment state
+.wrangler/
+
+# local QA artifacts
+.playwright-cli/
+output/
+server/output/
+server/.pytest-tmp-*/

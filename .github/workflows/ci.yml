@@ -1,0 +1,48 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    env:
+      AI_MODE: fake
+      DATABASE_URL: sqlite+aiosqlite:///./ci.db
+      JWT_SECRET: ci-only-secret-0123456789abcdef0123456789
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastapi "uvicorn[standard]" sqlalchemy alembic aiosqlite aiomysql cryptography "pydantic[email]" pydantic-settings argon2-cffi PyJWT httpx tzdata kiwipiepy pytest pytest-asyncio ruff
+      - name: Lint
+        run: python -m ruff check app tests
+      - name: Test
+        run: python -m pytest -q
+      - name: OpenAPI drift check
+        run: |
+          python -m app.export_openapi
+          git diff --exit-code openapi.json
+
+  flutter:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test

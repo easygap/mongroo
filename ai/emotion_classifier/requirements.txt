@@ -1,0 +1,10 @@
+# 감정 분류 파이프라인 의존성 (Python 3.12 기준)
+torch>=2.3
+transformers>=4.46
+datasets>=2.20
+accelerate>=0.30
+scikit-learn>=1.4
+pandas>=2.2
+pyarrow>=16.0
+numpy>=1.26
+openpyxl>=3.1

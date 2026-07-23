@@ -1,0 +1,723 @@
+import 'dart:math' as math;
+
+int gardenInt(Object? value, [int fallback = 0]) => switch (value) {
+      int number => number,
+      num number => number.toInt(),
+      String text => int.tryParse(text) ?? fallback,
+      _ => fallback,
+    };
+
+double gardenDouble(Object? value, [double fallback = 0]) => switch (value) {
+      num number => number.toDouble(),
+      String text => double.tryParse(text) ?? fallback,
+      _ => fallback,
+    };
+
+Map<String, dynamic> gardenMap(Object? value) =>
+    value is Map<String, dynamic> ? value : const {};
+
+String? gardenAssetPath(Map<String, dynamic> manifest) {
+  for (final key in const [
+    'preview_url',
+    'thumbnail_url',
+    'asset_url',
+    'preview',
+    'thumbnail',
+    'image',
+    'base',
+  ]) {
+    final value = manifest[key];
+    if (value is String && value.isNotEmpty) return value;
+  }
+  final stage = manifest['stage_5'] ?? manifest['5'];
+  if (stage is String && stage.isNotEmpty) return stage;
+  if (stage is Map<String, dynamic>) return gardenAssetPath(stage);
+  return null;
+}
+
+String? gardenString(Map<String, dynamic> manifest, String key) {
+  final value = manifest[key];
+  return value is String && value.trim().isNotEmpty ? value.trim() : null;
+}
+
+String _moodFormLabel(String form) => switch (form) {
+      'sunny' => '햇살꽃',
+      'rainy' => '빗방울꽃',
+      'ember' => '불씨꽃',
+      'moonlit' => '달그늘꽃',
+      'sparkling' => '반짝꽃',
+      'mosaic' => '마음모아꽃',
+      _ => form,
+    };
+
+/// 상점 상품을 얻기 위한 서버 계산 결과.
+///
+/// [type]이 `purchase`이면 씨앗 구매, 그 밖의 값이면 조건을 달성한 뒤
+/// claim API로 받는 보상이다. 진행률은 서버 값을 그대로 보관하되 UI에서만
+/// 0~1 범위로 보정해, 새 획득 조건이 추가돼도 모델 변경 없이 표시할 수 있다.
+class ShopItemAcquisition {
+  const ShopItemAcquisition({
+    required this.type,
+    required this.label,
+    required this.current,
+    required this.target,
+    required this.eligible,
+  });
+
+  final String type;
+  final String label;
+  final int current;
+  final int target;
+  final bool eligible;
+
+  bool get isPurchase => type == 'purchase';
+  bool get requiresClaim => !isPurchase;
+
+  double get progress {
+    if (target <= 0) return eligible ? 1 : 0;
+    return (current / target).clamp(0.0, 1.0).toDouble();
+  }
+
+  String get progressLabel => target > 0 ? '$current/$target' : label;
+
+  ShopItemAcquisition copyWith({bool? eligible}) => ShopItemAcquisition(
+        type: type,
+        label: label,
+        current: current,
+        target: target,
+        eligible: eligible ?? this.eligible,
+      );
+
+  static ShopItemAcquisition? maybeFromJson(Object? value) {
+    final json = gardenMap(value);
+    if (json.isEmpty) return null;
+    final type = (json['type'] as String?)?.trim();
+    if (type == null || type.isEmpty) return null;
+    return ShopItemAcquisition(
+      type: type,
+      label: ((json['label'] as String?)?.trim().isNotEmpty ?? false)
+          ? (json['label'] as String).trim()
+          : _fallbackLabel(type),
+      current: gardenInt(json['current']),
+      target: gardenInt(json['target']),
+      eligible: json['eligible'] == true,
+    );
+  }
+
+  static String _fallbackLabel(String type) => switch (type) {
+        'purchase' => '씨앗으로 구매',
+        'quest_count' => '일일 퀘스트 달성',
+        'streak' => '연속 기록 달성',
+        'record_count' => '누적 기록 달성',
+        'own_item' => '필요한 아이템 보유',
+        'collection_count' => '도감 수집 달성',
+        'harvest_form' => '해당 마음꽃 첫 수확',
+        _ => '획득 조건 달성',
+      };
+}
+
+class ShopItem {
+  const ShopItem({
+    required this.id,
+    required this.code,
+    required this.type,
+    required this.name,
+    required this.description,
+    required this.priceSeeds,
+    required this.rarity,
+    required this.assetManifest,
+    required this.owned,
+    this.acquisition,
+  });
+
+  final int id;
+  final String code;
+  final String type;
+  final String name;
+  final String description;
+  final int priceSeeds;
+  final int rarity;
+  final Map<String, dynamic> assetManifest;
+  final bool owned;
+  final ShopItemAcquisition? acquisition;
+
+  String? get assetPath => gardenAssetPath(assetManifest);
+  String? get assetKey => gardenString(assetManifest, 'asset_key');
+
+  /// 상품 코드를 앱 번들 자산에 연결한다.
+  ///
+  /// 서버가 실제 URL을 내려주면 [assetPath]가 우선하고, 로컬 데모 카탈로그는
+  /// 이 매핑을 사용한다. 보상마다 고유 비주얼을 보장해 fallback 아이콘이 서로
+  /// 다른 상품을 같은 물건처럼 보이게 하지 않도록 한다.
+  String? get bundledAssetPath => switch (code) {
+        'deco_cushion_leaf' => 'assets/decorations/leaf-cushion.webp',
+        'deco_lamp_moon' => 'assets/decorations/moon-lamp.webp',
+        'deco_rug_cloud' => 'assets/decorations/cloud-rug.webp',
+        'deco_lamp_mushroom' => 'assets/decorations/mushroom-reading-lamp.webp',
+        'deco_radio_strawberry' => 'assets/decorations/strawberry-radio.webp',
+        'deco_stool_frog' => 'assets/decorations/frog-stool.webp',
+        'deco_books_pressed' => 'assets/decorations/pressed-flower-books.webp',
+        'deco_mobile_moon_seed' => 'assets/decorations/moon-seed-mobile.webp',
+        'deco_planter_teacup' => 'assets/decorations/teacup-planter.webp',
+        'deco_resonance_sunny' => 'assets/decorations/mood-lamp-sunny.webp',
+        'deco_resonance_rainy' =>
+          'assets/decorations/listening-chime-rainy.webp',
+        'deco_resonance_ember' =>
+          'assets/decorations/courage-lantern-ember.webp',
+        'deco_resonance_moonlit' =>
+          'assets/decorations/preparation-lamp-moonlit.webp',
+        'deco_resonance_sparkling' =>
+          'assets/decorations/prism-bud-sparkling.webp',
+        'deco_resonance_mosaic' =>
+          'assets/decorations/many-heart-mobile-mosaic.webp',
+        'room_sunny' => 'assets/rooms/sunny-greenhouse.webp',
+        'room_pressed_studio' => 'assets/rooms/pressed-flower-studio.webp',
+        'companion_dewdrop' => 'assets/companions/dewdrop.webp',
+        'companion_star' => 'assets/companions/star-bean.webp',
+        'companion_bunny' => 'assets/companions/fluffy-bunny.webp',
+        'species_cactus' => 'assets/species/cactus-seed.webp',
+        'species_sunflower' => 'assets/species/sunflower-seed.webp',
+        _ => null,
+      };
+
+  bool get isCharacter => type == 'main_character' || type == 'companion';
+  bool get isRoomTheme => type == 'room_theme';
+  String? get collectionCode => gardenString(assetManifest, 'collection');
+  String? get reactionCopy => gardenString(assetManifest, 'reaction_copy');
+
+  List<String> get affinityForms {
+    final value = assetManifest['affinity_forms'];
+    if (value is! List) return const [];
+    return value
+        .whereType<String>()
+        .map((form) => form.trim())
+        .where((form) => form.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  bool get isMoodResonance =>
+      collectionCode == 'mood_resonance' || affinityForms.isNotEmpty;
+
+  String get affinityLabel {
+    final labels = affinityForms.map(_moodFormLabel).toList(growable: false);
+    return labels.isEmpty ? '모든 마음꽃' : labels.join(' · ');
+  }
+
+  bool get requiresClaim => acquisition?.requiresClaim ?? false;
+  bool get canClaim => !owned && requiresClaim && acquisition!.eligible;
+
+  String get acquisitionHint {
+    final rule = acquisition;
+    if (rule == null) {
+      return priceSeeds > 0 ? '씨앗 $priceSeeds개로 구매' : '상점에서 획득';
+    }
+    return rule.target > 0
+        ? '${rule.label} · ${rule.progressLabel}'
+        : rule.label;
+  }
+
+  String get characterSlug {
+    final key = assetKey;
+    if (key != null &&
+        (key.startsWith('characters/') || key.startsWith('character/'))) {
+      return key.substring(key.indexOf('/') + 1);
+    }
+    return code
+        .replaceFirst(RegExp(r'^(character|companion)_'), '')
+        .replaceAll('-', '_');
+  }
+
+  String? get bundledCharacterAssetPath {
+    if (!isCharacter) return null;
+    final key = assetKey;
+    if (key == null ||
+        (!key.startsWith('characters/') && !key.startsWith('character/'))) {
+      return bundledAssetPath;
+    }
+    return 'assets/characters/${key.substring(key.indexOf('/') + 1)}.webp';
+  }
+
+  String get motionKey =>
+      gardenString(assetManifest, 'motion_key') ?? _fallbackMotionKey;
+
+  String get personality =>
+      gardenString(assetManifest, 'personality') ?? _fallbackPersonality;
+
+  String get catchphrase =>
+      gardenString(assetManifest, 'catchphrase') ?? _fallbackCatchphrase;
+
+  /// 도감 상세에서만 공개하는 캐릭터 서사 메타데이터.
+  ///
+  /// 잠금 여부는 화면 계층이 판단한다. 모델은 서버가 제공한 원문만 반환해
+  /// 아직 서사가 없는 일반 꾸미기 아이템에 임의의 설정을 붙이지 않는다.
+  String? get storyRole => gardenString(assetManifest, 'story_role');
+  String? get loreHook => gardenString(assetManifest, 'lore_hook');
+  String? get collectionQuote =>
+      gardenString(assetManifest, 'collection_quote');
+  bool get hasCollectionStory =>
+      storyRole != null || loreHook != null || collectionQuote != null;
+
+  bool get isSpeciesUnlock => type == 'species_unlock';
+
+  String get _characterIdentity => '$characterSlug $code'.toLowerCase();
+  bool get _isBabyCharacter {
+    final identity = _characterIdentity;
+    return identity.contains('baby') ||
+        RegExp(r'(^|[^a-z0-9])agi([^a-z0-9]|$)').hasMatch(identity);
+  }
+
+  String get _fallbackMotionKey {
+    final identity = _characterIdentity;
+    if (_isBabyCharacter) {
+      return 'baby_bounce';
+    }
+    if (identity.contains('handsome') || identity.contains('prince')) {
+      return 'prince_flourish';
+    }
+    if (identity.contains('pretty')) return 'pretty_sparkle';
+    if (identity.contains('tsundere')) return 'tsundere_turn_away';
+    if (identity.contains('zombie')) return 'zombie_sway';
+    if (identity.contains('gumiho')) return 'gumiho_float';
+    if (identity.contains('ninja')) return 'ninja_snap';
+    if (identity.contains('aloof')) return 'aloof_glance';
+    if (identity.contains('student')) return 'student_adjust';
+    if (identity.contains('dewdrop')) return 'dewdrop_bob';
+    if (identity.contains('star')) return 'star_hop';
+    if (identity.contains('bunny')) return 'bunny_bounce';
+    if (identity.contains('mongle')) return 'cloud_float';
+    return 'magical_hover';
+  }
+
+  String get _fallbackPersonality {
+    final identity = _characterIdentity;
+    if (_isBabyCharacter) {
+      return '쪽쪽이를 문 호기심쟁이 막내';
+    }
+    if (identity.contains('handsome') || identity.contains('prince')) {
+      return '흐트러짐을 못 보는 냉정한 리더';
+    }
+    if (identity.contains('pretty')) return '무대 체질인 새싹 아이돌';
+    if (identity.contains('tsundere')) return '씨앗 주머니를 몰래 챙기는 츤데레';
+    if (identity.contains('zombie')) return '해 질 무렵 깨어나는 느긋한 좀비';
+    if (identity.contains('gumiho')) return '부채 뒤로 장난을 꾸미는 구미호';
+    if (identity.contains('ninja')) return '잎 수리검을 다루는 재빠른 정찰꾼';
+    if (identity.contains('aloof')) return '서리꽃을 지키는 말수 적은 라이벌';
+    if (identity.contains('student')) return '수첩부터 펴는 원칙주의 학생회장';
+    if (identity.contains('dewdrop')) return '잎 목도리를 두른 물방울 탐험가';
+    if (identity.contains('star')) return '길을 먼저 밝히는 별 모양 씨앗';
+    if (identity.contains('bunny')) return '씨앗 가방을 멘 잎귀 토끼';
+    if (identity.contains('mongle')) return '새싹을 달고 떠다니는 구름 친구';
+    return description.isEmpty ? '별자리 주문을 연구하는 마법학교 우등생' : description;
+  }
+
+  String get _fallbackCatchphrase {
+    final identity = _characterIdentity;
+    if (_isBabyCharacter) {
+      return '뽀또! 새싹 하나 더 찾았어!';
+    }
+    if (identity.contains('handsome') || identity.contains('prince')) {
+      return '소매부터 바로잡아. 출발하지.';
+    }
+    if (identity.contains('pretty')) return '센터는 나야. 박자 맞춰!';
+    if (identity.contains('tsundere')) return '이 씨앗은 남아서 주는 거야.';
+    if (identity.contains('zombie')) return '해 뜨기 전까진… 아직 시간 많아.';
+    if (identity.contains('gumiho')) return '후후, 꼬리 아홉 개를 다 찾았어?';
+    if (identity.contains('ninja')) return '연막 잎 준비. 셋에 움직여.';
+    if (identity.contains('aloof')) return '서리꽃은 함부로 만지지 마.';
+    if (identity.contains('student')) return '수첩 펴. 할 일부터 정리하자.';
+    if (identity.contains('dewdrop')) return '이슬길은 내가 먼저 살펴볼게!';
+    if (identity.contains('star')) return '반짝! 이쪽 길이야.';
+    if (identity.contains('bunny')) return '새 씨앗 냄새가 나. 따라와!';
+    if (identity.contains('mongle')) return '둥실둥실, 오늘은 어디로 갈까?';
+    return '별자리 세 번째 줄, 주문 시작!';
+  }
+
+  String get typeLabel => switch (type) {
+        'deco' => '꾸미기',
+        'room_theme' => '방 테마',
+        'main_character' => '정원 가이드',
+        'companion' => '동행 친구',
+        'species_unlock' => '식물 품종',
+        _ => '아이템',
+      };
+
+  String get rarityLabel => switch (rarity) {
+        >= 4 => '아주 희귀',
+        3 => '희귀',
+        2 => '특별',
+        _ => '기본',
+      };
+
+  ShopItem copyWith({
+    bool? owned,
+    ShopItemAcquisition? acquisition,
+  }) =>
+      ShopItem(
+        id: id,
+        code: code,
+        type: type,
+        name: name,
+        description: description,
+        priceSeeds: priceSeeds,
+        rarity: rarity,
+        assetManifest: assetManifest,
+        owned: owned ?? this.owned,
+        acquisition: acquisition ?? this.acquisition,
+      );
+
+  factory ShopItem.fromJson(Map<String, dynamic> json) {
+    final manifest = gardenMap(json['asset_manifest']);
+    return ShopItem(
+      id: gardenInt(json['id']),
+      code: (json['code'] as String?) ?? '',
+      type: (json['type'] as String?) ?? 'deco',
+      name: (json['name'] as String?) ?? '이름 없는 아이템',
+      description: (json['description'] as String?) ?? '',
+      priceSeeds: gardenInt(json['price_seeds']),
+      rarity: gardenInt(json['rarity'], 1),
+      assetManifest: manifest,
+      owned: (json['owned'] as bool?) ?? false,
+      // 최신 API는 계산된 acquisition을 최상위에 둔다. manifest fallback은
+      // 이전 카탈로그 응답과 로컬 fixture를 안전하게 읽기 위한 호환 경로다.
+      acquisition: ShopItemAcquisition.maybeFromJson(
+        json['acquisition'] ?? manifest['acquisition'],
+      ),
+    );
+  }
+}
+
+class UserGardenItem {
+  const UserGardenItem({
+    required this.id,
+    required this.item,
+    this.acquiredAt,
+  });
+
+  final int id;
+  final ShopItem item;
+  final DateTime? acquiredAt;
+
+  factory UserGardenItem.fromJson(Map<String, dynamic> json) => UserGardenItem(
+        id: gardenInt(json['id']),
+        item: ShopItem.fromJson({
+          ...gardenMap(json['item']),
+          'owned': true,
+        }),
+        acquiredAt: json['acquired_at'] is String
+            ? DateTime.tryParse(json['acquired_at'] as String)
+            : null,
+      );
+}
+
+class ShopCatalog {
+  const ShopCatalog({required this.items, required this.seedBalance});
+
+  final List<ShopItem> items;
+  final int seedBalance;
+
+  ShopCatalog markOwned(
+    int itemId,
+    int nextBalance, {
+    ShopItemAcquisition? acquisition,
+  }) =>
+      ShopCatalog(
+        items: [
+          for (final item in items)
+            item.id == itemId
+                ? item.copyWith(owned: true, acquisition: acquisition)
+                : item.acquisition?.isPurchase == true
+                    ? item.copyWith(
+                        acquisition: item.acquisition!.copyWith(
+                          eligible: nextBalance >= item.priceSeeds,
+                        ),
+                      )
+                    : item,
+        ],
+        seedBalance: nextBalance,
+      );
+
+  factory ShopCatalog.fromJson(Map<String, dynamic> json) => ShopCatalog(
+        items: ((json['items'] as List<dynamic>?) ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(ShopItem.fromJson)
+            .toList(),
+        seedBalance: gardenInt(json['seed_balance']),
+      );
+}
+
+class ShopPurchaseResult {
+  const ShopPurchaseResult({
+    required this.userItem,
+    required this.seedBalance,
+    this.acquisition,
+  });
+
+  final UserGardenItem userItem;
+  final int seedBalance;
+  final ShopItemAcquisition? acquisition;
+
+  factory ShopPurchaseResult.fromJson(Map<String, dynamic> json) =>
+      ShopPurchaseResult(
+        userItem: UserGardenItem.fromJson(gardenMap(json['user_item'])),
+        seedBalance: gardenInt(json['seed_balance']),
+        acquisition: ShopItemAcquisition.maybeFromJson(json['acquisition']),
+      );
+}
+
+class SpeciesCollectionEntry {
+  const SpeciesCollectionEntry({
+    required this.id,
+    required this.code,
+    required this.name,
+    required this.rarity,
+    required this.unlockPrice,
+    required this.isUnlocked,
+  });
+
+  final int id;
+  final String code;
+  final String name;
+  final int rarity;
+  final int unlockPrice;
+  final bool isUnlocked;
+
+  factory SpeciesCollectionEntry.fromJson(Map<String, dynamic> json) =>
+      SpeciesCollectionEntry(
+        id: gardenInt(json['id']),
+        code: (json['code'] as String?) ?? '',
+        name: (json['name'] as String?) ?? '이름 없는 식물',
+        rarity: gardenInt(json['rarity'], 1),
+        unlockPrice: gardenInt(json['unlock_price']),
+        isUnlocked: (json['is_unlocked'] as bool?) ?? false,
+      );
+}
+
+class GardenCollection {
+  const GardenCollection({
+    required this.items,
+    required this.species,
+    required this.seedBalance,
+    this.catalogItems = const [],
+  });
+
+  final List<UserGardenItem> items;
+  final List<SpeciesCollectionEntry> species;
+  final int seedBalance;
+  final List<ShopItem> catalogItems;
+
+  /// 품종 해금 상품은 상점에는 남지만 도감의 아이템 분류에서는 제외한다.
+  ///
+  /// 같은 해금이 [species]와 `catalog_items` 양쪽에서 내려오는 API 구조라,
+  /// 이 경계를 두지 않으면 아이템 도감과 전체 수집 수에 품종이 두 번 잡힌다.
+  List<ShopItem> get collectionCatalogItems => catalogItems
+      .where((entry) => !entry.isSpeciesUnlock)
+      .toList(growable: false);
+
+  List<ShopItem> get ownedCollectionItems => items
+      .map((entry) => entry.item)
+      .where((entry) => !entry.isSpeciesUnlock)
+      .toList(growable: false);
+
+  int get unlockedCount {
+    final catalog = collectionCatalogItems;
+    final itemCount = catalog.isEmpty
+        ? ownedCollectionItems.length
+        : catalog.where((entry) => entry.owned).length;
+    return itemCount + species.where((entry) => entry.isUnlocked).length;
+  }
+
+  int get totalCount {
+    final catalog = collectionCatalogItems;
+    final itemCount =
+        catalog.isEmpty ? ownedCollectionItems.length : catalog.length;
+    return itemCount + species.length;
+  }
+
+  factory GardenCollection.fromJson(Map<String, dynamic> json) =>
+      GardenCollection(
+        items: ((json['items'] as List<dynamic>?) ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(UserGardenItem.fromJson)
+            .toList(),
+        species: ((json['species'] as List<dynamic>?) ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(SpeciesCollectionEntry.fromJson)
+            .toList(),
+        seedBalance: gardenInt(json['seed_balance']),
+        catalogItems: ((json['catalog_items'] as List<dynamic>?) ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map((entry) {
+          final item = gardenMap(entry['item']);
+          return ShopItem.fromJson(
+            item.isEmpty
+                ? entry
+                : {
+                    ...item,
+                    'owned': entry['owned'] ?? item['owned'],
+                    'acquisition': entry['acquisition'] ?? item['acquisition'],
+                  },
+          );
+        }).toList(),
+      );
+}
+
+class FarmDecoration {
+  const FarmDecoration({
+    required this.userItemId,
+    required this.x,
+    required this.y,
+    required this.scale,
+    required this.rotation,
+    required this.zIndex,
+  });
+
+  final int userItemId;
+
+  /// 서버와 주고받는 0~1 정규화 좌표.
+  final double x;
+  final double y;
+  final double scale;
+
+  /// Transform.rotate와 서버 계약이 공통으로 쓰는 라디안(-pi~pi).
+  final double rotation;
+  final int zIndex;
+
+  FarmDecoration copyWith({
+    double? x,
+    double? y,
+    double? scale,
+    double? rotation,
+    int? zIndex,
+  }) =>
+      FarmDecoration(
+        userItemId: userItemId,
+        x: (x ?? this.x).clamp(0.0, 1.0).toDouble(),
+        y: (y ?? this.y).clamp(0.0, 1.0).toDouble(),
+        scale: (scale ?? this.scale).clamp(0.5, 2.0).toDouble(),
+        rotation:
+            (rotation ?? this.rotation).clamp(-math.pi, math.pi).toDouble(),
+        zIndex: zIndex ?? this.zIndex,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'user_item_id': userItemId,
+        'x': x,
+        'y': y,
+        'scale': scale,
+        'rotation': rotation,
+        'z_index': zIndex,
+      };
+
+  factory FarmDecoration.fromJson(Map<String, dynamic> json) => FarmDecoration(
+        userItemId: gardenInt(json['user_item_id']),
+        x: gardenDouble(json['x'], 0.5).clamp(0.0, 1.0).toDouble(),
+        y: gardenDouble(json['y'], 0.6).clamp(0.0, 1.0).toDouble(),
+        scale: gardenDouble(json['scale'], 1).clamp(0.5, 2.0).toDouble(),
+        rotation:
+            gardenDouble(json['rotation']).clamp(-math.pi, math.pi).toDouble(),
+        zIndex: gardenInt(json['z_index']),
+      );
+}
+
+const _farmUnset = Object();
+
+class FarmLayout {
+  const FarmLayout({
+    required this.version,
+    required this.companionUserItemIds,
+    required this.decorations,
+    this.roomThemeUserItemId,
+    this.mainCharacterUserItemId,
+  });
+
+  final int version;
+  final int? roomThemeUserItemId;
+  final int? mainCharacterUserItemId;
+  final List<int> companionUserItemIds;
+  final List<FarmDecoration> decorations;
+
+  FarmLayout copyWith({
+    int? version,
+    Object? roomThemeUserItemId = _farmUnset,
+    Object? mainCharacterUserItemId = _farmUnset,
+    List<int>? companionUserItemIds,
+    List<FarmDecoration>? decorations,
+  }) =>
+      FarmLayout(
+        version: version ?? this.version,
+        roomThemeUserItemId: roomThemeUserItemId == _farmUnset
+            ? this.roomThemeUserItemId
+            : roomThemeUserItemId as int?,
+        mainCharacterUserItemId: mainCharacterUserItemId == _farmUnset
+            ? this.mainCharacterUserItemId
+            : mainCharacterUserItemId as int?,
+        companionUserItemIds: companionUserItemIds ?? this.companionUserItemIds,
+        decorations: decorations ?? this.decorations,
+      );
+
+  Map<String, dynamic> toUpdateJson() => {
+        'expected_version': version,
+        'room_theme_user_item_id': roomThemeUserItemId,
+        'main_character_user_item_id': mainCharacterUserItemId,
+        'companion_user_item_ids': companionUserItemIds,
+        'decorations': decorations.map((item) => item.toJson()).toList(),
+      };
+
+  factory FarmLayout.fromJson(Map<String, dynamic> json) => FarmLayout(
+        version: gardenInt(json['version']),
+        roomThemeUserItemId: json['room_theme_user_item_id'] == null
+            ? null
+            : gardenInt(json['room_theme_user_item_id']),
+        mainCharacterUserItemId: json['main_character_user_item_id'] == null
+            ? null
+            : gardenInt(json['main_character_user_item_id']),
+        companionUserItemIds:
+            ((json['companion_user_item_ids'] as List<dynamic>?) ?? const [])
+                .map(gardenInt)
+                .where((id) => id > 0)
+                .toList(),
+        decorations: ((json['decorations'] as List<dynamic>?) ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(FarmDecoration.fromJson)
+            .toList(),
+      );
+}
+
+class FarmData {
+  const FarmData({required this.layout, required this.ownedItems});
+
+  final FarmLayout layout;
+  final List<UserGardenItem> ownedItems;
+
+  UserGardenItem? itemByUserItemId(int? id) {
+    if (id == null) return null;
+    for (final item in ownedItems) {
+      if (item.id == id) return item;
+    }
+    return null;
+  }
+
+  /// 저장된 방 배치에서 현재 메인 무대에 장착된 캐릭터.
+  ///
+  /// 보유 목록에 없는 오래된 ID는 안전하게 null로 취급해 호출 화면이 기본
+  /// 캐릭터로 대체할 수 있게 한다.
+  UserGardenItem? get equippedMainCharacter =>
+      itemByUserItemId(layout.mainCharacterUserItemId);
+
+  List<UserGardenItem> itemsOfType(String type) =>
+      ownedItems.where((entry) => entry.item.type == type).toList();
+
+  FarmData copyWith({FarmLayout? layout, List<UserGardenItem>? ownedItems}) =>
+      FarmData(
+        layout: layout ?? this.layout,
+        ownedItems: ownedItems ?? this.ownedItems,
+      );
+
+  factory FarmData.fromJson(Map<String, dynamic> json) => FarmData(
+        layout: FarmLayout.fromJson(gardenMap(json['layout'])),
+        ownedItems: ((json['owned_items'] as List<dynamic>?) ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(UserGardenItem.fromJson)
+            .toList(),
+      );
+}

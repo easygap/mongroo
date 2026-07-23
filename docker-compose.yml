@@ -1,0 +1,26 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mongroo-mysql
+    # 호스트 외부에 공개하지 않는다 (design.md 2.1)
+    ports:
+      - "127.0.0.1:3306:3306"
+    environment:
+      MYSQL_DATABASE: mongroo
+      MYSQL_USER: mongroo
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mongroo}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-mongroo-root}
+      TZ: UTC
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "mongroo", "-pmongroo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  mysql-data:

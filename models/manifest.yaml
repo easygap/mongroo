@@ -1,0 +1,102 @@
+# 모델 재현 manifest (설계서 6.5)
+#
+# 가중치 파일은 저장소에 커밋하지 않는다. 이 파일과 scripts/setup_models.ps1이
+# 모델 ID, revision, 라이선스, 파일 해시를 재현의 단일 기준이 된다.
+# - sha256: null은 "아직 기록 전"이라는 뜻이다. 설치 스크립트가 다운로드 후
+#   실측 해시를 기록하며, 값을 손으로 적지 않는다.
+# - revision: null은 설치 시점에 확인해 커밋 해시로 고정한다는 뜻이다.
+# - 모델을 바꾸면 analysis_model_version / summary_model_version /
+#   detector_version을 함께 올리고 기존 결과를 덮어쓰지 않는다.
+
+manifest_version: 1
+updated_at: "2026-07-10"
+
+models:
+  - key: chat_default
+    role: "식물 대화 생성 (P0 기본)"
+    model_id: "Qwen/Qwen3-8B"
+    provider: ollama
+    ollama_tag: "qwen3:8b-q4_K_M"
+    revision: null            # ollama pull 후 `ollama show`의 digest로 고정
+    quantization: "Q4_K_M (GGUF)"
+    context_default: 4096
+    num_predict_default: 384
+    sha256: null              # 설치 스크립트가 기록
+    license:
+      name: "Apache-2.0"
+      obligations: "라이선스 사본과 NOTICE 유지. 상업 이용 가능"
+      source: "https://huggingface.co/Qwen/Qwen3-8B"
+    download: "ollama pull qwen3:8b-q4_K_M"
+    local_path: "Ollama 관리 저장소 (%USERPROFILE%\\.ollama\\models)"
+    eval_report: "docs/benchmarks/ 아래 qwen3_8b-q4_K_M 최신 리포트"
+    known_limits: >-
+      8GB VRAM에서 num_ctx 확장 시 KV cache로 OOM 가능. thinking 모드가 지연을
+      키우므로 일반 대화는 비활성 모드로 비교. M0 실측 통과 전에는 확정 아님.
+
+  - key: chat_compare
+    role: "식물 대화 생성 (한국어 품질 비교용)"
+    model_id: "LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct"
+    provider: ollama
+    ollama_tag: "exaone3.5:7.8b"
+    revision: null
+    quantization: "Q4_K_M (GGUF)"
+    context_default: 4096
+    num_predict_default: 384
+    sha256: null              # 설치 스크립트가 기록
+    license:
+      name: "EXAONE AI Model License 1.1-NC"
+      obligations: >-
+        연구 목적 한정. Model·Derivative·Output 모두 상업적 이용 금지.
+        공개·재배포 시 attribution 조건 준수. 포트폴리오 공개 범위가
+        상업 이용에 해당하지 않는지 사용 전 라이선스 원문으로 확인.
+      source: "https://huggingface.co/LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct/blob/main/LICENSE"
+    download: "ollama pull exaone3.5:7.8b"
+    local_path: "Ollama 관리 저장소 (%USERPROFILE%\\.ollama\\models)"
+    eval_report: "docs/benchmarks/ 아래 exaone3.5_7.8b 최신 리포트"
+    known_limits: >-
+      NC 라이선스라 데모 벤치마크 비교 용도로만 사용. 제품 기본 모델로
+      채택하려면 라이선스 조건 재검토가 선행되어야 함.
+
+  - key: chat_light_experiment
+    role: "경량 대화 실험 (P0 제외)"
+    model_id: "naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-1.5B"
+    provider: transformers
+    ollama_tag: null
+    revision: null
+    quantization: "미정 (Transformers 기본 가중치)"
+    context_default: 4096
+    num_predict_default: 384
+    sha256: null              # 설치 스크립트가 기록
+    license:
+      name: "HyperCLOVA X SEED Model License"
+      obligations: "전용 라이선스의 표시 의무 준수. 허용 범위는 원문 확인"
+      source: "https://huggingface.co/naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-1.5B/blob/main/LICENSE"
+    download: "huggingface-cli download naver-hyperclovax/HyperCLOVAX-SEED-Text-Instruct-1.5B --revision <commit>"
+    local_path: "MONGROO_MODEL_ROOT/hyperclovax_seed_1.5b"
+    eval_report: null
+    known_limits: >-
+      P0 제외. 공식 Ollama 호환(GGUF 배포)이 확인되지 않아 서빙 경로가
+      Transformers로 갈라지고, 1.5B 체급의 한국어 자기성찰 대화 품질이
+      미검증. 호환과 품질 확인 후에만 실험 대상에 올린다.
+
+  - key: emotion_classifier_base
+    role: "감정 6대분류 분류기 base 모델"
+    model_id: "beomi/KcELECTRA-base"
+    provider: huggingface
+    ollama_tag: null
+    revision: null            # train.py --base-revision과 동일한 커밋으로 고정
+    quantization: "없음 (fp32, 약 0.1B)"
+    context_default: 256      # 분류 입력 max_length
+    num_predict_default: null
+    sha256: null              # 설치 스크립트가 기록
+    license:
+      name: "MIT"
+      obligations: "라이선스 고지 유지"
+      source: "https://huggingface.co/beomi/KcELECTRA-base"
+    download: "huggingface-cli download beomi/KcELECTRA-base --revision <commit>"
+    local_path: "HF 캐시 및 파인튜닝 산출물 MONGROO_MODEL_ROOT/emotion_classifier/{run_id}"
+    eval_report: "MONGROO_MODEL_ROOT/emotion_classifier/{run_id}/eval_report.md"
+    known_limits: >-
+      noisy UGC로 사전학습된 장점이 일기 도메인 우위를 보장하지 않음.
+      인도메인 평가와 베이스라인 비교 통과 전에는 UI에 라벨을 노출하지 않는다.
+      위기 신호 탐지 용도 사용 금지.

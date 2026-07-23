@@ -1,0 +1,32 @@
+[project]
+name = "mongroo-server"
+version = "0.1.0"
+description = "몽그루 API 서버"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.13",
+    "aiosqlite>=0.20",
+    "aiomysql>=0.2.0",
+    "cryptography>=42",
+    "pydantic[email]>=2.9",
+    "pydantic-settings>=2.5",
+    "argon2-cffi>=23.1",
+    "PyJWT>=2.9",
+    "httpx>=0.27",
+    "tzdata>=2024.1",
+]
+
+[project.optional-dependencies]
+# 리포트 키워드 추출(형태소 분석). 없으면 단순 토큰 기반으로 동작
+analysis = ["kiwipiepy>=0.18"]
+# AI_MODE=local에서 감정 분류기 실행에 필요
+local-ai = ["transformers>=4.44", "torch>=2.3"]
+dev = ["pytest>=8.2", "pytest-asyncio>=0.24"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
