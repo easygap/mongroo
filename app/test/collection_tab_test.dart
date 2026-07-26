@@ -29,7 +29,7 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('품종 해금 상품은 식물 품종에만 한 번 나타난다', (tester) async {
+  testWidgets('성장 씨앗은 성장 캐릭터 도감에만 한 번 나타난다', (tester) async {
     final collection = GardenCollection.fromJson({
       'seed_balance': 20,
       'items': [
@@ -84,12 +84,12 @@ void main() {
 
     expect(find.text('선인장'), findsOneWidget);
     expect(find.text('상점에서 첫 꾸미기 아이템을 만나 보세요.'), findsOneWidget);
-    expect(find.textContaining('전체 수집'), findsNothing);
-    expect(find.textContaining('수집 1/1'), findsOneWidget);
-    expect(find.textContaining('보유 아이템 0개'), findsOneWidget);
+    expect(find.textContaining('성장 캐릭터 1/1'), findsOneWidget);
+    expect(find.textContaining('전체 수집 1/1'), findsOneWidget);
+    expect(find.text('성장 캐릭터 도감'), findsOneWidget);
   });
 
-  testWidgets('보유 캐릭터만 상세 서사를 열고 잠긴 캐릭터 서사는 숨긴다', (tester) async {
+  testWidgets('사람형 완전체 원화도 같은 성장 캐릭터 도감에 노출한다', (tester) async {
     final collection = GardenCollection.fromJson({
       'seed_balance': 20,
       'items': const [],
@@ -143,20 +143,22 @@ void main() {
       findsNothing,
     );
     expect(find.text('이 문장은 잠긴 상태에서 보이면 안 된다.'), findsNothing);
-    expect(find.text('아직 알려지지 않은 친구'), findsOneWidget);
+    expect(find.text('여우비'), findsOneWidget);
+    expect(find.text('그림싹'), findsNothing);
+    expect(find.text('씨앗부터 여섯 감정의 성인 모습까지 성장'), findsOneWidget);
+    expect(find.text('아직 비밀이에요'), findsOneWidget);
+    expect(find.text('성장 캐릭터 도감'), findsOneWidget);
+    expect(find.textContaining('성장 캐릭터 1/2'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('여우비'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('여우비'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
 
-    expect(find.text('정원에서의 역할 · 달빛 온실의 장난꾼'), findsOneWidget);
-    expect(find.text('정원 이야기'), findsOneWidget);
-    expect(
-      find.text('달빛 신사의 봉인이 풀린 밤, 아홉 꼬리불을 훔쳐 달아난 여우 화분.'),
-      findsOneWidget,
-    );
-    expect(find.text('“후후, 마지막 꼬리불은 어디 있게?”'), findsOneWidget);
-    expect(find.text('이 문장은 잠긴 상태에서 보이면 안 된다.'), findsNothing);
+    expect(find.text('여우비 감정별 성장 도감'), findsOneWidget);
+    expect(find.text('씨앗 · 새싹 · 유아기 · 성장기 · 성인'), findsOneWidget);
+    expect(find.textContaining('기쁨'), findsOneWidget);
+    expect(find.textContaining('슬픔'), findsOneWidget);
   });
 
   testWidgets('잠긴 방 테마도 이름과 구체적인 획득 힌트를 보여 준다', (tester) async {

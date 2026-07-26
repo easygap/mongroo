@@ -1,0 +1,224 @@
+{
+  "schema_version": 2,
+  "species_code": "basic_sprout",
+  "art_family": "basic-sprout-25d",
+  "canvas": {
+    "width": 512,
+    "height": 768,
+    "pivot": [0.5, 0.935]
+  },
+  "style": {
+    "rendering": "storybook_2_5d_cel_shaded",
+    "outline": "fine_warm_brown",
+    "light": "soft_top_left",
+    "shared_identity": [
+      "peach_terracotta_pot",
+      "embossed_three_leaf_emblem",
+      "tiny_oval_eyes",
+      "pale_lime_seed_body"
+    ]
+  },
+  "source": {
+    "directory": "design-system/concepts/emotion-growth-humanoid-v2",
+    "style_bible": "emotion-human-final-lineup-v2.png",
+    "build_script": "design-system/scripts/build_growth_assets.py"
+  },
+  "shared_stages": [
+    {
+      "stage": 1,
+      "phase": "seed",
+      "asset": "app/assets/plants/basic-sprout-25d-seed.webp",
+      "motion_key": "seed_breathe",
+      "loop_ms": 3400
+    },
+    {
+      "stage": 2,
+      "phase": "sprout",
+      "state": "observing_without_leading_cue",
+      "asset": "app/assets/plants/basic-sprout-25d-sprout.webp",
+      "motion_key": "sprout_leaf_wiggle",
+      "loop_ms": 2600
+    }
+  ],
+  "branches": {
+    "sunny": {
+      "emotion": "joy",
+      "adult_direction": "radiant_cute_pretty",
+      "stages": [
+        {
+          "stage": 2,
+          "phase": "sprout",
+          "asset": "app/assets/plants/basic-sprout-25d-sprout-sunny.webp"
+        },
+        {
+          "stage": 3,
+          "phase": "branching",
+          "asset": "app/assets/plants/basic-sprout-25d-branching-sunny.webp"
+        },
+        {
+          "stage": 4,
+          "phase": "bloom",
+          "asset": "app/assets/plants/basic-sprout-25d-bloom-sunny.webp"
+        },
+        {
+          "stage": 5,
+          "phase": "full_bloom",
+          "asset": "app/assets/plants/basic-sprout-25d-full-bloom-sunny.webp",
+          "motion_key": "sunny_petals_bounce",
+          "loop_ms": 1900
+        }
+      ]
+    },
+    "rainy": {
+      "emotion": "sadness",
+      "adult_direction": "melancholic_decadent_elegance",
+      "stages": [
+        {
+          "stage": 2,
+          "phase": "sprout",
+          "asset": "app/assets/plants/basic-sprout-25d-sprout-rainy.webp"
+        },
+        {
+          "stage": 3,
+          "phase": "branching",
+          "asset": "app/assets/plants/basic-sprout-25d-branching-rainy.webp"
+        },
+        {
+          "stage": 4,
+          "phase": "bloom",
+          "asset": "app/assets/plants/basic-sprout-25d-bloom-rainy.webp"
+        },
+        {
+          "stage": 5,
+          "phase": "full_bloom",
+          "asset": "app/assets/plants/basic-sprout-25d-full-bloom-rainy.webp",
+          "motion_key": "rainy_velvet_sway",
+          "loop_ms": 3100
+        }
+      ]
+    },
+    "ember": {
+      "emotion": "anger",
+      "adult_direction": "confident_glamorous_allure",
+      "stages": [
+        {
+          "stage": 2,
+          "phase": "sprout",
+          "asset": "app/assets/plants/basic-sprout-25d-sprout-ember.webp"
+        },
+        {
+          "stage": 3,
+          "phase": "branching",
+          "asset": "app/assets/plants/basic-sprout-25d-branching-ember.webp"
+        },
+        {
+          "stage": 4,
+          "phase": "bloom",
+          "asset": "app/assets/plants/basic-sprout-25d-bloom-ember.webp"
+        },
+        {
+          "stage": 5,
+          "phase": "full_bloom",
+          "asset": "app/assets/plants/basic-sprout-25d-full-bloom-ember.webp",
+          "motion_key": "ember_flame_rise",
+          "loop_ms": 2200
+        }
+      ]
+    },
+    "moonlit": {
+      "emotion": "anxiety",
+      "adult_direction": "refined_protective_guardian",
+      "stages": [
+        {
+          "stage": 2,
+          "phase": "sprout",
+          "asset": "app/assets/plants/basic-sprout-25d-sprout-moonlit.webp"
+        },
+        {
+          "stage": 3,
+          "phase": "branching",
+          "asset": "app/assets/plants/basic-sprout-25d-branching-moonlit.webp"
+        },
+        {
+          "stage": 4,
+          "phase": "bloom",
+          "asset": "app/assets/plants/basic-sprout-25d-bloom-moonlit.webp"
+        },
+        {
+          "stage": 5,
+          "phase": "full_bloom",
+          "asset": "app/assets/plants/basic-sprout-25d-full-bloom-moonlit.webp",
+          "motion_key": "moonlit_wrap_breathe",
+          "loop_ms": 3400
+        }
+      ]
+    },
+    "sparkling": {
+      "emotion": "surprise",
+      "adult_direction": "whimsical_prism_explorer",
+      "stages": [
+        {
+          "stage": 2,
+          "phase": "sprout",
+          "asset": "app/assets/plants/basic-sprout-25d-sprout-sparkling.webp"
+        },
+        {
+          "stage": 3,
+          "phase": "branching",
+          "asset": "app/assets/plants/basic-sprout-25d-branching-sparkling.webp"
+        },
+        {
+          "stage": 4,
+          "phase": "bloom",
+          "asset": "app/assets/plants/basic-sprout-25d-bloom-sparkling.webp"
+        },
+        {
+          "stage": 5,
+          "phase": "full_bloom",
+          "asset": "app/assets/plants/basic-sprout-25d-full-bloom-sparkling.webp",
+          "motion_key": "sparkling_prism_hop",
+          "loop_ms": 1800
+        }
+      ]
+    },
+    "mosaic": {
+      "emotion": "mixed",
+      "adult_direction": "balanced_kaleidoscope_muse",
+      "stages": [
+        {
+          "stage": 2,
+          "phase": "sprout",
+          "asset": "app/assets/plants/basic-sprout-25d-sprout-mosaic.webp"
+        },
+        {
+          "stage": 3,
+          "phase": "branching",
+          "asset": "app/assets/plants/basic-sprout-25d-branching-mosaic.webp"
+        },
+        {
+          "stage": 4,
+          "phase": "bloom",
+          "asset": "app/assets/plants/basic-sprout-25d-bloom-mosaic.webp"
+        },
+        {
+          "stage": 5,
+          "phase": "full_bloom",
+          "asset": "app/assets/plants/basic-sprout-25d-full-bloom-mosaic.webp",
+          "motion_key": "mosaic_balanced_sway",
+          "loop_ms": 2800
+        }
+      ]
+    }
+  },
+  "secondary_form": {
+    "strategy": "runtime_accent_layer",
+    "from_stage": 4,
+    "baked_asset_pattern": "app/assets/plants/basic-sprout-25d-{phase}-{primary}-{secondary}.webp"
+  },
+  "reduced_motion": "static",
+  "fallback_order": [
+    "basic-sprout-cute",
+    "basic-sprout",
+    "PlantPainter"
+  ]
+}

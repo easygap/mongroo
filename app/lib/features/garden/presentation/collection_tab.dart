@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/api_exception.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../home/domain/plant.dart';
+import '../../home/presentation/plant_view.dart';
 import '../domain/garden_models.dart';
 import 'garden_controller.dart';
 import 'garden_item_visual.dart';
@@ -44,30 +46,10 @@ class CollectionCatalogView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final catalogCharacters = data.collectionCatalogItems
-        .where((item) => item.isCharacter)
-        .toList(growable: false);
-    final ownedCharacters = data.ownedCollectionItems
-        .where((item) => item.isCharacter)
-        .toList(growable: false);
-    final characters = [
-      ...(catalogCharacters.isEmpty ? ownedCharacters : catalogCharacters),
-    ]..sort((left, right) {
-        if (left.owned != right.owned) return left.owned ? -1 : 1;
-        final leftIsRoster = left.assetKey?.startsWith('characters/') ?? false;
-        final rightIsRoster =
-            right.assetKey?.startsWith('characters/') ?? false;
-        if (leftIsRoster != rightIsRoster) return leftIsRoster ? -1 : 1;
-        final rarity = right.rarity.compareTo(left.rarity);
-        return rarity != 0 ? rarity : left.id.compareTo(right.id);
-      });
-    final catalogItems = data.collectionCatalogItems
-        .where((item) => !item.isCharacter)
-        .toList(growable: false);
-    final fallbackItems = data.ownedCollectionItems
-        .where((item) => !item.isCharacter)
-        .toList(growable: false);
+    final catalogItems = data.collectionCatalogItems.toList(growable: false);
+    final fallbackItems = data.ownedCollectionItems.toList(growable: false);
     final allVisibleItems = catalogItems.isEmpty ? fallbackItems : catalogItems;
+    final lineageItems = data.growthLineageItems;
     final resonanceItems = allVisibleItems
         .where((item) => item.isMoodResonance)
         .toList(growable: false);
@@ -88,43 +70,29 @@ class CollectionCatalogView extends StatelessWidget {
                 _CollectionHeader(data: data),
                 const SizedBox(height: 20),
                 const Text(
-                  '정원 가이드 도감',
+                  '성장 캐릭터 도감',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '식물의 성장을 돕는 가이드와 동행 친구를 만나 보세요.',
+                  '모든 캐릭터는 씨앗에서 시작해 일기의 감정을 먹고 다섯 단계로 자라요.',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 12),
                 _ResponsiveCards(
-                  count: characters.length,
-                  extent: 288,
-                  emptyMessage: '새로운 캐릭터 친구들이 곧 도착해요.',
-                  builder: (index) => _CatalogItemCard(
-                    item: characters[index],
-                    characterFirst: true,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  '식물 품종',
-                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '돌봄을 이어 가며 새로운 식물을 도감에 등록해요.',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _ResponsiveCards(
-                  count: data.species.length,
-                  emptyMessage: '등록된 식물 품종이 아직 없어요.',
-                  builder: (index) => _SpeciesCard(entry: data.species[index]),
+                  count: data.species.length + lineageItems.length,
+                  extent: 244,
+                  emptyMessage: '등록된 성장 캐릭터가 아직 없어요.',
+                  builder: (index) {
+                    if (index < data.species.length) {
+                      return _SpeciesCard(entry: data.species[index]);
+                    }
+                    return _CharacterLineageCard(
+                      item: lineageItems[index - data.species.length],
+                    );
+                  },
                 ),
                 if (resonanceItems.isNotEmpty) ...[
                   const SizedBox(height: 24),
@@ -184,8 +152,11 @@ class _CollectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final characters = data.catalogItems.where((item) => item.isCharacter);
-    final ownedCharacters = characters.where((item) => item.owned).length;
+    final ownedCharacters =
+        data.species.where((entry) => entry.isUnlocked).length +
+            data.growthLineageItems.where((entry) => entry.owned).length;
+    final totalCharacters =
+        data.species.length + data.growthLineageItems.length;
     final scheme = Theme.of(context).colorScheme;
     return Card(
       color: scheme.primaryContainer.withAlpha(78),
@@ -213,9 +184,9 @@ class _CollectionHeader extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    characters.isEmpty
+                    totalCharacters == 0
                         ? '수집 ${data.unlockedCount}/${data.totalCount} · 보유 아이템 ${data.ownedCollectionItems.length}개'
-                        : '캐릭터 $ownedCharacters/${characters.length} · 전체 수집 ${data.unlockedCount}/${data.totalCount}',
+                        : '성장 캐릭터 $ownedCharacters/$totalCharacters · 전체 수집 ${data.unlockedCount}/${data.totalCount}',
                   ),
                 ],
               ),
@@ -283,6 +254,35 @@ class _SpeciesCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final growthLine = FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        children: [
+          PlantStagePreview(
+            stage: 1,
+            speciesCode: entry.code,
+            speciesName: entry.name,
+            size: 58,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: Icon(
+              Icons.call_split_rounded,
+              size: 18,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          for (final form in PlantGrowthForm.values)
+            PlantStagePreview(
+              stage: 5,
+              form: form,
+              speciesCode: entry.code,
+              speciesName: entry.name,
+              size: 52,
+            ),
+        ],
+      ),
+    );
     return Semantics(
       label:
           entry.isUnlocked ? '${entry.name}, 해금된 식물 캐릭터' : '아직 만나지 못한 식물 캐릭터',
@@ -298,15 +298,26 @@ class _SpeciesCard extends StatelessWidget {
                     color: scheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(
-                    entry.isUnlocked
-                        ? Icons.local_florist_outlined
-                        : Icons.lock_outline,
-                    size: 54,
-                    color: entry.isUnlocked
-                        ? scheme.primary
-                        : scheme.onSurfaceVariant,
-                  ),
+                  padding: const EdgeInsets.all(8),
+                  child: entry.isUnlocked
+                      ? growthLine
+                      : Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            ColorFiltered(
+                              colorFilter: const ColorFilter.mode(
+                                Color(0xFF77716A),
+                                BlendMode.saturation,
+                              ),
+                              child: Opacity(opacity: .32, child: growthLine),
+                            ),
+                            Icon(
+                              Icons.lock_outline,
+                              size: 36,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ],
+                        ),
                 ),
               ),
               const SizedBox(height: 10),
@@ -318,7 +329,9 @@ class _SpeciesCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                entry.isUnlocked ? '도감에 등록됨' : '계속 돌보며 만나 보세요',
+                entry.isUnlocked
+                    ? '공통 씨앗에서 여섯 마음 루트로 성장'
+                    : '해금하면 씨앗부터 함께 키울 수 있어요',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
@@ -331,14 +344,216 @@ class _SpeciesCard extends StatelessWidget {
   }
 }
 
-class _CatalogItemCard extends StatefulWidget {
-  const _CatalogItemCard({
-    required this.item,
-    this.characterFirst = false,
-  });
+class _CharacterLineageCard extends StatelessWidget {
+  const _CharacterLineageCard({required this.item});
 
   final ShopItem item;
-  final bool characterFirst;
+
+  void _showGrowthAtlas(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) => _CharacterGrowthAtlasSheet(item: item),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final locked = !item.owned;
+    final growthLine = FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        children: [
+          PlantStagePreview(
+            stage: 1,
+            speciesCode: item.growthSpeciesCode,
+            speciesName: item.name,
+            size: 58,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: Icon(
+              Icons.call_split_rounded,
+              size: 18,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          for (final form in PlantGrowthForm.values)
+            PlantStagePreview(
+              stage: 5,
+              form: form,
+              speciesCode: item.growthSpeciesCode,
+              speciesName: item.name,
+              size: 52,
+            ),
+        ],
+      ),
+    );
+    return Semantics(
+      label: locked
+          ? '${item.name}, 아직 만나지 못한 성장 캐릭터'
+          : '${item.name}, 씨앗에서 사람형 완전체까지 자라는 성장 캐릭터',
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: locked ? null : () => _showGrowthAtlas(context),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    child: locked
+                        ? Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              ColorFiltered(
+                                colorFilter: const ColorFilter.mode(
+                                  Color(0xFF77716A),
+                                  BlendMode.saturation,
+                                ),
+                                child: Opacity(opacity: .32, child: growthLine),
+                              ),
+                              Icon(
+                                Icons.lock_outline,
+                                size: 36,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ],
+                          )
+                        : growthLine,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  locked ? '아직 비밀이에요' : item.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  locked ? '해금하면 씨앗부터 함께 키울 수 있어요' : '씨앗부터 여섯 감정의 성인 모습까지 성장',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CharacterGrowthAtlasSheet extends StatelessWidget {
+  const _CharacterGrowthAtlasSheet({required this.item});
+
+  final ShopItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return FractionallySizedBox(
+      heightFactor: .9,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 12, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${item.name} 감정별 성장 도감',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '씨앗 · 새싹 · 유아기 · 성장기 · 성인',
+                        style: TextStyle(color: scheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: '닫기',
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: PlantGrowthForm.values.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final form = PlantGrowthForm.values[index];
+                return Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${form.emotionLabel} · ${form.label} · ${form.personalityName}',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 8),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            children: [
+                              for (var stage = 1; stage <= 5; stage++)
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 4),
+                                  child: PlantStagePreview(
+                                    stage: stage,
+                                    form: stage >= 2 ? form : null,
+                                    speciesCode: item.growthSpeciesCode,
+                                    speciesName: item.name,
+                                    size: 82,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CatalogItemCard extends StatefulWidget {
+  const _CatalogItemCard({required this.item});
+
+  final ShopItem item;
 
   @override
   State<_CatalogItemCard> createState() => _CatalogItemCardState();
@@ -361,8 +576,9 @@ class _CatalogItemCardState extends State<_CatalogItemCard> {
     final item = widget.item;
     final scheme = Theme.of(context).colorScheme;
     final locked = !item.owned;
-    final canOpenStory =
-        !locked && (item.hasCollectionStory || item.isMoodResonance);
+    final canOpenStory = !locked &&
+        !item.isGrowthCharacter &&
+        (item.hasCollectionStory || item.isMoodResonance);
     final accent = gardenRarityColor(
       scheme,
       item.rarity,
@@ -385,7 +601,9 @@ class _CatalogItemCardState extends State<_CatalogItemCard> {
               ? '${item.name}, 아직 수집하지 못함'
               : item.isMoodResonance
                   ? '${item.name}, 수집 완료, ${item.affinityLabel} 기념품'
-                  : '${item.name}, 수집 완료, ${item.personality}',
+                  : item.isGrowthCharacter
+                      ? '${item.name}, 성장 씨앗 해금'
+                      : '${item.name}, 수집 완료, ${item.personality}',
           hint: canOpenStory
               ? item.isMoodResonance
                   ? '두 번 탭하여 기념품 반응 보기'
@@ -409,9 +627,7 @@ class _CatalogItemCardState extends State<_CatalogItemCard> {
                         child: GardenRarityFrame(
                           item: item,
                           locked: locked,
-                          padding: EdgeInsets.all(
-                            widget.characterFirst ? 6 : 10,
-                          ),
+                          padding: const EdgeInsets.all(10),
                           child: GardenItemVisual(
                             item: item,
                             locked: locked,
@@ -452,10 +668,10 @@ class _CatalogItemCardState extends State<_CatalogItemCard> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        widget.characterFirst
+                        item.isGrowthCharacter
                             ? locked
-                                ? '아직 알려지지 않은 친구'
-                                : item.personality
+                                ? '아직 만나지 못한 성장 씨앗'
+                                : '일기로 키우는 다섯 단계 성장 캐릭터'
                             : locked && item.isRoomTheme
                                 ? item.acquisitionHint
                                 : item.isMoodResonance
@@ -476,12 +692,14 @@ class _CatalogItemCardState extends State<_CatalogItemCard> {
                         ),
                       ),
                     ),
-                    if (widget.characterFirst) ...[
+                    if (item.isGrowthCharacter) ...[
                       const SizedBox(height: 3),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          locked ? '퀘스트와 상점에서 만날 수 있어요' : item.catchphrase,
+                          locked
+                              ? '상점과 퀘스트에서 씨앗을 해금할 수 있어요'
+                              : '씨앗 · 새싹 · 줄기 · 개화 · 만개',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

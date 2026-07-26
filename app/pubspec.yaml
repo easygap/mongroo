@@ -31,6 +31,7 @@ flutter:
     - assets/characters/
     - assets/decorations/
     - assets/companions/
+    - assets/plants/
     - assets/rooms/
     - assets/species/
   fonts:

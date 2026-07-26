@@ -9,9 +9,6 @@ import '../../../core/theme/mongroo_ui.dart';
 import '../../../core/text/korean_particles.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../gallery/presentation/gallery_screen.dart';
-import '../../garden/domain/garden_models.dart';
-import '../../garden/presentation/garden_controller.dart';
-import '../../garden/presentation/garden_item_visual.dart';
 import '../../quest/presentation/quest_controller.dart';
 import '../domain/plant.dart';
 import 'home_controller.dart';
@@ -19,23 +16,6 @@ import 'plant_story_card.dart';
 import 'plant_view.dart';
 import 'species_picker_dialog.dart';
 import 'today_journey_board.dart';
-
-const _starterGuide = ShopItem(
-  id: 0,
-  code: 'character_baby_pot',
-  type: 'main_character',
-  name: '뽀또',
-  description: '쪽쪽이를 문 채 마음을 받아 주는 정원의 막내',
-  priceSeeds: 0,
-  rarity: 1,
-  assetManifest: {
-    'asset_key': 'characters/baby-pot',
-    'motion_key': 'baby_bounce',
-    'personality': '호기심이 자라는 순수한 막내',
-    'catchphrase': '쪽쪽! 오늘 얘기 들려줘.',
-  },
-  owned: true,
-);
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -165,12 +145,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .watch(authControllerProvider.select((s) => s.user?.seedBalance ?? 0));
     final analysisAcknowledged = ref.watch(plantReactionProvider);
     final questFeed = ref.watch(questControllerProvider).feed.valueOrNull;
-    final equippedGuide = ref.watch(
-          farmControllerProvider.select(
-            (state) => state.data.valueOrNull?.equippedMainCharacter?.item,
-          ),
-        ) ??
-        _starterGuide;
 
     return Scaffold(
       appBar: AppBar(
@@ -221,7 +195,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     )
                   : _PlantCard(
                       plant: plant,
-                      guide: equippedGuide,
                       expression: analysisAcknowledged
                           ? PlantExpression.acknowledged
                           : PlantExpression.neutral,
@@ -518,7 +491,6 @@ class _HomeGreeting extends StatelessWidget {
 class _PlantCard extends StatelessWidget {
   const _PlantCard({
     required this.plant,
-    required this.guide,
     required this.expression,
     required this.harvesting,
     required this.onChat,
@@ -526,7 +498,6 @@ class _PlantCard extends StatelessWidget {
   });
 
   final ActivePlant plant;
-  final ShopItem guide;
   final PlantExpression expression;
   final bool harvesting;
   final VoidCallback onChat;
@@ -546,7 +517,6 @@ class _PlantCard extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
             child: _PlantStageScene(
               plant: plant,
-              guide: guide,
               expression: expression,
               plantLine: plantLine,
               onChat: onChat,
@@ -786,14 +756,12 @@ class _PlantCard extends StatelessWidget {
 class _PlantStageScene extends StatelessWidget {
   const _PlantStageScene({
     required this.plant,
-    required this.guide,
     required this.expression,
     required this.plantLine,
     required this.onChat,
   });
 
   final ActivePlant plant;
-  final ShopItem guide;
   final PlantExpression expression;
   final String plantLine;
   final VoidCallback onChat;
@@ -843,26 +811,23 @@ class _PlantStageScene extends StatelessWidget {
                     child: LayoutBuilder(
                       builder: (context, sceneConstraints) {
                         final maxSceneHeight = sceneConstraints.maxHeight;
-                        final desiredPlantSize =
-                            width < 380 ? 180.0 : (width < 520 ? 215.0 : 245.0);
-                        final plantSize = desiredPlantSize
-                            .clamp(138.0, maxSceneHeight + 12)
+                        final desiredPlantWidth =
+                            width < 380 ? 196.0 : (width < 520 ? 232.0 : 270.0);
+                        final desiredPlantHeight = desiredPlantWidth * 1.5;
+                        final plantHeight = (maxSceneHeight + 12)
+                            .clamp(138.0, desiredPlantHeight)
                             .toDouble();
-                        final desiredGuideWidth =
-                            width < 380 ? 126.0 : (width < 520 ? 152.0 : 184.0);
-                        final guideWidth = desiredGuideWidth
-                            .clamp(96.0, maxSceneHeight * .68)
+                        final plantWidth = (plantHeight / 1.5)
+                            .clamp(92.0, desiredPlantWidth)
                             .toDouble();
-                        final guideCacheWidth =
-                            (guideWidth * dpr).round().clamp(192, 1200);
                         return Stack(
                           clipBehavior: Clip.hardEdge,
                           children: [
                             Positioned(
-                              left: width < 380 ? 4 : width * .08,
+                              left: (width - plantWidth) / 2,
                               bottom: 2,
-                              width: plantSize,
-                              height: plantSize,
+                              width: plantWidth,
+                              height: plantHeight,
                               child: RepaintBoundary(
                                 child: AnimatedSwitcher(
                                   duration:
@@ -894,48 +859,8 @@ class _PlantStageScene extends StatelessWidget {
                                     speciesCode: plant.species.code,
                                     speciesName: plant.species.name,
                                     growthVisual: plant.growthVisual,
-                                    size: plantSize,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              right: width < 380 ? -8 : 5,
-                              bottom: 10,
-                              width: guideWidth,
-                              height: guideWidth * 1.25,
-                              child: AnimatedGardenCharacter(
-                                item: guide,
-                                cacheWidth: guideCacheWidth,
-                              ),
-                            ),
-                            Positioned(
-                              right: 9,
-                              top: 0,
-                              width: width < 380 ? 96 : 126,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: palette.paper.withAlpha(232),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: palette.ink.withAlpha(38),
-                                  ),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 6,
-                                  ),
-                                  child: Text(
-                                    '정원 가이드 · ${guide.name}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: palette.ink,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800,
-                                    ),
+                                    width: plantWidth,
+                                    height: plantHeight,
                                   ),
                                 ),
                               ),

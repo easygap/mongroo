@@ -544,6 +544,12 @@ class PlantGrowthVisual {
     required this.assetNamespace,
     required this.rarity,
     this.secondaryAssetKey,
+    this.phase = '',
+    this.seedAssetKey,
+    this.vesselAssetKey,
+    this.baseAssetKey,
+    this.renderLayers = const [],
+    this.renderKey = '',
   });
 
   final String seedShape;
@@ -552,6 +558,12 @@ class PlantGrowthVisual {
   final String assetNamespace;
   final int rarity;
   final String? secondaryAssetKey;
+  final String phase;
+  final String? seedAssetKey;
+  final String? vesselAssetKey;
+  final String? baseAssetKey;
+  final List<String> renderLayers;
+  final String renderKey;
 
   bool get isSpecial => rarity >= 2 || rarityEffect != 'none';
 
@@ -592,6 +604,24 @@ class PlantGrowthVisual {
       return manifestValue.isEmpty ? null : manifestValue;
     }
 
+    List<String> pickList(String key) {
+      final primaryValue = primary[key];
+      if (primaryValue is List) {
+        return primaryValue
+            .map((item) => item.toString().trim())
+            .where((item) => item.isNotEmpty)
+            .toList(growable: false);
+      }
+      final manifestValue = manifestGrowth[key];
+      if (manifestValue is List) {
+        return manifestValue
+            .map((item) => item.toString().trim())
+            .where((item) => item.isNotEmpty)
+            .toList(growable: false);
+      }
+      return const [];
+    }
+
     final fallback = PlantGrowthVisual.fallback(
       speciesCode: species.code,
       rarity: species.rarity,
@@ -609,6 +639,12 @@ class PlantGrowthVisual {
         fallback: fallback.rarity,
       ).clamp(1, 5).toInt(),
       secondaryAssetKey: pickOptional('secondary_asset_key'),
+      phase: pick('phase', ''),
+      seedAssetKey: pickOptional('seed_asset_key'),
+      vesselAssetKey: pickOptional('vessel_asset_key'),
+      baseAssetKey: pickOptional('base_asset_key'),
+      renderLayers: pickList('render_layers'),
+      renderKey: pick('render_key', ''),
     );
   }
 

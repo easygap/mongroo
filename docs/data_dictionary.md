@@ -397,19 +397,19 @@ BackgroundTasks를 쓰지 않는 이유는 설계서 5.4 참고.
 |------|------|-----------|
 | id | bigint PK | |
 | code | varchar UK | |
-| type | varchar | `deco\|room_theme\|main_character\|companion\|species_unlock` |
+| type | varchar | 신규 쓰기: `deco\|room_theme\|companion\|species_unlock`. `main_character`는 사람형 성장 계보를 담은 호환값 |
 | name | varchar | |
 | description | varchar | 사용자에게 표시할 짧은 설명 |
 | price_seeds | int | 씨앗 포인트 가격 |
 | rarity | tinyint | UI 희귀도 |
-| asset_manifest | json | 번들 `asset_key`; 품종 해금이면 `species_code`; 캐릭터면 `personality`, `catchphrase`, `motion_key`, `palette`, `accent`, `story_role`, `lore_hook`, `quest_affinities`, `collection_quote`; 조건형 아이템이면 `acquisition` |
+| asset_manifest | json | 번들 `asset_key`; 성장 씨앗이면 `species_code`; 동행 소품이면 `personality`, `catchphrase`, `motion_key`; 조건형 아이템이면 `acquisition` |
 | is_active | tinyint | 카탈로그 노출 여부 |
 
-`0003_character_catalog`은 애니메이션풍 주 캐릭터 10종을 등록한다. 희귀도는
-1~5 정수로 저장하며, 설화는 5단계, 하루는 4단계다.
-`0009_content_copy`는 캐릭터 manifest의 `lore_hook`과
-`collection_quote`만 게임 설정 문구로 갱신하며 렌더링·가격·해금 필드는
-그대로 둔다.
+`0003_character_catalog`이 `main_character`로 등록한 사람형 캐릭터 10종은
+폐기하지 않는다. 앱은 이를 완제품 장착 아이템이 아니라 씨앗에서 도달하는
+사람형 완전체 계보로 해석하고, 상점·도감에서 씨앗과 완전체 미리보기를 함께
+보여 준다. 신규 성장 계보의 원본은 `plant_species`와 `species_unlock`에 두며,
+기존 보유 행은 대응 품종 해금으로 매핑한다.
 
 `asset_manifest.acquisition`은 스키마 컬럼을 늘리지 않고 콘텐츠별 획득 규칙을
 버전 관리한다. `type`은 `purchase|quest_count|streak|record_count|own_item|collection_count`,
@@ -428,23 +428,26 @@ API가 반환하는 `current`, `target`, `eligible`은 저장값이 아니라 �
 
 구매는 잔액 확인·차감·인벤토리 추가를 한 트랜잭션으로 처리하고 잔액 음수를
 금지한다. 조건 해금은 서버가 같은 트랜잭션 안에서 사용자 진행도를 다시 확인한 뒤
-인벤토리를 추가하며 seed 원장 이벤트를 만들지 않는다. `character_baby_pot`은 가입
-트랜잭션에서 무료 스타터로 지급한다.
-0003 마이그레이션은 기존 사용자에게도 같은 항목을 `NOT EXISTS` 조건으로 한 번만
-지급해 신규·기존 계정의 시작 상태를 맞춘다.
+인벤토리를 추가하며 seed 원장 이벤트를 만들지 않는다. 신규 가입은 무료 기본
+`plant_species`를 해금하고 같은 품종의 활성 `plants` 인스턴스를 만든다.
+과거 `character_baby_pot` 지급 행은 별도 캐릭터 장착값으로 쓰지 않지만 사람형
+성장 계보의 보유 여부와 완전체 미리보기에는 사용한다. 성장·대화·정원 중앙
+캐릭터의 현재 상태는 계속 활성 `plants` 인스턴스가 원본이다.
 
 **UNIQUE(user_id, item_id)**. 현재 MVP 아이템은 카탈로그 항목당 한 번만 해금한다.
 
-### 2.5 farm_layouts — 장착 캐릭터와 방 배치
+### 2.5 farm_layouts — 방과 소품 배치
 
 | 컬럼 | 타입 | 의미·제약 |
 |------|------|-----------|
 | user_id | bigint PK/FK(users) | 사용자당 하나의 배치 문서 |
 | version | int | PUT 낙관적 잠금 버전. 최초 저장은 expected_version=0 |
-| layout | json | 보유 `user_item_id` 기반 room/main/companion/decorations 배치. decoration rotation은 라디안 `-pi~pi` |
+| layout | json | 보유 `user_item_id` 기반 room/companion/decorations 배치. 중앙 성장 캐릭터는 활성 `plants.id`로 자동 결정. decoration rotation은 라디안 `-pi~pi` |
 | updated_at | datetime | 마지막 저장 시각(UTC) |
 
 서버는 소유권, 아이템 type, 중복 배치, 좌표·크기·라디안 회전 범위를 검증한다.
+과거 `main_character_user_item_id`는 구버전 클라이언트 응답을 위한 nullable
+호환 필드이며 신규 PUT은 항상 `null`을 보낸다.
 
 ### 2.6 user_species_unlocks — 유료 품종 해금
 

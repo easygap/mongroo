@@ -155,10 +155,10 @@ class JourneyUnlock {
 
   String get typeLabel => switch (itemType) {
         'room_theme' => '방 테마',
-        'main_character' => '메인 캐릭터',
-        'companion' => '친구 캐릭터',
+        'main_character' => '성장 씨앗',
+        'companion' => '동행 친구',
         'deco' => '꾸미기',
-        'species_unlock' => '식물 품종',
+        'species_unlock' => '성장 씨앗',
         _ => '컬렉션',
       };
 

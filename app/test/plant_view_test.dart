@@ -25,6 +25,7 @@ Future<PlantPainter> _pumpAndGetPainter(
             secondaryForm: secondaryForm,
             speciesCode: speciesCode,
             growthVisual: growthVisual,
+            preferRasterAssets: false,
           ),
         ),
       ),
@@ -116,7 +117,9 @@ void main() {
     for (final stage in [1, 2, 3, 4, 5]) {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(body: PlantView(stage: stage)),
+          home: Scaffold(
+            body: PlantView(stage: stage, preferRasterAssets: false),
+          ),
         ),
       );
       expect(
@@ -141,6 +144,7 @@ void main() {
             secondaryForm: PlantGrowthForm.sparkling,
             speciesCode: 'sunflower',
             speciesName: '해바라기',
+            preferRasterAssets: false,
           ),
         ),
       ),
@@ -157,7 +161,9 @@ void main() {
   testWidgets('정적 painter는 래스터 캐시를 쓰고 매 프레임 다시 그리지 않는다', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
-        home: Scaffold(body: PlantView(stage: 5)),
+        home: Scaffold(
+          body: PlantView(stage: 5, preferRasterAssets: false),
+        ),
       ),
     );
     final paint = tester.widget<CustomPaint>(
@@ -272,13 +278,161 @@ void main() {
     expect(changed.shouldRepaint(previous), isTrue);
   });
 
+  test('기본 품종은 2.5D 감정 성장 아트 뒤에 기존 대체 파일을 찾는다', () {
+    const visual = PlantGrowthVisual(
+      seedShape: 'heart_speck_seed',
+      vesselStyle: 'round_terracotta_pot',
+      rarityEffect: 'none',
+      assetNamespace: 'plants/basic_sprout',
+      rarity: 1,
+      phase: 'full_bloom',
+    );
+
+    final candidates = PlantGrowthAssetResolver.candidates(
+      speciesCode: 'basic_sprout',
+      stage: 5,
+      form: PlantGrowthForm.rainy,
+      secondaryForm: PlantGrowthForm.sparkling,
+      visual: visual,
+    );
+
+    expect(candidates, [
+      'assets/plants/basic-sprout-25d-full-bloom-rainy-sparkling.webp',
+      'assets/plants/basic-sprout-25d-full-bloom-rainy.webp',
+      'assets/plants/basic-sprout-25d-full-bloom.webp',
+      'assets/plants/basic-sprout-cute-full-bloom-rainy-sparkling.webp',
+      'assets/plants/basic-sprout-cute-full-bloom-rainy.webp',
+      'assets/plants/basic-sprout-cute-full-bloom.webp',
+      'assets/plants/basic-sprout-full-bloom-rainy-sparkling.webp',
+      'assets/plants/basic-sprout-full-bloom-rainy.webp',
+      'assets/plants/basic-sprout-full-bloom.webp',
+    ]);
+  });
+
+  test('사람형 성장 계보는 전용 2.5D 파일을 먼저 찾는다', () {
+    final candidates = PlantGrowthAssetResolver.candidates(
+      speciesCode: 'gumiho_pot',
+      stage: 5,
+      form: PlantGrowthForm.rainy,
+      secondaryForm: PlantGrowthForm.sparkling,
+    );
+
+    expect(candidates.take(3), [
+      'assets/plants/gumiho-pot-25d-full-bloom-rainy-sparkling.webp',
+      'assets/plants/gumiho-pot-25d-full-bloom-rainy.webp',
+      'assets/plants/gumiho-pot-25d-full-bloom.webp',
+    ]);
+  });
+
+  testWidgets('기본 품종은 공통 씨앗 뒤 감정별 2.5D 성장 래스터를 우선 사용한다', (tester) async {
+    const assets = {
+      1: 'assets/plants/basic-sprout-25d-seed.webp',
+      2: 'assets/plants/basic-sprout-25d-sprout-sunny.webp',
+      3: 'assets/plants/basic-sprout-25d-branching-sunny.webp',
+      4: 'assets/plants/basic-sprout-25d-bloom-sunny.webp',
+      5: 'assets/plants/basic-sprout-25d-full-bloom-sunny.webp',
+    };
+
+    for (final entry in assets.entries) {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: Scaffold(
+              body: PlantView(
+                stage: entry.key,
+                form: entry.key >= 2 ? PlantGrowthForm.sunny : null,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(ValueKey(entry.value)), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  testWidgets('2단계 감정 단서가 없으면 같은 화풍의 관찰 중 새싹을 사용한다', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: Scaffold(body: PlantView(stage: 2)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(
+        const ValueKey('assets/plants/basic-sprout-25d-sprout.webp'),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('성장 단계 미리보기도 검수한 래스터 에셋을 사용한다', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: PlantStagePreview(
+            stage: 4,
+            form: PlantGrowthForm.sunny,
+            size: 96,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(
+        const ValueKey(
+          'assets/plants/basic-sprout-25d-bloom-sunny.webp',
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('제작되지 않은 품종은 기존 벡터 painter로 돌아간다', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: Scaffold(
+            body: PlantView(stage: 1, speciesCode: 'future_species'),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byType(PlantView),
+        matching: find.byType(CustomPaint),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('동작 줄이기 환경에서 idle transform이 완전히 멈춘다', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: MediaQuery(
           data: MediaQueryData(disableAnimations: true),
           child: Scaffold(
-            body: PlantView(stage: 4, form: PlantGrowthForm.sparkling),
+            body: PlantView(
+              stage: 4,
+              form: PlantGrowthForm.sparkling,
+              preferRasterAssets: false,
+            ),
           ),
         ),
       ),

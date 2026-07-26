@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../domain/plant.dart';
@@ -8,11 +9,11 @@ import '../domain/plant.dart';
 /// 분기가 결정하며, 수동 mood level을 여기에 연결하지 않는다.
 enum PlantExpression { neutral, acknowledged, happy, sad }
 
-/// 몽그루의 성장 단계를 무광 셀 셰이딩으로 그리는 런타임 벡터 식물.
+/// 몽그루의 성장 캐릭터를 단계별 래스터 에셋으로 보여 주는 뷰.
 ///
-/// painter 자체는 정적으로 래스터 캐시하고, 형태별 idle은 완성된
-/// 레이어에 Transform만 적용한다. 동작 줄이기 설정에서는 컨트롤러까지
-/// 멈춰 배터리와 프레임을 소모하지 않는다.
+/// 검수한 래스터 에셋이 아직 없는 조합만 런타임 벡터 painter로 대체한다.
+/// idle은 완성된 레이어에 Transform만 적용하고, 동작 줄이기 설정에서는
+/// 컨트롤러까지 멈춰 배터리와 프레임을 소모하지 않는다.
 class PlantView extends StatefulWidget {
   const PlantView({
     super.key,
@@ -24,6 +25,9 @@ class PlantView extends StatefulWidget {
     this.speciesName,
     this.growthVisual,
     this.size = 180,
+    this.width,
+    this.height,
+    this.preferRasterAssets = true,
   });
 
   final int stage;
@@ -33,7 +37,15 @@ class PlantView extends StatefulWidget {
   final String speciesCode;
   final String? speciesName;
   final PlantGrowthVisual? growthVisual;
+
+  /// 기존 정사각 호출부를 유지하기 위한 기본 크기다.
   final double size;
+  final double? width;
+  final double? height;
+
+  /// 래스터 에셋이 없는 품종·단계는 기존 벡터 painter로 돌아간다.
+  @visibleForTesting
+  final bool preferRasterAssets;
 
   @override
   State<PlantView> createState() => _PlantViewState();
@@ -69,12 +81,13 @@ class _PlantViewState extends State<PlantView>
     }
   }
 
-  _PlantIdleMotion get _motion =>
-      _PlantIdleMotion.forForm(widget.stage >= 3 ? widget.form : null);
+  _PlantIdleMotion get _motion => _PlantIdleMotion.forStage(
+        widget.stage,
+        form: widget.stage >= 3 ? widget.form : null,
+      );
 
   void _syncMotion({bool restart = false}) {
-    final disabled =
-        MediaQuery.disableAnimationsOf(context) || widget.stage < 2;
+    final disabled = MediaQuery.disableAnimationsOf(context);
     if (disabled) {
       _idleController
         ..stop()
@@ -107,18 +120,45 @@ class _PlantViewState extends State<PlantView>
     final visualLabel = clamped == 1
         ? '${visual.seedLabel}, ${visual.vesselLabel}'
         : visual.vesselLabel;
-    final painting = CustomPaint(
-      size: Size.square(widget.size),
-      isComplex: true,
-      willChange: false,
-      painter: PlantPainter(
-        stage: clamped,
-        expression: widget.expression,
-        form: revealedForm,
-        secondaryForm: clamped >= 4 ? widget.secondaryForm : null,
-        speciesCode: widget.speciesCode,
-        growthVisual: visual,
+    final viewWidth = widget.width ?? widget.size;
+    final viewHeight = widget.height ?? widget.size;
+    final vectorSize = math.min(viewWidth, viewHeight);
+    final vectorFallback = Align(
+      alignment: Alignment.bottomCenter,
+      child: SizedBox.square(
+        dimension: vectorSize,
+        child: CustomPaint(
+          size: Size.square(vectorSize),
+          isComplex: true,
+          willChange: false,
+          painter: PlantPainter(
+            stage: clamped,
+            expression: widget.expression,
+            form: revealedForm,
+            secondaryForm: clamped >= 4 ? widget.secondaryForm : null,
+            speciesCode: widget.speciesCode,
+            growthVisual: visual,
+          ),
+        ),
       ),
+    );
+    final assetCandidates = PlantGrowthAssetResolver.candidates(
+      speciesCode: widget.speciesCode,
+      stage: clamped,
+      form: revealedForm,
+      secondaryForm: clamped >= 4 ? widget.secondaryForm : null,
+      visual: visual,
+    );
+    final painting = SizedBox(
+      width: viewWidth,
+      height: viewHeight,
+      child: widget.preferRasterAssets && assetCandidates.isNotEmpty
+          ? _RasterPlantArtwork(
+              candidates: assetCandidates,
+              fallback: vectorFallback,
+              logicalWidth: viewWidth,
+            )
+          : vectorFallback,
     );
     final animationsDisabled = MediaQuery.disableAnimationsOf(context);
     final speciesLabel = widget.speciesName?.trim().isNotEmpty == true
@@ -132,7 +172,7 @@ class _PlantViewState extends State<PlantView>
       image: true,
       label: '식물 모습: $speciesLabel, ${plantStageName(clamped)} 단계, '
           '$visualLabel, $branchLabel',
-      child: animationsDisabled || clamped < 2
+      child: animationsDisabled
           ? painting
           : AnimatedBuilder(
               animation: _idleController,
@@ -154,6 +194,146 @@ class _PlantViewState extends State<PlantView>
                 );
               },
             ),
+    );
+  }
+}
+
+/// 서버의 계층형 asset key를 Flutter 번들에서 사용할 평면 파일명으로 바꾼다.
+///
+/// 감정 형태별 파일을 먼저 찾고, 아직 제작되지 않았으면 같은 단계의 공통 파일,
+/// 그마저 없으면 [PlantPainter]로 내려간다.
+class PlantGrowthAssetResolver {
+  const PlantGrowthAssetResolver._();
+
+  static const _phases = <int, String>{
+    1: 'seed',
+    2: 'sprout',
+    3: 'branching',
+    4: 'bloom',
+    5: 'full-bloom',
+  };
+
+  static List<String> candidates({
+    required String speciesCode,
+    required int stage,
+    PlantGrowthForm? form,
+    PlantGrowthForm? secondaryForm,
+    PlantGrowthVisual? visual,
+  }) {
+    final clamped = stage.clamp(1, 5).toInt();
+    final serverPhase = _slug(visual?.phase ?? '');
+    final phase = serverPhase.isEmpty ? _phases[clamped]! : serverPhase;
+    final slugs = <String>{
+      _slug(speciesCode),
+      _namespaceSlug(visual?.assetNamespace),
+    }..removeWhere((value) => value.isEmpty || value == 'generic');
+    final paths = <String>[];
+    for (final species in slugs) {
+      final artFamilies = species == 'basic-sprout'
+          ? const [
+              'basic-sprout-25d',
+              'basic-sprout-cute',
+              'basic-sprout',
+            ]
+          : ['$species-25d', species];
+      for (final family in artFamilies) {
+        if (clamped >= 4 && form != null && secondaryForm != null) {
+          paths.add(
+            'assets/plants/$family-$phase-${form.code}-${secondaryForm.code}.webp',
+          );
+        }
+        if (clamped >= 2 && form != null) {
+          paths.add('assets/plants/$family-$phase-${form.code}.webp');
+        }
+        paths.add('assets/plants/$family-$phase.webp');
+      }
+    }
+    return paths.toSet().toList(growable: false);
+  }
+
+  static String _namespaceSlug(String? namespace) {
+    final value = namespace?.trim() ?? '';
+    if (value.isEmpty) return '';
+    final withoutPrefix =
+        value.startsWith('plants/') ? value.substring('plants/'.length) : value;
+    return _slug(withoutPrefix);
+  }
+
+  static String _slug(String value) => value
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+      .replaceAll(RegExp(r'^-+|-+$'), '');
+}
+
+class _RasterPlantArtwork extends StatefulWidget {
+  const _RasterPlantArtwork({
+    required this.candidates,
+    required this.fallback,
+    required this.logicalWidth,
+  });
+
+  final List<String> candidates;
+  final Widget fallback;
+  final double logicalWidth;
+
+  @override
+  State<_RasterPlantArtwork> createState() => _RasterPlantArtworkState();
+}
+
+class _RasterPlantArtworkState extends State<_RasterPlantArtwork> {
+  int _candidateIndex = 0;
+  bool _advanceScheduled = false;
+
+  @override
+  void didUpdateWidget(covariant _RasterPlantArtwork oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!listEquals(oldWidget.candidates, widget.candidates)) {
+      _candidateIndex = 0;
+      _advanceScheduled = false;
+    }
+  }
+
+  void _tryNextCandidate() {
+    if (_advanceScheduled || _candidateIndex >= widget.candidates.length - 1) {
+      return;
+    }
+    _advanceScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _candidateIndex += 1;
+        _advanceScheduled = false;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.candidates.isEmpty) return widget.fallback;
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final cacheWidth =
+        (widget.logicalWidth * dpr).round().clamp(128, 1024).toInt();
+    final path = widget.candidates[_candidateIndex];
+    return Image.asset(
+      path,
+      key: ValueKey(path),
+      fit: BoxFit.contain,
+      alignment: Alignment.bottomCenter,
+      filterQuality: FilterQuality.medium,
+      cacheWidth: cacheWidth,
+      gaplessPlayback: true,
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded || frame != null) return child;
+        return Stack(
+          fit: StackFit.expand,
+          children: [widget.fallback, child],
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        _tryNextCandidate();
+        return widget.fallback;
+      },
     );
   }
 }
@@ -185,6 +365,29 @@ class PlantStagePreview extends StatelessWidget {
     final clamped = stage.clamp(1, 5).toInt();
     final visual =
         growthVisual ?? PlantGrowthVisual.fallback(speciesCode: speciesCode);
+    final fallback = SizedBox.square(
+      dimension: size,
+      child: CustomPaint(
+        size: Size.square(size),
+        isComplex: true,
+        willChange: false,
+        painter: PlantPainter(
+          stage: clamped,
+          expression: PlantExpression.neutral,
+          form: clamped >= 2 ? form : null,
+          secondaryForm: clamped >= 4 ? secondaryForm : null,
+          speciesCode: speciesCode,
+          growthVisual: visual,
+        ),
+      ),
+    );
+    final candidates = PlantGrowthAssetResolver.candidates(
+      speciesCode: speciesCode,
+      stage: clamped,
+      form: clamped >= 2 ? form : null,
+      secondaryForm: clamped >= 4 ? secondaryForm : null,
+      visual: visual,
+    );
     return Semantics(
       image: true,
       label:
@@ -192,17 +395,12 @@ class PlantStagePreview extends StatelessWidget {
           '${plantStageName(clamped)} 모습 미리보기, ${visual.vesselLabel}',
       child: ExcludeSemantics(
         child: RepaintBoundary(
-          child: CustomPaint(
-            size: Size.square(size),
-            isComplex: true,
-            willChange: false,
-            painter: PlantPainter(
-              stage: clamped,
-              expression: PlantExpression.neutral,
-              form: clamped >= 2 ? form : null,
-              secondaryForm: clamped >= 4 ? secondaryForm : null,
-              speciesCode: speciesCode,
-              growthVisual: visual,
+          child: SizedBox.square(
+            dimension: size,
+            child: _RasterPlantArtwork(
+              candidates: candidates,
+              fallback: fallback,
+              logicalWidth: size,
             ),
           ),
         ),
@@ -228,7 +426,45 @@ class _PlantIdleMotion {
   final double scaleX;
   final double scaleY;
 
-  static _PlantIdleMotion forForm(PlantGrowthForm? form) => switch (form) {
+  static _PlantIdleMotion forStage(
+    int stage, {
+    PlantGrowthForm? form,
+  }) {
+    final clamped = stage.clamp(1, 5).toInt();
+    if (clamped == 1) {
+      return const _PlantIdleMotion(
+        duration: Duration(milliseconds: 3400),
+        scaleX: .004,
+        scaleY: .008,
+      );
+    }
+    if (clamped == 2) {
+      return const _PlantIdleMotion(
+        duration: Duration(milliseconds: 2600),
+        rotation: .012,
+        scaleY: .005,
+      );
+    }
+    if (clamped == 3) {
+      return const _PlantIdleMotion(
+        duration: Duration(milliseconds: 2100),
+        dy: -1.8,
+        scaleX: .005,
+        scaleY: .009,
+      );
+    }
+    if (clamped == 4) {
+      return const _PlantIdleMotion(
+        duration: Duration(milliseconds: 2300),
+        dy: -1.2,
+        rotation: -.008,
+        scaleY: .007,
+      );
+    }
+    return _forForm(form);
+  }
+
+  static _PlantIdleMotion _forForm(PlantGrowthForm? form) => switch (form) {
         PlantGrowthForm.sunny => const _PlantIdleMotion(
             duration: Duration(milliseconds: 1900),
             dy: -2.2,

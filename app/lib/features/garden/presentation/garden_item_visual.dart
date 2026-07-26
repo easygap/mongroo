@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../home/presentation/plant_view.dart';
 import '../domain/garden_models.dart';
 
 const gardenDefaultRoomAssetPath = 'assets/rooms/day-greenhouse-ink.webp';
@@ -125,7 +126,68 @@ class GardenItemVisual extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (item.isCharacter) {
+    if (item.isGrowthCharacter) {
+      final dpr = MediaQuery.devicePixelRatioOf(context);
+      final preview = PlantStagePreview(
+        stage: 1,
+        speciesCode: item.growthSpeciesCode,
+        speciesName: item.name,
+        size: item.hasFinalCharacterPreview
+            ? 126
+            : (cacheWidth / dpr).clamp(96, 512).toDouble(),
+      );
+      final finalAssetPath =
+          item.hasFinalCharacterPreview ? item.bundledCharacterAssetPath : null;
+      final growthPreview = finalAssetPath == null
+          ? preview
+          : SizedBox(
+              width: 360,
+              height: 300,
+              child: Row(
+                children: [
+                  SizedBox(width: 126, height: 190, child: preview),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Icon(Icons.arrow_forward_rounded, size: 24),
+                  ),
+                  Expanded(
+                    child: _gardenImage(
+                      path: finalAssetPath,
+                      fit: BoxFit.contain,
+                      cacheWidth: cacheWidth,
+                      fallback: () => const _GardenInkFallback(
+                        icon: Icons.local_florist_outlined,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+      return Semantics(
+        image: true,
+        label: locked
+            ? '${item.name}, 아직 해금하지 않은 성장 씨앗'
+            : item.hasFinalCharacterPreview
+                ? '${item.name}, 씨앗에서 사람형 완전체까지 자라는 성장 캐릭터'
+                : '${item.name}, 씨앗부터 만개까지 자라는 성장 캐릭터',
+        child: ExcludeSemantics(
+          child: FittedBox(
+            fit: fit,
+            child: locked
+                ? ColorFiltered(
+                    colorFilter: const ColorFilter.mode(
+                      Color(0xFF807A72),
+                      BlendMode.saturation,
+                    ),
+                    child: Opacity(opacity: .52, child: growthPreview),
+                  )
+                : growthPreview,
+          ),
+        ),
+      );
+    }
+
+    if (item.isCompanion) {
       return AnimatedGardenCharacter(
         item: item,
         fit: fit,

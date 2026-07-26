@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "art_family": "character-lineage-25d",
+  "stage_mapping": {
+    "seed": "씨앗",
+    "sprout": "새싹",
+    "branching": "유아기",
+    "bloom": "성장기",
+    "full-bloom": "성인"
+  },
+  "forms": ["sunny", "rainy", "ember", "moonlit", "sparkling", "mosaic"],
+  "lineages": [
+    {
+      "slug": "baby-pot",
+      "name": "뽀또",
+      "identity": "잎 보닛, 둥근 갈색 눈, 새싹 펜던트",
+      "routes": {
+        "sunny": "해바라기 축제 정원사",
+        "rainy": "블루벨 자장가 수호자",
+        "ember": "산호빛 씨앗 레인저",
+        "moonlit": "초승달 꿈 수호자",
+        "sparkling": "민트빛 온실 탐험가",
+        "mosaic": "조각잎 정원 돌봄이"
+      }
+    },
+    {
+      "slug": "handsome-pot",
+      "name": "로제온",
+      "identity": "남색 머리, 푸른 눈, 식물 학교 코트",
+      "routes": {
+        "sunny": "황금 온실 학생회장",
+        "rainy": "남청 장미 시인",
+        "ember": "붉은 동백 결투 학자",
+        "moonlit": "은빛 담쟁이 천문 수호자",
+        "sparkling": "민트 프리즘 원정대장",
+        "mosaic": "다색 식물 외교관"
+      }
+    },
+    {
+      "slug": "pretty-pot",
+      "name": "블루미",
+      "identity": "코랄 단발, 초록 케이프, 꽃 아이돌",
+      "routes": {
+        "sunny": "해바라기 무대 아이돌",
+        "rainy": "도라지꽃 발라드 가수",
+        "ember": "불꽃 플라워 리드 퍼포머",
+        "moonlit": "은보라 야상곡 무용수",
+        "sparkling": "민트 핑크 팝 연금술사",
+        "mosaic": "만화경 카니발 뮤즈"
+      }
+    },
+    {
+      "slug": "tsundere-pot",
+      "name": "가시로",
+      "identity": "붉은 머리, 가시잎, 금으로 수선한 깨진 화분",
+      "routes": {
+        "sunny": "툴툴대는 과수원 기사",
+        "rainy": "남청 가시 장미 방랑자",
+        "ember": "불꽃 가시 지휘관",
+        "moonlit": "월광 선인장 파수꾼",
+        "sparkling": "별가시 질주 배달부",
+        "mosaic": "금수선 조각잎 수호자"
+      }
+    },
+    {
+      "slug": "zombie-pot",
+      "name": "시들잎",
+      "identity": "보라 머리, 졸린 눈, 누빔 화분 옷",
+      "routes": {
+        "sunny": "졸린 데이지 치유사",
+        "rainy": "밤그늘 고딕 시인",
+        "ember": "잔불 되살림 정원사",
+        "moonlit": "꿈길을 걷는 수호자",
+        "sparkling": "괴짜 버섯 연구자",
+        "mosaic": "조각 기억 보관자"
+      }
+    },
+    {
+      "slug": "gumiho-pot",
+      "name": "여우비",
+      "identity": "검은 머리, 현대 한복, 아홉 여우꽃 꼬리",
+      "routes": {
+        "sunny": "복숭아꽃 잔치 주인",
+        "rainy": "월우 여우꽃 무희",
+        "ember": "구미호불 춤꾼",
+        "moonlit": "달빛 신사 수호자",
+        "sparkling": "별씨앗 장난 탐험가",
+        "mosaic": "아홉 빛 이야기꾼"
+      }
+    },
+    {
+      "slug": "ninja-pot",
+      "name": "그림싹",
+      "identity": "검은 잎 후드, 잎 수리검, 화분 배낭",
+      "routes": {
+        "sunny": "햇대나무 정찰꾼",
+        "rainy": "안개잎 은신 닌자",
+        "ember": "불꽃잎 돌격대",
+        "moonlit": "달그림자 경호원",
+        "sparkling": "별바람 전령",
+        "mosaic": "다색 위장 전술가"
+      }
+    },
+    {
+      "slug": "magical-pot",
+      "name": "별솔",
+      "identity": "보라 머리, 덩굴 마법 모자, 새싹 지팡이",
+      "routes": {
+        "sunny": "태양꽃 연금술사",
+        "rainy": "푸른종꽃 예언자",
+        "ember": "홍련 화염 마도사",
+        "moonlit": "별달 대마법사",
+        "sparkling": "프리즘 발명 마법사",
+        "mosaic": "스펙트럼 식물 현자"
+      }
+    },
+    {
+      "slug": "aloof-pot",
+      "name": "설화",
+      "identity": "짙은 피부, 검은 단발, 흰 식물 연구 코트",
+      "routes": {
+        "sunny": "태양초 현장 연구자",
+        "rainy": "검푸른 난초 식물학자",
+        "ember": "화산꽃 생태학자",
+        "moonlit": "월광 온실 연구소장",
+        "sparkling": "프리즘 변이 탐사자",
+        "mosaic": "다층 생태계 큐레이터"
+      }
+    },
+    {
+      "slug": "student-pot",
+      "name": "하루",
+      "identity": "갈색 머리, 새싹 배지, 화분 책가방",
+      "routes": {
+        "sunny": "햇살 학교 정원부장",
+        "rainy": "푸른 일기 도서위원",
+        "ember": "붉은 동백 토론부장",
+        "moonlit": "달빛 천문 학생회장",
+        "sparkling": "별씨앗 현장학습 대장",
+        "mosaic": "여러 마음 기록 보관자"
+      }
+    }
+  ]
+}

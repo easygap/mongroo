@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/garden/domain/garden_models.dart';
 import 'package:mongroo/features/garden/presentation/garden_item_visual.dart';
+import 'package:mongroo/features/home/presentation/plant_view.dart';
 
 void main() {
   double contrastRatio(Color foreground, Color background) {
@@ -16,38 +17,72 @@ void main() {
     return (lighter + 0.05) / (darker + 0.05);
   }
 
-  ShopItem character({
+  ShopItem growthSeed({
     bool owned = true,
-    String code = 'character_baby_pot',
-    String name = '아기 화분',
-    String assetKey = 'characters/baby-pot',
-    String motionKey = 'baby_bounce',
+    String code = 'species_basic_sprout',
+    String name = '기본 새싹',
   }) =>
       ShopItem.fromJson({
         'id': 41,
         'code': code,
-        'type': 'main_character',
+        'type': 'species_unlock',
         'name': name,
         'description': '새로운 감정을 배우는 친구',
         'price_seeds': 80,
         'rarity': 2,
         'asset_manifest': {
-          'asset_key': assetKey,
-          'motion_key': motionKey,
-          'personality': '쪽쪽이를 문 호기심쟁이 막내',
-          'catchphrase': '뽀또! 새싹 하나 더 찾았어!',
+          'asset_key': 'species/basic_sprout',
+          'species_code': 'basic_sprout',
         },
         'owned': owned,
       });
 
-  testWidgets('캐릭터 이름과 성격, 대사를 접근성 정보로 제공한다', (tester) async {
+  ShopItem companion({
+    required String code,
+    required String name,
+    required String assetKey,
+    required String motionKey,
+  }) =>
+      ShopItem.fromJson({
+        'id': code.hashCode,
+        'code': code,
+        'type': 'companion',
+        'name': name,
+        'description': '정원의 작은 동행 소품',
+        'price_seeds': 80,
+        'rarity': 2,
+        'asset_manifest': {
+          'asset_key': assetKey,
+          'motion_key': motionKey,
+          'personality': '작고 다정한 정원 친구',
+          'catchphrase': '같이 정원을 둘러볼까?',
+        },
+        'owned': true,
+      });
+
+  ShopItem humanoidLineage() => ShopItem.fromJson({
+        'id': 42,
+        'code': 'character_gumiho_pot',
+        'type': 'main_character',
+        'name': '여우비',
+        'description': '씨앗에서 자라는 구미호 성장 계보',
+        'price_seeds': 240,
+        'rarity': 4,
+        'asset_manifest': {
+          'asset_key': 'characters/gumiho-pot',
+          'species_code': 'basic_sprout',
+        },
+        'owned': true,
+      });
+
+  testWidgets('성장 씨앗은 같은 캐릭터의 성장 가능성을 접근성 정보로 제공한다', (tester) async {
     final semantics = tester.ensureSemantics();
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: SizedBox.square(
             dimension: 160,
-            child: GardenItemVisual(item: character()),
+            child: GardenItemVisual(item: growthSeed()),
           ),
         ),
       ),
@@ -55,17 +90,14 @@ void main() {
     await tester.pump();
 
     expect(
-      find.bySemanticsLabel('아기 화분, 쪽쪽이를 문 호기심쟁이 막내'),
+      find.bySemanticsLabel('기본 새싹, 씨앗부터 만개까지 자라는 성장 캐릭터'),
       findsOneWidget,
     );
-    final node = tester.getSemantics(
-      find.bySemanticsLabel('아기 화분, 쪽쪽이를 문 호기심쟁이 막내'),
-    );
-    expect(node.hint, '뽀또! 새싹 하나 더 찾았어!');
+    expect(find.byType(PlantStagePreview), findsOneWidget);
     semantics.dispose();
   });
 
-  testWidgets('동작 줄이기 설정에서도 캐릭터가 안정적으로 렌더링된다', (tester) async {
+  testWidgets('동작 줄이기 설정에서도 성장 씨앗이 안정적으로 렌더링된다', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: MediaQuery(
@@ -73,26 +105,55 @@ void main() {
           child: Scaffold(
             body: SizedBox.square(
               dimension: 160,
-              child: GardenItemVisual(item: character()),
+              child: GardenItemVisual(item: growthSeed()),
             ),
           ),
         ),
       ),
     );
 
-    expect(find.byType(AnimatedGardenCharacter), findsOneWidget);
+    expect(find.byType(PlantStagePreview), findsOneWidget);
     await tester.pump(const Duration(seconds: 5));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('그리드 캐릭터는 유휴 애니메이션 프레임을 계속 예약하지 않는다', (tester) async {
+  testWidgets('사람형 계보는 씨앗과 완전체를 한 성장선으로 보여 준다', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 360,
+            height: 300,
+            child: GardenItemVisual(
+              item: humanoidLineage(),
+              animateIdle: false,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(PlantStagePreview), findsOneWidget);
+    expect(find.byType(Image), findsWidgets);
+    expect(
+      find.bySemanticsLabel(
+        '여우비, 씨앗에서 사람형 완전체까지 자라는 성장 캐릭터',
+      ),
+      findsOneWidget,
+    );
+    semantics.dispose();
+  });
+
+  testWidgets('그리드 성장 씨앗은 유휴 애니메이션 프레임을 예약하지 않는다', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: SizedBox.square(
             dimension: 160,
             child: GardenItemVisual(
-              item: character(),
+              item: growthSeed(),
               animateIdle: false,
             ),
           ),
@@ -104,12 +165,12 @@ void main() {
     expect(tester.binding.hasScheduledFrame, isFalse);
   });
 
-  testWidgets('카드 캐릭터 이미지는 표시 크기에 맞춰 축소 디코딩한다', (tester) async {
+  testWidgets('카드 성장 씨앗 이미지는 표시 크기에 맞춰 축소 디코딩한다', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: GardenItemVisual(
-            item: character(),
+            item: growthSeed(),
             animateIdle: false,
             cacheWidth: 512,
           ),
@@ -122,7 +183,7 @@ void main() {
     expect((image.image as ResizeImage).width, 512);
   });
 
-  testWidgets('잠긴 캐릭터는 잠금 상태를 읽어 준다', (tester) async {
+  testWidgets('잠긴 성장 씨앗은 잠금 상태를 읽어 준다', (tester) async {
     final semantics = tester.ensureSemantics();
     await tester.pumpWidget(
       MaterialApp(
@@ -130,7 +191,7 @@ void main() {
           body: SizedBox.square(
             dimension: 160,
             child:
-                GardenItemVisual(item: character(owned: false), locked: true),
+                GardenItemVisual(item: growthSeed(owned: false), locked: true),
           ),
         ),
       ),
@@ -138,7 +199,7 @@ void main() {
     await tester.pump();
 
     expect(
-      find.bySemanticsLabel('아기 화분, 아직 만나지 못한 캐릭터'),
+      find.bySemanticsLabel('기본 새싹, 아직 해금하지 않은 성장 씨앗'),
       findsOneWidget,
     );
     semantics.dispose();
@@ -166,17 +227,17 @@ void main() {
     }
   });
 
-  testWidgets('무심이와 모범생 화분은 탭에 서로 다른 방향으로 반응한다', (tester) async {
-    final aloof = character(
-      code: 'character_aloof_pot',
-      name: '무심이 화분',
-      assetKey: 'characters/aloof-pot',
+  testWidgets('동행 소품은 각 motion key에 맞춰 탭 반응을 보인다', (tester) async {
+    final dewdrop = companion(
+      code: 'companion_dewdrop',
+      name: '이슬이',
+      assetKey: 'companion/dewdrop',
       motionKey: 'aloof_glance',
     );
-    final student = character(
-      code: 'character_student_pot',
-      name: '모범생 화분',
-      assetKey: 'characters/student-pot',
+    final star = companion(
+      code: 'companion_star',
+      name: '별콩이',
+      assetKey: 'companion/star',
       motionKey: 'student_adjust',
     );
     await tester.pumpWidget(
@@ -188,11 +249,11 @@ void main() {
               children: [
                 SizedBox.square(
                   dimension: 180,
-                  child: GardenItemVisual(item: aloof),
+                  child: GardenItemVisual(item: dewdrop),
                 ),
                 SizedBox.square(
                   dimension: 180,
-                  child: GardenItemVisual(item: student),
+                  child: GardenItemVisual(item: star),
                 ),
               ],
             ),
@@ -201,11 +262,11 @@ void main() {
       ),
     );
 
-    final aloofPose = find.byKey(
-      const ValueKey('character-pose-character_aloof_pot'),
+    final dewdropPose = find.byKey(
+      const ValueKey('character-pose-companion_dewdrop'),
     );
-    final studentPose = find.byKey(
-      const ValueKey('character-pose-character_student_pot'),
+    final starPose = find.byKey(
+      const ValueKey('character-pose-companion_star'),
     );
     Listener reactionListener(int index) => tester
         .widgetList<Listener>(
@@ -215,23 +276,23 @@ void main() {
           ),
         )
         .firstWhere((listener) => listener.onPointerDown != null);
-    final aloofBefore =
-        tester.widget<Transform>(aloofPose).transform.getTranslation();
+    final dewdropBefore =
+        tester.widget<Transform>(dewdropPose).transform.getTranslation();
     reactionListener(0).onPointerDown!(const PointerDownEvent());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 110));
-    final aloofAfter =
-        tester.widget<Transform>(aloofPose).transform.getTranslation();
-    expect(aloofAfter.x, lessThan(aloofBefore.x - 1));
+    final dewdropAfter =
+        tester.widget<Transform>(dewdropPose).transform.getTranslation();
+    expect(dewdropAfter.x, lessThan(dewdropBefore.x - 1));
 
-    final studentBefore =
-        tester.widget<Transform>(studentPose).transform.getTranslation();
+    final starBefore =
+        tester.widget<Transform>(starPose).transform.getTranslation();
     reactionListener(1).onPointerDown!(const PointerDownEvent());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 110));
-    final studentAfter =
-        tester.widget<Transform>(studentPose).transform.getTranslation();
-    expect(studentAfter.y, lessThan(studentBefore.y - 1));
+    final starAfter =
+        tester.widget<Transform>(starPose).transform.getTranslation();
+    expect(starAfter.y, lessThan(starBefore.y - 1));
   });
 
   test('신규 방 테마 asset_key와 code fallback을 중앙 매핑에서 찾는다', () {

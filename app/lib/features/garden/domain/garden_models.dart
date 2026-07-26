@@ -180,7 +180,26 @@ class ShopItem {
         _ => null,
       };
 
-  bool get isCharacter => type == 'main_character' || type == 'companion';
+  /// 씨앗부터 일기 감정을 먹고 자라는 핵심 캐릭터 품종.
+  ///
+  /// `main_character`는 초기 카탈로그에서 완성 캐릭터를 따로 팔던 이름이다.
+  /// 새 화면은 이를 별도 캐릭터로 취급하지 않고 `species_unlock`과 같은
+  /// 성장 씨앗으로 읽는다.
+  bool get isGrowthCharacter =>
+      type == 'main_character' || type == 'species_unlock';
+
+  /// 기존 사람형 원화가 있는 성장 계보.
+  ///
+  /// 완성 캐릭터를 별도 상품으로 취급하지 않고, 씨앗이 도달할 수 있는
+  /// 완전체 미리보기로 사용한다.
+  bool get hasFinalCharacterPreview =>
+      type == 'main_character' &&
+      (assetKey?.startsWith('characters/') ?? false);
+
+  bool get isCompanion => type == 'companion';
+
+  /// 기존 호출부 호환용. 성장 캐릭터와 작은 동행 아이템을 모두 포함한다.
+  bool get isCharacter => isGrowthCharacter || isCompanion;
   bool get isRoomTheme => type == 'room_theme';
   String? get collectionCode => gardenString(assetManifest, 'collection');
   String? get reactionCopy => gardenString(assetManifest, 'reaction_copy');
@@ -259,6 +278,18 @@ class ShopItem {
 
   bool get isSpeciesUnlock => type == 'species_unlock';
 
+  String get growthSpeciesCode {
+    final manifestCode =
+        gardenString(assetManifest, 'species_code')?.trim().toLowerCase();
+    if (manifestCode?.isNotEmpty == true) return manifestCode!;
+    if (hasFinalCharacterPreview) {
+      return characterSlug.replaceAll('-', '_');
+    }
+    return code
+        .replaceFirst(RegExp(r'^(character|species)_'), '')
+        .replaceAll('-', '_');
+  }
+
   String get _characterIdentity => '$characterSlug $code'.toLowerCase();
   bool get _isBabyCharacter {
     final identity = _characterIdentity;
@@ -335,9 +366,9 @@ class ShopItem {
   String get typeLabel => switch (type) {
         'deco' => '꾸미기',
         'room_theme' => '방 테마',
-        'main_character' => '정원 가이드',
+        'main_character' => '성장 씨앗',
         'companion' => '동행 친구',
-        'species_unlock' => '식물 품종',
+        'species_unlock' => '성장 씨앗',
         _ => '아이템',
       };
 
@@ -505,32 +536,50 @@ class GardenCollection {
   final int seedBalance;
   final List<ShopItem> catalogItems;
 
-  /// 품종 해금 상품은 상점에는 남지만 도감의 아이템 분류에서는 제외한다.
+  /// 성장 캐릭터 씨앗은 상점에는 남지만 도감의 아이템 분류에서는 제외한다.
   ///
-  /// 같은 해금이 [species]와 `catalog_items` 양쪽에서 내려오는 API 구조라,
-  /// 이 경계를 두지 않으면 아이템 도감과 전체 수집 수에 품종이 두 번 잡힌다.
+  /// 같은 해금이 [species]와 과거 `main_character`/`species_unlock` 카탈로그
+  /// 양쪽에서 내려오는 호환 API라, 이 경계를 두지 않으면 하나의 성장
+  /// 캐릭터가 캐릭터 도감과 아이템 도감에 중복 표시된다.
   List<ShopItem> get collectionCatalogItems => catalogItems
-      .where((entry) => !entry.isSpeciesUnlock)
+      .where((entry) => !entry.isGrowthCharacter)
       .toList(growable: false);
 
   List<ShopItem> get ownedCollectionItems => items
       .map((entry) => entry.item)
-      .where((entry) => !entry.isSpeciesUnlock)
+      .where((entry) => !entry.isGrowthCharacter)
       .toList(growable: false);
+
+  /// 사람형 완전체 원화가 연결된 성장 계보.
+  ///
+  /// 서버가 전체 카탈로그를 주면 잠긴 계보도 보여 주고, 구버전 응답은
+  /// 사용자가 보유한 항목만 사용한다.
+  List<ShopItem> get growthLineageItems {
+    final catalog = catalogItems
+        .where((entry) => entry.hasFinalCharacterPreview)
+        .toList(growable: false);
+    if (catalog.isNotEmpty) return catalog;
+    return items
+        .map((entry) => entry.item)
+        .where((entry) => entry.hasFinalCharacterPreview)
+        .toList(growable: false);
+  }
 
   int get unlockedCount {
     final catalog = collectionCatalogItems;
     final itemCount = catalog.isEmpty
         ? ownedCollectionItems.length
         : catalog.where((entry) => entry.owned).length;
-    return itemCount + species.where((entry) => entry.isUnlocked).length;
+    return itemCount +
+        species.where((entry) => entry.isUnlocked).length +
+        growthLineageItems.where((entry) => entry.owned).length;
   }
 
   int get totalCount {
     final catalog = collectionCatalogItems;
     final itemCount =
         catalog.isEmpty ? ownedCollectionItems.length : catalog.length;
-    return itemCount + species.length;
+    return itemCount + species.length + growthLineageItems.length;
   }
 
   factory GardenCollection.fromJson(Map<String, dynamic> json) =>

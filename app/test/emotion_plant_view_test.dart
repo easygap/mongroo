@@ -27,18 +27,29 @@ void main() {
           reason: '${form.code} $speciesCode',
         );
 
-        final paint = tester.widget<CustomPaint>(
-          find.descendant(
-            of: find.byType(EmotionPlantView),
-            matching: find.byType(CustomPaint),
-          ),
-        );
-        expect(paint.painter, isA<EmotionPlantPainter>());
-        expect((paint.painter! as EmotionPlantPainter).form, form);
-        expect(
-            (paint.painter! as EmotionPlantPainter).speciesCode, speciesCode);
-        expect(paint.isComplex, isTrue);
-        expect(paint.willChange, isFalse);
+        if (speciesCode == 'basic_sprout') {
+          expect(
+            find.byKey(
+              ValueKey(
+                'assets/plants/basic-sprout-25d-full-bloom-${form.code}.webp',
+              ),
+            ),
+            findsOneWidget,
+          );
+        } else {
+          final paint = tester.widget<CustomPaint>(
+            find.descendant(
+              of: find.byType(EmotionPlantView),
+              matching: find.byType(CustomPaint),
+            ),
+          );
+          expect(paint.painter, isA<EmotionPlantPainter>());
+          expect((paint.painter! as EmotionPlantPainter).form, form);
+          expect(
+              (paint.painter! as EmotionPlantPainter).speciesCode, speciesCode);
+          expect(paint.isComplex, isTrue);
+          expect(paint.willChange, isFalse);
+        }
       }
     }
   });

@@ -6,6 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/error/api_exception.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
+import '../../home/domain/plant.dart';
+import '../../home/presentation/home_controller.dart';
+import '../../home/presentation/plant_view.dart';
 import '../domain/garden_models.dart';
 import 'garden_controller.dart';
 import 'garden_item_visual.dart';
@@ -64,6 +67,7 @@ class _FarmTabState extends ConsumerState<FarmTab> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(farmControllerProvider);
+    final activePlant = ref.watch(homeControllerProvider).valueOrNull;
     ref.listen(
       farmControllerProvider.select((value) => value.actionError),
       (previous, next) {
@@ -140,6 +144,7 @@ class _FarmTabState extends ConsumerState<FarmTab> {
                                 child: _RoomCanvas(
                                   data: data,
                                   layout: draft,
+                                  activePlant: activePlant,
                                   editing: editingEnabled,
                                   selectedDecorationId: _selectedDecorationId,
                                   onSelectDecoration: (id) => setState(
@@ -155,6 +160,7 @@ class _FarmTabState extends ConsumerState<FarmTab> {
                                 child: _FarmControls(
                                   data: data,
                                   layout: draft,
+                                  activePlant: activePlant,
                                   editing: editingEnabled,
                                   selectedDecorationId: _selectedDecorationId,
                                   onSelectDecoration: (id) => setState(
@@ -167,6 +173,7 @@ class _FarmTabState extends ConsumerState<FarmTab> {
                           _RoomCanvas(
                             data: data,
                             layout: draft,
+                            activePlant: activePlant,
                             editing: editingEnabled,
                             selectedDecorationId: _selectedDecorationId,
                             onSelectDecoration: (id) =>
@@ -179,6 +186,7 @@ class _FarmTabState extends ConsumerState<FarmTab> {
                           _FarmControls(
                             data: data,
                             layout: draft,
+                            activePlant: activePlant,
                             editing: editingEnabled,
                             selectedDecorationId: _selectedDecorationId,
                             onSelectDecoration: (id) =>
@@ -412,6 +420,7 @@ class _RoomCanvas extends StatelessWidget {
   const _RoomCanvas({
     required this.data,
     required this.layout,
+    required this.activePlant,
     required this.editing,
     required this.selectedDecorationId,
     required this.onSelectDecoration,
@@ -420,6 +429,7 @@ class _RoomCanvas extends StatelessWidget {
 
   final FarmData data;
   final FarmLayout layout;
+  final ActivePlant? activePlant;
   final bool editing;
   final int? selectedDecorationId;
   final ValueChanged<int> onSelectDecoration;
@@ -431,7 +441,6 @@ class _RoomCanvas extends StatelessWidget {
     final roomAspectRatio =
         MediaQuery.sizeOf(context).width < 600 ? 4 / 3 : 16 / 9;
     final theme = data.itemByUserItemId(layout.roomThemeUserItemId);
-    final main = data.itemByUserItemId(layout.mainCharacterUserItemId);
     final companions = layout.companionUserItemIds
         .map(data.itemByUserItemId)
         .whereType<UserGardenItem>()
@@ -500,15 +509,24 @@ class _RoomCanvas extends StatelessWidget {
                   ),
                   for (final decoration in lowDecorations)
                     decorationWidget(decoration),
-                  if (main != null)
+                  if (activePlant != null)
                     Positioned(
-                      width: math.min(width * 0.28, 132.0),
-                      height: math.min(height * 0.42, 150.0),
-                      left: width * 0.36,
-                      bottom: height * 0.08,
-                      child: GardenItemVisual(
-                        key: const ValueKey('farm-main-character'),
-                        item: main.item,
+                      width: math.min(width * 0.3, 144.0),
+                      height: math.min(height * 0.48, 174.0),
+                      left: width * 0.35,
+                      bottom: height * 0.06,
+                      child: PlantView(
+                        key: ValueKey(
+                          'farm-growth-character-${activePlant!.visualKey}',
+                        ),
+                        stage: activePlant!.stage,
+                        form: activePlant!.visualForm,
+                        secondaryForm: activePlant!.secondaryForm,
+                        speciesCode: activePlant!.species.code,
+                        speciesName: activePlant!.species.name,
+                        growthVisual: activePlant!.growthVisual,
+                        width: math.min(width * 0.3, 144.0),
+                        height: math.min(height * 0.48, 174.0),
                       ),
                     ),
                   for (var index = 0; index < companions.length; index++)
@@ -629,6 +647,7 @@ class _FarmControls extends ConsumerWidget {
   const _FarmControls({
     required this.data,
     required this.layout,
+    required this.activePlant,
     required this.editing,
     required this.selectedDecorationId,
     required this.onSelectDecoration,
@@ -636,6 +655,7 @@ class _FarmControls extends ConsumerWidget {
 
   final FarmData data;
   final FarmLayout layout;
+  final ActivePlant? activePlant;
   final bool editing;
   final int? selectedDecorationId;
   final ValueChanged<int?> onSelectDecoration;
@@ -646,7 +666,6 @@ class _FarmControls extends ConsumerWidget {
     final palette = MongrooPalette.of(context);
     final scheme = Theme.of(context).colorScheme;
     final themes = data.itemsOfType('room_theme');
-    final mainCharacters = data.itemsOfType('main_character');
     final companions = data.itemsOfType('companion');
     final decorations = data.itemsOfType('deco');
     FarmDecoration? selected;
@@ -668,33 +687,13 @@ class _FarmControls extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         _ControlSection(
-          title: '정원 가이드',
-          child: mainCharacters.isEmpty
-              ? const Text('보유한 정원 가이드가 없어요.')
-              : Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final entry in mainCharacters)
-                      ChoiceChip(
-                        label: Text(entry.item.name),
-                        selected: layout.mainCharacterUserItemId == entry.id,
-                        selectedColor: palette.butter.withAlpha(92),
-                        checkmarkColor: palette.leaf,
-                        side: BorderSide(
-                          color: layout.mainCharacterUserItemId == entry.id
-                              ? palette.leaf
-                              : scheme.outlineVariant,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        onSelected: editing
-                            ? (_) => controller.equipMainCharacter(entry.id)
-                            : null,
-                      ),
-                  ],
-                ),
+          title: '성장 캐릭터',
+          child: Text(
+            activePlant == null
+                ? '홈에서 씨앗을 심으면 이 방에도 같은 캐릭터가 찾아와요.'
+                : '${activePlant!.name} · ${plantStageName(activePlant!.stage)} 단계\n'
+                    '홈과 대화에서 키우는 바로 그 캐릭터가 방에도 함께 있어요.',
+          ),
         ),
         const SizedBox(height: 12),
         _ControlSection(

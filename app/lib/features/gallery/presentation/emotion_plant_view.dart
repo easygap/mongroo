@@ -28,17 +28,32 @@ class EmotionPlantView extends StatelessWidget {
     final resolvedSpeciesName = speciesName?.trim().isNotEmpty == true
         ? speciesName!.trim()
         : _fallbackSpeciesName(speciesCode);
+    final painter = CustomPaint(
+      size: Size.square(size),
+      isComplex: true,
+      willChange: false,
+      painter: EmotionPlantPainter(form, speciesCode: speciesCode),
+    );
+    final normalizedSpecies = speciesCode.trim().toLowerCase();
+    final assetPath =
+        'assets/plants/basic-sprout-25d-full-bloom-${form.code}.webp';
+    final artwork = normalizedSpecies == 'basic_sprout'
+        ? Image.asset(
+            assetPath,
+            key: ValueKey(assetPath),
+            width: size,
+            height: size,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.medium,
+            errorBuilder: (context, error, stackTrace) => painter,
+          )
+        : painter;
     return Semantics(
       image: true,
       label: '$resolvedSpeciesName 품종, ${form.label}, '
           '${form.emotionLabel}의 기록으로 자란 식물',
       child: ExcludeSemantics(
-        child: CustomPaint(
-          size: Size.square(size),
-          isComplex: true,
-          willChange: false,
-          painter: EmotionPlantPainter(form, speciesCode: speciesCode),
-        ),
+        child: SizedBox.square(dimension: size, child: artwork),
       ),
     );
   }

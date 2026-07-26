@@ -327,15 +327,15 @@ void main() {
         .map((visual) => visual.item.code)
         .toList();
     expect(
-      codes.take(5),
+      codes.take(4),
       [
         'deco_cushion_leaf',
         'deco_rug_cloud',
-        'character_baby_pot',
         'companion_dewdrop',
         'deco_lamp_moon',
       ],
     );
+    expect(codes, isNot(contains('character_baby_pot')));
     expect(
       gardenDecorationRendersBehindCharacters(_layerRug.item, 99),
       isTrue,

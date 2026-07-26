@@ -542,27 +542,25 @@ burden_level, estimated_minutes, reward_exp, reward_seeds}}` 형태다.
 ```json
 {
   "items": [
-    {"id": 7, "item": {"code": "character_baby_pot"}, "acquired_at": "2026-07-13T01:00:00Z"}
+    {"id": 7, "item": {"code": "deco_cushion_leaf"}, "acquired_at": "2026-07-13T01:00:00Z"}
   ],
   "catalog_items": [
     {
       "id": 11,
-      "code": "character_baby_pot",
-      "type": "main_character",
-      "name": "아기 화분 뽀또",
-      "description": "흙 한 줌에도 까르르 웃는 호기심 만렙 막내 화분",
-      "price_seeds": 0,
-      "rarity": 1,
+      "code": "species_cactus",
+      "type": "species_unlock",
+      "name": "가시니 씨앗",
+      "description": "씨앗부터 다섯 단계로 키우는 성장 캐릭터 품종",
+      "price_seeds": 100,
+      "rarity": 2,
       "asset_manifest": {
-        "asset_key": "characters/baby-pot",
-        "personality": "호기심 많은 말랑한 막내",
-        "catchphrase": "쪼꼬만 용기, 같이 심을래?",
-        "motion_key": "baby_bounce"
+        "asset_key": "species/cactus",
+        "species_code": "cactus"
       },
-      "owned": true,
-      "locked": false,
-      "user_item_id": 7,
-      "acquired_at": "2026-07-13T01:00:00Z"
+      "owned": false,
+      "locked": true,
+      "user_item_id": null,
+      "acquired_at": null
     }
   ],
   "species": [],
@@ -583,6 +581,10 @@ burden_level, estimated_minutes, reward_exp, reward_seeds}}` 형태다.
   ]
 }
 ```
+
+중앙 성장 캐릭터는 layout에 장착하지 않는다. 앱은 현재 활성 `plants.id`와 해당
+단계 에셋을 자동으로 사용한다. `main_character_user_item_id`는 구버전 응답
+호환을 위해 남아 있지만 신규 클라이언트는 읽거나 쓰지 않고 항상 `null`로 보낸다.
 
 `decorations[].rotation`은 Flutter `Transform.rotate`와 같은 **라디안** 단위이며
 `-pi <= rotation <= pi` 범위다. `expected_version`이 현재 서버 version과 다르면

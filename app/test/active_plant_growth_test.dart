@@ -72,6 +72,17 @@ void main() {
           'rarity_effect': 'prismatic',
           'asset_namespace': 'plants/moonlit_deluxe',
           'rarity': 4,
+          'phase': 'bloom',
+          'seed_asset_key': 'plants/moonlit_deluxe/seeds/crystal_seed',
+          'vessel_asset_key':
+              'plants/moonlit_deluxe/vessels/crystal_growth_tube',
+          'base_asset_key': 'plants/moonlit_deluxe/stages/bloom',
+          'render_layers': [
+            'plants/moonlit_deluxe/vessels/crystal_growth_tube',
+            'plants/moonlit_deluxe/stages/bloom',
+          ],
+          'render_key':
+              'plants/moonlit_deluxe/vessels/crystal_growth_tube|plants/moonlit_deluxe/stages/bloom',
         },
       });
 
@@ -92,6 +103,15 @@ void main() {
     expect(plant.growthVisual?.seedShape, 'crystal_seed');
     expect(plant.growthVisual?.vesselStyle, 'crystal_growth_tube');
     expect(plant.growthVisual?.assetNamespace, 'plants/moonlit_deluxe');
+    expect(plant.growthVisual?.phase, 'bloom');
+    expect(
+      plant.growthVisual?.renderLayers,
+      hasLength(2),
+    );
+    expect(
+      plant.growthVisual?.renderKey,
+      contains('stages/bloom'),
+    );
     expect(plant.emotionProfile.source, 'diary_text_analysis');
   });
 

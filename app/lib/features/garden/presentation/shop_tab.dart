@@ -9,7 +9,7 @@ import '../domain/garden_models.dart';
 import 'garden_controller.dart';
 import 'garden_item_visual.dart';
 
-enum _ShopFilter { all, resonance, character, room, decoration, species }
+enum _ShopFilter { all, resonance, growth, room, decoration }
 
 class ShopTab extends ConsumerStatefulWidget {
   const ShopTab({super.key, this.initialSpeciesCode});
@@ -27,7 +27,7 @@ class _ShopTabState extends ConsumerState<ShopTab> {
   void initState() {
     super.initState();
     if (widget.initialSpeciesCode != null) {
-      _filter = _ShopFilter.species;
+      _filter = _ShopFilter.growth;
     }
   }
 
@@ -36,7 +36,7 @@ class _ShopTabState extends ConsumerState<ShopTab> {
     super.didUpdateWidget(oldWidget);
     if (widget.initialSpeciesCode != oldWidget.initialSpeciesCode &&
         widget.initialSpeciesCode != null) {
-      _filter = _ShopFilter.species;
+      _filter = _ShopFilter.growth;
     }
   }
 
@@ -44,7 +44,7 @@ class _ShopTabState extends ConsumerState<ShopTab> {
       widget.initialSpeciesCode != null &&
       item.assetManifest['species_code'] == widget.initialSpeciesCode;
 
-  bool _canUseInRoom(ShopItem item) => item.isCharacter || item.type == 'deco';
+  bool _canUseInRoom(ShopItem item) => item.isCompanion || item.type == 'deco';
 
   void _openRoom(WidgetRef ref) {
     DefaultTabController.maybeOf(context)?.animateTo(0);
@@ -155,10 +155,9 @@ class _ShopTabState extends ConsumerState<ShopTab> {
               return switch (_filter) {
                 _ShopFilter.all => true,
                 _ShopFilter.resonance => item.isMoodResonance,
-                _ShopFilter.character => item.isCharacter,
+                _ShopFilter.growth => item.isGrowthCharacter,
                 _ShopFilter.room => item.isRoomTheme,
                 _ShopFilter.decoration => item.type == 'deco',
-                _ShopFilter.species => item.type == 'species_unlock',
               };
             }).toList()
               ..sort((left, right) {
@@ -171,10 +170,10 @@ class _ShopTabState extends ConsumerState<ShopTab> {
                 if (left.owned != right.owned) {
                   return left.owned ? 1 : -1;
                 }
-                if (left.isCharacter != right.isCharacter) {
-                  return left.isCharacter ? -1 : 1;
+                if (left.isGrowthCharacter != right.isGrowthCharacter) {
+                  return left.isGrowthCharacter ? -1 : 1;
                 }
-                if (left.isCharacter && right.isCharacter) {
+                if (left.isGrowthCharacter && right.isGrowthCharacter) {
                   final leftIsRoster =
                       left.assetKey?.startsWith('characters/') ?? false;
                   final rightIsRoster =
@@ -561,8 +560,7 @@ class _ShopFilterBar extends StatelessWidget {
     const labels = {
       _ShopFilter.all: ('전체', Icons.apps_rounded),
       _ShopFilter.resonance: ('마음결', Icons.blur_circular_rounded),
-      _ShopFilter.character: ('가이드', Icons.face_retouching_natural_rounded),
-      _ShopFilter.species: ('품종', Icons.local_florist_outlined),
+      _ShopFilter.growth: ('성장 씨앗', Icons.local_florist_outlined),
       _ShopFilter.room: ('방', Icons.cottage_outlined),
       _ShopFilter.decoration: ('소품', Icons.chair_outlined),
     };
@@ -745,18 +743,33 @@ class _ShopItemCardState extends State<_ShopItemCard> {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      item.isCharacter
-                          ? item.personality
-                          : item.isMoodResonance && item.reactionCopy != null
-                              ? item.reactionCopy!
-                              : item.description.isEmpty
-                                  ? item.typeLabel
-                                  : item.description,
+                      item.isGrowthCharacter
+                          ? '일기를 쓰며 감정을 먹고 다섯 단계로 자라요.'
+                          : item.isCompanion
+                              ? item.personality
+                              : item.isMoodResonance &&
+                                      item.reactionCopy != null
+                                  ? item.reactionCopy!
+                                  : item.description.isEmpty
+                                      ? item.typeLabel
+                                      : item.description,
                       maxLines: item.isCharacter ? 1 : 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: scheme.onSurfaceVariant),
                     ),
-                    if (item.isCharacter) ...[
+                    if (item.isGrowthCharacter) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        '씨앗 · 새싹 · 줄기 · 개화 · 만개',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: accent,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ] else if (item.isCompanion) ...[
                       const SizedBox(height: 4),
                       Text(
                         '“${item.catchphrase}”',

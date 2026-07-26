@@ -182,6 +182,7 @@ void main() {
 
     expect(character.isCharacter, isTrue);
     expect(character.characterSlug, 'gumiho-pot');
+    expect(character.growthSpeciesCode, 'gumiho_pot');
     expect(
       character.bundledCharacterAssetPath,
       'assets/characters/gumiho-pot.webp',
@@ -232,7 +233,7 @@ void main() {
     );
   });
 
-  test('도감의 전체 catalog_items와 보유 상태를 파싱한다', () {
+  test('사람형 완전체 원화는 아이템이 아닌 성장 계보로 집계한다', () {
     final collection = GardenCollection.fromJson({
       'seed_balance': 80,
       'items': const [],
@@ -271,6 +272,8 @@ void main() {
     expect(collection.catalogItems, hasLength(2));
     expect(collection.catalogItems.first.owned, isTrue);
     expect(collection.catalogItems.last.motionKey, 'zombie_sway');
+    expect(collection.collectionCatalogItems, isEmpty);
+    expect(collection.growthLineageItems, hasLength(2));
     expect(collection.unlockedCount, 1);
     expect(collection.totalCount, 2);
   });
@@ -340,11 +343,12 @@ void main() {
     });
 
     expect(collection.catalogItems, hasLength(3));
-    expect(collection.collectionCatalogItems, hasLength(2));
+    expect(collection.collectionCatalogItems, hasLength(1));
     expect(
       collection.collectionCatalogItems.any((item) => item.isSpeciesUnlock),
       isFalse,
     );
+    expect(collection.growthLineageItems, hasLength(1));
     expect(collection.unlockedCount, 3);
     expect(collection.totalCount, 4);
     expect(shop.items.single.isSpeciesUnlock, isTrue);
@@ -507,7 +511,7 @@ void main() {
     );
   });
 
-  test('상점 가이드 캐릭터와 감정으로 성장하는 식물을 명칭으로 구분한다', () {
+  test('과거 주 캐릭터와 품종 해금은 모두 성장 씨앗으로 표시한다', () {
     final guide = ShopItem.fromJson({
       'id': 171,
       'code': 'character_ninja_pot',
@@ -523,7 +527,9 @@ void main() {
       'asset_manifest': const {},
     });
 
-    expect(guide.typeLabel, '정원 가이드');
+    expect(guide.typeLabel, '성장 씨앗');
+    expect(guide.isGrowthCharacter, isTrue);
     expect(companion.typeLabel, '동행 친구');
+    expect(companion.isGrowthCharacter, isFalse);
   });
 }

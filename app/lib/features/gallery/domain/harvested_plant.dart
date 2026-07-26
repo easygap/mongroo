@@ -9,37 +9,37 @@ enum PlantFinalForm {
     code: 'sunny',
     label: '햇살꽃',
     emotionLabel: '기쁨',
-    description: '수확일 관찰: 꽃잎이 해를 향해 넓게 벌어졌고 노란 잎맥이 또렷하다.',
+    description: '해바라기 왕관과 위로 열린 잎, 환한 미소가 쾌활하고 예쁜 인상을 만든다.',
   ),
   rainy(
     code: 'rainy',
     label: '빗방울꽃',
     emotionLabel: '슬픔',
-    description: '푸른 잎 끝에 물방울이 오래 머문다. 비가 그치면 줄기가 다시 곧게 선다.',
+    description: '남청색 벨벳 잎과 이슬 장식, 차분한 반눈이 우아한 퇴폐미를 만든다.',
   ),
   ember(
     code: 'ember',
     label: '불씨꽃',
     emotionLabel: '화남',
-    description: '붉은 꽃받침이 단단히 겹쳐 있고, 잎 가장자리에는 불씨 같은 주황 무늬가 남았다.',
+    description: '산호색 불꽃잎과 자신 있는 시선이 당당하고 성숙한 매력을 만든다.',
   ),
   moonlit(
     code: 'moonlit',
     label: '달그늘꽃',
     emotionLabel: '불안',
-    description: '밤에 잎이 반쯤 접히며 은빛 반점이 드러난다. 바람이 닿으면 가늘게 떨린다.',
+    description: '은보라 잎이 몸을 감싸고 초승달과 별 장식이 섬세한 수호자 인상을 만든다.',
   ),
   sparkling(
     code: 'sparkling',
     label: '반짝꽃',
     emotionLabel: '놀람',
-    description: '새순마다 크기가 다른 꽃망울이 돋았다. 방향을 바꿀 때마다 표면 색이 번쩍인다.',
+    description: '민트·진주·분홍 봉오리와 비대칭 별꽃이 호기심 많은 탐험가 인상을 만든다.',
   ),
   mosaic(
     code: 'mosaic',
     label: '마음모아꽃',
     emotionLabel: '여러 마음',
-    description: '한 줄기에서 서로 다른 색과 모양의 잎이 자랐다. 어느 쪽도 다른 잎을 가리지 않는다.',
+    description: '서로 다른 색과 모양의 잎이 질서 있게 균형을 이루며 한 캐릭터로 피어났다.',
   );
 
   const PlantFinalForm({
