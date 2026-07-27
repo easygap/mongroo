@@ -1,0 +1,82 @@
+{
+  "schema_version": 4,
+  "rule": "The dominant emotion profile changes the adult archetype, silhouette, face, styling, expression, and motion—not only its palette.",
+  "forms": {
+    "sunny": {
+      "emotions": ["joy", "enjoyment", "affection"],
+      "adult_archetype": "warm beauty",
+      "style_tags": ["온미남", "온미녀", "다정함", "햇살형"],
+      "face": "soft lifted eyes, relaxed brows, open genuine smile",
+      "silhouette": "open shoulders, welcoming hands, softly flowing plant layers",
+      "motion": "warm wave, gentle nod, open-arm growth celebration"
+    },
+    "rainy": {
+      "emotions": ["sadness", "hurt", "loneliness"],
+      "adult_archetype": "cold melancholic beauty",
+      "style_tags": ["냉미남", "냉미녀", "고딕", "음침한 우아함"],
+      "face": "lowered half-lidded eyes, restrained mouth, distant gaze",
+      "silhouette": "closed shoulders, long vertical layers, cool dark botanical shapes",
+      "motion": "slow glance away, guarded diary hold, quiet rain-petal release"
+    },
+    "ember": {
+      "emotions": ["anger", "frustration", "defiance"],
+      "adult_archetype": "strong glamorous charisma",
+      "style_tags": ["섹시함", "강인함", "걸크러쉬", "눈나", "존잘"],
+      "face": "direct sharp gaze, confident brow, controlled smirk",
+      "silhouette": "strong shoulder and waist line, grounded stance, restrained skin or sheer accents",
+      "motion": "challenge pose, protective step, forceful flame-leaf celebration"
+    },
+    "moonlit": {
+      "emotions": ["anxiety", "fear", "unease"],
+      "adult_archetype": "dark guarded obsession",
+      "style_tags": ["미스터리", "집착계", "다크 로맨스", "위태로운 냉미"],
+      "face": "watchful eyes, tense small smile or pressed lips, alert side glance",
+      "silhouette": "protective wrapping layers, asymmetric shadow shapes, guarded hands",
+      "motion": "look over shoulder, clutch diary close, protective moon-vine unfurl"
+    },
+    "sparkling": {
+      "emotions": ["surprise", "excitement", "curiosity"],
+      "adult_archetype": "playful charming explorer",
+      "style_tags": ["귀여움", "장난기", "발랄함", "반전 매력"],
+      "face": "wide bright eyes, animated brows, delighted open mouth or wink",
+      "silhouette": "asymmetric lively stance, short bouncing layers, curious reaching hands",
+      "motion": "quick hop, excited diary reveal, spinning prism-leaf celebration"
+    },
+    "mosaic": {
+      "emotions": ["mixed", "ambivalence", "complexity"],
+      "adult_archetype": "mature dual-aspect elegance",
+      "style_tags": ["성숙함", "중성적 매력", "복합적", "우아한 전략가"],
+      "face": "calm analytical gaze with a subtle unreadable smile",
+      "silhouette": "balanced asymmetric layers, two complementary botanical motifs",
+      "motion": "measured sway, thoughtful diary comparison, balanced two-sided bloom"
+    }
+  },
+  "sprite_states": {
+    "idle": {
+      "purpose": "default adult route identity",
+      "asset_pattern": "app/assets/plants/{slug}-25d-full-bloom-{form}-v4-idle.webp"
+    },
+    "diary": {
+      "purpose": "acknowledge a newly written emotion diary",
+      "asset_pattern": "app/assets/plants/{slug}-25d-full-bloom-{form}-v4-diary.webp"
+    },
+    "grow": {
+      "purpose": "route-specific growth or harvest celebration",
+      "asset_pattern": "app/assets/plants/{slug}-25d-full-bloom-{form}-v4-grow.webp"
+    }
+  },
+  "scope": {
+    "characters": 10,
+    "forms_per_character": 6,
+    "states_per_form": 3,
+    "adult_sprite_total": 180,
+    "juvenile_rule": "Stages 1–4 remain nonsexual. Route silhouettes become readable progressively from stage 2.",
+    "baby_pot_exception": "Ppoto remains a nonsexual plant mascot in every route; ember means brave and sturdy, never sexy."
+  },
+  "safety": {
+    "adult_only_for_sexy_archetypes": true,
+    "no_self_harm_symbols": true,
+    "no_clinical_diagnosis_from_emotion": true,
+    "note": "Rainy and moonlit may use gothic, gloomy, or obsession-inspired fictional styling without labeling real sadness as mental illness."
+  }
+}

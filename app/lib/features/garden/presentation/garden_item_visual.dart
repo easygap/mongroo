@@ -42,16 +42,16 @@ const Map<String, String> gardenBundledAssetKeyPaths = {
   'companion/bunny': 'assets/companions/fluffy-bunny.webp',
   'species/cactus': 'assets/species/cactus-seed.webp',
   'species/sunflower': 'assets/species/sunflower-seed.webp',
-  'characters/baby-pot': 'assets/characters/baby-pot.webp',
-  'characters/handsome-pot': 'assets/characters/handsome-pot.webp',
-  'characters/pretty-pot': 'assets/characters/pretty-pot.webp',
-  'characters/tsundere-pot': 'assets/characters/tsundere-pot.webp',
-  'characters/zombie-pot': 'assets/characters/zombie-pot.webp',
-  'characters/gumiho-pot': 'assets/characters/gumiho-pot.webp',
-  'characters/ninja-pot': 'assets/characters/ninja-pot.webp',
-  'characters/magical-pot': 'assets/characters/magical-pot.webp',
-  'characters/aloof-pot': 'assets/characters/aloof-pot.webp',
-  'characters/student-pot': 'assets/characters/student-pot.webp',
+  'characters/baby-pot': 'assets/characters/baby-pot-v2.webp',
+  'characters/handsome-pot': 'assets/characters/handsome-pot-v2.webp',
+  'characters/pretty-pot': 'assets/characters/pretty-pot-v2.webp',
+  'characters/tsundere-pot': 'assets/characters/tsundere-pot-v3.webp',
+  'characters/zombie-pot': 'assets/characters/zombie-pot-v2.webp',
+  'characters/gumiho-pot': 'assets/characters/gumiho-pot-v3.webp',
+  'characters/ninja-pot': 'assets/characters/ninja-pot-v2.webp',
+  'characters/magical-pot': 'assets/characters/magical-pot-v2.webp',
+  'characters/aloof-pot': 'assets/characters/aloof-pot-v2.webp',
+  'characters/student-pot': 'assets/characters/student-pot-v2.webp',
 };
 
 /// `asset_key`가 없는 응답은 상품 코드로 찾는다.
@@ -151,13 +151,12 @@ class GardenItemVisual extends StatelessWidget {
                     child: Icon(Icons.arrow_forward_rounded, size: 24),
                   ),
                   Expanded(
-                    child: _gardenImage(
-                      path: finalAssetPath,
+                    child: AnimatedGardenCharacter(
+                      item: item,
                       fit: BoxFit.contain,
+                      locked: locked,
+                      animateIdle: animateIdle,
                       cacheWidth: cacheWidth,
-                      fallback: () => const _GardenInkFallback(
-                        icon: Icons.local_florist_outlined,
-                      ),
                     ),
                   ),
                 ],
@@ -283,6 +282,9 @@ class _AnimatedGardenCharacterState extends State<AnimatedGardenCharacter>
         oldWidget.locked != widget.locked ||
         oldWidget.animateIdle != widget.animateIdle) {
       _controller.duration = _motionDuration(widget.item.motionKey);
+      _tapController
+        ..stop()
+        ..value = 0;
       _syncMotion();
     }
   }
@@ -601,9 +603,14 @@ Widget _gardenImage({
 }
 
 Duration _motionDuration(String motionKey) => switch (motionKey) {
+      'baby_bounce' => const Duration(milliseconds: 1800),
+      'prince_flourish' => const Duration(milliseconds: 2600),
+      'pretty_sparkle' => const Duration(milliseconds: 2100),
+      'tsundere_turn_away' => const Duration(milliseconds: 2300),
       'ninja_snap' => const Duration(milliseconds: 1800),
       'zombie_sway' => const Duration(milliseconds: 3600),
       'gumiho_float' => const Duration(milliseconds: 3000),
+      'magical_hover' => const Duration(milliseconds: 2800),
       'aloof_glance' => const Duration(milliseconds: 4200),
       'student_adjust' => const Duration(milliseconds: 2800),
       _ => const Duration(milliseconds: 2400),
@@ -670,13 +677,73 @@ _CharacterPose _characterPose(String motionKey, double progress) {
   };
 }
 
-bool _supportsTapMotion(String motionKey) =>
-    motionKey == 'aloof_glance' || motionKey == 'student_adjust';
+bool _supportsTapMotion(String motionKey) => const {
+      'baby_bounce',
+      'prince_flourish',
+      'pretty_sparkle',
+      'tsundere_turn_away',
+      'zombie_sway',
+      'gumiho_float',
+      'ninja_snap',
+      'magical_hover',
+      'aloof_glance',
+      'student_adjust',
+    }.contains(motionKey);
 
 _CharacterPose _tapPose(String motionKey, double progress) {
   if (progress <= 0 || progress >= 1) return const _CharacterPose();
   final envelope = math.sin(progress * math.pi);
+  final oscillation = math.sin(progress * math.pi * 2);
   return switch (motionKey) {
+    'baby_bounce' => _CharacterPose(
+        y: -8 * envelope,
+        rotation: oscillation * envelope * .035,
+        scaleX: 1 + .055 * envelope,
+        scaleY: 1 - .035 * envelope,
+      ),
+    'prince_flourish' => _CharacterPose(
+        x: 2.4 * oscillation * envelope,
+        y: -3 * envelope,
+        rotation: .05 * oscillation * envelope,
+        scaleX: 1 + .018 * envelope,
+        scaleY: 1 + .018 * envelope,
+      ),
+    'pretty_sparkle' => _CharacterPose(
+        y: -5 * envelope,
+        rotation: .075 * oscillation * envelope,
+        scaleX: 1 + .035 * envelope,
+        scaleY: 1 + .035 * envelope,
+      ),
+    'tsundere_turn_away' => _CharacterPose(
+        x: 7 * envelope,
+        rotation: -.06 * envelope,
+        scaleX: 1 - .035 * envelope,
+      ),
+    'zombie_sway' => _CharacterPose(
+        x: 4.5 * oscillation * envelope,
+        y: 2 * envelope,
+        rotation: .085 * oscillation * envelope,
+        scaleY: 1 - .025 * envelope,
+      ),
+    'gumiho_float' => _CharacterPose(
+        y: -8 * envelope,
+        rotation: .035 * oscillation * envelope,
+        scaleX: 1 + .03 * envelope,
+        scaleY: 1 + .03 * envelope,
+      ),
+    'ninja_snap' => _CharacterPose(
+        x: 12 * oscillation * envelope,
+        y: -2.5 * envelope,
+        rotation: -.045 * oscillation * envelope,
+        scaleX: 1 - .045 * envelope,
+        opacity: 1 - .12 * envelope,
+      ),
+    'magical_hover' => _CharacterPose(
+        y: -9 * envelope,
+        rotation: .09 * oscillation * envelope,
+        scaleX: 1 + .035 * envelope,
+        scaleY: 1 + .035 * envelope,
+      ),
     'aloof_glance' => _CharacterPose(
         x: -3.5 * envelope,
         rotation: -0.032 * envelope,
@@ -684,9 +751,9 @@ _CharacterPose _tapPose(String motionKey, double progress) {
         opacity: 1 - 0.025 * envelope,
       ),
     'student_adjust' => _CharacterPose(
-        x: math.sin(progress * math.pi * 2) * envelope * 1.2,
+        x: oscillation * envelope * 1.2,
         y: -3 * envelope,
-        rotation: -math.sin(progress * math.pi * 2) * envelope * 0.012,
+        rotation: -oscillation * envelope * 0.012,
         scaleX: 1 + 0.008 * envelope,
         scaleY: 1 - 0.015 * envelope,
       ),

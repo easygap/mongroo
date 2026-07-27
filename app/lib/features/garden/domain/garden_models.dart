@@ -1,5 +1,23 @@
 import 'dart:math' as math;
 
+const _v2CharacterSlugs = {
+  'baby-pot',
+  'handsome-pot',
+  'pretty-pot',
+  'tsundere-pot',
+  'zombie-pot',
+  'gumiho-pot',
+  'ninja-pot',
+  'magical-pot',
+  'aloof-pot',
+  'student-pot',
+};
+
+const _v3CharacterSlugs = {
+  'tsundere-pot',
+  'gumiho-pot',
+};
+
 int gardenInt(Object? value, [int fallback = 0]) => switch (value) {
       int number => number,
       num number => number.toInt(),
@@ -253,7 +271,13 @@ class ShopItem {
         (!key.startsWith('characters/') && !key.startsWith('character/'))) {
       return bundledAssetPath;
     }
-    return 'assets/characters/${key.substring(key.indexOf('/') + 1)}.webp';
+    final slug = key.substring(key.indexOf('/') + 1);
+    final version = _v3CharacterSlugs.contains(slug)
+        ? '-v3'
+        : _v2CharacterSlugs.contains(slug)
+            ? '-v2'
+            : '';
+    return 'assets/characters/$slug$version.webp';
   }
 
   String get motionKey =>
@@ -328,9 +352,9 @@ class ShopItem {
       return '흐트러짐을 못 보는 냉정한 리더';
     }
     if (identity.contains('pretty')) return '무대 체질인 새싹 아이돌';
-    if (identity.contains('tsundere')) return '씨앗 주머니를 몰래 챙기는 츤데레';
+    if (identity.contains('tsundere')) return '시선을 피하며 챙겨 주는 정석 츤데레';
     if (identity.contains('zombie')) return '해 질 무렵 깨어나는 느긋한 좀비';
-    if (identity.contains('gumiho')) return '부채 뒤로 장난을 꾸미는 구미호';
+    if (identity.contains('gumiho')) return '눈맞춤과 부채로 홀리는 요염한 구미호';
     if (identity.contains('ninja')) return '잎 수리검을 다루는 재빠른 정찰꾼';
     if (identity.contains('aloof')) return '서리꽃을 지키는 말수 적은 라이벌';
     if (identity.contains('student')) return '수첩부터 펴는 원칙주의 학생회장';
@@ -350,9 +374,13 @@ class ShopItem {
       return '소매부터 바로잡아. 출발하지.';
     }
     if (identity.contains('pretty')) return '센터는 나야. 박자 맞춰!';
-    if (identity.contains('tsundere')) return '이 씨앗은 남아서 주는 거야.';
+    if (identity.contains('tsundere')) {
+      return '오해하지 마. 네가 걱정돼서 그런 건 아니니까.';
+    }
     if (identity.contains('zombie')) return '해 뜨기 전까진… 아직 시간 많아.';
-    if (identity.contains('gumiho')) return '후후, 꼬리 아홉 개를 다 찾았어?';
+    if (identity.contains('gumiho')) {
+      return '후후, 그렇게 빤히 보면 내가 먼저 홀려버릴지도 몰라.';
+    }
     if (identity.contains('ninja')) return '연막 잎 준비. 셋에 움직여.';
     if (identity.contains('aloof')) return '서리꽃은 함부로 만지지 마.';
     if (identity.contains('student')) return '수첩 펴. 할 일부터 정리하자.';

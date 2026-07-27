@@ -1,6 +1,26 @@
 {
-  "schema_version": 1,
+  "schema_version": 4,
   "art_family": "character-lineage-25d",
+  "asset_contract": {
+    "per_lineage": 37,
+    "total": 370,
+    "early_stage_per_lineage": 19,
+    "early_stage_total": 190,
+    "early_stage_pattern": "assets/plants/{slug}-25d-{phase}-{form}.webp",
+    "adult_v2_pattern": "assets/plants/{slug}-25d-full-bloom-{form}-v2.webp",
+    "adult_v4_pattern": "assets/plants/{slug}-25d-full-bloom-{form}-v4-{state}.webp",
+    "adult_latest_pattern": "assets/plants/{slug}-25d-full-bloom-{form}-v4-{state}.webp",
+    "adult_states": ["idle", "diary", "grow"],
+    "adult_versions": {
+      "default": "v4"
+    },
+    "adult_v4_per_lineage": 18,
+    "adult_v4_count": 180,
+    "adult_v2_count": 60,
+    "adult_v3_count": 12,
+    "legacy_adult_count": 132,
+    "resolver_order": ["v4-state", "v3", "v2", "route", "phase", "vector"]
+  },
   "stage_mapping": {
     "seed": "씨앗",
     "sprout": "새싹",
@@ -14,6 +34,20 @@
       "slug": "baby-pot",
       "name": "뽀또",
       "identity": "잎 보닛, 둥근 갈색 눈, 새싹 펜던트",
+      "art_direction": {"appeal_focus": "cute mascot", "skin_tone": "not applicable"},
+      "motion": {
+        "idle_key": "baby_bounce",
+        "tap_reaction": "double pot hop",
+        "secondary": ["leaf wave", "curious head tilt"]
+      },
+      "expressions": {
+        "sunny": "활짝 웃는 눈과 손 흔들기",
+        "rainy": "촉촉한 눈과 위로를 기다리는 입",
+        "ember": "볼을 부풀린 용감한 결심",
+        "moonlit": "조심스럽고 졸린 눈",
+        "sparkling": "동그랗게 커진 놀란 눈",
+        "mosaic": "고개를 갸웃하는 생각 표정"
+      },
       "routes": {
         "sunny": "해바라기 축제 정원사",
         "rainy": "블루벨 자장가 수호자",
@@ -27,6 +61,20 @@
       "slug": "handsome-pot",
       "name": "로제온",
       "identity": "남색 머리, 푸른 눈, 식물 학교 코트",
+      "art_direction": {"appeal_focus": "handsome", "skin_tone": "23N"},
+      "motion": {
+        "idle_key": "prince_flourish",
+        "tap_reaction": "coat flourish and soft bow",
+        "secondary": ["cuff adjust", "calm greeting nod"]
+      },
+      "expressions": {
+        "sunny": "여유 있는 미소",
+        "rainy": "낮게 가라앉은 시선",
+        "ember": "정면을 보는 단호한 눈",
+        "moonlit": "먼 곳을 보는 경계심",
+        "sparkling": "뜻밖의 발견에 열린 표정",
+        "mosaic": "턱을 괴는 사색 표정"
+      },
       "routes": {
         "sunny": "황금 온실 학생회장",
         "rainy": "남청 장미 시인",
@@ -40,6 +88,20 @@
       "slug": "pretty-pot",
       "name": "블루미",
       "identity": "코랄 단발, 초록 케이프, 꽃 아이돌",
+      "art_direction": {"appeal_focus": "pretty", "skin_tone": "21C/21N"},
+      "motion": {
+        "idle_key": "pretty_sparkle",
+        "tap_reaction": "cape twirl and flower pose",
+        "secondary": ["idol wave", "playful wink"]
+      },
+      "expressions": {
+        "sunny": "환한 무대 미소",
+        "rainy": "눈꼬리가 내려간 공감 표정",
+        "ember": "자신감 있는 반쪽 미소",
+        "moonlit": "조용히 집중한 눈",
+        "sparkling": "윙크와 놀란 미소",
+        "mosaic": "다정하게 고민하는 표정"
+      },
       "routes": {
         "sunny": "해바라기 무대 아이돌",
         "rainy": "도라지꽃 발라드 가수",
@@ -52,7 +114,22 @@
     {
       "slug": "tsundere-pot",
       "name": "가시로",
-      "identity": "붉은 머리, 가시잎, 금으로 수선한 깨진 화분",
+      "art_revision": 3,
+      "identity": "붉은 머리, 가시잎, 홍조, 금으로 수선한 깨진 화분",
+      "art_direction": {"appeal_focus": "handsome tsundere", "skin_tone": "19N"},
+      "motion": {
+        "idle_key": "tsundere_turn_away",
+        "tap_reaction": "blushing turn-away while offering a seed pouch",
+        "secondary": ["defensive arm cross", "secret caring handoff"]
+      },
+      "expressions": {
+        "sunny": "감추지 못한 옅은 미소",
+        "rainy": "시선을 피하는 걱정",
+        "ember": "이를 악문 강한 눈",
+        "moonlit": "의심스러운 곁눈질",
+        "sparkling": "당황해 커진 눈",
+        "mosaic": "팔짱을 낀 복잡한 표정"
+      },
       "routes": {
         "sunny": "툴툴대는 과수원 기사",
         "rainy": "남청 가시 장미 방랑자",
@@ -66,6 +143,20 @@
       "slug": "zombie-pot",
       "name": "시들잎",
       "identity": "보라 머리, 졸린 눈, 누빔 화분 옷",
+      "art_direction": {"appeal_focus": "languid sexy", "skin_tone": "shade-19 sage"},
+      "motion": {
+        "idle_key": "zombie_sway",
+        "tap_reaction": "sleepy side sway",
+        "secondary": ["slow blink", "loose shoulder slump"]
+      },
+      "expressions": {
+        "sunny": "잠에서 덜 깬 작은 미소",
+        "rainy": "무거운 눈꺼풀과 쓸쓸한 입",
+        "ember": "힘겹게 뜬 결심의 눈",
+        "moonlit": "몽유병처럼 먼 시선",
+        "sparkling": "느리게 번지는 놀람",
+        "mosaic": "기억을 더듬는 멍한 표정"
+      },
       "routes": {
         "sunny": "졸린 데이지 치유사",
         "rainy": "밤그늘 고딕 시인",
@@ -78,7 +169,22 @@
     {
       "slug": "gumiho-pot",
       "name": "여우비",
+      "art_revision": 3,
       "identity": "검은 머리, 현대 한복, 아홉 여우꽃 꼬리",
+      "art_direction": {"appeal_focus": "alluring seductive adult", "skin_tone": "19C/19N"},
+      "motion": {
+        "idle_key": "gumiho_float",
+        "tap_reaction": "playful tail-fan float with direct eye contact",
+        "secondary": ["fan below the lips", "half-lidded fox glance"]
+      },
+      "expressions": {
+        "sunny": "눈을 맞추는 유혹적인 환한 미소",
+        "rainy": "쇄골 가까이 부채를 든 외로운 요염함",
+        "ember": "허리에 손을 얹은 도발적인 자신감",
+        "moonlit": "부채 아래 비밀스러운 반쯤 감긴 눈",
+        "sparkling": "손을 내미는 장난스러운 여우 윙크",
+        "mosaic": "부채를 턱에 댄 느긋한 요염함"
+      },
       "routes": {
         "sunny": "복숭아꽃 잔치 주인",
         "rainy": "월우 여우꽃 무희",
@@ -92,6 +198,20 @@
       "slug": "ninja-pot",
       "name": "그림싹",
       "identity": "검은 잎 후드, 잎 수리검, 화분 배낭",
+      "art_direction": {"appeal_focus": "agile sexy", "skin_tone": "19N"},
+      "motion": {
+        "idle_key": "ninja_snap",
+        "tap_reaction": "short dash and snap-back",
+        "secondary": ["shuriken flip", "scout crouch"]
+      },
+      "expressions": {
+        "sunny": "후드 아래의 가벼운 미소",
+        "rainy": "숨을 죽인 경계 눈",
+        "ember": "공격 직전의 날카로운 눈",
+        "moonlit": "그림자를 읽는 집중",
+        "sparkling": "목표를 발견한 놀람",
+        "mosaic": "경로를 계산하는 곁눈질"
+      },
       "routes": {
         "sunny": "햇대나무 정찰꾼",
         "rainy": "안개잎 은신 닌자",
@@ -105,6 +225,20 @@
       "slug": "magical-pot",
       "name": "별솔",
       "identity": "보라 머리, 덩굴 마법 모자, 새싹 지팡이",
+      "art_direction": {"appeal_focus": "handsome", "skin_tone": "23C/23N"},
+      "motion": {
+        "idle_key": "magical_hover",
+        "tap_reaction": "wand hover spin",
+        "secondary": ["hat tip", "thoughtful page turn"]
+      },
+      "expressions": {
+        "sunny": "따뜻한 학자 미소",
+        "rainy": "조용히 공감하는 눈",
+        "ember": "주문에 집중한 표정",
+        "moonlit": "별을 읽는 신중한 눈",
+        "sparkling": "발명에 성공한 놀람",
+        "mosaic": "가설을 세우는 사색 표정"
+      },
       "routes": {
         "sunny": "태양꽃 연금술사",
         "rainy": "푸른종꽃 예언자",
@@ -117,7 +251,21 @@
     {
       "slug": "aloof-pot",
       "name": "설화",
-      "identity": "짙은 피부, 검은 단발, 흰 식물 연구 코트",
+      "identity": "21C 아이보리 피부, 검은 단발, 흰 식물 연구 코트",
+      "art_direction": {"appeal_focus": "pretty", "skin_tone": "21C"},
+      "motion": {
+        "idle_key": "aloof_glance",
+        "tap_reaction": "cool side glance",
+        "secondary": ["lab-coat settle", "specimen check"]
+      },
+      "expressions": {
+        "sunny": "절제된 옅은 미소",
+        "rainy": "걱정을 숨긴 내려간 눈",
+        "ember": "단단하게 좁힌 눈",
+        "moonlit": "차분하고 냉정한 관찰",
+        "sparkling": "눈썹이 살짝 오른 발견",
+        "mosaic": "결론을 유보한 분석 표정"
+      },
       "routes": {
         "sunny": "태양초 현장 연구자",
         "rainy": "검푸른 난초 식물학자",
@@ -131,6 +279,20 @@
       "slug": "student-pot",
       "name": "하루",
       "identity": "갈색 머리, 새싹 배지, 화분 책가방",
+      "art_direction": {"appeal_focus": "wholesome handsome", "skin_tone": "23N"},
+      "motion": {
+        "idle_key": "student_adjust",
+        "tap_reaction": "posture adjust and earnest nod",
+        "secondary": ["satchel hold", "friendly garden wave"]
+      },
+      "expressions": {
+        "sunny": "반갑게 손 흔드는 미소",
+        "rainy": "공책을 읽는 걱정스러운 눈",
+        "ember": "토론을 이끄는 단호한 표정",
+        "moonlit": "별자리를 살피는 조심스러운 눈",
+        "sparkling": "현장 발견에 들뜬 놀람",
+        "mosaic": "기록을 정리하는 진지한 표정"
+      },
       "routes": {
         "sunny": "햇살 학교 정원부장",
         "rainy": "푸른 일기 도서위원",

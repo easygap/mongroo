@@ -9,6 +9,19 @@ import '../domain/plant.dart';
 /// 분기가 결정하며, 수동 mood level을 여기에 연결하지 않는다.
 enum PlantExpression { neutral, acknowledged, happy, sad }
 
+/// 감정 성체 원화가 제공하는 실제 자세.
+///
+/// 직접 지정하지 않으면 [PlantExpression]에서 일기 반응과 성장 축하 자세를
+/// 자동으로 고른다.
+enum PlantSpritePose {
+  idle('idle'),
+  diary('diary'),
+  grow('grow');
+
+  const PlantSpritePose(this.code);
+  final String code;
+}
+
 /// 몽그루의 성장 캐릭터를 단계별 래스터 에셋으로 보여 주는 뷰.
 ///
 /// 검수한 래스터 에셋이 아직 없는 조합만 런타임 벡터 painter로 대체한다.
@@ -19,6 +32,7 @@ class PlantView extends StatefulWidget {
     super.key,
     required this.stage,
     this.expression = PlantExpression.neutral,
+    this.spritePose,
     this.form,
     this.secondaryForm,
     this.speciesCode = 'basic_sprout',
@@ -32,6 +46,7 @@ class PlantView extends StatefulWidget {
 
   final int stage;
   final PlantExpression expression;
+  final PlantSpritePose? spritePose;
   final PlantGrowthForm? form;
   final PlantGrowthForm? secondaryForm;
   final String speciesCode;
@@ -75,7 +90,8 @@ class _PlantViewState extends State<PlantView>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.form != widget.form ||
         oldWidget.secondaryForm != widget.secondaryForm ||
-        oldWidget.stage != widget.stage) {
+        oldWidget.stage != widget.stage ||
+        oldWidget.speciesCode != widget.speciesCode) {
       _idleController.duration = _motion.duration;
       _syncMotion(restart: true);
     }
@@ -84,7 +100,18 @@ class _PlantViewState extends State<PlantView>
   _PlantIdleMotion get _motion => _PlantIdleMotion.forStage(
         widget.stage,
         form: widget.stage >= 3 ? widget.form : null,
+        speciesCode: widget.speciesCode,
       );
+
+  PlantSpritePose get _spritePose =>
+      widget.spritePose ??
+      switch (widget.expression) {
+        PlantExpression.neutral => PlantSpritePose.idle,
+        PlantExpression.acknowledged ||
+        PlantExpression.sad =>
+          PlantSpritePose.diary,
+        PlantExpression.happy => PlantSpritePose.grow,
+      };
 
   void _syncMotion({bool restart = false}) {
     final disabled = MediaQuery.disableAnimationsOf(context);
@@ -148,6 +175,7 @@ class _PlantViewState extends State<PlantView>
       form: revealedForm,
       secondaryForm: clamped >= 4 ? widget.secondaryForm : null,
       visual: visual,
+      pose: _spritePose,
     );
     final painting = SizedBox(
       width: viewWidth,
@@ -205,6 +233,26 @@ class _PlantViewState extends State<PlantView>
 class PlantGrowthAssetResolver {
   const PlantGrowthAssetResolver._();
 
+  static const _emotionAdultV2Species = {
+    'baby-pot',
+    'handsome-pot',
+    'pretty-pot',
+    'tsundere-pot',
+    'zombie-pot',
+    'gumiho-pot',
+    'ninja-pot',
+    'magical-pot',
+    'aloof-pot',
+    'student-pot',
+  };
+
+  static const _emotionAdultV4Species = _emotionAdultV2Species;
+
+  static const _emotionAdultV3Species = {
+    'tsundere-pot',
+    'gumiho-pot',
+  };
+
   static const _phases = <int, String>{
     1: 'seed',
     2: 'sprout',
@@ -219,6 +267,7 @@ class PlantGrowthAssetResolver {
     PlantGrowthForm? form,
     PlantGrowthForm? secondaryForm,
     PlantGrowthVisual? visual,
+    PlantSpritePose pose = PlantSpritePose.idle,
   }) {
     final clamped = stage.clamp(1, 5).toInt();
     final serverPhase = _slug(visual?.phase ?? '');
@@ -237,6 +286,25 @@ class PlantGrowthAssetResolver {
             ]
           : ['$species-25d', species];
       for (final family in artFamilies) {
+        if (clamped == 5 &&
+            form != null &&
+            family == '$species-25d' &&
+            _emotionAdultV2Species.contains(species)) {
+          if (_emotionAdultV4Species.contains(species)) {
+            paths.add(
+              'assets/plants/$family-$phase-${form.code}'
+              '-v4-${pose.code}.webp',
+            );
+          }
+          if (_emotionAdultV3Species.contains(species)) {
+            paths.add(
+              'assets/plants/$family-$phase-${form.code}-v3.webp',
+            );
+          }
+          paths.add(
+            'assets/plants/$family-$phase-${form.code}-v2.webp',
+          );
+        }
         if (clamped >= 4 && form != null && secondaryForm != null) {
           paths.add(
             'assets/plants/$family-$phase-${form.code}-${secondaryForm.code}.webp',
@@ -429,39 +497,123 @@ class _PlantIdleMotion {
   static _PlantIdleMotion forStage(
     int stage, {
     PlantGrowthForm? form,
+    String speciesCode = 'basic_sprout',
   }) {
     final clamped = stage.clamp(1, 5).toInt();
-    if (clamped == 1) {
-      return const _PlantIdleMotion(
-        duration: Duration(milliseconds: 3400),
-        scaleX: .004,
-        scaleY: .008,
-      );
-    }
-    if (clamped == 2) {
-      return const _PlantIdleMotion(
-        duration: Duration(milliseconds: 2600),
-        rotation: .012,
-        scaleY: .005,
-      );
-    }
-    if (clamped == 3) {
-      return const _PlantIdleMotion(
-        duration: Duration(milliseconds: 2100),
-        dy: -1.8,
-        scaleX: .005,
-        scaleY: .009,
-      );
-    }
-    if (clamped == 4) {
-      return const _PlantIdleMotion(
-        duration: Duration(milliseconds: 2300),
-        dy: -1.2,
-        rotation: -.008,
-        scaleY: .007,
-      );
-    }
-    return _forForm(form);
+    final stageMotion = switch (clamped) {
+      1 => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 3400),
+          scaleX: .004,
+          scaleY: .008,
+        ),
+      2 => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 2600),
+          rotation: .012,
+          scaleY: .005,
+        ),
+      3 => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 2100),
+          dy: -1.8,
+          scaleX: .005,
+          scaleY: .009,
+        ),
+      4 => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 2300),
+          dy: -1.2,
+          rotation: -.008,
+          scaleY: .007,
+        ),
+      _ => _forForm(form),
+    };
+    return stageMotion._withCharacterSignature(
+      speciesCode,
+      stage: clamped,
+    );
+  }
+
+  _PlantIdleMotion _withCharacterSignature(
+    String speciesCode, {
+    required int stage,
+  }) {
+    final slug = PlantGrowthAssetResolver._slug(speciesCode);
+    final signature = switch (slug) {
+      'baby-pot' => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 1800),
+          dy: -1.8,
+          scaleX: .008,
+          scaleY: -.004,
+        ),
+      'handsome-pot' => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 2600),
+          dx: .5,
+          rotation: .005,
+        ),
+      'pretty-pot' => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 2100),
+          dy: -.6,
+          rotation: .007,
+          scaleX: .003,
+          scaleY: .003,
+        ),
+      'tsundere-pot' => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 2300),
+          dx: .9,
+          rotation: -.009,
+        ),
+      'zombie-pot' => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 3600),
+          dx: 1.1,
+          rotation: .014,
+          scaleY: -.004,
+        ),
+      'gumiho-pot' => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 3000),
+          dy: -1.4,
+          rotation: .006,
+          scaleX: .004,
+          scaleY: .004,
+        ),
+      'ninja-pot' => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 1700),
+          dx: 1.6,
+          rotation: -.014,
+          scaleX: -.006,
+        ),
+      'magical-pot' => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 2800),
+          dy: -1.8,
+          rotation: .004,
+          scaleX: .004,
+          scaleY: .004,
+        ),
+      'aloof-pot' => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 3900),
+          dx: .35,
+          rotation: -.004,
+        ),
+      'student-pot' => const _PlantIdleMotion(
+          duration: Duration(milliseconds: 2800),
+          dy: -.7,
+          rotation: .003,
+        ),
+      _ => null,
+    };
+    if (signature == null) return this;
+    final strength = switch (stage) {
+      1 => .30,
+      2 => .45,
+      3 => .65,
+      4 => .82,
+      _ => 1.0,
+    };
+    return _PlantIdleMotion(
+      duration: signature.duration,
+      dx: dx + signature.dx * strength,
+      dy: dy + signature.dy * strength,
+      rotation: rotation + signature.rotation * strength,
+      scaleX: scaleX + signature.scaleX * strength,
+      scaleY: scaleY + signature.scaleY * strength,
+    );
   }
 
   static _PlantIdleMotion _forForm(PlantGrowthForm? form) => switch (form) {

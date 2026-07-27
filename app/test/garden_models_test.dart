@@ -185,7 +185,7 @@ void main() {
     expect(character.growthSpeciesCode, 'gumiho_pot');
     expect(
       character.bundledCharacterAssetPath,
-      'assets/characters/gumiho-pot.webp',
+      'assets/characters/gumiho-pot-v3.webp',
     );
     expect(character.motionKey, 'gumiho_float');
     expect(character.personality, '부채 뒤로 장난을 꾸미는 구미호');
@@ -354,7 +354,7 @@ void main() {
     expect(shop.items.single.isSpeciesUnlock, isTrue);
   });
 
-  test('무심이와 모범생 화분의 이미지 경로와 모션 키를 매핑한다', () {
+  test('v2·v3 캐릭터의 이미지 경로와 모션 키를 매핑한다', () {
     ShopItem item(String slug, String motionKey) => ShopItem.fromJson({
           'id': 40,
           'code': 'character_${slug.replaceAll('-', '_')}',
@@ -370,12 +370,27 @@ void main() {
 
     final aloof = item('aloof-pot', 'aloof_glance');
     final student = item('student-pot', 'student_adjust');
+    final gumiho = item('gumiho-pot', 'gumiho_float');
+    final tsundere = item('tsundere-pot', 'tsundere_turn_away');
 
-    expect(aloof.bundledCharacterAssetPath, 'assets/characters/aloof-pot.webp');
+    expect(
+      aloof.bundledCharacterAssetPath,
+      'assets/characters/aloof-pot-v2.webp',
+    );
     expect(aloof.motionKey, 'aloof_glance');
     expect(student.bundledCharacterAssetPath,
-        'assets/characters/student-pot.webp');
+        'assets/characters/student-pot-v2.webp');
     expect(student.motionKey, 'student_adjust');
+    expect(
+      gumiho.bundledCharacterAssetPath,
+      'assets/characters/gumiho-pot-v3.webp',
+    );
+    expect(gumiho.motionKey, 'gumiho_float');
+    expect(
+      tsundere.bundledCharacterAssetPath,
+      'assets/characters/tsundere-pot-v3.webp',
+    );
+    expect(tsundere.motionKey, 'tsundere_turn_away');
   });
 
   test('캐릭터 기본 소개와 대사는 성격별로 구분된다', () {
@@ -383,9 +398,9 @@ void main() {
       'baby-pot': ['쪽쪽이를 문 호기심쟁이 막내', '뽀또! 새싹 하나 더 찾았어!'],
       'handsome-pot': ['흐트러짐을 못 보는 냉정한 리더', '소매부터 바로잡아. 출발하지.'],
       'pretty-pot': ['무대 체질인 새싹 아이돌', '센터는 나야. 박자 맞춰!'],
-      'tsundere-pot': ['씨앗 주머니를 몰래 챙기는 츤데레', '이 씨앗은 남아서 주는 거야.'],
+      'tsundere-pot': ['시선을 피하며 챙겨 주는 정석 츤데레', '오해하지 마. 네가 걱정돼서 그런 건 아니니까.'],
       'zombie-pot': ['해 질 무렵 깨어나는 느긋한 좀비', '해 뜨기 전까진… 아직 시간 많아.'],
-      'gumiho-pot': ['부채 뒤로 장난을 꾸미는 구미호', '후후, 꼬리 아홉 개를 다 찾았어?'],
+      'gumiho-pot': ['눈맞춤과 부채로 홀리는 요염한 구미호', '후후, 그렇게 빤히 보면 내가 먼저 홀려버릴지도 몰라.'],
       'ninja-pot': ['잎 수리검을 다루는 재빠른 정찰꾼', '연막 잎 준비. 셋에 움직여.'],
       'magical-pot': ['별자리 주문을 연구하는 마법학교 우등생', '별자리 세 번째 줄, 주문 시작!'],
       'aloof-pot': ['서리꽃을 지키는 말수 적은 라이벌', '서리꽃은 함부로 만지지 마.'],

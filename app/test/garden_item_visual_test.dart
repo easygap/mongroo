@@ -60,6 +60,27 @@ void main() {
         'owned': true,
       });
 
+  ShopItem mainCharacter({
+    required String slug,
+    required String motionKey,
+  }) =>
+      ShopItem.fromJson({
+        'id': slug.hashCode,
+        'code': 'character_${slug.replaceAll('-', '_')}',
+        'type': 'main_character',
+        'name': slug,
+        'description': '감정일기로 자라는 캐릭터',
+        'price_seeds': 240,
+        'rarity': 3,
+        'asset_manifest': {
+          'asset_key': 'characters/$slug',
+          'motion_key': motionKey,
+          'personality': '고유한 움직임을 가진 성장 캐릭터',
+          'catchphrase': '오늘 마음은 어땠어?',
+        },
+        'owned': true,
+      });
+
   ShopItem humanoidLineage() => ShopItem.fromJson({
         'id': 42,
         'code': 'character_gumiho_pot',
@@ -136,6 +157,7 @@ void main() {
     await tester.pump();
 
     expect(find.byType(PlantStagePreview), findsOneWidget);
+    expect(find.byType(AnimatedGardenCharacter), findsOneWidget);
     expect(find.byType(Image), findsWidgets);
     expect(
       find.bySemanticsLabel(
@@ -293,6 +315,67 @@ void main() {
     final starAfter =
         tester.widget<Transform>(starPose).transform.getTranslation();
     expect(starAfter.y, lessThan(starBefore.y - 1));
+  });
+
+  testWidgets('10종 성장 캐릭터는 모두 서로 다른 탭 모션을 지원한다', (tester) async {
+    const characters = {
+      'baby-pot': 'baby_bounce',
+      'handsome-pot': 'prince_flourish',
+      'pretty-pot': 'pretty_sparkle',
+      'tsundere-pot': 'tsundere_turn_away',
+      'zombie-pot': 'zombie_sway',
+      'gumiho-pot': 'gumiho_float',
+      'ninja-pot': 'ninja_snap',
+      'magical-pot': 'magical_hover',
+      'aloof-pot': 'aloof_glance',
+      'student-pot': 'student_adjust',
+    };
+
+    for (final entry in characters.entries) {
+      final item = mainCharacter(
+        slug: entry.key,
+        motionKey: entry.value,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox.square(
+              dimension: 180,
+              child: AnimatedGardenCharacter(
+                item: item,
+                animateIdle: false,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final poseFinder = find.byKey(
+        ValueKey('character-pose-${item.code}'),
+      );
+      final before =
+          tester.widget<Transform>(poseFinder).transform.getTranslation();
+      final listener = tester
+          .widgetList<Listener>(
+            find.descendant(
+              of: find.byType(AnimatedGardenCharacter),
+              matching: find.byType(Listener),
+            ),
+          )
+          .firstWhere((candidate) => candidate.onPointerDown != null);
+      listener.onPointerDown!(const PointerDownEvent());
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 110));
+      final after =
+          tester.widget<Transform>(poseFinder).transform.getTranslation();
+
+      expect(
+        (after - before).length,
+        greaterThan(1),
+        reason: '${entry.key} (${entry.value}) 탭 모션이 정지해 있습니다.',
+      );
+    }
   });
 
   test('신규 방 테마 asset_key와 code fallback을 중앙 매핑에서 찾는다', () {

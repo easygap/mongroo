@@ -317,11 +317,85 @@ void main() {
       secondaryForm: PlantGrowthForm.sparkling,
     );
 
-    expect(candidates.take(3), [
+    expect(candidates.take(6), [
+      'assets/plants/gumiho-pot-25d-full-bloom-rainy-v4-idle.webp',
+      'assets/plants/gumiho-pot-25d-full-bloom-rainy-v3.webp',
+      'assets/plants/gumiho-pot-25d-full-bloom-rainy-v2.webp',
       'assets/plants/gumiho-pot-25d-full-bloom-rainy-sparkling.webp',
       'assets/plants/gumiho-pot-25d-full-bloom-rainy.webp',
       'assets/plants/gumiho-pot-25d-full-bloom.webp',
     ]);
+  });
+
+  testWidgets('사람형 계보의 최고 성장 단계는 최신 감정 성체를 사용한다', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: Scaffold(
+            body: PlantView(
+              stage: 5,
+              speciesCode: 'gumiho_pot',
+              speciesName: '여우비',
+              form: PlantGrowthForm.moonlit,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(
+        const ValueKey(
+          'assets/plants/gumiho-pot-25d-full-bloom-moonlit-v4-idle.webp',
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('일기 반응과 성장 축하는 전용 감정 성체 자세를 사용한다', (tester) async {
+    Future<void> pumpExpression(PlantExpression expression) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(disableAnimations: true),
+            child: Scaffold(
+              body: PlantView(
+                stage: 5,
+                speciesCode: 'tsundere_pot',
+                form: PlantGrowthForm.ember,
+                expression: expression,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await pumpExpression(PlantExpression.acknowledged);
+    expect(
+      find.byKey(
+        const ValueKey(
+          'assets/plants/tsundere-pot-25d-full-bloom-ember-v4-diary.webp',
+        ),
+      ),
+      findsOneWidget,
+    );
+
+    await pumpExpression(PlantExpression.happy);
+    expect(
+      find.byKey(
+        const ValueKey(
+          'assets/plants/tsundere-pot-25d-full-bloom-ember-v4-grow.webp',
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('기본 품종은 공통 씨앗 뒤 감정별 2.5D 성장 래스터를 우선 사용한다', (tester) async {
