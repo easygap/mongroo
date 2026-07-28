@@ -30,3 +30,4 @@ Thumbs.db
 output/
 server/output/
 server/.pytest-tmp-*/
+design-system/concepts/wardrobe-v1/qa/

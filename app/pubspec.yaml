@@ -32,6 +32,10 @@ flutter:
     - assets/decorations/
     - assets/companions/
     - assets/plants/
+    - assets/wardrobe/bodies/
+    - assets/wardrobe/inners/
+    - assets/wardrobe/outfits/
+    - assets/wardrobe/previews/
     - assets/rooms/
     - assets/species/
   fonts:

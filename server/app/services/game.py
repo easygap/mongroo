@@ -933,6 +933,7 @@ def default_layout(
         "version": version,
         "room_theme_user_item_id": None,
         "main_character_user_item_id": main_character_user_item_id,
+        "wardrobe_user_item_id": None,
         "companion_user_item_ids": [],
         "decorations": [],
     }
@@ -980,7 +981,11 @@ async def save_farm_layout(db: AsyncSession, user_id: int, body) -> dict:
 
     requested_ids = {
         item_id
-        for item_id in (body.room_theme_user_item_id, body.main_character_user_item_id)
+        for item_id in (
+            body.room_theme_user_item_id,
+            body.main_character_user_item_id,
+            body.wardrobe_user_item_id,
+        )
         if item_id is not None
     }
     requested_ids.update(body.companion_user_item_ids)
@@ -1001,6 +1006,7 @@ async def save_farm_layout(db: AsyncSession, user_id: int, body) -> dict:
     expected_types: list[tuple[int | None, str]] = [
         (body.room_theme_user_item_id, "room_theme"),
         (body.main_character_user_item_id, "main_character"),
+        (body.wardrobe_user_item_id, "wardrobe"),
     ]
     expected_types.extend((i, "companion") for i in body.companion_user_item_ids)
     expected_types.extend((d.user_item_id, "deco") for d in body.decorations)
@@ -1015,6 +1021,7 @@ async def save_farm_layout(db: AsyncSession, user_id: int, body) -> dict:
     layout = {
         "room_theme_user_item_id": body.room_theme_user_item_id,
         "main_character_user_item_id": body.main_character_user_item_id,
+        "wardrobe_user_item_id": body.wardrobe_user_item_id,
         "companion_user_item_ids": body.companion_user_item_ids,
         "decorations": [d.model_dump() for d in body.decorations],
     }

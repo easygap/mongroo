@@ -349,6 +349,43 @@ void main() {
     }
   });
 
+  test('구매 의상은 바디와 같은 프레임 묶음으로 준비한다', () {
+    final candidates = PlantGrowthAssetResolver.layeredCandidates(
+      speciesCode: 'gumiho_pot',
+      stage: 5,
+      form: PlantGrowthForm.rainy,
+      pose: PlantSpritePose.diary,
+      outfitKey: 'garden_daily',
+    );
+
+    // 최소 가림이 바디에 포함돼 있어 지금은 이너 레이어 파일이 없다. 없는
+    // 경로를 후보에 넣으면 프레임마다 디코딩이 한 번씩 실패하므로 넣지 않는다.
+    expect(candidates, [
+      [
+        'assets/wardrobe/bodies/gumiho-pot-diary-rainy.webp',
+        'assets/wardrobe/outfits/garden-daily-gumiho-pot-diary-rainy.webp',
+      ],
+    ]);
+    expect(
+      PlantGrowthAssetResolver.preloadLayeredCandidates(
+        speciesCode: 'gumiho_pot',
+        stage: 5,
+        outfitKey: 'garden_daily',
+      ),
+      hasLength(36),
+    );
+    expect(
+      PlantGrowthAssetResolver.layeredCandidates(
+        speciesCode: 'gumiho_pot',
+        stage: 4,
+        form: PlantGrowthForm.rainy,
+        pose: PlantSpritePose.diary,
+        outfitKey: 'garden_daily',
+      ),
+      isEmpty,
+    );
+  });
+
   test('감정 성체 10종 모두 캐릭터 고유 부분 모션과 눈 깜빡임을 제공한다', () {
     const speciesCodes = [
       'baby_pot',

@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "layer_contract": 2,
+  "rule": "The base layer carries no garment. Render order is base -> inner -> outfit, and every layer of one character shares one crop, scale and baseline.",
+  "canvas": {
+    "width": 512,
+    "height": 768,
+    "baseline_y": 718
+  },
+  "states": [
+    "idle",
+    "diary",
+    "grow"
+  ],
+  "forms": [
+    "sunny",
+    "rainy",
+    "ember",
+    "moonlit",
+    "sparkling",
+    "mosaic"
+  ],
+  "envelope": {
+    "adult": {
+      "top": 0.24,
+      "bottom": 0.46
+    }
+  },
+  "characters": {
+    "baby-pot": {
+      "name": "Ppoto",
+      "body_type": "child",
+      "has_inner": false,
+      "outfits": [
+        "garden-daily"
+      ],
+      "route_scale": {
+        "sunny": 1.198347,
+        "rainy": 1.208333,
+        "ember": 1.215933,
+        "moonlit": 1.277533,
+        "sparkling": 1.200828,
+        "mosaic": 1.231423
+      }
+    },
+    "handsome-pot": {
+      "name": "Rozeon",
+      "body_type": "adult",
+      "has_inner": false,
+      "outfits": [
+        "garden-daily"
+      ],
+      "route_scale": {
+        "sunny": 0.950067,
+        "rainy": 0.94751,
+        "ember": 0.967033,
+        "moonlit": 0.946237,
+        "sparkling": 0.968363,
+        "mosaic": 0.94751
+      }
+    },
+    "pretty-pot": {
+      "name": "Bloomy",
+      "body_type": "adult",
+      "has_inner": false,
+      "outfits": [
+        "garden-daily"
+      ],
+      "route_scale": {
+        "sunny": 0.959128,
+        "rainy": 0.963064,
+        "ember": 0.931217,
+        "moonlit": 0.964384,
+        "sparkling": 0.972376,
+        "mosaic": 0.946237
+      }
+    },
+    "tsundere-pot": {
+      "name": "Gasiro",
+      "body_type": "adult",
+      "has_inner": false,
+      "outfits": [
+        "garden-daily"
+      ],
+      "route_scale": {
+        "sunny": 0.903723,
+        "rainy": 0.904884,
+        "ember": 0.903723,
+        "moonlit": 0.944966,
+        "sparkling": 0.961749,
+        "mosaic": 0.900256
+      }
+    },
+    "zombie-pot": {
+      "name": "Sideulip",
+      "body_type": "adult",
+      "has_inner": false,
+      "outfits": [
+        "garden-daily"
+      ],
+      "route_scale": {
+        "sunny": 0.876712,
+        "rainy": 0.876712,
+        "ember": 0.856448,
+        "moonlit": 0.862745,
+        "sparkling": 0.874534,
+        "mosaic": 0.857491
+      }
+    },
+    "gumiho-pot": {
+      "name": "Yeoubi",
+      "body_type": "adult",
+      "has_inner": false,
+      "outfits": [
+        "garden-daily"
+      ],
+      "route_scale": {
+        "sunny": 0.941176,
+        "rainy": 0.94751,
+        "ember": 0.938667,
+        "moonlit": 0.956522,
+        "sparkling": 0.942436,
+        "mosaic": 0.903723
+      }
+    },
+    "ninja-pot": {
+      "name": "Geurimsak",
+      "body_type": "adult",
+      "has_inner": false,
+      "outfits": [
+        "garden-daily"
+      ],
+      "route_scale": {
+        "sunny": 1.030747,
+        "rainy": 1.047619,
+        "ember": 1.032258,
+        "moonlit": 1.04142,
+        "sparkling": 1.11746,
+        "mosaic": 1.039882
+      }
+    },
+    "magical-pot": {
+      "name": "Byeolsol",
+      "body_type": "adult",
+      "has_inner": false,
+      "outfits": [
+        "garden-daily"
+      ],
+      "route_scale": {
+        "sunny": 0.927536,
+        "rainy": 0.931217,
+        "ember": 0.931217,
+        "moonlit": 0.934927,
+        "sparkling": 1.02924,
+        "mosaic": 0.915475
+      }
+    }
+  },
+  "pending_base": [],
+  "violations": [],
+  "inner_exposure": {
+    "magical-pot/garden-daily/idle/sunny": 0.0451,
+    "magical-pot/garden-daily/diary/sunny": 0.0001,
+    "magical-pot/garden-daily/grow/sunny": 0.0424,
+    "magical-pot/garden-daily/idle/rainy": 0.0226,
+    "magical-pot/garden-daily/diary/rainy": 0.0182,
+    "magical-pot/garden-daily/grow/rainy": 0.0027,
+    "magical-pot/garden-daily/idle/ember": 0.0457,
+    "magical-pot/garden-daily/diary/ember": 0.0052,
+    "magical-pot/garden-daily/grow/ember": 0.0,
+    "magical-pot/garden-daily/idle/moonlit": 0.0435,
+    "magical-pot/garden-daily/diary/moonlit": 0.0034,
+    "magical-pot/garden-daily/grow/moonlit": 0.0162,
+    "magical-pot/garden-daily/idle/sparkling": 0.0217,
+    "magical-pot/garden-daily/diary/sparkling": 0.0001,
+    "magical-pot/garden-daily/grow/sparkling": 0.0149,
+    "magical-pot/garden-daily/idle/mosaic": 0.0204,
+    "magical-pot/garden-daily/diary/mosaic": 0.0114,
+    "magical-pot/garden-daily/grow/mosaic": 0.0357
+  }
+}

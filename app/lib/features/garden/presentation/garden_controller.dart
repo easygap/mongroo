@@ -319,6 +319,10 @@ class FarmController extends Notifier<FarmUiState> {
         (draft) => draft.copyWith(mainCharacterUserItemId: userItemId),
       );
 
+  void equipWardrobe(int? userItemId) => _updateDraft(
+        (draft) => draft.copyWith(wardrobeUserItemId: userItemId),
+      );
+
   void toggleCompanion(int userItemId) {
     if (state.saving) return;
     final draft = state.draft;

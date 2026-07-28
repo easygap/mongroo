@@ -125,13 +125,19 @@ class FarmLayoutRequest(BaseModel):
     expected_version: int = Field(ge=0)
     room_theme_user_item_id: int | None = None
     main_character_user_item_id: int | None = None
+    wardrobe_user_item_id: int | None = None
     companion_user_item_ids: list[int] = Field(default_factory=list, max_length=3)
     decorations: list[FarmDecorationRequest] = Field(default_factory=list, max_length=30)
 
     @model_validator(mode="after")
     def validate_unique_items(self):
         ids = [
-            i for i in (self.room_theme_user_item_id, self.main_character_user_item_id)
+            i
+            for i in (
+                self.room_theme_user_item_id,
+                self.main_character_user_item_id,
+                self.wardrobe_user_item_id,
+            )
             if i is not None
         ]
         ids.extend(self.companion_user_item_ids)

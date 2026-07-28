@@ -105,6 +105,7 @@ void main() {
       version: 7,
       roomThemeUserItemId: 10,
       mainCharacterUserItemId: 11,
+      wardrobeUserItemId: 14,
       companionUserItemIds: const [12],
       decorations: const [
         FarmDecoration(
@@ -121,8 +122,33 @@ void main() {
     final body = layout.toUpdateJson();
     expect(body['expected_version'], 7);
     expect(body['room_theme_user_item_id'], 10);
+    expect(body['wardrobe_user_item_id'], 14);
     expect(body['companion_user_item_ids'], [12]);
     expect((body['decorations'] as List).single['user_item_id'], 13);
+  });
+
+  test('의상 manifest에서 레이어 키와 호환 캐릭터를 해석한다', () {
+    final wardrobe = ShopItem.fromJson({
+      'id': 31,
+      'code': 'wardrobe_garden_daily',
+      'type': 'wardrobe',
+      'name': '정원 데일리 셋',
+      'price_seeds': 180,
+      'rarity': 2,
+      'asset_manifest': {
+        'wardrobe_layer_key': 'garden-daily',
+        'wardrobe_slot': 'outfit',
+        'compatible_species': ['gumiho-pot', 'magical-pot'],
+      },
+      'owned': true,
+    });
+
+    expect(wardrobe.isWardrobe, isTrue);
+    expect(wardrobe.typeLabel, '의상');
+    expect(wardrobe.wardrobeLayerKey, 'garden-daily');
+    expect(wardrobe.wardrobeSlot, 'outfit');
+    expect(wardrobe.supportsSpecies('gumiho-pot'), isTrue);
+    expect(wardrobe.supportsSpecies('baby-pot'), isFalse);
   });
 
   test('저장된 배치의 메인 캐릭터를 보유 아이템에서 찾는다', () {

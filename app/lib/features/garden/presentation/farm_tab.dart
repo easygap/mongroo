@@ -441,6 +441,7 @@ class _RoomCanvas extends StatelessWidget {
     final roomAspectRatio =
         MediaQuery.sizeOf(context).width < 600 ? 4 / 3 : 16 / 9;
     final theme = data.itemByUserItemId(layout.roomThemeUserItemId);
+    final wardrobe = data.itemByUserItemId(layout.wardrobeUserItemId);
     final companions = layout.companionUserItemIds
         .map(data.itemByUserItemId)
         .whereType<UserGardenItem>()
@@ -525,6 +526,7 @@ class _RoomCanvas extends StatelessWidget {
                         speciesCode: activePlant!.species.code,
                         speciesName: activePlant!.species.name,
                         growthVisual: activePlant!.growthVisual,
+                        outfitKey: wardrobe?.item.wardrobeLayerKey,
                         width: math.min(width * 0.3, 144.0),
                         height: math.min(height * 0.48, 174.0),
                       ),
@@ -666,6 +668,14 @@ class _FarmControls extends ConsumerWidget {
     final palette = MongrooPalette.of(context);
     final scheme = Theme.of(context).colorScheme;
     final themes = data.itemsOfType('room_theme');
+    final wardrobes = data
+        .itemsOfType('wardrobe')
+        .where(
+          (entry) =>
+              activePlant == null ||
+              entry.item.supportsSpecies(activePlant!.species.code),
+        )
+        .toList(growable: false);
     final companions = data.itemsOfType('companion');
     final decorations = data.itemsOfType('deco');
     FarmDecoration? selected;
@@ -694,6 +704,37 @@ class _FarmControls extends ConsumerWidget {
                 : '${activePlant!.name} · ${plantStageName(activePlant!.stage)} 단계\n'
                     '홈과 대화에서 키우는 바로 그 캐릭터가 방에도 함께 있어요.',
           ),
+        ),
+        const SizedBox(height: 12),
+        _ControlSection(
+          title: '의상',
+          child: activePlant == null
+              ? const Text('캐릭터를 심으면 입힐 수 있는 의상이 여기에 보여요.')
+              : wardrobes.isEmpty
+                  ? const Text('상점에서 캐릭터 의상을 모아 보세요.')
+                  : Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('기본 의상'),
+                          selected: layout.wardrobeUserItemId == null,
+                          onSelected: editing
+                              ? (_) => controller.equipWardrobe(null)
+                              : null,
+                        ),
+                        for (final entry in wardrobes)
+                          ChoiceChip(
+                            label: Text(entry.item.name),
+                            selected: layout.wardrobeUserItemId == entry.id,
+                            avatar:
+                                const Icon(Icons.checkroom_outlined, size: 18),
+                            onSelected: editing
+                                ? (_) => controller.equipWardrobe(entry.id)
+                                : null,
+                          ),
+                      ],
+                    ),
         ),
         const SizedBox(height: 12),
         _ControlSection(

@@ -39,6 +39,7 @@ class PlantView extends StatefulWidget {
     this.speciesCode = 'basic_sprout',
     this.speciesName,
     this.growthVisual,
+    this.outfitKey,
     this.size = 180,
     this.width,
     this.height,
@@ -53,6 +54,7 @@ class PlantView extends StatefulWidget {
   final String speciesCode;
   final String? speciesName;
   final PlantGrowthVisual? growthVisual;
+  final String? outfitKey;
 
   /// 기존 정사각 호출부를 유지하기 위한 기본 크기다.
   final double size;
@@ -113,7 +115,8 @@ class _PlantViewState extends State<PlantView> with TickerProviderStateMixin {
     if (oldWidget.form != widget.form ||
         oldWidget.secondaryForm != widget.secondaryForm ||
         oldWidget.stage != widget.stage ||
-        oldWidget.speciesCode != widget.speciesCode) {
+        oldWidget.speciesCode != widget.speciesCode ||
+        oldWidget.outfitKey != widget.outfitKey) {
       _idleController.duration = _motion.duration;
       _blinkController.duration = _blinkDuration;
       _syncMotion(restart: true);
@@ -280,17 +283,32 @@ class _PlantViewState extends State<PlantView> with TickerProviderStateMixin {
       visual: visual,
       pose: _spritePose,
     );
-    if (widget.preferRasterAssets && assetCandidates.isNotEmpty) {
+    final layeredCandidates = PlantGrowthAssetResolver.layeredCandidates(
+      speciesCode: widget.speciesCode,
+      stage: clamped,
+      form: revealedForm,
+      pose: _spritePose,
+      outfitKey: widget.outfitKey,
+    );
+    if (widget.preferRasterAssets &&
+        (assetCandidates.isNotEmpty || layeredCandidates.isNotEmpty)) {
       final dpr = MediaQuery.devicePixelRatioOf(context);
       final cacheWidth = (contentWidth * dpr).round().clamp(128, 1024).toInt();
       _scheduleSpritePrecache(
-        paths: PlantGrowthAssetResolver.preloadCandidates(
-          speciesCode: widget.speciesCode,
-          stage: clamped,
-          form: revealedForm,
-          secondaryForm: clamped >= 4 ? widget.secondaryForm : null,
-          visual: visual,
-        ),
+        paths: [
+          ...PlantGrowthAssetResolver.preloadCandidates(
+            speciesCode: widget.speciesCode,
+            stage: clamped,
+            form: revealedForm,
+            secondaryForm: clamped >= 4 ? widget.secondaryForm : null,
+            visual: visual,
+          ),
+          ...PlantGrowthAssetResolver.preloadLayeredCandidates(
+            speciesCode: widget.speciesCode,
+            stage: clamped,
+            outfitKey: widget.outfitKey,
+          ),
+        ],
         cacheWidth: cacheWidth,
       );
     }
@@ -300,9 +318,11 @@ class _PlantViewState extends State<PlantView> with TickerProviderStateMixin {
       child: Padding(
         key: const ValueKey('plant-motion-safe-area'),
         padding: safeArea,
-        child: widget.preferRasterAssets && assetCandidates.isNotEmpty
+        child: widget.preferRasterAssets &&
+                (assetCandidates.isNotEmpty || layeredCandidates.isNotEmpty)
             ? _RasterPlantArtwork(
                 candidates: assetCandidates,
+                layeredCandidates: layeredCandidates,
                 fallback: vectorFallback,
                 logicalWidth: contentWidth,
                 speciesCode: widget.speciesCode,
@@ -376,6 +396,15 @@ class PlantGrowthAssetResolver {
 
   static const _emotionAdultV4Species = _emotionAdultV2Species;
 
+  static const _layeredWardrobeSpecies = _emotionAdultV2Species;
+
+  /// 별도 이너 레이어 파일을 가진 종.
+  ///
+  /// 지금은 최소 가림이 바디에 포함돼 있어 비어 있다. 없는 경로를 후보에 넣으면
+  /// 프레임마다 디코딩이 한 번씩 실패하므로, `assets/wardrobe/inners`에 실제로
+  /// 파일을 빌드한 종만 여기에 추가한다.
+  static const _wardrobeInnerSpecies = <String>{};
+
   static const _emotionAdultV3Species = {
     'tsundere-pot',
     'gumiho-pot',
@@ -445,6 +474,62 @@ class PlantGrowthAssetResolver {
       }
     }
     return paths.toSet().toList(growable: false);
+  }
+
+  /// 무착의형 바디와 의상 파일을 같은 캔버스 좌표로 묶는다.
+  ///
+  /// 합성 순서는 `바디 → (이너) → 의상`이다. 바디에는 의상 디자인이 없고
+  /// 최소 가림만 커버리지 엔벨로프 안에 남아 있어서, 의상이 덜 덮어도 비칠
+  /// 것이 없다.
+  ///
+  /// 의상 키가 없으면 기존 완성 스프라이트를 그대로 사용한다. 바디만 먼저
+  /// 보이는 프레임이 생기지 않도록 호출부는 이 묶음 전체를 디코딩한 뒤 한 번에
+  /// 교체한다.
+  static List<List<String>> layeredCandidates({
+    required String speciesCode,
+    required int stage,
+    required PlantGrowthForm? form,
+    required PlantSpritePose pose,
+    required String? outfitKey,
+  }) {
+    final species = _slug(speciesCode);
+    final outfit = _slug(outfitKey ?? '');
+    if (stage < 5 ||
+        form == null ||
+        outfit.isEmpty ||
+        !_layeredWardrobeSpecies.contains(species)) {
+      return const [];
+    }
+    final frame = '$species-${pose.code}-${form.code}.webp';
+    return [
+      [
+        'assets/wardrobe/bodies/$frame',
+        if (_wardrobeInnerSpecies.contains(species))
+          'assets/wardrobe/inners/$frame',
+        'assets/wardrobe/outfits/$outfit-$frame',
+      ],
+    ];
+  }
+
+  static List<String> preloadLayeredCandidates({
+    required String speciesCode,
+    required int stage,
+    required String? outfitKey,
+  }) {
+    if (stage < 5 || outfitKey == null || outfitKey.trim().isEmpty) {
+      return const [];
+    }
+    return [
+      for (final pose in PlantSpritePose.values)
+        for (final form in PlantGrowthForm.values)
+          ...layeredCandidates(
+            speciesCode: speciesCode,
+            stage: stage,
+            form: form,
+            pose: pose,
+            outfitKey: outfitKey,
+          ).expand((layers) => layers),
+    ];
   }
 
   /// 현재 캐릭터의 첫 전환에서 화분 대체 이미지가 비치지 않도록 다음 자세를
@@ -536,6 +621,7 @@ class _PlantSpritePreloader {
 class _RasterPlantArtwork extends StatefulWidget {
   const _RasterPlantArtwork({
     required this.candidates,
+    required this.layeredCandidates,
     required this.fallback,
     required this.logicalWidth,
     required this.speciesCode,
@@ -547,6 +633,7 @@ class _RasterPlantArtwork extends StatefulWidget {
   });
 
   final List<String> candidates;
+  final List<List<String>> layeredCandidates;
   final Widget fallback;
   final double logicalWidth;
   final String speciesCode;
@@ -561,14 +648,15 @@ class _RasterPlantArtwork extends StatefulWidget {
 }
 
 class _RasterPlantArtworkState extends State<_RasterPlantArtwork> {
-  String? _displayedPath;
+  List<String>? _displayedPaths;
   int _loadVersion = 0;
   double? _devicePixelRatio;
 
   @override
   void initState() {
     super.initState();
-    _displayedPath = widget.candidates.firstOrNull;
+    final legacy = widget.candidates.firstOrNull;
+    _displayedPaths = legacy == null ? null : [legacy];
   }
 
   @override
@@ -585,10 +673,15 @@ class _RasterPlantArtworkState extends State<_RasterPlantArtwork> {
   void didUpdateWidget(covariant _RasterPlantArtwork oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!listEquals(oldWidget.candidates, widget.candidates) ||
+        !listEquals(
+          oldWidget.layeredCandidates.map((paths) => paths.join('|')).toList(),
+          widget.layeredCandidates.map((paths) => paths.join('|')).toList(),
+        ) ||
         oldWidget.logicalWidth != widget.logicalWidth) {
       if (widget.animationsDisabled) {
         _loadVersion += 1;
-        _displayedPath = widget.candidates.firstOrNull;
+        final legacy = widget.candidates.firstOrNull;
+        _displayedPaths = legacy == null ? null : [legacy];
       } else {
         unawaited(_resolveCandidate());
       }
@@ -600,30 +693,37 @@ class _RasterPlantArtworkState extends State<_RasterPlantArtwork> {
     final dpr = _devicePixelRatio ?? MediaQuery.devicePixelRatioOf(context);
     final cacheWidth =
         (widget.logicalWidth * dpr).round().clamp(128, 1024).toInt();
-    for (final path in widget.candidates) {
+    final bundles = [
+      ...widget.layeredCandidates,
+      for (final path in widget.candidates) [path],
+    ];
+    for (final paths in bundles) {
       if (!mounted || version != _loadVersion) return;
       var failed = false;
-      await precacheImage(
-        ResizeImage.resizeIfNeeded(
-          cacheWidth,
-          null,
-          AssetImage(path),
-        ),
-        context,
-        onError: (error, stackTrace) {
-          failed = true;
-        },
-      );
+      for (final path in paths) {
+        await precacheImage(
+          ResizeImage.resizeIfNeeded(
+            cacheWidth,
+            null,
+            AssetImage(path),
+          ),
+          context,
+          onError: (error, stackTrace) {
+            failed = true;
+          },
+        );
+        if (failed) break;
+      }
       if (!mounted || version != _loadVersion) return;
       if (failed) continue;
-      if (_displayedPath != path) {
-        setState(() => _displayedPath = path);
+      if (!listEquals(_displayedPaths, paths)) {
+        setState(() => _displayedPaths = paths);
       }
       return;
     }
     if (!mounted || version != _loadVersion) return;
-    if (_displayedPath != null) {
-      setState(() => _displayedPath = null);
+    if (_displayedPaths != null) {
+      setState(() => _displayedPaths = null);
     }
   }
 
@@ -633,15 +733,15 @@ class _RasterPlantArtworkState extends State<_RasterPlantArtwork> {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final cacheWidth =
         (widget.logicalWidth * dpr).round().clamp(128, 1024).toInt();
-    final path = _displayedPath;
-    final child = path == null
+    final paths = _displayedPaths;
+    final child = paths == null
         ? KeyedSubtree(
             key: const ValueKey('plant-raster-fallback'),
             child: widget.fallback,
           )
         : _CharacterRasterSprite(
-            key: ValueKey(path),
-            path: path,
+            key: ValueKey(paths.join('|')),
+            paths: paths,
             cacheWidth: cacheWidth,
             fallback: widget.fallback,
             speciesCode: widget.speciesCode,
@@ -682,7 +782,7 @@ class _RasterPlantArtworkState extends State<_RasterPlantArtwork> {
 class _CharacterRasterSprite extends StatelessWidget {
   const _CharacterRasterSprite({
     super.key,
-    required this.path,
+    required this.paths,
     required this.cacheWidth,
     required this.fallback,
     required this.speciesCode,
@@ -693,7 +793,7 @@ class _CharacterRasterSprite extends StatelessWidget {
     required this.animationsDisabled,
   });
 
-  final String path;
+  final List<String> paths;
   final int cacheWidth;
   final Widget fallback;
   final String speciesCode;
@@ -703,14 +803,20 @@ class _CharacterRasterSprite extends StatelessWidget {
   final Animation<double> blinkAnimation;
   final bool animationsDisabled;
 
-  Widget _image() => Image.asset(
-        path,
-        fit: BoxFit.contain,
-        alignment: Alignment.bottomCenter,
-        filterQuality: FilterQuality.medium,
-        cacheWidth: cacheWidth,
-        gaplessPlayback: true,
-        errorBuilder: (context, error, stackTrace) => fallback,
+  Widget _image() => Stack(
+        fit: StackFit.expand,
+        children: [
+          for (final path in paths)
+            Image.asset(
+              path,
+              fit: BoxFit.contain,
+              alignment: Alignment.bottomCenter,
+              filterQuality: FilterQuality.medium,
+              cacheWidth: cacheWidth,
+              gaplessPlayback: true,
+              errorBuilder: (context, error, stackTrace) => fallback,
+            ),
+        ],
       );
 
   @override
@@ -1373,6 +1479,7 @@ class PlantStagePreview extends StatelessWidget {
             dimension: size,
             child: _RasterPlantArtwork(
               candidates: candidates,
+              layeredCandidates: const [],
               fallback: fallback,
               logicalWidth: size,
               speciesCode: speciesCode,

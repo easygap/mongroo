@@ -219,6 +219,23 @@ class ShopItem {
   /// 기존 호출부 호환용. 성장 캐릭터와 작은 동행 아이템을 모두 포함한다.
   bool get isCharacter => isGrowthCharacter || isCompanion;
   bool get isRoomTheme => type == 'room_theme';
+  bool get isWardrobe => type == 'wardrobe';
+  String? get wardrobeLayerKey =>
+      gardenString(assetManifest, 'wardrobe_layer_key');
+  String get wardrobeSlot =>
+      gardenString(assetManifest, 'wardrobe_slot') ?? 'outfit';
+  List<String> get compatibleSpecies {
+    final value = assetManifest['compatible_species'];
+    if (value is! List) return const [];
+    return value
+        .whereType<String>()
+        .map((species) => species.trim())
+        .where((species) => species.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  bool supportsSpecies(String speciesCode) =>
+      compatibleSpecies.isEmpty || compatibleSpecies.contains(speciesCode);
   String? get collectionCode => gardenString(assetManifest, 'collection');
   String? get reactionCopy => gardenString(assetManifest, 'reaction_copy');
 
@@ -397,6 +414,7 @@ class ShopItem {
         'main_character' => '성장 씨앗',
         'companion' => '동행 친구',
         'species_unlock' => '성장 씨앗',
+        'wardrobe' => '의상',
         _ => '아이템',
       };
 
@@ -705,11 +723,13 @@ class FarmLayout {
     required this.decorations,
     this.roomThemeUserItemId,
     this.mainCharacterUserItemId,
+    this.wardrobeUserItemId,
   });
 
   final int version;
   final int? roomThemeUserItemId;
   final int? mainCharacterUserItemId;
+  final int? wardrobeUserItemId;
   final List<int> companionUserItemIds;
   final List<FarmDecoration> decorations;
 
@@ -717,6 +737,7 @@ class FarmLayout {
     int? version,
     Object? roomThemeUserItemId = _farmUnset,
     Object? mainCharacterUserItemId = _farmUnset,
+    Object? wardrobeUserItemId = _farmUnset,
     List<int>? companionUserItemIds,
     List<FarmDecoration>? decorations,
   }) =>
@@ -728,6 +749,9 @@ class FarmLayout {
         mainCharacterUserItemId: mainCharacterUserItemId == _farmUnset
             ? this.mainCharacterUserItemId
             : mainCharacterUserItemId as int?,
+        wardrobeUserItemId: wardrobeUserItemId == _farmUnset
+            ? this.wardrobeUserItemId
+            : wardrobeUserItemId as int?,
         companionUserItemIds: companionUserItemIds ?? this.companionUserItemIds,
         decorations: decorations ?? this.decorations,
       );
@@ -736,6 +760,7 @@ class FarmLayout {
         'expected_version': version,
         'room_theme_user_item_id': roomThemeUserItemId,
         'main_character_user_item_id': mainCharacterUserItemId,
+        'wardrobe_user_item_id': wardrobeUserItemId,
         'companion_user_item_ids': companionUserItemIds,
         'decorations': decorations.map((item) => item.toJson()).toList(),
       };
@@ -748,6 +773,9 @@ class FarmLayout {
         mainCharacterUserItemId: json['main_character_user_item_id'] == null
             ? null
             : gardenInt(json['main_character_user_item_id']),
+        wardrobeUserItemId: json['wardrobe_user_item_id'] == null
+            ? null
+            : gardenInt(json['wardrobe_user_item_id']),
         companionUserItemIds:
             ((json['companion_user_item_ids'] as List<dynamic>?) ?? const [])
                 .map(gardenInt)
@@ -780,6 +808,9 @@ class FarmData {
   /// 캐릭터로 대체할 수 있게 한다.
   UserGardenItem? get equippedMainCharacter =>
       itemByUserItemId(layout.mainCharacterUserItemId);
+
+  UserGardenItem? get equippedWardrobe =>
+      itemByUserItemId(layout.wardrobeUserItemId);
 
   List<UserGardenItem> itemsOfType(String type) =>
       ownedItems.where((entry) => entry.item.type == type).toList();

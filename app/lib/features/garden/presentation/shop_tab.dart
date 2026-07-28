@@ -9,7 +9,7 @@ import '../domain/garden_models.dart';
 import 'garden_controller.dart';
 import 'garden_item_visual.dart';
 
-enum _ShopFilter { all, resonance, growth, room, decoration }
+enum _ShopFilter { all, resonance, growth, wardrobe, room, decoration }
 
 class ShopTab extends ConsumerStatefulWidget {
   const ShopTab({super.key, this.initialSpeciesCode});
@@ -44,7 +44,8 @@ class _ShopTabState extends ConsumerState<ShopTab> {
       widget.initialSpeciesCode != null &&
       item.assetManifest['species_code'] == widget.initialSpeciesCode;
 
-  bool _canUseInRoom(ShopItem item) => item.isCompanion || item.type == 'deco';
+  bool _canUseInRoom(ShopItem item) =>
+      item.isCompanion || item.isWardrobe || item.type == 'deco';
 
   void _openRoom(WidgetRef ref) {
     DefaultTabController.maybeOf(context)?.animateTo(0);
@@ -156,6 +157,7 @@ class _ShopTabState extends ConsumerState<ShopTab> {
                 _ShopFilter.all => true,
                 _ShopFilter.resonance => item.isMoodResonance,
                 _ShopFilter.growth => item.isGrowthCharacter,
+                _ShopFilter.wardrobe => item.isWardrobe,
                 _ShopFilter.room => item.isRoomTheme,
                 _ShopFilter.decoration => item.type == 'deco',
               };
@@ -561,6 +563,7 @@ class _ShopFilterBar extends StatelessWidget {
       _ShopFilter.all: ('전체', Icons.apps_rounded),
       _ShopFilter.resonance: ('마음결', Icons.blur_circular_rounded),
       _ShopFilter.growth: ('성장 씨앗', Icons.local_florist_outlined),
+      _ShopFilter.wardrobe: ('의상', Icons.checkroom_outlined),
       _ShopFilter.room: ('방', Icons.cottage_outlined),
       _ShopFilter.decoration: ('소품', Icons.chair_outlined),
     };

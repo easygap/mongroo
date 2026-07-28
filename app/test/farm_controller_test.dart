@@ -120,6 +120,32 @@ class _DelayedSaveFarmRepository extends _FarmRepository {
 }
 
 void main() {
+  test('선택한 의상을 편집 중인 방 배치에 반영한다', () async {
+    final container = ProviderContainer(
+      overrides: [
+        gardenRepositoryProvider.overrideWithValue(_FarmRepository()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(farmControllerProvider);
+    await Future<void>.delayed(Duration.zero);
+    final controller = container.read(farmControllerProvider.notifier);
+    controller.beginEditing();
+
+    controller.equipWardrobe(77);
+    expect(
+      container.read(farmControllerProvider).draft?.wardrobeUserItemId,
+      77,
+    );
+
+    controller.equipWardrobe(null);
+    expect(
+      container.read(farmControllerProvider).draft?.wardrobeUserItemId,
+      isNull,
+    );
+  });
+
   test('편집 중 구매 아이템을 합쳐도 미저장 방 배치가 유지된다', () async {
     final container = ProviderContainer(
       overrides: [
