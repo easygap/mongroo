@@ -30,3 +30,7 @@ dev = ["pytest>=8.2", "pytest-asyncio>=0.24"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff.lint]
+# Ruff 버전이 올라가도 기존 검사 범위를 유지한다.
+select = ["E4", "E7", "E9", "F"]
