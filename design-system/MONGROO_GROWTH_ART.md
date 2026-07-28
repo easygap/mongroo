@@ -177,6 +177,13 @@ basic-sprout-25d-full-bloom-mosaic.webp
 `build_emotion_archetype_sprites_v4.py`가 여섯 패널 분리, 이웃 패널 조각 제거,
 세 자세 크기 정규화, 512×768 WebP 출력과 검수용 연락시트 생성을 담당한다.
 
+v4 캐릭터 보정은 `growth-assets/emotion-archetypes-v4.json`의
+`character_overrides`를 따른다. 가시로는 기본 홍조를 제거하고 23N 피부를
+유지하며 `sunny diary`, `sparkling idle`, `sparkling diary`에서만 옅게
+붉어진다. 여우비는 여섯 감정 모두에서 열린 목선·어깨선·허리선·다리선을
+기본으로 두고 `ember`를 가장 대담하게 만든다. 여우비 `moonlit`과 블루미
+`ember`는 검정 반투명 스타킹과 가는 힐을 사용한다.
+
 기존 캐릭터 10종은
 `design-system/concepts/character-lineages-v1/{character-slug}/`의 고유 씨앗과
 여섯 성장 시트를 입력으로 사용한다. `build_character_lineages.py`가 각 시트를
@@ -192,9 +199,10 @@ basic-sprout-25d-full-bloom-mosaic.webp
 여우비·가시로의 정체성 보강본은
 `design-system/concepts/character-redesign-v3/`에 둔다. 여우비는 반쯤 감긴
 직접 시선, 작은 미소, S자 자세, 부채와 시스루 현대 한복으로 성인 요염함을
-강화한다. 가시로는 홍조와 외면, 팔짱을 유지하면서 씨앗주머니·손수건·수선
-화분을 몰래 건네는 행동으로 츤데레의 모순을 드러낸다. v3 12장을 먼저 찾고
-누락 시 같은 감정의 v2로 내려간다.
+강화한다. 가시로는 외면과 팔짱을 유지하면서 씨앗주머니·손수건·수선 화분을
+몰래 건네는 행동으로 츤데레의 모순을 드러낸다. v3의 상시 홍조는 레거시
+표현이며 현재 v4에서는 특정 호감·당황 반응에만 사용한다. v3 12장을 먼저
+찾고 누락 시 같은 감정의 v2로 내려간다.
 
 공통 프롬프트의 핵심 문장은 다음과 같다.
 

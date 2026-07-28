@@ -327,6 +327,88 @@ void main() {
     ]);
   });
 
+  test('감정 성체는 여섯 감정과 세 자세를 전환 전에 모두 준비한다', () {
+    final candidates = PlantGrowthAssetResolver.preloadCandidates(
+      speciesCode: 'gumiho_pot',
+      stage: 5,
+      form: PlantGrowthForm.sunny,
+    );
+
+    expect(candidates, hasLength(18));
+    expect(candidates.toSet(), hasLength(18));
+    for (final form in PlantGrowthForm.values) {
+      for (final pose in PlantSpritePose.values) {
+        expect(
+          candidates,
+          contains(
+            'assets/plants/gumiho-pot-25d-full-bloom-${form.code}'
+            '-v4-${pose.code}.webp',
+          ),
+        );
+      }
+    }
+  });
+
+  test('감정 성체 10종 모두 캐릭터 고유 부분 모션과 눈 깜빡임을 제공한다', () {
+    const speciesCodes = [
+      'baby_pot',
+      'handsome_pot',
+      'pretty_pot',
+      'tsundere_pot',
+      'zombie_pot',
+      'gumiho_pot',
+      'ninja_pot',
+      'magical_pot',
+      'aloof_pot',
+      'student_pot',
+    ];
+
+    for (final speciesCode in speciesCodes) {
+      expect(
+        PlantView.debugHasCharacterMotionProfile(speciesCode),
+        isTrue,
+        reason: '$speciesCode 모션 프로필이 누락됨',
+      );
+      expect(
+        PlantGrowthAssetResolver.preloadCandidates(
+          speciesCode: speciesCode,
+          stage: 5,
+          form: PlantGrowthForm.sunny,
+        ),
+        hasLength(18),
+        reason: '$speciesCode 스프라이트 사전 로딩 목록이 누락됨',
+      );
+    }
+  });
+
+  test('캐릭터 고유 모션을 더해도 감정별 호흡 속도는 유지한다', () {
+    const speciesCode = 'gumiho_pot';
+    expect(
+      PlantView.debugMotionDuration(
+        stage: 5,
+        form: PlantGrowthForm.sunny,
+        speciesCode: speciesCode,
+      ),
+      const Duration(milliseconds: 1900),
+    );
+    expect(
+      PlantView.debugMotionDuration(
+        stage: 5,
+        form: PlantGrowthForm.ember,
+        speciesCode: speciesCode,
+      ),
+      const Duration(milliseconds: 1250),
+    );
+    expect(
+      PlantView.debugMotionDuration(
+        stage: 5,
+        form: PlantGrowthForm.moonlit,
+        speciesCode: speciesCode,
+      ),
+      const Duration(milliseconds: 3800),
+    );
+  });
+
   testWidgets('사람형 계보의 최고 성장 단계는 최신 감정 성체를 사용한다', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
@@ -471,6 +553,89 @@ void main() {
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('모션 여백이 이동과 회전 중 캐릭터가 잘리지 않도록 확보된다', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: PlantView(
+            stage: 5,
+            form: PlantGrowthForm.ember,
+            speciesCode: 'gumiho_pot',
+            width: 270,
+            height: 405,
+            preferRasterAssets: false,
+          ),
+        ),
+      ),
+    );
+
+    final padding = tester.widget<Padding>(
+      find.byKey(const ValueKey('plant-motion-safe-area')),
+    );
+    final insets = padding.padding as EdgeInsets;
+    expect(insets.left, greaterThan(2));
+    expect(insets.right, insets.left);
+    expect(insets.top, greaterThan(8));
+    expect(insets.bottom, greaterThanOrEqualTo(2));
+  });
+
+  testWidgets('감정 성체에 크로스페이드와 캐릭터 고유 부분 모션·눈 깜빡임을 연결한다', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: PlantView(
+            stage: 5,
+            form: PlantGrowthForm.ember,
+            speciesCode: 'gumiho_pot',
+            width: 270,
+            height: 405,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('plant-sprite-crossfade')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('plant-part-motion-gumiho-pot')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('plant-blink-gumiho-pot')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('동작 줄이기 환경에서는 래스터 부분 모션과 눈 깜빡임도 만들지 않는다', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MediaQuery(
+          data: MediaQueryData(disableAnimations: true),
+          child: Scaffold(
+            body: PlantView(
+              stage: 5,
+              form: PlantGrowthForm.ember,
+              speciesCode: 'gumiho_pot',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('plant-part-motion-gumiho-pot')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey('plant-blink-gumiho-pot')),
+      findsNothing,
+    );
   });
 
   testWidgets('제작되지 않은 품종은 기존 벡터 painter로 돌아간다', (tester) async {

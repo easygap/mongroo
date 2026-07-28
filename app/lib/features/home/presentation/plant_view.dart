@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -25,8 +26,8 @@ enum PlantSpritePose {
 /// 몽그루의 성장 캐릭터를 단계별 래스터 에셋으로 보여 주는 뷰.
 ///
 /// 검수한 래스터 에셋이 아직 없는 조합만 런타임 벡터 painter로 대체한다.
-/// idle은 완성된 레이어에 Transform만 적용하고, 동작 줄이기 설정에서는
-/// 컨트롤러까지 멈춰 배터리와 프레임을 소모하지 않는다.
+/// 래스터 성체는 감정별 호흡과 캐릭터 고유의 상·하체 미세 동작을 적용하고,
+/// 동작 줄이기 설정에서는 컨트롤러까지 멈춰 배터리와 프레임을 소모하지 않는다.
 class PlantView extends StatefulWidget {
   const PlantView({
     super.key,
@@ -62,13 +63,30 @@ class PlantView extends StatefulWidget {
   @visibleForTesting
   final bool preferRasterAssets;
 
+  @visibleForTesting
+  static Duration debugMotionDuration({
+    required int stage,
+    PlantGrowthForm? form,
+    String speciesCode = 'basic_sprout',
+  }) =>
+      _PlantIdleMotion.forStage(
+        stage,
+        form: stage >= 3 ? form : null,
+        speciesCode: speciesCode,
+      ).duration;
+
+  @visibleForTesting
+  static bool debugHasCharacterMotionProfile(String speciesCode) =>
+      _CharacterMotionProfile.forSpecies(speciesCode) != null;
+
   @override
   State<PlantView> createState() => _PlantViewState();
 }
 
-class _PlantViewState extends State<PlantView>
-    with SingleTickerProviderStateMixin {
+class _PlantViewState extends State<PlantView> with TickerProviderStateMixin {
   late final AnimationController _idleController;
+  late final AnimationController _blinkController;
+  String? _precacheSignature;
 
   @override
   void initState() {
@@ -76,6 +94,10 @@ class _PlantViewState extends State<PlantView>
     _idleController = AnimationController(
       vsync: this,
       duration: _motion.duration,
+    );
+    _blinkController = AnimationController(
+      vsync: this,
+      duration: _blinkDuration,
     );
   }
 
@@ -93,6 +115,7 @@ class _PlantViewState extends State<PlantView>
         oldWidget.stage != widget.stage ||
         oldWidget.speciesCode != widget.speciesCode) {
       _idleController.duration = _motion.duration;
+      _blinkController.duration = _blinkDuration;
       _syncMotion(restart: true);
     }
   }
@@ -102,6 +125,10 @@ class _PlantViewState extends State<PlantView>
         form: widget.stage >= 3 ? widget.form : null,
         speciesCode: widget.speciesCode,
       );
+
+  Duration get _blinkDuration =>
+      _CharacterMotionProfile.forSpecies(widget.speciesCode)?.blinkDuration ??
+      const Duration(milliseconds: 4200);
 
   PlantSpritePose get _spritePose =>
       widget.spritePose ??
@@ -119,18 +146,87 @@ class _PlantViewState extends State<PlantView>
       _idleController
         ..stop()
         ..value = 0;
+      _blinkController
+        ..stop()
+        ..value = 0;
       return;
     }
-    if (restart) _idleController.value = 0;
+    if (restart) {
+      _idleController.value = 0;
+      _blinkController.value = 0;
+    }
     if (!_idleController.isAnimating) {
-      _idleController.repeat(reverse: true);
+      _idleController.repeat();
+    }
+    if (!_blinkController.isAnimating) {
+      _blinkController.repeat();
     }
   }
 
   @override
   void dispose() {
     _idleController.dispose();
+    _blinkController.dispose();
     super.dispose();
+  }
+
+  EdgeInsets _motionSafeArea(double width, double height) {
+    final motions = widget.stage >= 5
+        ? PlantGrowthForm.values.map(
+            (form) => _PlantIdleMotion.forStage(
+              widget.stage,
+              form: form,
+              speciesCode: widget.speciesCode,
+            ),
+          )
+        : [_motion];
+    var horizontal = 2.0;
+    var top = 2.0;
+    var bottom = 2.0;
+    for (final motion in motions) {
+      final rotationX = motion.rotation.abs() * height * .5;
+      final rotationY = motion.rotation.abs() * width * .5;
+      horizontal = math.max(
+        horizontal,
+        motion.dx.abs() +
+            rotationX +
+            math.max(0, motion.scaleX) * width * .5 +
+            2,
+      );
+      top = math.max(
+        top,
+        math.max(0, -motion.dy) +
+            rotationY +
+            math.max(0, motion.scaleY) * height +
+            2,
+      );
+      bottom = math.max(
+        bottom,
+        math.max(0, motion.dy) + rotationY + 2,
+      );
+    }
+    horizontal = horizontal.clamp(2.0, math.max(2.0, width * .08)).toDouble();
+    top = top.clamp(2.0, math.max(2.0, height * .08)).toDouble();
+    bottom = bottom.clamp(2.0, math.max(2.0, height * .04)).toDouble();
+    return EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom);
+  }
+
+  void _scheduleSpritePrecache({
+    required List<String> paths,
+    required int cacheWidth,
+  }) {
+    if (paths.isEmpty) return;
+    final signature = '${paths.join('|')}@$cacheWidth';
+    if (_precacheSignature == signature) return;
+    _precacheSignature = signature;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _precacheSignature != signature) return;
+      _PlantSpritePreloader.preload(
+        context,
+        paths: paths,
+        cacheWidth: cacheWidth,
+      );
+    });
   }
 
   @override
@@ -149,7 +245,14 @@ class _PlantViewState extends State<PlantView>
         : visual.vesselLabel;
     final viewWidth = widget.width ?? widget.size;
     final viewHeight = widget.height ?? widget.size;
-    final vectorSize = math.min(viewWidth, viewHeight);
+    final motion = _motion;
+    final safeArea = _motionSafeArea(viewWidth, viewHeight);
+    final contentWidth =
+        math.max(1.0, viewWidth - safeArea.horizontal).toDouble();
+    final contentHeight =
+        math.max(1.0, viewHeight - safeArea.vertical).toDouble();
+    final vectorSize = math.min(contentWidth, contentHeight);
+    final animationsDisabled = MediaQuery.disableAnimationsOf(context);
     final vectorFallback = Align(
       alignment: Alignment.bottomCenter,
       child: SizedBox.square(
@@ -177,18 +280,41 @@ class _PlantViewState extends State<PlantView>
       visual: visual,
       pose: _spritePose,
     );
+    if (widget.preferRasterAssets && assetCandidates.isNotEmpty) {
+      final dpr = MediaQuery.devicePixelRatioOf(context);
+      final cacheWidth = (contentWidth * dpr).round().clamp(128, 1024).toInt();
+      _scheduleSpritePrecache(
+        paths: PlantGrowthAssetResolver.preloadCandidates(
+          speciesCode: widget.speciesCode,
+          stage: clamped,
+          form: revealedForm,
+          secondaryForm: clamped >= 4 ? widget.secondaryForm : null,
+          visual: visual,
+        ),
+        cacheWidth: cacheWidth,
+      );
+    }
     final painting = SizedBox(
       width: viewWidth,
       height: viewHeight,
-      child: widget.preferRasterAssets && assetCandidates.isNotEmpty
-          ? _RasterPlantArtwork(
-              candidates: assetCandidates,
-              fallback: vectorFallback,
-              logicalWidth: viewWidth,
-            )
-          : vectorFallback,
+      child: Padding(
+        key: const ValueKey('plant-motion-safe-area'),
+        padding: safeArea,
+        child: widget.preferRasterAssets && assetCandidates.isNotEmpty
+            ? _RasterPlantArtwork(
+                candidates: assetCandidates,
+                fallback: vectorFallback,
+                logicalWidth: contentWidth,
+                speciesCode: widget.speciesCode,
+                form: revealedForm,
+                pose: _spritePose,
+                idleAnimation: _idleController,
+                blinkAnimation: _blinkController,
+                animationsDisabled: animationsDisabled,
+              )
+            : vectorFallback,
+      ),
     );
-    final animationsDisabled = MediaQuery.disableAnimationsOf(context);
     final speciesLabel = widget.speciesName?.trim().isNotEmpty == true
         ? widget.speciesName!.trim()
         : switch (widget.speciesCode) {
@@ -206,15 +332,17 @@ class _PlantViewState extends State<PlantView>
               animation: _idleController,
               child: painting,
               builder: (context, child) {
-                final wave = math.sin(_idleController.value * math.pi);
-                final motion = _motion;
+                final phase = _idleController.value * math.pi * 2;
+                final sway = math.sin(phase);
+                final lift = (1 - math.cos(phase)) * .5;
+                final breath = lift;
                 return Transform.translate(
-                  offset: Offset(motion.dx * wave, motion.dy * wave),
+                  offset: Offset(motion.dx * sway, motion.dy * lift),
                   child: Transform.rotate(
-                    angle: motion.rotation * wave,
+                    angle: motion.rotation * sway,
                     child: Transform.scale(
-                      scaleX: 1 + motion.scaleX * wave,
-                      scaleY: 1 + motion.scaleY * wave,
+                      scaleX: 1 + motion.scaleX * breath,
+                      scaleY: 1 + motion.scaleY * breath,
                       alignment: Alignment.bottomCenter,
                       child: child,
                     ),
@@ -319,6 +447,46 @@ class PlantGrowthAssetResolver {
     return paths.toSet().toList(growable: false);
   }
 
+  /// 현재 캐릭터의 첫 전환에서 화분 대체 이미지가 비치지 않도록 다음 자세를
+  /// 미리 디코딩한다. 감정 성체는 여섯 감정과 세 자세를 모두 준비한다.
+  static List<String> preloadCandidates({
+    required String speciesCode,
+    required int stage,
+    PlantGrowthForm? form,
+    PlantGrowthForm? secondaryForm,
+    PlantGrowthVisual? visual,
+  }) {
+    final clamped = stage.clamp(1, 5).toInt();
+    final species = _slug(speciesCode);
+    if (clamped == 5 && _emotionAdultV4Species.contains(species)) {
+      final paths = <String>[];
+      for (final emotion in PlantGrowthForm.values) {
+        for (final pose in PlantSpritePose.values) {
+          final poseCandidates = candidates(
+            speciesCode: speciesCode,
+            stage: clamped,
+            form: emotion,
+            secondaryForm: secondaryForm,
+            visual: visual,
+            pose: pose,
+          );
+          final v4Path = poseCandidates.where((path) {
+            return path.contains('-v4-${pose.code}.webp');
+          }).firstOrNull;
+          if (v4Path != null) paths.add(v4Path);
+        }
+      }
+      return paths.toSet().toList(growable: false);
+    }
+    return candidates(
+      speciesCode: speciesCode,
+      stage: clamped,
+      form: form,
+      secondaryForm: secondaryForm,
+      visual: visual,
+    ).take(1).toList(growable: false);
+  }
+
   static String _namespaceSlug(String? namespace) {
     final value = namespace?.trim() ?? '';
     if (value.isEmpty) return '';
@@ -334,46 +502,129 @@ class PlantGrowthAssetResolver {
       .replaceAll(RegExp(r'^-+|-+$'), '');
 }
 
+class _PlantSpritePreloader {
+  const _PlantSpritePreloader._();
+
+  static final Set<String> _scheduled = <String>{};
+
+  static void preload(
+    BuildContext context, {
+    required List<String> paths,
+    required int cacheWidth,
+  }) {
+    for (final path in paths) {
+      final token = '$path@$cacheWidth';
+      if (!_scheduled.add(token)) continue;
+      final provider = ResizeImage.resizeIfNeeded(
+        cacheWidth,
+        null,
+        AssetImage(path),
+      );
+      unawaited(
+        precacheImage(
+          provider,
+          context,
+          onError: (error, stackTrace) {
+            _scheduled.remove(token);
+          },
+        ),
+      );
+    }
+  }
+}
+
 class _RasterPlantArtwork extends StatefulWidget {
   const _RasterPlantArtwork({
     required this.candidates,
     required this.fallback,
     required this.logicalWidth,
+    required this.speciesCode,
+    required this.form,
+    required this.pose,
+    required this.idleAnimation,
+    required this.blinkAnimation,
+    required this.animationsDisabled,
   });
 
   final List<String> candidates;
   final Widget fallback;
   final double logicalWidth;
+  final String speciesCode;
+  final PlantGrowthForm? form;
+  final PlantSpritePose pose;
+  final Animation<double> idleAnimation;
+  final Animation<double> blinkAnimation;
+  final bool animationsDisabled;
 
   @override
   State<_RasterPlantArtwork> createState() => _RasterPlantArtworkState();
 }
 
 class _RasterPlantArtworkState extends State<_RasterPlantArtwork> {
-  int _candidateIndex = 0;
-  bool _advanceScheduled = false;
+  String? _displayedPath;
+  int _loadVersion = 0;
+  double? _devicePixelRatio;
+
+  @override
+  void initState() {
+    super.initState();
+    _displayedPath = widget.candidates.firstOrNull;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    if (_devicePixelRatio != dpr) {
+      _devicePixelRatio = dpr;
+      unawaited(_resolveCandidate());
+    }
+  }
 
   @override
   void didUpdateWidget(covariant _RasterPlantArtwork oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!listEquals(oldWidget.candidates, widget.candidates)) {
-      _candidateIndex = 0;
-      _advanceScheduled = false;
+    if (!listEquals(oldWidget.candidates, widget.candidates) ||
+        oldWidget.logicalWidth != widget.logicalWidth) {
+      if (widget.animationsDisabled) {
+        _loadVersion += 1;
+        _displayedPath = widget.candidates.firstOrNull;
+      } else {
+        unawaited(_resolveCandidate());
+      }
     }
   }
 
-  void _tryNextCandidate() {
-    if (_advanceScheduled || _candidateIndex >= widget.candidates.length - 1) {
+  Future<void> _resolveCandidate() async {
+    final version = ++_loadVersion;
+    final dpr = _devicePixelRatio ?? MediaQuery.devicePixelRatioOf(context);
+    final cacheWidth =
+        (widget.logicalWidth * dpr).round().clamp(128, 1024).toInt();
+    for (final path in widget.candidates) {
+      if (!mounted || version != _loadVersion) return;
+      var failed = false;
+      await precacheImage(
+        ResizeImage.resizeIfNeeded(
+          cacheWidth,
+          null,
+          AssetImage(path),
+        ),
+        context,
+        onError: (error, stackTrace) {
+          failed = true;
+        },
+      );
+      if (!mounted || version != _loadVersion) return;
+      if (failed) continue;
+      if (_displayedPath != path) {
+        setState(() => _displayedPath = path);
+      }
       return;
     }
-    _advanceScheduled = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      setState(() {
-        _candidateIndex += 1;
-        _advanceScheduled = false;
-      });
-    });
+    if (!mounted || version != _loadVersion) return;
+    if (_displayedPath != null) {
+      setState(() => _displayedPath = null);
+    }
   }
 
   @override
@@ -382,27 +633,682 @@ class _RasterPlantArtworkState extends State<_RasterPlantArtwork> {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     final cacheWidth =
         (widget.logicalWidth * dpr).round().clamp(128, 1024).toInt();
-    final path = widget.candidates[_candidateIndex];
-    return Image.asset(
-      path,
-      key: ValueKey(path),
-      fit: BoxFit.contain,
-      alignment: Alignment.bottomCenter,
-      filterQuality: FilterQuality.medium,
-      cacheWidth: cacheWidth,
-      gaplessPlayback: true,
-      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-        if (wasSynchronouslyLoaded || frame != null) return child;
-        return Stack(
-          fit: StackFit.expand,
-          children: [widget.fallback, child],
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        _tryNextCandidate();
-        return widget.fallback;
-      },
+    final path = _displayedPath;
+    final child = path == null
+        ? KeyedSubtree(
+            key: const ValueKey('plant-raster-fallback'),
+            child: widget.fallback,
+          )
+        : _CharacterRasterSprite(
+            key: ValueKey(path),
+            path: path,
+            cacheWidth: cacheWidth,
+            fallback: widget.fallback,
+            speciesCode: widget.speciesCode,
+            form: widget.form,
+            pose: widget.pose,
+            idleAnimation: widget.idleAnimation,
+            blinkAnimation: widget.blinkAnimation,
+            animationsDisabled: widget.animationsDisabled,
+          );
+    final duration = widget.animationsDisabled
+        ? Duration.zero
+        : const Duration(milliseconds: 240);
+    return AnimatedSwitcher(
+      key: const ValueKey('plant-sprite-crossfade'),
+      duration: duration,
+      reverseDuration: widget.animationsDisabled
+          ? Duration.zero
+          : const Duration(milliseconds: 160),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      layoutBuilder: (currentChild, previousChildren) => Stack(
+        fit: StackFit.expand,
+        clipBehavior: Clip.none,
+        children: [
+          ...previousChildren,
+          if (currentChild != null) currentChild,
+        ],
+      ),
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: child,
+      ),
+      child: child,
     );
+  }
+}
+
+class _CharacterRasterSprite extends StatelessWidget {
+  const _CharacterRasterSprite({
+    super.key,
+    required this.path,
+    required this.cacheWidth,
+    required this.fallback,
+    required this.speciesCode,
+    required this.form,
+    required this.pose,
+    required this.idleAnimation,
+    required this.blinkAnimation,
+    required this.animationsDisabled,
+  });
+
+  final String path;
+  final int cacheWidth;
+  final Widget fallback;
+  final String speciesCode;
+  final PlantGrowthForm? form;
+  final PlantSpritePose pose;
+  final Animation<double> idleAnimation;
+  final Animation<double> blinkAnimation;
+  final bool animationsDisabled;
+
+  Widget _image() => Image.asset(
+        path,
+        fit: BoxFit.contain,
+        alignment: Alignment.bottomCenter,
+        filterQuality: FilterQuality.medium,
+        cacheWidth: cacheWidth,
+        gaplessPlayback: true,
+        errorBuilder: (context, error, stackTrace) => fallback,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = _CharacterMotionProfile.forSpecies(speciesCode);
+    if (animationsDisabled || profile == null) return _image();
+
+    final upperLayer = Stack(
+      fit: StackFit.expand,
+      clipBehavior: Clip.none,
+      children: [
+        _image(),
+        if (pose == PlantSpritePose.idle)
+          _BlinkOverlay(
+            profile: profile,
+            form: form,
+            pose: pose,
+            animation: blinkAnimation,
+          ),
+      ],
+    );
+    final lowerLayer = _image();
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        key: ValueKey('plant-part-motion-${profile.speciesCode}'),
+        animation: idleAnimation,
+        builder: (context, child) {
+          final phase = idleAnimation.value * math.pi * 2;
+          final upperWave = math.sin(phase + profile.phaseOffset);
+          final lowerWave = math.sin(phase - profile.phaseOffset * .6);
+          return Stack(
+            fit: StackFit.expand,
+            clipBehavior: Clip.none,
+            children: [
+              ClipRect(
+                clipper: _SpriteBandClipper(
+                  top: profile.split,
+                  bottom: 1,
+                ),
+                child: Transform.rotate(
+                  angle: profile.lowerRotation * lowerWave,
+                  alignment: Alignment.topCenter,
+                  child: Transform.scale(
+                    scaleX: 1 + profile.lowerScaleX * lowerWave,
+                    alignment: Alignment.topCenter,
+                    child: lowerLayer,
+                  ),
+                ),
+              ),
+              ClipRect(
+                clipper: _SpriteBandClipper(
+                  top: 0,
+                  bottom: profile.split,
+                ),
+                child: Transform.rotate(
+                  angle: profile.upperRotation * upperWave,
+                  alignment: Alignment.bottomCenter,
+                  child: Transform.scale(
+                    scaleX: 1 + profile.upperScaleX * upperWave,
+                    alignment: Alignment.bottomCenter,
+                    child: upperLayer,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SpriteBandClipper extends CustomClipper<Rect> {
+  const _SpriteBandClipper({
+    required this.top,
+    required this.bottom,
+  });
+
+  final double top;
+  final double bottom;
+
+  @override
+  Rect getClip(Size size) => Rect.fromLTRB(
+        0,
+        size.height * top,
+        size.width,
+        size.height * bottom,
+      );
+
+  @override
+  bool shouldReclip(covariant _SpriteBandClipper oldClipper) =>
+      top != oldClipper.top || bottom != oldClipper.bottom;
+}
+
+class _BlinkOverlay extends StatelessWidget {
+  const _BlinkOverlay({
+    required this.profile,
+    required this.form,
+    required this.pose,
+    required this.animation,
+  });
+
+  final _CharacterMotionProfile profile;
+  final PlantGrowthForm? form;
+  final PlantSpritePose pose;
+  final Animation<double> animation;
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+        child: AnimatedBuilder(
+          key: ValueKey('plant-blink-${profile.speciesCode}'),
+          animation: animation,
+          builder: (context, child) {
+            final amount = profile.blinkAmount(animation.value);
+            if (amount <= .001) return const SizedBox.expand();
+            return CustomPaint(
+              painter: _BlinkPainter(
+                profile: profile,
+                form: form,
+                pose: pose,
+                amount: amount,
+              ),
+            );
+          },
+        ),
+      );
+}
+
+class _BlinkPainter extends CustomPainter {
+  const _BlinkPainter({
+    required this.profile,
+    required this.form,
+    required this.pose,
+    required this.amount,
+  });
+
+  static const _sourceSize = Size(512, 768);
+
+  final _CharacterMotionProfile profile;
+  final PlantGrowthForm? form;
+  final PlantSpritePose pose;
+  final double amount;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fitted = applyBoxFit(BoxFit.contain, _sourceSize, size).destination;
+    final imageRect = Alignment.bottomCenter.inscribe(
+      fitted,
+      Offset.zero & size,
+    );
+    final scale = fitted.width / _sourceSize.width;
+    if (scale < .16) return;
+
+    final coverPaint = Paint()
+      ..color = profile.skinColorFor(form).withAlpha((245 * amount).round())
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+    final linePaint = Paint()
+      ..color = profile.eyeColor.withAlpha((235 * amount).round())
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = math.max(.7, 1.35 * scale)
+      ..isAntiAlias = true;
+
+    for (final sourceEye in profile.eyeCenters(form)) {
+      final eyeCenter = Offset(
+        imageRect.left + sourceEye.dx * scale,
+        imageRect.top + sourceEye.dy * scale,
+      );
+      canvas
+        ..save()
+        ..translate(eyeCenter.dx, eyeCenter.dy)
+        ..rotate(profile.eyeRotationFor(form));
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset.zero,
+          width: profile.eyeWidth * 1.5 * scale,
+          height: math.max(1.8, 10.5 * scale),
+        ),
+        coverPaint,
+      );
+      final halfWidth = profile.eyeWidth * .5 * scale;
+      final path = Path()
+        ..moveTo(-halfWidth, 0)
+        ..quadraticBezierTo(
+          0,
+          math.max(.5, 1.2 * scale),
+          halfWidth,
+          0,
+        );
+      canvas.drawPath(path, linePaint);
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BlinkPainter oldDelegate) =>
+      profile != oldDelegate.profile ||
+      form != oldDelegate.form ||
+      pose != oldDelegate.pose ||
+      amount != oldDelegate.amount;
+}
+
+class _CharacterMotionProfile {
+  const _CharacterMotionProfile({
+    required this.speciesCode,
+    required this.blinkDuration,
+    required this.blinkStart,
+    required this.split,
+    required this.upperRotation,
+    required this.upperScaleX,
+    required this.lowerRotation,
+    required this.lowerScaleX,
+    required this.phaseOffset,
+    required this.eyeGap,
+    required this.eyeWidth,
+    required this.eyeRotation,
+    required this.skinColor,
+    required this.eyeColor,
+    this.idleEyeCenters = const [],
+    this.doubleBlink = false,
+    this.idleEyePoints,
+    this.idleEyeRotations,
+    this.idleSkinColors,
+  });
+
+  final String speciesCode;
+  final Duration blinkDuration;
+  final double blinkStart;
+  final bool doubleBlink;
+  final double split;
+  final double upperRotation;
+  final double upperScaleX;
+  final double lowerRotation;
+  final double lowerScaleX;
+  final double phaseOffset;
+  final double eyeGap;
+  final double eyeWidth;
+  final double eyeRotation;
+  final Color skinColor;
+  final Color eyeColor;
+  final List<Offset> idleEyeCenters;
+  final List<List<Offset>>? idleEyePoints;
+  final List<double>? idleEyeRotations;
+  final List<Color>? idleSkinColors;
+
+  static _CharacterMotionProfile? forSpecies(String speciesCode) =>
+      switch (PlantGrowthAssetResolver._slug(speciesCode)) {
+        'baby-pot' => const _CharacterMotionProfile(
+            speciesCode: 'baby-pot',
+            blinkDuration: Duration(milliseconds: 3400),
+            blinkStart: .7,
+            doubleBlink: true,
+            split: .62,
+            upperRotation: .0032,
+            upperScaleX: .0026,
+            lowerRotation: -.0015,
+            lowerScaleX: .0024,
+            phaseOffset: .15,
+            eyeGap: 0,
+            eyeWidth: 23,
+            eyeRotation: 0,
+            skinColor: Color(0xFFFADC9D),
+            eyeColor: Color(0xFF3A261D),
+            idleEyePoints: [
+              [Offset(219, 388), Offset(296, 397)],
+              [Offset(189, 410), Offset(269, 411)],
+              [Offset(218, 390), Offset(306, 392)],
+              [Offset(292, 438), Offset(367, 430)],
+              [Offset(234, 414), Offset(308, 407)],
+              [Offset(219, 382), Offset(297, 373)],
+            ],
+            idleEyeRotations: [.11, .02, .02, -.11, -.09, -.12],
+            idleSkinColors: [
+              Color(0xFFFCE0A1),
+              Color(0xFFF9DB93),
+              Color(0xFFFADB9D),
+              Color(0xFFF7D38F),
+              Color(0xFFFCDEA3),
+              Color(0xFFFADB9E),
+            ],
+          ),
+        'handsome-pot' => const _CharacterMotionProfile(
+            speciesCode: 'handsome-pot',
+            blinkDuration: Duration(milliseconds: 4600),
+            blinkStart: .75,
+            split: .44,
+            upperRotation: .0015,
+            upperScaleX: .0011,
+            lowerRotation: -.0018,
+            lowerScaleX: .0014,
+            phaseOffset: .42,
+            eyeGap: 0,
+            eyeWidth: 9,
+            eyeRotation: -.12,
+            skinColor: Color(0xFFF4D0A5),
+            eyeColor: Color(0xFF342A32),
+            idleEyePoints: [
+              [Offset(264, 64), Offset(288, 63)],
+              [Offset(249, 64), Offset(270, 61)],
+              [Offset(249, 73), Offset(271, 69)],
+              [Offset(226, 66), Offset(251, 61)],
+              [Offset(255, 69), Offset(279, 62)],
+              [Offset(246, 68), Offset(270, 63)],
+            ],
+            idleEyeRotations: [-.05, -.12, -.16, -.18, -.16, -.16],
+            idleSkinColors: [
+              Color(0xFFF4CFA2),
+              Color(0xFFF4CEA5),
+              Color(0xFFF3CFA5),
+              Color(0xFFF1CBA4),
+              Color(0xFFF5D1A5),
+              Color(0xFFF4D1A5),
+            ],
+          ),
+        'zombie-pot' => const _CharacterMotionProfile(
+            speciesCode: 'zombie-pot',
+            blinkDuration: Duration(milliseconds: 5700),
+            blinkStart: .82,
+            split: .46,
+            upperRotation: .0027,
+            upperScaleX: .0008,
+            lowerRotation: -.0013,
+            lowerScaleX: .001,
+            phaseOffset: 1.34,
+            eyeGap: 0,
+            eyeWidth: 9,
+            eyeRotation: -.16,
+            skinColor: Color(0xFFD8C8AB),
+            eyeColor: Color(0xFF55413C),
+            idleEyePoints: [
+              [Offset(282, 74)],
+              [Offset(258, 75)],
+              [Offset(260, 75)],
+              [Offset(221, 88), Offset(250, 78)],
+              [Offset(256, 82), Offset(282, 80)],
+              [Offset(264, 82)],
+            ],
+            idleEyeRotations: [-.08, -.15, -.17, -.32, -.06, -.18],
+            idleSkinColors: [
+              Color(0xFFD8C3A2),
+              Color(0xFFD3C7AB),
+              Color(0xFFD7C19D),
+              Color(0xFFD7C8AD),
+              Color(0xFFDBCBB0),
+              Color(0xFFDCCAAB),
+            ],
+          ),
+        'gumiho-pot' => const _CharacterMotionProfile(
+            speciesCode: 'gumiho-pot',
+            blinkDuration: Duration(milliseconds: 4700),
+            blinkStart: .68,
+            doubleBlink: true,
+            split: .48,
+            upperRotation: .0022,
+            upperScaleX: .0014,
+            lowerRotation: -.0036,
+            lowerScaleX: .0022,
+            phaseOffset: .72,
+            eyeGap: 12,
+            eyeWidth: 10,
+            eyeRotation: -.12,
+            skinColor: Color(0xFFF4CDBF),
+            eyeColor: Color(0xFF442D2A),
+            idleEyeCenters: [
+              Offset(282, 100),
+              Offset(222, 100),
+              Offset(247, 102),
+              Offset(253, 109),
+              Offset(248, 102),
+              Offset(246, 99),
+            ],
+          ),
+        'ninja-pot' => const _CharacterMotionProfile(
+            speciesCode: 'ninja-pot',
+            blinkDuration: Duration(milliseconds: 3300),
+            blinkStart: .64,
+            doubleBlink: true,
+            split: .45,
+            upperRotation: -.003,
+            upperScaleX: .0019,
+            lowerRotation: .0024,
+            lowerScaleX: .0016,
+            phaseOffset: .9,
+            eyeGap: 0,
+            eyeWidth: 9,
+            eyeRotation: -.18,
+            skinColor: Color(0xFFF5CFAB),
+            eyeColor: Color(0xFF31272A),
+            idleEyePoints: [
+              [Offset(257, 75), Offset(282, 69)],
+              [Offset(230, 83), Offset(255, 75)],
+              [Offset(245, 77), Offset(270, 69)],
+              [Offset(219, 84), Offset(246, 75)],
+              [Offset(257, 80), Offset(287, 79)],
+              [Offset(240, 82), Offset(268, 79)],
+            ],
+            idleEyeRotations: [-.14, -.24, -.28, -.32, -.04, -.12],
+            idleSkinColors: [
+              Color(0xFFF4CBA4),
+              Color(0xFFF5D3B6),
+              Color(0xFFF4C69F),
+              Color(0xFFD9A889),
+              Color(0xFFF6CEA9),
+              Color(0xFFF5CFAC),
+            ],
+          ),
+        'magical-pot' => const _CharacterMotionProfile(
+            speciesCode: 'magical-pot',
+            blinkDuration: Duration(milliseconds: 4300),
+            blinkStart: .71,
+            doubleBlink: true,
+            split: .46,
+            upperRotation: .0019,
+            upperScaleX: .0014,
+            lowerRotation: -.0028,
+            lowerScaleX: .0018,
+            phaseOffset: 1.6,
+            eyeGap: 0,
+            eyeWidth: 9,
+            eyeRotation: -.22,
+            skinColor: Color(0xFFE4BE9A),
+            eyeColor: Color(0xFF4A3130),
+            idleEyePoints: [
+              [Offset(221, 109), Offset(246, 102)],
+              [Offset(239, 117), Offset(263, 111)],
+              [Offset(268, 106), Offset(294, 100)],
+              [Offset(219, 121), Offset(247, 114)],
+              [Offset(259, 94), Offset(287, 88)],
+              [Offset(232, 112), Offset(259, 106)],
+            ],
+            idleEyeRotations: [-.22, -.22, -.22, -.27, -.18, -.18],
+            idleSkinColors: [
+              Color(0xFFECC5A0),
+              Color(0xFFE0BB9C),
+              Color(0xFFE4BE94),
+              Color(0xFFBC9682),
+              Color(0xFFE7BF9B),
+              Color(0xFFE6C3A5),
+            ],
+          ),
+        'aloof-pot' => const _CharacterMotionProfile(
+            speciesCode: 'aloof-pot',
+            blinkDuration: Duration(milliseconds: 5600),
+            blinkStart: .85,
+            split: .42,
+            upperRotation: -.0011,
+            upperScaleX: .0007,
+            lowerRotation: .0014,
+            lowerScaleX: .0008,
+            phaseOffset: .12,
+            eyeGap: 0,
+            eyeWidth: 9,
+            eyeRotation: .24,
+            skinColor: Color(0xFFECCDB3),
+            eyeColor: Color(0xFF3A2C2C),
+            idleEyePoints: [
+              [Offset(265, 86), Offset(291, 96)],
+              [Offset(259, 88), Offset(283, 96)],
+              [Offset(255, 84), Offset(282, 96)],
+              [Offset(273, 88), Offset(294, 93)],
+              [Offset(231, 95), Offset(270, 103)],
+              [Offset(243, 89), Offset(275, 98)],
+            ],
+            idleEyeRotations: [.28, .28, .32, .15, .2, .2],
+            idleSkinColors: [
+              Color(0xFFEDCFB5),
+              Color(0xFFECCFB6),
+              Color(0xFFECCBB1),
+              Color(0xFFEDD0B6),
+              Color(0xFFEDCBB1),
+              Color(0xFFE8C1A9),
+            ],
+          ),
+        'student-pot' => const _CharacterMotionProfile(
+            speciesCode: 'student-pot',
+            blinkDuration: Duration(milliseconds: 4100),
+            blinkStart: .76,
+            split: .44,
+            upperRotation: .0017,
+            upperScaleX: .0012,
+            lowerRotation: -.0015,
+            lowerScaleX: .0012,
+            phaseOffset: .56,
+            eyeGap: 0,
+            eyeWidth: 10,
+            eyeRotation: -.12,
+            skinColor: Color(0xFFF5CB9A),
+            eyeColor: Color(0xFF3B261C),
+            idleEyePoints: [
+              [Offset(236, 117), Offset(265, 109)],
+              [Offset(228, 119), Offset(252, 115)],
+              [Offset(229, 121), Offset(263, 118)],
+              [Offset(221, 129), Offset(248, 123)],
+              [Offset(235, 124), Offset(261, 119)],
+              [Offset(236, 121), Offset(265, 119)],
+            ],
+            idleEyeRotations: [-.28, -.1, -.05, -.18, -.15, -.07],
+            idleSkinColors: [
+              Color(0xFFF3C99B),
+              Color(0xFFF5CB9A),
+              Color(0xFFF6C899),
+              Color(0xFFF4CC9C),
+              Color(0xFFF6CA9A),
+              Color(0xFFF5CB97),
+            ],
+          ),
+        'pretty-pot' => const _CharacterMotionProfile(
+            speciesCode: 'pretty-pot',
+            blinkDuration: Duration(milliseconds: 3900),
+            blinkStart: .73,
+            doubleBlink: true,
+            split: .46,
+            upperRotation: -.0018,
+            upperScaleX: .0012,
+            lowerRotation: .0033,
+            lowerScaleX: .002,
+            phaseOffset: 1.08,
+            eyeGap: 15,
+            eyeWidth: 12,
+            eyeRotation: -.36,
+            skinColor: Color(0xFFF0C7B6),
+            eyeColor: Color(0xFF49312C),
+            idleEyeCenters: [
+              Offset(268, 79),
+              Offset(276, 78),
+              Offset(226, 77),
+              Offset(243, 83),
+              Offset(259, 77),
+              Offset(244, 76),
+            ],
+          ),
+        'tsundere-pot' => const _CharacterMotionProfile(
+            speciesCode: 'tsundere-pot',
+            blinkDuration: Duration(milliseconds: 5200),
+            blinkStart: .8,
+            split: .38,
+            upperRotation: -.0024,
+            upperScaleX: .001,
+            lowerRotation: .0014,
+            lowerScaleX: .0012,
+            phaseOffset: .34,
+            eyeGap: 14,
+            eyeWidth: 11,
+            eyeRotation: -.28,
+            skinColor: Color(0xFFD8AA91),
+            eyeColor: Color(0xFF3D2926),
+            idleEyeCenters: [
+              Offset(257, 86),
+              Offset(239, 100),
+              Offset(246, 91),
+              Offset(225, 96),
+              Offset(274, 107),
+              Offset(234, 90),
+            ],
+          ),
+        _ => null,
+      };
+
+  int _formIndex(PlantGrowthForm? form) => form?.index ?? 0;
+
+  List<Offset> eyeCenters(PlantGrowthForm? form) {
+    final index = _formIndex(form);
+    final measured = idleEyePoints;
+    if (measured != null) return measured[index];
+
+    final center = idleEyeCenters[index];
+    final cosine = math.cos(eyeRotation);
+    final sine = math.sin(eyeRotation);
+    return [
+      Offset(
+        center.dx - eyeGap * cosine,
+        center.dy - eyeGap * sine,
+      ),
+      Offset(
+        center.dx + eyeGap * cosine,
+        center.dy + eyeGap * sine,
+      ),
+    ];
+  }
+
+  double eyeRotationFor(PlantGrowthForm? form) =>
+      idleEyeRotations?[_formIndex(form)] ?? eyeRotation;
+
+  Color skinColorFor(PlantGrowthForm? form) =>
+      idleSkinColors?[_formIndex(form)] ?? skinColor;
+
+  double blinkAmount(double value) {
+    final first = _blinkPulse(value, blinkStart, .036);
+    if (!doubleBlink) return first;
+    return math.max(first, _blinkPulse(value, blinkStart + .075, .032));
+  }
+
+  static double _blinkPulse(double value, double start, double width) {
+    final local = (value - start) / width;
+    if (local <= 0 || local >= 1) return 0;
+    final sine = math.sin(local * math.pi);
+    return sine * sine;
   }
 }
 
@@ -469,6 +1375,12 @@ class PlantStagePreview extends StatelessWidget {
               candidates: candidates,
               fallback: fallback,
               logicalWidth: size,
+              speciesCode: speciesCode,
+              form: clamped >= 2 ? form : null,
+              pose: PlantSpritePose.idle,
+              idleAnimation: const AlwaysStoppedAnimation(0),
+              blinkAnimation: const AlwaysStoppedAnimation(0),
+              animationsDisabled: true,
             ),
           ),
         ),
@@ -607,7 +1519,8 @@ class _PlantIdleMotion {
       _ => 1.0,
     };
     return _PlantIdleMotion(
-      duration: signature.duration,
+      // 캐릭터의 움직임 방향은 더하되 감정별 호흡 속도는 유지한다.
+      duration: duration,
       dx: dx + signature.dx * strength,
       dy: dy + signature.dy * strength,
       rotation: rotation + signature.rotation * strength,

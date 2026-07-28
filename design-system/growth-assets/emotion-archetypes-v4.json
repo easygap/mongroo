@@ -65,6 +65,22 @@
       "asset_pattern": "app/assets/plants/{slug}-25d-full-bloom-{form}-v4-grow.webp"
     }
   },
+  "character_overrides": {
+    "tsundere-pot": {
+      "skin_tone": "23N",
+      "default_blush": "none",
+      "blush_triggers": ["sunny.diary", "sparkling.idle", "sparkling.diary"],
+      "rule": "Blush is a rare affection-or-surprise reaction, never a permanent facial tint."
+    },
+    "gumiho-pot": {
+      "default_wardrobe": "Every route keeps an open neckline, elegant shoulder line, fitted waist, visible leg line, and controlled translucent chiffon.",
+      "ember": "The boldest wardrobe route with the strongest shoulder, waist, and leg silhouette.",
+      "moonlit": "High asymmetrical slit over black semi-transparent sheer hosiery and black heels."
+    },
+    "pretty-pot": {
+      "ember": "Black semi-transparent sheer hosiery with slim heels replaces opaque tall boots."
+    }
+  },
   "scope": {
     "characters": 10,
     "forms_per_character": 6,

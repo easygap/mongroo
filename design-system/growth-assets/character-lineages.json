@@ -87,8 +87,13 @@
     {
       "slug": "pretty-pot",
       "name": "블루미",
+      "art_revision": 4,
       "identity": "코랄 단발, 초록 케이프, 꽃 아이돌",
-      "art_direction": {"appeal_focus": "pretty", "skin_tone": "21C/21N"},
+      "art_direction": {
+        "appeal_focus": "pretty",
+        "skin_tone": "21C/21N",
+        "ember_legwear": "black semi-transparent sheer hosiery with slim heels"
+      },
       "motion": {
         "idle_key": "pretty_sparkle",
         "tap_reaction": "cape twirl and flower pose",
@@ -114,12 +119,17 @@
     {
       "slug": "tsundere-pot",
       "name": "가시로",
-      "art_revision": 3,
-      "identity": "붉은 머리, 가시잎, 홍조, 금으로 수선한 깨진 화분",
-      "art_direction": {"appeal_focus": "handsome tsundere", "skin_tone": "19N"},
+      "art_revision": 4,
+      "identity": "붉은 머리, 가시잎, 금으로 수선한 깨진 화분, 상황형 홍조",
+      "art_direction": {
+        "appeal_focus": "handsome tsundere",
+        "skin_tone": "23N",
+        "default_blush": "none",
+        "blush_cues": ["sunny.diary", "sparkling.idle", "sparkling.diary"]
+      },
       "motion": {
         "idle_key": "tsundere_turn_away",
-        "tap_reaction": "blushing turn-away while offering a seed pouch",
+        "tap_reaction": "quick turn-away while offering a seed pouch; blush only on affection or surprise cues",
         "secondary": ["defensive arm cross", "secret caring handoff"]
       },
       "expressions": {
@@ -169,9 +179,15 @@
     {
       "slug": "gumiho-pot",
       "name": "여우비",
-      "art_revision": 3,
+      "art_revision": 4,
       "identity": "검은 머리, 현대 한복, 아홉 여우꽃 꼬리",
-      "art_direction": {"appeal_focus": "alluring seductive adult", "skin_tone": "19C/19N"},
+      "art_direction": {
+        "appeal_focus": "alluring seductive adult",
+        "skin_tone": "19C/19N",
+        "default_wardrobe": "open neckline, shoulder line, fitted waist, visible leg line, translucent chiffon",
+        "exposure_peak": "ember",
+        "moonlit_legwear": "black semi-transparent sheer hosiery with black heels"
+      },
       "motion": {
         "idle_key": "gumiho_float",
         "tap_reaction": "playful tail-fan float with direct eye contact",
