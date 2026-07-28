@@ -124,6 +124,20 @@ class BuildReport:
     exposure: dict[str, float] = field(default_factory=dict)
     pending: list[str] = field(default_factory=list)
     limb: dict[str, dict[str, float]] = field(default_factory=dict)
+    warnings: list[Violation] = field(default_factory=list)
+
+    def warn(
+        self,
+        species: str,
+        layer: str,
+        state: str,
+        form: str,
+        rule: str,
+        detail: str,
+    ) -> None:
+        self.warnings.append(
+            Violation(species, layer, state, form, rule, detail)
+        )
 
     def fail(
         self,
@@ -589,7 +603,7 @@ def _check_limb_outliers(report: BuildReport, qa_root: Path) -> None:
             if value <= median + LIMB_OUTLIER_MARGIN:
                 continue
             state, form = frame.split("/", 1)
-            report.fail(
+            report.warn(
                 slug,
                 outfit,
                 state,
@@ -901,6 +915,16 @@ def _write_manifest(
         ],
         "inner_exposure": report.exposure,
         "limb_leak": report.limb,
+        "warnings": [
+            {
+                "species": item.species,
+                "state": item.state,
+                "form": item.form,
+                "rule": item.rule,
+                "detail": item.detail,
+            }
+            for item in report.warnings
+        ],
     }
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(
@@ -1006,8 +1030,20 @@ def main() -> None:
         )
         print("  PROMPTS.md 의 재생성 프롬프트로 base/ 를 채워야 한다.")
 
+    if report.warnings:
+        print(f"\n확인 필요 {len(report.warnings)}건 (빌드는 통과):")
+        for item in report.warnings:
+            print(
+                f"  [{item.rule}] {item.species}/{item.state}/{item.form}: "
+                f"{item.detail}"
+            )
+        print(
+            "  감정별로 의상이 다른 캐릭터(맨다리 ↔ 타이츠)는 여기 함께 걸린다. "
+            "합성 프리뷰로 실제 어긋남인지 확인한다."
+        )
+
     if not report.violations:
-        print("wardrobe contract v2: OK")
+        print("\nwardrobe contract v2: OK")
         return
 
     print(f"\n{len(report.violations)} contract violations:")

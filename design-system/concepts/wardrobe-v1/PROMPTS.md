@@ -224,6 +224,11 @@ python design-system/scripts/build_wardrobe_layers.py `
 | `inner-exposed` | 의상이 최소 가림을 못 덮는다 | 3번 [가림 규칙] |
 | `garment-exposed` | 착의형을 허용한 캐릭터에서 옷이 비친다 | 그 캐릭터를 `COVERED_BASE_SPECIES`에서 빼고 1번으로 |
 | `source` | 의상을 새로 생성해 캔버스가 다르다 | 3번 [자세 고정]. image-to-image 로 다시 |
+| `limb-exposed`(경고) | 맨다리·맨발이 옷 옆에 따로 그려졌다 | 3번 [자세 고정]. 해당 자세만 다시 |
+
+의상 패널을 옆으로 밀어 `pose-lock` 을 통과시키는 우회는 하지 마라.
+`align_wardrobe_panels.py` 는 원본을 덮어쓰고 중심만 맞출 뿐, 팔다리 각도가
+다른 것은 고치지 못한다. 그렇게 맞춘 프레임은 `limb-exposed` 로 드러난다.
 
 `--report-only`를 빼면 위반이 하나라도 있을 때 빌드가 실패한다. 커밋 전에는
 플래그 없이 돌려서 통과하는지 본다.
