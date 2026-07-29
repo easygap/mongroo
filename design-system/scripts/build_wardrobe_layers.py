@@ -23,10 +23,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 from build_character_emotion_adults_v2 import FORMS, _empty_runs
 from build_emotion_archetype_sprites_v4 import CHARACTERS, STATES
@@ -101,6 +103,24 @@ ON_BODY_FLOOR = 0.55
 LIMB_BAND = (0.55, 1.0)
 LIMB_OUTLIER_MARGIN = 0.10
 
+# Pose variety.  `pose-lock` compares one outfit panel against its own base
+# panel, and a full-body garment overlaps a full-body figure enough to pass even
+# when the pose is wrong.  This asks a sharper question: do the six panels of
+# the sheet differ from each other the way the six base panels do?
+#
+# A sheet drawn once and recoloured six times has near-identical silhouettes.
+# Measured across the v1 sheets, a pose-locked outfit tracks its base to within
+# +0.10 self-similarity, while a recoloured lineup runs +0.16 to +0.25 above it.
+POSE_VARIETY_MARGIN = 0.13
+SILHOUETTE_SIZE = (120, 300)
+
+# Disconnected outfit pieces.  A two-piece outfit, separate shoes and gloves
+# are legitimate, so component count or "keep only the largest" is not a valid
+# rule here.  Measurements across the current wardrobe put every intended
+# piece at 2% or more of the largest garment component; floating ImageGen
+# crumbs are all below that share.
+OUTFIT_COMPONENT_MIN_RATIO = 0.02
+
 # Seam and antialiasing noise around a covered garment. A real neckline gap or
 # a short hem exposes far more than this.
 GARMENT_LEAK_LIMIT = 0.05
@@ -168,7 +188,8 @@ def _load_alpha(chroma_path: Path) -> Image.Image:
         or alpha_path.stat().st_mtime < chroma_path.stat().st_mtime
     ):
         extract(chroma_path, alpha_path)
-    return Image.open(alpha_path).convert("RGBA")
+    with Image.open(alpha_path) as source:
+        return source.convert("RGBA")
 
 
 def _six_boundaries(sheet: Image.Image) -> list[int]:
@@ -213,6 +234,105 @@ def _mask(layer: Image.Image) -> Image.Image:
     return layer.getchannel("A").point(
         lambda value: 255 if value >= ALPHA_FLOOR else 0
     )
+
+
+def _connected_components(
+    mask: Image.Image,
+) -> list[list[tuple[int, int]]]:
+    """Return four-connected visible components from a binary mask."""
+
+    pixels = mask.load()
+    width, height = mask.size
+    seen: set[tuple[int, int]] = set()
+    components: list[list[tuple[int, int]]] = []
+    for y in range(height):
+        for x in range(width):
+            if not pixels[x, y] or (x, y) in seen:
+                continue
+            stack = [(x, y)]
+            seen.add((x, y))
+            component: list[tuple[int, int]] = []
+            while stack:
+                current_x, current_y = stack.pop()
+                component.append((current_x, current_y))
+                for neighbor_x, neighbor_y in (
+                    (current_x - 1, current_y),
+                    (current_x + 1, current_y),
+                    (current_x, current_y - 1),
+                    (current_x, current_y + 1),
+                ):
+                    point = (neighbor_x, neighbor_y)
+                    if (
+                        0 <= neighbor_x < width
+                        and 0 <= neighbor_y < height
+                        and pixels[neighbor_x, neighbor_y]
+                        and point not in seen
+                    ):
+                        seen.add(point)
+                        stack.append(point)
+            components.append(component)
+    return components
+
+
+def _remove_edge_fragments(layer: Image.Image) -> Image.Image:
+    """Drop neighboring panel pieces that touch a vertical crop edge.
+
+    The largest component is the current figure. Disconnected pieces on either
+    vertical edge come from the adjacent route, while interior petals and other
+    floating motifs remain part of the current panel.
+    """
+
+    components = _connected_components(_mask(layer))
+    if len(components) <= 1:
+        return layer
+    primary = max(components, key=len)
+    keep = Image.new("L", layer.size, 0)
+    keep_pixels = keep.load()
+    for component in components:
+        if component is not primary:
+            left = min(x for x, _ in component)
+            right = max(x for x, _ in component)
+            if left <= 1 or right >= layer.width - 2:
+                continue
+        for x, y in component:
+            keep_pixels[x, y] = 255
+
+    # Restore the retained components' antialiased fringe, matching the source
+    # sprite builder without changing this panel's canvas or alignment.
+    keep = keep.filter(ImageFilter.MaxFilter(7))
+    cleaned = layer.copy()
+    cleaned.putalpha(ImageChops.multiply(layer.getchannel("A"), keep))
+    return cleaned
+
+
+def _remove_outfit_fragments(layer: Image.Image) -> Image.Image:
+    """Remove only pieces smaller than the measured outfit component floor."""
+
+    components = _connected_components(_mask(layer))
+    if len(components) <= 1:
+        return layer
+
+    primary_area = max(len(component) for component in components)
+    keep = Image.new("L", layer.size, 0)
+    keep_pixels = keep.load()
+    remove = Image.new("L", layer.size, 0)
+    remove_pixels = remove.load()
+    for component in components:
+        if len(component) / primary_area < OUTFIT_COMPONENT_MIN_RATIO:
+            for x, y in component:
+                remove_pixels[x, y] = 255
+            continue
+        for x, y in component:
+            keep_pixels[x, y] = 255
+
+    # Restore the retained components' antialiased fringe without reconnecting
+    # a detached crumb several pixels away.
+    keep = keep.filter(ImageFilter.MaxFilter(3))
+    cleaned = layer.copy()
+    alpha = ImageChops.multiply(layer.getchannel("A"), keep)
+    alpha.paste(0, mask=remove)
+    cleaned.putalpha(alpha)
+    return cleaned
 
 
 def _count(mask: Image.Image) -> int:
@@ -274,12 +394,34 @@ def _route_scale(slug: str, union_sizes: list[tuple[int, int]]) -> float:
     return min(468 / max_width, 704 / max_height)
 
 
+def _save_webp_atomic(image: Image.Image, output: Path, **options: object) -> None:
+    """Replace a watched app asset only after the encoded file is complete."""
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            dir=output.parent,
+            prefix=f".{output.stem}-",
+            suffix=output.suffix,
+            delete=False,
+        ) as handle:
+            temporary = Path(handle.name)
+        image.save(temporary, "WEBP", **options)
+        os.replace(temporary, output)
+        temporary = None
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+
+
 def _render_layer(
     layer: Image.Image,
     *,
     crop_box: tuple[int, int, int, int],
     scale: float,
     output: Path,
+    clean_fragments: bool = False,
 ) -> None:
     cropped = layer.crop(crop_box)
     width = max(1, round(cropped.width * scale))
@@ -289,18 +431,27 @@ def _render_layer(
         .resize((width, height), Image.Resampling.LANCZOS)
         .convert("RGBA")
     )
+    if clean_fragments:
+        cleaned = _remove_outfit_fragments(resized)
+        if cleaned is not resized:
+            resized.close()
+            resized = cleaned
     canvas = Image.new("RGBA", CANVAS, (0, 0, 0, 0))
     x = (CANVAS[0] - width) // 2
     y = BASELINE_Y - height
     if x < 0 or y < 0 or x + width > CANVAS[0] or y + height > CANVAS[1]:
         raise ValueError(f"{output.name} does not fit the 512x768 canvas.")
     canvas.alpha_composite(resized, (x, y))
-    transparent = canvas.getchannel("A").point(
-        lambda alpha: 255 if alpha == 0 else 0
-    )
+    with canvas.getchannel("A") as alpha:
+        transparent = alpha.point(lambda value: 255 if value == 0 else 0)
     canvas.paste((0, 0, 0, 0), mask=transparent)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    canvas.save(output, "WEBP", lossless=True, method=6)
+    transparent.close()
+    try:
+        _save_webp_atomic(canvas, output, lossless=True, method=6)
+    finally:
+        canvas.close()
+        resized.close()
+        cropped.close()
 
 
 def discover(source_root: Path) -> tuple[dict[str, list[str]], list[str]]:
@@ -342,7 +493,11 @@ def _load_layers(
     source_root: Path,
     slug: str,
     outfit_keys: list[str],
-) -> tuple[dict[str, dict[str, list[Image.Image]]], list[str]]:
+) -> tuple[
+    dict[str, dict[str, list[Image.Image]]],
+    list[str],
+    dict[str, dict[str, list[Image.Image]]],
+]:
     """Split every sheet of one character with the boundaries of its base."""
 
     names = ["base"]
@@ -363,11 +518,13 @@ def _load_layers(
         return root / OUTFITS_DIR / name / f"{state}-chroma.png"
 
     panels: dict[str, dict[str, list[Image.Image]]] = {}
+    source_outfits: dict[str, dict[str, list[Image.Image]]] = {}
     repairs: list[str] = []
     for state in STATES:
         base_sheet = _load_alpha(_sheet_path("base", state))
         boundaries = _six_boundaries(base_sheet)
         panels[state] = {}
+        source_outfits[state] = {}
         for name in names:
             sheet = (
                 base_sheet
@@ -386,10 +543,25 @@ def _load_layers(
                     )
                 sheet = _align_to_base(sheet, base_sheet.size)
                 repairs.append(f"{name}/{state} {drift_x:.3%}x{drift_y:.3%}")
-            panels[state][name] = _split_with_boundaries(sheet, boundaries)
+            split = _split_with_boundaries(sheet, boundaries)
+            if name not in ("base", "inner"):
+                # Pose variety describes the authored sheet. Fragment cleanup
+                # is a derived render step and must not change that source
+                # validation result.
+                source_outfits[state][name] = split
+            split = [
+                _remove_edge_fragments(panel)
+                for panel in split
+            ]
+            if name not in ("base", "inner"):
+                split = [
+                    _remove_outfit_fragments(panel)
+                    for panel in split
+                ]
+            panels[state][name] = split
     if repairs:
         print(f"  {slug}: 캔버스 정렬 보정 {len(repairs)}건 - {', '.join(repairs)}")
-    return panels, names
+    return panels, names, source_outfits
 
 
 def _check_inner_envelope(
@@ -556,6 +728,62 @@ def _check_garment_hidden(
         )
 
 
+def _silhouette(panel: Image.Image) -> Image.Image | None:
+    """The panel's shape, normalized to a fixed box so poses can be compared."""
+
+    mask = _mask(panel)
+    box = mask.getbbox()
+    if box is None:
+        return None
+    return (
+        mask.crop(box)
+        .resize(SILHOUETTE_SIZE, Image.Resampling.NEAREST)
+        .point(lambda value: 255 if value > 127 else 0)
+    )
+
+
+def _self_similarity(panels: list[Image.Image]) -> float | None:
+    """Mean pairwise IoU across the six panels of one sheet."""
+
+    shapes = [_silhouette(panel) for panel in panels]
+    if any(shape is None for shape in shapes):
+        return None
+    scores = []
+    for first in range(len(shapes)):
+        for second in range(first + 1, len(shapes)):
+            overlap = _count(ImageChops.multiply(shapes[first], shapes[second]))
+            union = _count(ImageChops.lighter(shapes[first], shapes[second]))
+            scores.append(overlap / max(1, union))
+    return sum(scores) / len(scores)
+
+
+def _check_pose_variety(
+    report: BuildReport,
+    slug: str,
+    outfit: str,
+    state: str,
+    base_panels: list[Image.Image],
+    layer_panels: list[Image.Image],
+) -> None:
+    """Reject a sheet whose six panels are one pose recoloured six times."""
+
+    base_score = _self_similarity(base_panels)
+    layer_score = _self_similarity(layer_panels)
+    if base_score is None or layer_score is None:
+        return
+    if layer_score > base_score + POSE_VARIETY_MARGIN:
+        report.fail(
+            slug,
+            outfit,
+            state,
+            "-",
+            "pose-variety",
+            f"의상 여섯 칸이 서로 {layer_score:.2f} 로 닮았는데 바디는 "
+            f"{base_score:.2f} 다. 한 자세를 그려 색만 여섯 번 바꾼 시트이므로 "
+            "각 칸을 그 칸의 베이스 자세에 맞춰 다시 만들어야 한다",
+        )
+
+
 def _measure_limb_leak(
     base: Image.Image,
     layer: Image.Image,
@@ -688,7 +916,10 @@ def _check_outfit(
     on_body = _count(ImageChops.multiply(base_mask, layer_mask)) / max(
         1, _count(layer_mask)
     )
-    if drift > CENTROID_LIMIT or on_body < ON_BODY_FLOOR:
+    off_body = _count(ImageChops.subtract(layer_mask, base_mask))
+    if on_body < ON_BODY_FLOOR or (
+        drift > CENTROID_LIMIT and off_body
+    ):
         report.fail(
             slug,
             outfit,
@@ -784,7 +1015,9 @@ def build(
     manifest_layers: dict[str, dict] = {}
     for slug, outfit_keys in catalog.items():
         try:
-            panels, names = _load_layers(source_root, slug, outfit_keys)
+            panels, names, source_outfits = _load_layers(
+                source_root, slug, outfit_keys
+            )
         except ValueError as error:
             # One unusable sheet must not hide the state of every other
             # character; the roster is built one character at a time.
@@ -803,6 +1036,20 @@ def build(
             ]
             for state in STATES
         }
+
+        # Sheet-level check: the six panels must vary the way the base does.
+        for name in names:
+            if name in ("base", "inner"):
+                continue
+            for state in STATES:
+                _check_pose_variety(
+                    report,
+                    slug,
+                    name,
+                    state,
+                    panels[state]["base"],
+                    source_outfits[state][name],
+                )
 
         scales: dict[str, float] = {}
         for form_index, form in enumerate(FORMS):
@@ -865,6 +1112,7 @@ def build(
                         output=_output_path(
                             output_root, name, slug, state, form
                         ),
+                        clean_fragments=name not in ("base", "inner"),
                     )
 
         manifest_layers[slug] = {
@@ -997,7 +1245,12 @@ def build_preview(output_root: Path, outfit_key: str, species: list[str]) -> Non
 
     preview_dir = output_root / "previews"
     preview_dir.mkdir(parents=True, exist_ok=True)
-    canvas.save(preview_dir / f"{outfit_key}.webp", "WEBP", quality=94, method=6)
+    _save_webp_atomic(
+        canvas,
+        preview_dir / f"{outfit_key}.webp",
+        quality=94,
+        method=6,
+    )
 
 
 def main() -> None:

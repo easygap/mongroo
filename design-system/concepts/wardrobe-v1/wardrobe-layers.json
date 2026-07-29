@@ -51,12 +51,12 @@
         "garden-daily"
       ],
       "route_scale": {
-        "sunny": 0.950067,
-        "rainy": 0.94751,
-        "ember": 0.967033,
-        "moonlit": 0.946237,
-        "sparkling": 0.968363,
-        "mosaic": 0.94751
+        "sunny": 0.968363,
+        "rainy": 0.964384,
+        "ember": 0.965706,
+        "moonlit": 0.964384,
+        "sparkling": 0.965706,
+        "mosaic": 0.961749
       }
     },
     "pretty-pot": {
@@ -101,10 +101,10 @@
       "route_scale": {
         "sunny": 0.876712,
         "rainy": 0.876712,
-        "ember": 0.856448,
+        "ember": 0.857491,
         "moonlit": 0.862745,
-        "sparkling": 0.874534,
-        "mosaic": 0.857491
+        "sparkling": 0.88665,
+        "mosaic": 0.858537
       }
     },
     "gumiho-pot": {
@@ -115,12 +115,12 @@
         "garden-daily"
       ],
       "route_scale": {
-        "sunny": 0.941176,
-        "rainy": 0.94751,
-        "ember": 0.938667,
-        "moonlit": 0.956522,
-        "sparkling": 0.942436,
-        "mosaic": 0.903723
+        "sunny": 1.065053,
+        "rainy": 1.103448,
+        "ember": 1.076453,
+        "moonlit": 1.144715,
+        "sparkling": 1.161716,
+        "mosaic": 1.088099
       }
     },
     "ninja-pot": {
@@ -159,85 +159,85 @@
   "pending_base": [],
   "violations": [],
   "inner_exposure": {
-    "magical-pot/garden-daily/idle/sunny": 0.0451,
+    "magical-pot/garden-daily/idle/sunny": 0.0025,
     "magical-pot/garden-daily/diary/sunny": 0.0001,
-    "magical-pot/garden-daily/grow/sunny": 0.0424,
-    "magical-pot/garden-daily/idle/rainy": 0.0226,
-    "magical-pot/garden-daily/diary/rainy": 0.0182,
-    "magical-pot/garden-daily/grow/rainy": 0.0027,
-    "magical-pot/garden-daily/idle/ember": 0.0457,
+    "magical-pot/garden-daily/grow/sunny": 0.0049,
+    "magical-pot/garden-daily/idle/rainy": 0.0046,
+    "magical-pot/garden-daily/diary/rainy": 0.0183,
+    "magical-pot/garden-daily/grow/rainy": 0.0089,
+    "magical-pot/garden-daily/idle/ember": 0.0088,
     "magical-pot/garden-daily/diary/ember": 0.0052,
-    "magical-pot/garden-daily/grow/ember": 0.0,
-    "magical-pot/garden-daily/idle/moonlit": 0.0435,
+    "magical-pot/garden-daily/grow/ember": 0.0006,
+    "magical-pot/garden-daily/idle/moonlit": 0.0065,
     "magical-pot/garden-daily/diary/moonlit": 0.0034,
-    "magical-pot/garden-daily/grow/moonlit": 0.0162,
-    "magical-pot/garden-daily/idle/sparkling": 0.0217,
+    "magical-pot/garden-daily/grow/moonlit": 0.0108,
+    "magical-pot/garden-daily/idle/sparkling": 0.0116,
     "magical-pot/garden-daily/diary/sparkling": 0.0001,
-    "magical-pot/garden-daily/grow/sparkling": 0.0149,
-    "magical-pot/garden-daily/idle/mosaic": 0.0204,
+    "magical-pot/garden-daily/grow/sparkling": 0.0089,
+    "magical-pot/garden-daily/idle/mosaic": 0.0045,
     "magical-pot/garden-daily/diary/mosaic": 0.0114,
-    "magical-pot/garden-daily/grow/mosaic": 0.0357
+    "magical-pot/garden-daily/grow/mosaic": 0.0116
   },
   "limb_leak": {
     "baby-pot/garden-daily": {
-      "idle/sunny": 0.2023,
-      "diary/sunny": 0.2511,
+      "idle/sunny": 0.1373,
+      "diary/sunny": 0.0887,
       "grow/sunny": 0.1103,
-      "idle/rainy": 0.1102,
-      "diary/rainy": 0.2958,
+      "idle/rainy": 0.1279,
+      "diary/rainy": 0.0971,
       "grow/rainy": 0.0271,
-      "idle/ember": 0.2367,
-      "diary/ember": 0.3921,
+      "idle/ember": 0.1438,
+      "diary/ember": 0.0862,
       "grow/ember": 0.0326,
-      "idle/moonlit": 0.1984,
-      "diary/moonlit": 0.4415,
+      "idle/moonlit": 0.0368,
+      "diary/moonlit": 0.0892,
       "grow/moonlit": 0.0399,
-      "idle/sparkling": 0.2224,
-      "diary/sparkling": 0.3071,
+      "idle/sparkling": 0.0593,
+      "diary/sparkling": 0.089,
       "grow/sparkling": 0.0681,
-      "idle/mosaic": 0.2036,
-      "diary/mosaic": 0.3376,
+      "idle/mosaic": 0.0848,
+      "diary/mosaic": 0.0898,
       "grow/mosaic": 0.0503
     },
     "handsome-pot/garden-daily": {
-      "idle/sunny": 0.0835,
-      "diary/sunny": 0.1305,
-      "grow/sunny": 0.0262,
-      "idle/rainy": 0.0685,
-      "diary/rainy": 0.0543,
-      "grow/rainy": 0.0266,
-      "idle/ember": 0.3553,
-      "diary/ember": 0.2374,
-      "grow/ember": 0.1064,
-      "idle/moonlit": 0.5828,
-      "diary/moonlit": 0.2014,
-      "grow/moonlit": 0.0099,
-      "idle/sparkling": 0.1753,
-      "diary/sparkling": 0.0904,
-      "grow/sparkling": 0.0296,
-      "idle/mosaic": 0.0353,
-      "diary/mosaic": 0.1342,
-      "grow/mosaic": 0.0111
+      "idle/sunny": 0.003,
+      "diary/sunny": 0.0021,
+      "grow/sunny": 0.0028,
+      "idle/rainy": 0.0028,
+      "diary/rainy": 0.002,
+      "grow/rainy": 0.0036,
+      "idle/ember": 0.003,
+      "diary/ember": 0.0022,
+      "grow/ember": 0.0026,
+      "idle/moonlit": 0.003,
+      "diary/moonlit": 0.0014,
+      "grow/moonlit": 0.0035,
+      "idle/sparkling": 0.0012,
+      "diary/sparkling": 0.002,
+      "grow/sparkling": 0.0016,
+      "idle/mosaic": 0.003,
+      "diary/mosaic": 0.0023,
+      "grow/mosaic": 0.0038
     },
     "pretty-pot/garden-daily": {
       "idle/sunny": 0.134,
       "diary/sunny": 0.1155,
-      "grow/sunny": 0.0213,
+      "grow/sunny": 0.041,
       "idle/rainy": 0.0832,
       "diary/rainy": 0.0487,
-      "grow/rainy": 0.0215,
+      "grow/rainy": 0.0525,
       "idle/ember": 0.0938,
       "diary/ember": 0.1174,
-      "grow/ember": 0.0225,
+      "grow/ember": 0.0499,
       "idle/moonlit": 0.0875,
       "diary/moonlit": 0.1136,
-      "grow/moonlit": 0.0253,
+      "grow/moonlit": 0.0439,
       "idle/sparkling": 0.0548,
       "diary/sparkling": 0.0919,
-      "grow/sparkling": 0.0276,
+      "grow/sparkling": 0.048,
       "idle/mosaic": 0.0198,
       "diary/mosaic": 0.0955,
-      "grow/mosaic": 0.0268
+      "grow/mosaic": 0.0511
     },
     "tsundere-pot/garden-daily": {
       "idle/sunny": 0.0852,
@@ -260,226 +260,85 @@
       "grow/mosaic": 0.0343
     },
     "zombie-pot/garden-daily": {
-      "idle/sunny": 0.3829,
+      "idle/sunny": 0.0811,
       "diary/sunny": 0.0114,
-      "grow/sunny": 0.0234,
-      "idle/rainy": 0.0868,
+      "grow/sunny": 0.1051,
+      "idle/rainy": 0.0759,
       "diary/rainy": 0.0096,
-      "grow/rainy": 0.0114,
-      "idle/ember": 0.0073,
+      "grow/rainy": 0.0888,
+      "idle/ember": 0.0793,
       "diary/ember": 0.007,
       "grow/ember": 0.0109,
-      "idle/moonlit": 0.0455,
+      "idle/moonlit": 0.0761,
       "diary/moonlit": 0.0115,
-      "grow/moonlit": 0.0325,
-      "idle/sparkling": 0.5629,
+      "grow/moonlit": 0.0346,
+      "idle/sparkling": 0.0805,
       "diary/sparkling": 0.012,
-      "grow/sparkling": 0.0307,
-      "idle/mosaic": 0.0364,
+      "grow/sparkling": 0.0428,
+      "idle/mosaic": 0.0849,
       "diary/mosaic": 0.013,
       "grow/mosaic": 0.0141
     },
     "gumiho-pot/garden-daily": {
-      "idle/sunny": 0.7478,
-      "diary/sunny": 0.9568,
-      "grow/sunny": 0.7254,
-      "idle/rainy": 0.6559,
-      "diary/rainy": 0.8916,
-      "grow/rainy": 0.7058,
-      "idle/ember": 0.7477,
-      "diary/ember": 0.608,
-      "grow/ember": 0.7351,
-      "idle/moonlit": 0.7326,
-      "diary/moonlit": 0.4325,
-      "grow/moonlit": 0.8918,
-      "idle/sparkling": 0.7987,
-      "diary/sparkling": 0.6726,
-      "grow/sparkling": 0.6811,
-      "idle/mosaic": 0.7847,
-      "diary/mosaic": 0.6155,
-      "grow/mosaic": 0.7945
+      "idle/sunny": 1.0,
+      "diary/sunny": 1.0,
+      "grow/sunny": 1.0,
+      "idle/rainy": 1.0,
+      "diary/rainy": 1.0,
+      "grow/rainy": 1.0,
+      "idle/ember": 1.0,
+      "diary/ember": 1.0,
+      "grow/ember": 1.0,
+      "idle/moonlit": 0.7106,
+      "diary/moonlit": 0.5923,
+      "grow/moonlit": 0.6425,
+      "idle/sparkling": 1.0,
+      "diary/sparkling": 1.0,
+      "grow/sparkling": 1.0,
+      "idle/mosaic": 1.0,
+      "diary/mosaic": 1.0,
+      "grow/mosaic": 1.0
     },
     "ninja-pot/garden-daily": {
-      "idle/sunny": 0.046,
+      "idle/sunny": 0.0687,
       "diary/sunny": 0.0369,
       "grow/sunny": 0.0195,
-      "idle/rainy": 0.0705,
+      "idle/rainy": 0.1068,
       "diary/rainy": 0.0447,
       "grow/rainy": 0.0272,
-      "idle/ember": 0.1382,
+      "idle/ember": 0.0026,
       "diary/ember": 0.1023,
       "grow/ember": 0.0184,
-      "idle/moonlit": 0.0434,
+      "idle/moonlit": 0.0703,
       "diary/moonlit": 0.0182,
       "grow/moonlit": 0.0226,
-      "idle/sparkling": 0.4203,
+      "idle/sparkling": 0.0014,
       "diary/sparkling": 0.002,
       "grow/sparkling": 0.0081,
-      "idle/mosaic": 0.0195,
+      "idle/mosaic": 0.0356,
       "diary/mosaic": 0.0173,
       "grow/mosaic": 0.0238
     },
     "magical-pot/garden-daily": {
-      "idle/sunny": 0.2344,
+      "idle/sunny": 0.0325,
       "diary/sunny": 0.0152,
-      "grow/sunny": 0.4712,
-      "idle/rainy": 0.1832,
+      "grow/sunny": 0.0329,
+      "idle/rainy": 0.0268,
       "diary/rainy": 0.022,
-      "grow/rainy": 0.1435,
-      "idle/ember": 0.2023,
+      "grow/rainy": 0.0406,
+      "idle/ember": 0.0358,
       "diary/ember": 0.0576,
-      "grow/ember": 0.056,
-      "idle/moonlit": 0.2934,
+      "grow/ember": 0.025,
+      "idle/moonlit": 0.0274,
       "diary/moonlit": 0.0003,
-      "grow/moonlit": 0.0273,
-      "idle/sparkling": 0.1008,
+      "grow/moonlit": 0.0344,
+      "idle/sparkling": 0.0379,
       "diary/sparkling": 0.0594,
-      "grow/sparkling": 0.2088,
-      "idle/mosaic": 0.1061,
+      "grow/sparkling": 0.026,
+      "idle/mosaic": 0.0309,
       "diary/mosaic": 0.0092,
-      "grow/mosaic": 0.229
+      "grow/mosaic": 0.0317
     }
   },
-  "warnings": [
-    {
-      "species": "baby-pot",
-      "state": "diary",
-      "form": "ember",
-      "rule": "limb-exposed",
-      "detail": "하반신의 39% 가 의상 밖으로 나왔다(이 캐릭터 기준값 20%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "baby-pot",
-      "state": "diary",
-      "form": "moonlit",
-      "rule": "limb-exposed",
-      "detail": "하반신의 44% 가 의상 밖으로 나왔다(이 캐릭터 기준값 20%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "baby-pot",
-      "state": "diary",
-      "form": "mosaic",
-      "rule": "limb-exposed",
-      "detail": "하반신의 34% 가 의상 밖으로 나왔다(이 캐릭터 기준값 20%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "baby-pot",
-      "state": "diary",
-      "form": "sparkling",
-      "rule": "limb-exposed",
-      "detail": "하반신의 31% 가 의상 밖으로 나왔다(이 캐릭터 기준값 20%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "handsome-pot",
-      "state": "diary",
-      "form": "ember",
-      "rule": "limb-exposed",
-      "detail": "하반신의 24% 가 의상 밖으로 나왔다(이 캐릭터 기준값 9%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "handsome-pot",
-      "state": "diary",
-      "form": "moonlit",
-      "rule": "limb-exposed",
-      "detail": "하반신의 20% 가 의상 밖으로 나왔다(이 캐릭터 기준값 9%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "handsome-pot",
-      "state": "idle",
-      "form": "ember",
-      "rule": "limb-exposed",
-      "detail": "하반신의 36% 가 의상 밖으로 나왔다(이 캐릭터 기준값 9%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "handsome-pot",
-      "state": "idle",
-      "form": "moonlit",
-      "rule": "limb-exposed",
-      "detail": "하반신의 58% 가 의상 밖으로 나왔다(이 캐릭터 기준값 9%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "zombie-pot",
-      "state": "idle",
-      "form": "sparkling",
-      "rule": "limb-exposed",
-      "detail": "하반신의 56% 가 의상 밖으로 나왔다(이 캐릭터 기준값 1%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "zombie-pot",
-      "state": "idle",
-      "form": "sunny",
-      "rule": "limb-exposed",
-      "detail": "하반신의 38% 가 의상 밖으로 나왔다(이 캐릭터 기준값 1%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "gumiho-pot",
-      "state": "diary",
-      "form": "rainy",
-      "rule": "limb-exposed",
-      "detail": "하반신의 89% 가 의상 밖으로 나왔다(이 캐릭터 기준값 74%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "gumiho-pot",
-      "state": "diary",
-      "form": "sunny",
-      "rule": "limb-exposed",
-      "detail": "하반신의 96% 가 의상 밖으로 나왔다(이 캐릭터 기준값 74%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "gumiho-pot",
-      "state": "grow",
-      "form": "moonlit",
-      "rule": "limb-exposed",
-      "detail": "하반신의 89% 가 의상 밖으로 나왔다(이 캐릭터 기준값 74%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "ninja-pot",
-      "state": "idle",
-      "form": "ember",
-      "rule": "limb-exposed",
-      "detail": "하반신의 14% 가 의상 밖으로 나왔다(이 캐릭터 기준값 3%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "ninja-pot",
-      "state": "idle",
-      "form": "sparkling",
-      "rule": "limb-exposed",
-      "detail": "하반신의 42% 가 의상 밖으로 나왔다(이 캐릭터 기준값 3%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "magical-pot",
-      "state": "grow",
-      "form": "mosaic",
-      "rule": "limb-exposed",
-      "detail": "하반신의 23% 가 의상 밖으로 나왔다(이 캐릭터 기준값 11%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "magical-pot",
-      "state": "grow",
-      "form": "sparkling",
-      "rule": "limb-exposed",
-      "detail": "하반신의 21% 가 의상 밖으로 나왔다(이 캐릭터 기준값 11%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "magical-pot",
-      "state": "grow",
-      "form": "sunny",
-      "rule": "limb-exposed",
-      "detail": "하반신의 47% 가 의상 밖으로 나왔다(이 캐릭터 기준값 11%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "magical-pot",
-      "state": "idle",
-      "form": "moonlit",
-      "rule": "limb-exposed",
-      "detail": "하반신의 29% 가 의상 밖으로 나왔다(이 캐릭터 기준값 11%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    },
-    {
-      "species": "magical-pot",
-      "state": "idle",
-      "form": "sunny",
-      "rule": "limb-exposed",
-      "detail": "하반신의 23% 가 의상 밖으로 나왔다(이 캐릭터 기준값 11%). 맨다리나 맨발이 옷 옆에 따로 그려진 것이므로 이 자세의 의상을 다시 만들어야 한다"
-    }
-  ]
+  "warnings": []
 }
