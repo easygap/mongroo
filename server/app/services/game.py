@@ -939,6 +939,54 @@ def default_layout(
     }
 
 
+def _wardrobe_supports_species(asset_manifest: object, species_code: str) -> bool:
+    if not isinstance(asset_manifest, dict):
+        return False
+    compatible_species = asset_manifest.get("compatible_species")
+    if not isinstance(compatible_species, list):
+        return False
+    return species_code in {
+        code.strip()
+        for code in compatible_species
+        if isinstance(code, str) and code.strip()
+    }
+
+
+async def unequip_incompatible_wardrobe(
+    db: AsyncSession, user_id: int, species_code: str
+) -> bool:
+    """새 활성 품종과 맞지 않는 의상을 같은 트랜잭션에서 해제한다."""
+    row = await db.scalar(
+        sa.select(FarmLayout).where(FarmLayout.user_id == user_id).with_for_update()
+    )
+    if row is None:
+        return False
+
+    layout = {**default_layout(version=row.version), **(row.layout or {})}
+    wardrobe_user_item_id = layout.get("wardrobe_user_item_id")
+    if wardrobe_user_item_id is None:
+        return False
+
+    asset_manifest = await db.scalar(
+        sa.select(Item.asset_manifest)
+        .join(UserItem, UserItem.item_id == Item.id)
+        .where(
+            UserItem.id == wardrobe_user_item_id,
+            UserItem.user_id == user_id,
+            Item.type == "wardrobe",
+        )
+    )
+    if _wardrobe_supports_species(asset_manifest, species_code):
+        return False
+
+    layout["wardrobe_user_item_id"] = None
+    layout.pop("version", None)
+    row.layout = layout
+    row.version += 1
+    row.updated_at = utcnow()
+    return True
+
+
 async def farm_payload(db: AsyncSession, user_id: int) -> dict:
     row = await db.get(FarmLayout, user_id)
     owned = await _owned_items(db, user_id)
@@ -990,18 +1038,25 @@ async def save_farm_layout(db: AsyncSession, user_id: int, body) -> dict:
     }
     requested_ids.update(body.companion_user_item_ids)
     requested_ids.update(d.user_item_id for d in body.decorations)
-    owned_types: dict[int, str] = {}
+    owned_items: dict[int, tuple[str, object]] = {}
     if requested_ids:
         rows = await db.execute(
-            sa.select(UserItem.id, Item.type)
+            sa.select(UserItem.id, Item.type, Item.asset_manifest)
             .join(Item, Item.id == UserItem.item_id)
             .where(UserItem.user_id == user_id, UserItem.id.in_(requested_ids))
         )
-        owned_types = dict(rows.all())
-    if set(owned_types) != requested_ids:
+        owned_items = {
+            user_item_id: (item_type, asset_manifest)
+            for user_item_id, item_type, asset_manifest in rows.all()
+        }
+    if set(owned_items) != requested_ids:
         raise AppError(
             422, "FARM_ITEM_NOT_OWNED", "보유하지 않은 아이템은 배치할 수 없습니다."
         )
+    owned_types = {
+        user_item_id: item_type
+        for user_item_id, (item_type, _asset_manifest) in owned_items.items()
+    }
 
     expected_types: list[tuple[int | None, str]] = [
         (body.room_theme_user_item_id, "room_theme"),
@@ -1016,6 +1071,29 @@ async def save_farm_layout(db: AsyncSession, user_id: int, body) -> dict:
                 422,
                 "FARM_ITEM_TYPE_INVALID",
                 "아이템을 해당 위치에 배치할 수 없습니다.",
+            )
+
+    if body.wardrobe_user_item_id is not None:
+        species_code = await db.scalar(
+            sa.select(PlantSpecies.code)
+            .join(Plant, Plant.species_id == PlantSpecies.id)
+            .where(
+                Plant.user_id == user_id,
+                Plant.status == PlantStatus.ACTIVE,
+            )
+        )
+        wardrobe_manifest = owned_items[body.wardrobe_user_item_id][1]
+        if species_code is not None and not _wardrobe_supports_species(
+            wardrobe_manifest, species_code
+        ):
+            raise AppError(
+                422,
+                "FARM_WARDROBE_SPECIES_INCOMPATIBLE",
+                "현재 심어진 캐릭터가 착용할 수 없는 의상입니다.",
+                {
+                    "species_code": species_code,
+                    "wardrobe_user_item_id": body.wardrobe_user_item_id,
+                },
             )
 
     layout = {

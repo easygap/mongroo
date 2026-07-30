@@ -6,10 +6,10 @@ from datetime import timedelta
 import sqlalchemy as sa
 
 from app.core.timeutil import local_date_of, utcnow
-from app.models.enums import AnalysisStatus
-from app.models.game import Item, Quest, UserItem, UserQuest
+from app.models.enums import AnalysisStatus, PlantStatus
+from app.models.game import Item, Quest, UserItem, UserQuest, UserSpeciesUnlock
 from app.models.mood import MoodEntry
-from app.models.plant import Plant
+from app.models.plant import Plant, PlantSpecies
 from app.models.reward import RewardEvent
 from app.models.user import User
 from app.workers.ai_worker import run_pending_once
@@ -49,6 +49,36 @@ async def _create_acquisition_item(
         await db.commit()
         await db.refresh(item)
         return item.id
+
+
+async def _grant_wardrobe(
+    session_factory,
+    user_id: int,
+    code: str,
+    compatible_species: list[str],
+) -> int:
+    async with session_factory() as db:
+        item = Item(
+            code=code,
+            type="wardrobe",
+            name=f"{code} 테스트 의상",
+            description="품종 호환성 통합 테스트 의상",
+            price_seeds=0,
+            rarity=1,
+            asset_manifest={
+                "asset_key": f"wardrobe/{code}",
+                "wardrobe_layer_key": code,
+                "compatible_species": compatible_species,
+            },
+            is_active=True,
+        )
+        db.add(item)
+        await db.flush()
+        user_item = UserItem(user_id=user_id, item_id=item.id)
+        db.add(user_item)
+        await db.commit()
+        await db.refresh(user_item)
+        return user_item.id
 
 
 async def test_daily_quest_complete_rewards_once(client):
@@ -468,6 +498,83 @@ async def test_item_purchase_collection_and_optimistic_farm_layout(
     )
     assert conflict.status_code == 409
     assert conflict.json()["code"] == "FARM_LAYOUT_VERSION_CONFLICT"
+
+
+async def test_wardrobe_species_compatibility_and_replant_auto_unequip(
+    client, session_factory
+):
+    tokens = await signup(client)
+    headers = auth_headers(tokens)
+    user_id = tokens["user"]["id"]
+    incompatible_id = await _grant_wardrobe(
+        session_factory,
+        user_id,
+        "cactus_only",
+        ["cactus"],
+    )
+
+    rejected = await client.put(
+        "/farm/layout",
+        json={
+            "expected_version": 0,
+            "wardrobe_user_item_id": incompatible_id,
+        },
+        headers=headers,
+    )
+    assert rejected.status_code == 422
+    assert rejected.json()["code"] == "FARM_WARDROBE_SPECIES_INCOMPATIBLE"
+    assert rejected.json()["details"] == {
+        "species_code": "basic_sprout",
+        "wardrobe_user_item_id": incompatible_id,
+    }
+
+    farm = await client.get("/farm", headers=headers)
+    assert farm.json()["layout"]["version"] == 0
+    assert farm.json()["layout"]["wardrobe_user_item_id"] is None
+
+    basic_sprout_wardrobe_id = await _grant_wardrobe(
+        session_factory,
+        user_id,
+        "basic_sprout_only",
+        ["basic_sprout"],
+    )
+    equipped = await client.put(
+        "/farm/layout",
+        json={
+            "expected_version": 0,
+            "wardrobe_user_item_id": basic_sprout_wardrobe_id,
+        },
+        headers=headers,
+    )
+    assert equipped.status_code == 200
+    assert equipped.json()["layout"]["version"] == 1
+
+    async with session_factory() as db:
+        active_plant = await db.scalar(
+            sa.select(Plant).where(
+                Plant.user_id == user_id,
+                Plant.status == PlantStatus.ACTIVE,
+            )
+        )
+        active_plant.status = PlantStatus.HARVESTED
+        cactus = await db.scalar(
+            sa.select(PlantSpecies).where(PlantSpecies.code == "cactus")
+        )
+        db.add(UserSpeciesUnlock(user_id=user_id, species_id=cactus.id))
+        await db.commit()
+        cactus_id = cactus.id
+
+    planted = await client.post(
+        "/plants",
+        json={"species_id": cactus_id},
+        headers=headers,
+    )
+    assert planted.status_code == 201
+    assert planted.json()["species"]["code"] == "cactus"
+
+    farm = await client.get("/farm", headers=headers)
+    assert farm.json()["layout"]["version"] == 2
+    assert farm.json()["layout"]["wardrobe_user_item_id"] is None
 
 
 async def test_concurrent_same_key_purchase_replays_first_response(

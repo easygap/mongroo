@@ -193,21 +193,23 @@ app/assets/wardrobe/
 
 ## 현재 상태
 
-| 캐릭터 | base | garden-daily | 비고 |
-|---|---|---|---|
-| baby-pot | 완료 | 완료 | 아동 바디수트. 초판 시트 그대로 |
-| handsome-pot | 완료 | 완료 | |
-| pretty-pot | 완료 | 완료 | 마네킹 시트 문제 해결 |
-| tsundere-pot | 완료 | 완료 | |
-| zombie-pot | 완료 | 완료 | |
-| gumiho-pot | 완료 | 완료 | |
-| ninja-pot | 완료 | 완료 | |
-| magical-pot | 완료(착의형 유지) | 완료 | 슈트가 전신을 덮어 재생성 불필요 |
-| aloof-pot | 미착수 | 미착수 | |
-| student-pot | 미착수 | 미착수 | |
+| 캐릭터 | base | garden-daily | city-night | 비고 |
+|---|---|---|---|---|
+| baby-pot | 완료 | 완료 | 완료 | 아동 바디수트. 초판 시트 그대로 |
+| handsome-pot | 완료 | 완료 | 완료 | 소매 없는 상의로 정원 의상보다 낮은 피복률 검증 |
+| pretty-pot | 완료 | 완료 | 완료 | 마네킹 시트 문제 해결 |
+| tsundere-pot | 완료 | 완료 | 완료 | |
+| zombie-pot | 완료 | 완료 | 완료 | |
+| gumiho-pot | 완료 | 완료 | 완료 | |
+| ninja-pot | 완료 | 완료 | 완료 | |
+| magical-pot | 완료(착의형 유지) | 완료 | 완료 | 두 의상 모두 슈트를 전신 커버 |
+| aloof-pot | 완료 | 완료 | 완료 | |
+| student-pot | 완료 | 완료 | 완료 | grow 베이스는 두 의상이 완전히 덮는 고피복 운동복 사용 |
 
 `baby-pot`은 초판 바디가 이미 무늬 없는 단색 바디수트라 그대로 옮겼다.
 `magical-pot`은 의상이 전신을 덮어 착의형 바디를 유지한다(`COVERED_BASE_SPECIES`).
+`student-pot`의 grow 베이스는 안전 필터를 우회하지 않고 고피복 운동복으로
+만들었으며, 두 의상이 해당 영역을 모두 덮는다.
 
 `base/`가 비어 있는 캐릭터는 빌드에서 **건너뛰고 목록으로 보고**한다. 시트를
 읽을 수 없는 캐릭터도 그 캐릭터만 건너뛰고 나머지는 계속 빌드한다. 착의형

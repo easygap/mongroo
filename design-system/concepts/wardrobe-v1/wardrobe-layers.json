@@ -32,15 +32,16 @@
       "body_type": "child",
       "has_inner": false,
       "outfits": [
+        "city-night",
         "garden-daily"
       ],
       "route_scale": {
-        "sunny": 1.198347,
-        "rainy": 1.208333,
-        "ember": 1.215933,
-        "moonlit": 1.277533,
-        "sparkling": 1.200828,
-        "mosaic": 1.231423
+        "sunny": 1.162325,
+        "rainy": 1.178862,
+        "ember": 1.181263,
+        "moonlit": 1.24197,
+        "sparkling": 1.174089,
+        "mosaic": 1.198347
       }
     },
     "handsome-pot": {
@@ -48,15 +49,16 @@
       "body_type": "adult",
       "has_inner": false,
       "outfits": [
+        "city-night",
         "garden-daily"
       ],
       "route_scale": {
-        "sunny": 0.968363,
-        "rainy": 0.964384,
-        "ember": 0.965706,
-        "moonlit": 0.964384,
-        "sparkling": 0.965706,
-        "mosaic": 0.961749
+        "sunny": 0.956522,
+        "rainy": 0.952639,
+        "ember": 0.964384,
+        "moonlit": 0.95393,
+        "sparkling": 0.964384,
+        "mosaic": 0.952639
       }
     },
     "pretty-pot": {
@@ -64,10 +66,11 @@
       "body_type": "adult",
       "has_inner": false,
       "outfits": [
+        "city-night",
         "garden-daily"
       ],
       "route_scale": {
-        "sunny": 0.959128,
+        "sunny": 0.957823,
         "rainy": 0.963064,
         "ember": 0.931217,
         "moonlit": 0.964384,
@@ -80,6 +83,7 @@
       "body_type": "adult",
       "has_inner": false,
       "outfits": [
+        "city-night",
         "garden-daily"
       ],
       "route_scale": {
@@ -96,15 +100,16 @@
       "body_type": "adult",
       "has_inner": false,
       "outfits": [
+        "city-night",
         "garden-daily"
       ],
       "route_scale": {
         "sunny": 0.876712,
-        "rainy": 0.876712,
+        "rainy": 0.874534,
         "ember": 0.857491,
         "moonlit": 0.862745,
-        "sparkling": 0.88665,
-        "mosaic": 0.858537
+        "sparkling": 0.88,
+        "mosaic": 0.857491
       }
     },
     "gumiho-pot": {
@@ -112,11 +117,12 @@
       "body_type": "adult",
       "has_inner": false,
       "outfits": [
+        "city-night",
         "garden-daily"
       ],
       "route_scale": {
-        "sunny": 1.065053,
-        "rainy": 1.103448,
+        "sunny": 1.055472,
+        "rainy": 1.088099,
         "ember": 1.076453,
         "moonlit": 1.144715,
         "sparkling": 1.161716,
@@ -128,15 +134,16 @@
       "body_type": "adult",
       "has_inner": false,
       "outfits": [
+        "city-night",
         "garden-daily"
       ],
       "route_scale": {
-        "sunny": 1.030747,
+        "sunny": 1.02924,
         "rainy": 1.047619,
         "ember": 1.032258,
         "moonlit": 1.04142,
-        "sparkling": 1.11746,
-        "mosaic": 1.039882
+        "sparkling": 1.098284,
+        "mosaic": 1.036819
       }
     },
     "magical-pot": {
@@ -144,6 +151,7 @@
       "body_type": "adult",
       "has_inner": false,
       "outfits": [
+        "city-night",
         "garden-daily"
       ],
       "route_scale": {
@@ -151,34 +159,106 @@
         "rainy": 0.931217,
         "ember": 0.931217,
         "moonlit": 0.934927,
-        "sparkling": 1.02924,
+        "sparkling": 1.02029,
         "mosaic": 0.915475
+      }
+    },
+    "aloof-pot": {
+      "name": "Seolhwa",
+      "body_type": "adult",
+      "has_inner": false,
+      "outfits": [
+        "city-night",
+        "garden-daily"
+      ],
+      "route_scale": {
+        "sunny": 0.901408,
+        "rainy": 0.911917,
+        "ember": 0.896815,
+        "moonlit": 0.911917,
+        "sparkling": 0.923885,
+        "mosaic": 0.883312
+      }
+    },
+    "student-pot": {
+      "name": "Haru",
+      "body_type": "adult",
+      "has_inner": false,
+      "outfits": [
+        "city-night",
+        "garden-daily"
+      ],
+      "route_scale": {
+        "sunny": 0.916667,
+        "rainy": 0.922674,
+        "ember": 0.896815,
+        "moonlit": 0.909561,
+        "sparkling": 0.961749,
+        "mosaic": 0.896815
       }
     }
   },
   "pending_base": [],
   "violations": [],
   "inner_exposure": {
+    "magical-pot/city-night/idle/sunny": 0.0003,
     "magical-pot/garden-daily/idle/sunny": 0.0025,
+    "magical-pot/city-night/diary/sunny": 0.0021,
     "magical-pot/garden-daily/diary/sunny": 0.0001,
+    "magical-pot/city-night/grow/sunny": 0.0023,
     "magical-pot/garden-daily/grow/sunny": 0.0049,
+    "magical-pot/city-night/idle/rainy": 0.0,
     "magical-pot/garden-daily/idle/rainy": 0.0046,
+    "magical-pot/city-night/diary/rainy": 0.0082,
     "magical-pot/garden-daily/diary/rainy": 0.0183,
+    "magical-pot/city-night/grow/rainy": 0.0001,
     "magical-pot/garden-daily/grow/rainy": 0.0089,
+    "magical-pot/city-night/idle/ember": 0.0092,
     "magical-pot/garden-daily/idle/ember": 0.0088,
+    "magical-pot/city-night/diary/ember": 0.0,
     "magical-pot/garden-daily/diary/ember": 0.0052,
+    "magical-pot/city-night/grow/ember": 0.0013,
     "magical-pot/garden-daily/grow/ember": 0.0006,
+    "magical-pot/city-night/idle/moonlit": 0.0,
     "magical-pot/garden-daily/idle/moonlit": 0.0065,
+    "magical-pot/city-night/diary/moonlit": 0.0045,
     "magical-pot/garden-daily/diary/moonlit": 0.0034,
+    "magical-pot/city-night/grow/moonlit": 0.0007,
     "magical-pot/garden-daily/grow/moonlit": 0.0108,
+    "magical-pot/city-night/idle/sparkling": 0.0238,
     "magical-pot/garden-daily/idle/sparkling": 0.0116,
+    "magical-pot/city-night/diary/sparkling": 0.0001,
     "magical-pot/garden-daily/diary/sparkling": 0.0001,
+    "magical-pot/city-night/grow/sparkling": 0.0,
     "magical-pot/garden-daily/grow/sparkling": 0.0089,
+    "magical-pot/city-night/idle/mosaic": 0.0003,
     "magical-pot/garden-daily/idle/mosaic": 0.0045,
+    "magical-pot/city-night/diary/mosaic": 0.0097,
     "magical-pot/garden-daily/diary/mosaic": 0.0114,
+    "magical-pot/city-night/grow/mosaic": 0.0096,
     "magical-pot/garden-daily/grow/mosaic": 0.0116
   },
   "limb_leak": {
+    "baby-pot/city-night": {
+      "idle/sunny": 0.0769,
+      "diary/sunny": 0.0942,
+      "grow/sunny": 0.0211,
+      "idle/rainy": 0.0553,
+      "diary/rainy": 0.0942,
+      "grow/rainy": 0.0101,
+      "idle/ember": 0.1178,
+      "diary/ember": 0.0874,
+      "grow/ember": 0.0099,
+      "idle/moonlit": 0.0725,
+      "diary/moonlit": 0.0418,
+      "grow/moonlit": 0.0109,
+      "idle/sparkling": 0.0948,
+      "diary/sparkling": 0.0481,
+      "grow/sparkling": 0.0116,
+      "idle/mosaic": 0.099,
+      "diary/mosaic": 0.0762,
+      "grow/mosaic": 0.0215
+    },
     "baby-pot/garden-daily": {
       "idle/sunny": 0.1373,
       "diary/sunny": 0.0887,
@@ -198,6 +278,26 @@
       "idle/mosaic": 0.0848,
       "diary/mosaic": 0.0898,
       "grow/mosaic": 0.0503
+    },
+    "handsome-pot/city-night": {
+      "idle/sunny": 0.0312,
+      "diary/sunny": 0.0324,
+      "grow/sunny": 0.0544,
+      "idle/rainy": 0.0739,
+      "diary/rainy": 0.0322,
+      "grow/rainy": 0.052,
+      "idle/ember": 0.0548,
+      "diary/ember": 0.1437,
+      "grow/ember": 0.0503,
+      "idle/moonlit": 0.1426,
+      "diary/moonlit": 0.138,
+      "grow/moonlit": 0.0344,
+      "idle/sparkling": 0.0843,
+      "diary/sparkling": 0.079,
+      "grow/sparkling": 0.0299,
+      "idle/mosaic": 0.0089,
+      "diary/mosaic": 0.0388,
+      "grow/mosaic": 0.0751
     },
     "handsome-pot/garden-daily": {
       "idle/sunny": 0.003,
@@ -219,6 +319,26 @@
       "diary/mosaic": 0.0023,
       "grow/mosaic": 0.0038
     },
+    "pretty-pot/city-night": {
+      "idle/sunny": 0.0444,
+      "diary/sunny": 0.0471,
+      "grow/sunny": 0.0248,
+      "idle/rainy": 0.0258,
+      "diary/rainy": 0.0754,
+      "grow/rainy": 0.0215,
+      "idle/ember": 0.1486,
+      "diary/ember": 0.1215,
+      "grow/ember": 0.0763,
+      "idle/moonlit": 0.1175,
+      "diary/moonlit": 0.0605,
+      "grow/moonlit": 0.019,
+      "idle/sparkling": 0.1549,
+      "diary/sparkling": 0.0591,
+      "grow/sparkling": 0.0143,
+      "idle/mosaic": 0.0753,
+      "diary/mosaic": 0.0848,
+      "grow/mosaic": 0.0111
+    },
     "pretty-pot/garden-daily": {
       "idle/sunny": 0.134,
       "diary/sunny": 0.1155,
@@ -238,6 +358,26 @@
       "idle/mosaic": 0.0198,
       "diary/mosaic": 0.0955,
       "grow/mosaic": 0.0511
+    },
+    "tsundere-pot/city-night": {
+      "idle/sunny": 0.0063,
+      "diary/sunny": 0.0081,
+      "grow/sunny": 0.0178,
+      "idle/rainy": 0.0193,
+      "diary/rainy": 0.0086,
+      "grow/rainy": 0.0314,
+      "idle/ember": 0.0143,
+      "diary/ember": 0.083,
+      "grow/ember": 0.0155,
+      "idle/moonlit": 0.0297,
+      "diary/moonlit": 0.0319,
+      "grow/moonlit": 0.0023,
+      "idle/sparkling": 0.0437,
+      "diary/sparkling": 0.0092,
+      "grow/sparkling": 0.0157,
+      "idle/mosaic": 0.1122,
+      "diary/mosaic": 0.0296,
+      "grow/mosaic": 0.002
     },
     "tsundere-pot/garden-daily": {
       "idle/sunny": 0.0852,
@@ -259,6 +399,26 @@
       "diary/mosaic": 0.0637,
       "grow/mosaic": 0.0343
     },
+    "zombie-pot/city-night": {
+      "idle/sunny": 0.0328,
+      "diary/sunny": 0.0033,
+      "grow/sunny": 0.0093,
+      "idle/rainy": 0.0022,
+      "diary/rainy": 0.0114,
+      "grow/rainy": 0.0038,
+      "idle/ember": 0.0596,
+      "diary/ember": 0.0153,
+      "grow/ember": 0.0,
+      "idle/moonlit": 0.0961,
+      "diary/moonlit": 0.0003,
+      "grow/moonlit": 0.0007,
+      "idle/sparkling": 0.0417,
+      "diary/sparkling": 0.0112,
+      "grow/sparkling": 0.0,
+      "idle/mosaic": 0.0638,
+      "diary/mosaic": 0.0307,
+      "grow/mosaic": 0.0009
+    },
     "zombie-pot/garden-daily": {
       "idle/sunny": 0.0811,
       "diary/sunny": 0.0114,
@@ -278,6 +438,26 @@
       "idle/mosaic": 0.0849,
       "diary/mosaic": 0.013,
       "grow/mosaic": 0.0141
+    },
+    "gumiho-pot/city-night": {
+      "idle/sunny": 0.9962,
+      "diary/sunny": 0.9995,
+      "grow/sunny": 0.8485,
+      "idle/rainy": 0.9986,
+      "diary/rainy": 1.0,
+      "grow/rainy": 0.8298,
+      "idle/ember": 0.9974,
+      "diary/ember": 0.9777,
+      "grow/ember": 0.862,
+      "idle/moonlit": 0.9969,
+      "diary/moonlit": 0.9649,
+      "grow/moonlit": 0.8089,
+      "idle/sparkling": 0.9993,
+      "diary/sparkling": 0.9794,
+      "grow/sparkling": 0.8481,
+      "idle/mosaic": 0.9969,
+      "diary/mosaic": 0.9822,
+      "grow/mosaic": 0.8234
     },
     "gumiho-pot/garden-daily": {
       "idle/sunny": 1.0,
@@ -299,6 +479,26 @@
       "diary/mosaic": 1.0,
       "grow/mosaic": 1.0
     },
+    "ninja-pot/city-night": {
+      "idle/sunny": 0.0863,
+      "diary/sunny": 0.0109,
+      "grow/sunny": 0.0028,
+      "idle/rainy": 0.022,
+      "diary/rainy": 0.0125,
+      "grow/rainy": 0.0072,
+      "idle/ember": 0.0493,
+      "diary/ember": 0.0678,
+      "grow/ember": 0.0125,
+      "idle/moonlit": 0.0299,
+      "diary/moonlit": 0.0267,
+      "grow/moonlit": 0.0404,
+      "idle/sparkling": 0.0491,
+      "diary/sparkling": 0.0274,
+      "grow/sparkling": 0.0046,
+      "idle/mosaic": 0.0138,
+      "diary/mosaic": 0.0188,
+      "grow/mosaic": 0.0003
+    },
     "ninja-pot/garden-daily": {
       "idle/sunny": 0.0687,
       "diary/sunny": 0.0369,
@@ -319,6 +519,26 @@
       "diary/mosaic": 0.0173,
       "grow/mosaic": 0.0238
     },
+    "magical-pot/city-night": {
+      "idle/sunny": 0.0522,
+      "diary/sunny": 0.0026,
+      "grow/sunny": 0.0417,
+      "idle/rainy": 0.0375,
+      "diary/rainy": 0.013,
+      "grow/rainy": 0.0104,
+      "idle/ember": 0.0747,
+      "diary/ember": 0.0315,
+      "grow/ember": 0.0643,
+      "idle/moonlit": 0.0201,
+      "diary/moonlit": 0.007,
+      "grow/moonlit": 0.0225,
+      "idle/sparkling": 0.0176,
+      "diary/sparkling": 0.0058,
+      "grow/sparkling": 0.007,
+      "idle/mosaic": 0.0897,
+      "diary/mosaic": 0.0862,
+      "grow/mosaic": 0.0505
+    },
     "magical-pot/garden-daily": {
       "idle/sunny": 0.0325,
       "diary/sunny": 0.0152,
@@ -338,6 +558,86 @@
       "idle/mosaic": 0.0309,
       "diary/mosaic": 0.0092,
       "grow/mosaic": 0.0317
+    },
+    "aloof-pot/city-night": {
+      "idle/sunny": 0.0094,
+      "diary/sunny": 0.1373,
+      "grow/sunny": 0.0304,
+      "idle/rainy": 0.0421,
+      "diary/rainy": 0.0516,
+      "grow/rainy": 0.057,
+      "idle/ember": 0.0201,
+      "diary/ember": 0.0395,
+      "grow/ember": 0.0208,
+      "idle/moonlit": 0.0762,
+      "diary/moonlit": 0.0476,
+      "grow/moonlit": 0.0608,
+      "idle/sparkling": 0.1105,
+      "diary/sparkling": 0.0764,
+      "grow/sparkling": 0.0517,
+      "idle/mosaic": 0.0265,
+      "diary/mosaic": 0.0864,
+      "grow/mosaic": 0.0135
+    },
+    "aloof-pot/garden-daily": {
+      "idle/sunny": 0.1646,
+      "diary/sunny": 0.1716,
+      "grow/sunny": 0.0101,
+      "idle/rainy": 0.1102,
+      "diary/rainy": 0.0745,
+      "grow/rainy": 0.1892,
+      "idle/ember": 0.1017,
+      "diary/ember": 0.1602,
+      "grow/ember": 0.0217,
+      "idle/moonlit": 0.1132,
+      "diary/moonlit": 0.0531,
+      "grow/moonlit": 0.0123,
+      "idle/sparkling": 0.0959,
+      "diary/sparkling": 0.0615,
+      "grow/sparkling": 0.0377,
+      "idle/mosaic": 0.0851,
+      "diary/mosaic": 0.1221,
+      "grow/mosaic": 0.004
+    },
+    "student-pot/city-night": {
+      "idle/sunny": 0.0303,
+      "diary/sunny": 0.1127,
+      "grow/sunny": 0.0007,
+      "idle/rainy": 0.0517,
+      "diary/rainy": 0.0427,
+      "grow/rainy": 0.0,
+      "idle/ember": 0.0692,
+      "diary/ember": 0.0573,
+      "grow/ember": 0.0066,
+      "idle/moonlit": 0.0475,
+      "diary/moonlit": 0.0516,
+      "grow/moonlit": 0.0022,
+      "idle/sparkling": 0.1299,
+      "diary/sparkling": 0.0167,
+      "grow/sparkling": 0.0101,
+      "idle/mosaic": 0.0231,
+      "diary/mosaic": 0.0302,
+      "grow/mosaic": 0.0001
+    },
+    "student-pot/garden-daily": {
+      "idle/sunny": 0.0,
+      "diary/sunny": 0.0678,
+      "grow/sunny": 0.0003,
+      "idle/rainy": 0.0045,
+      "diary/rainy": 0.0539,
+      "grow/rainy": 0.0001,
+      "idle/ember": 0.1056,
+      "diary/ember": 0.1294,
+      "grow/ember": 0.0298,
+      "idle/moonlit": 0.0968,
+      "diary/moonlit": 0.1024,
+      "grow/moonlit": 0.0,
+      "idle/sparkling": 0.1163,
+      "diary/sparkling": 0.0889,
+      "grow/sparkling": 0.002,
+      "idle/mosaic": 0.1266,
+      "diary/mosaic": 0.1225,
+      "grow/mosaic": 0.0047
     }
   },
   "warnings": []

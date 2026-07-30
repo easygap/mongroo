@@ -14,7 +14,7 @@ from app.models.game import UserSpeciesUnlock
 from app.models.plant import Plant, PlantSpecies
 from app.models.user import User
 from app.schemas.requests import PlantCreateRequest, PlantMuseumFeatureRequest
-from app.services import plants as plant_service
+from app.services import game as game_service, plants as plant_service
 from app.services.rewards import lock_active_plant, lock_user
 
 router = APIRouter(tags=["plants"])
@@ -249,6 +249,7 @@ async def plant_new(
         emotion_profile=plant_service.empty_emotion_profile(),
     )
     db.add(plant)
+    await game_service.unequip_incompatible_wardrobe(db, user.id, species.code)
     await db.commit()
     await db.refresh(plant)
     payload = plant_service.plant_payload(plant, species)

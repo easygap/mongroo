@@ -30,7 +30,7 @@ def test_wardrobe_layers_migration_seeds_v2_outfit(tmp_path, monkeypatch):
         "magical-pot",
     }
     try:
-        command.upgrade(config, "head")
+        command.upgrade(config, "0018_wardrobe_layers")
         with sqlite3.connect(database_path) as connection:
             row = connection.execute(
                 """
