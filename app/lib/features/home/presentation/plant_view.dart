@@ -81,6 +81,18 @@ class PlantView extends StatefulWidget {
   static bool debugHasCharacterMotionProfile(String speciesCode) =>
       _CharacterMotionProfile.forSpecies(speciesCode) != null;
 
+  @visibleForTesting
+  static List<Offset> debugBlinkEyeCenters({
+    required String speciesCode,
+    required PlantGrowthForm form,
+    bool wardrobeLayered = false,
+  }) =>
+      _CharacterMotionProfile.forSpecies(speciesCode)?.eyeCenters(
+        form,
+        wardrobeLayered: wardrobeLayered,
+      ) ??
+      const [];
+
   @override
   State<PlantView> createState() => _PlantViewState();
 }
@@ -751,29 +763,11 @@ class _RasterPlantArtworkState extends State<_RasterPlantArtwork> {
             blinkAnimation: widget.blinkAnimation,
             animationsDisabled: widget.animationsDisabled,
           );
-    final duration = widget.animationsDisabled
-        ? Duration.zero
-        : const Duration(milliseconds: 240);
-    return AnimatedSwitcher(
-      key: const ValueKey('plant-sprite-crossfade'),
-      duration: duration,
-      reverseDuration: widget.animationsDisabled
-          ? Duration.zero
-          : const Duration(milliseconds: 160),
-      switchInCurve: Curves.easeOutCubic,
-      switchOutCurve: Curves.easeInCubic,
-      layoutBuilder: (currentChild, previousChildren) => Stack(
-        fit: StackFit.expand,
-        clipBehavior: Clip.none,
-        children: [
-          ...previousChildren,
-          if (currentChild != null) currentChild,
-        ],
-      ),
-      transitionBuilder: (child, animation) => FadeTransition(
-        opacity: animation,
-        child: child,
-      ),
+    // 모든 레이어를 precache한 뒤 묶음 전체를 한 번에 교체한다. 서로 다른
+    // 전신 실루엣을 교차 페이드하면 중간 프레임에서 캐릭터가 반투명해지고
+    // 바디와 의상이 따로 보이는 것처럼 읽힌다.
+    return KeyedSubtree(
+      key: const ValueKey('plant-sprite-atomic-swap'),
       child: child,
     );
   }
@@ -823,6 +817,9 @@ class _CharacterRasterSprite extends StatelessWidget {
   Widget build(BuildContext context) {
     final profile = _CharacterMotionProfile.forSpecies(speciesCode);
     if (animationsDisabled || profile == null) return _image();
+    final wardrobeLayered = paths.any(
+      (path) => path.startsWith('assets/wardrobe/bodies/'),
+    );
 
     final upperLayer = Stack(
       fit: StackFit.expand,
@@ -835,6 +832,7 @@ class _CharacterRasterSprite extends StatelessWidget {
             form: form,
             pose: pose,
             animation: blinkAnimation,
+            wardrobeLayered: wardrobeLayered,
           ),
       ],
     );
@@ -917,12 +915,14 @@ class _BlinkOverlay extends StatelessWidget {
     required this.form,
     required this.pose,
     required this.animation,
+    required this.wardrobeLayered,
   });
 
   final _CharacterMotionProfile profile;
   final PlantGrowthForm? form;
   final PlantSpritePose pose;
   final Animation<double> animation;
+  final bool wardrobeLayered;
 
   @override
   Widget build(BuildContext context) => IgnorePointer(
@@ -938,6 +938,7 @@ class _BlinkOverlay extends StatelessWidget {
                 form: form,
                 pose: pose,
                 amount: amount,
+                wardrobeLayered: wardrobeLayered,
               ),
             );
           },
@@ -951,6 +952,7 @@ class _BlinkPainter extends CustomPainter {
     required this.form,
     required this.pose,
     required this.amount,
+    required this.wardrobeLayered,
   });
 
   static const _sourceSize = Size(512, 768);
@@ -959,6 +961,7 @@ class _BlinkPainter extends CustomPainter {
   final PlantGrowthForm? form;
   final PlantSpritePose pose;
   final double amount;
+  final bool wardrobeLayered;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -981,7 +984,10 @@ class _BlinkPainter extends CustomPainter {
       ..strokeWidth = math.max(.7, 1.35 * scale)
       ..isAntiAlias = true;
 
-    for (final sourceEye in profile.eyeCenters(form)) {
+    for (final sourceEye in profile.eyeCenters(
+      form,
+      wardrobeLayered: wardrobeLayered,
+    )) {
       final eyeCenter = Offset(
         imageRect.left + sourceEye.dx * scale,
         imageRect.top + sourceEye.dy * scale,
@@ -1041,6 +1047,7 @@ class _CharacterMotionProfile {
     this.idleEyePoints,
     this.idleEyeRotations,
     this.idleSkinColors,
+    this.wardrobeEyeOffsets = const [],
   });
 
   final String speciesCode;
@@ -1062,6 +1069,7 @@ class _CharacterMotionProfile {
   final List<List<Offset>>? idleEyePoints;
   final List<double>? idleEyeRotations;
   final List<Color>? idleSkinColors;
+  final List<Offset> wardrobeEyeOffsets;
 
   static _CharacterMotionProfile? forSpecies(String speciesCode) =>
       switch (PlantGrowthAssetResolver._slug(speciesCode)) {
@@ -1098,6 +1106,14 @@ class _CharacterMotionProfile {
               Color(0xFFFCDEA3),
               Color(0xFFFADB9E),
             ],
+            wardrobeEyeOffsets: [
+              Offset(0, -5),
+              Offset(13, -6),
+              Offset(-6, -4),
+              Offset(-25, -6),
+              Offset(-1, -4),
+              Offset(9, -1),
+            ],
           ),
         'handsome-pot' => const _CharacterMotionProfile(
             speciesCode: 'handsome-pot',
@@ -1130,6 +1146,14 @@ class _CharacterMotionProfile {
               Color(0xFFF1CBA4),
               Color(0xFFF5D1A5),
               Color(0xFFF4D1A5),
+            ],
+            wardrobeEyeOffsets: [
+              Offset(6, 1),
+              Offset(6, 1),
+              Offset(4, 1),
+              Offset(-17, 1),
+              Offset(1, 1),
+              Offset(-4, 1),
             ],
           ),
         'zombie-pot' => const _CharacterMotionProfile(
@@ -1164,6 +1188,14 @@ class _CharacterMotionProfile {
               Color(0xFFDBCBB0),
               Color(0xFFDCCAAB),
             ],
+            wardrobeEyeOffsets: [
+              Offset(9, 0),
+              Offset(4, 0),
+              Offset(-4, 1),
+              Offset(7, 1),
+              Offset(-2, -1),
+              Offset(-3, 1),
+            ],
           ),
         'gumiho-pot' => const _CharacterMotionProfile(
             speciesCode: 'gumiho-pot',
@@ -1188,6 +1220,14 @@ class _CharacterMotionProfile {
               Offset(253, 109),
               Offset(248, 102),
               Offset(246, 99),
+            ],
+            wardrobeEyeOffsets: [
+              Offset(-38, 2),
+              Offset(3, 0),
+              Offset(-12, 2),
+              Offset(-17, -1),
+              Offset(-2, 0),
+              Offset(-1, 0),
             ],
           ),
         'ninja-pot' => const _CharacterMotionProfile(
@@ -1223,6 +1263,14 @@ class _CharacterMotionProfile {
               Color(0xFFF6CEA9),
               Color(0xFFF5CFAC),
             ],
+            wardrobeEyeOffsets: [
+              Offset(4, 4),
+              Offset(2, -1),
+              Offset(4, -3),
+              Offset(22, -2),
+              Offset(-7, -1),
+              Offset(-2, -2),
+            ],
           ),
         'magical-pot' => const _CharacterMotionProfile(
             speciesCode: 'magical-pot',
@@ -1257,6 +1305,14 @@ class _CharacterMotionProfile {
               Color(0xFFE7BF9B),
               Color(0xFFE6C3A5),
             ],
+            wardrobeEyeOffsets: [
+              Offset(-5, -1),
+              Offset(6, -3),
+              Offset(1, -5),
+              Offset(-4, 0),
+              Offset(-13, 3),
+              Offset(1, -4),
+            ],
           ),
         'aloof-pot' => const _CharacterMotionProfile(
             speciesCode: 'aloof-pot',
@@ -1289,6 +1345,14 @@ class _CharacterMotionProfile {
               Color(0xFFEDD0B6),
               Color(0xFFEDCBB1),
               Color(0xFFE8C1A9),
+            ],
+            wardrobeEyeOffsets: [
+              Offset(4, 0),
+              Offset(-1, 1),
+              Offset(0, 1),
+              Offset(-11, 0),
+              Offset(4, 0),
+              Offset(-1, 0),
             ],
           ),
         'student-pot' => const _CharacterMotionProfile(
@@ -1323,6 +1387,14 @@ class _CharacterMotionProfile {
               Color(0xFFF6CA9A),
               Color(0xFFF5CB97),
             ],
+            wardrobeEyeOffsets: [
+              Offset(6, 1),
+              Offset(4, 0),
+              Offset(-1, 1),
+              Offset(10, -1),
+              Offset(-2, 1),
+              Offset(-10, 0),
+            ],
           ),
         'pretty-pot' => const _CharacterMotionProfile(
             speciesCode: 'pretty-pot',
@@ -1348,6 +1420,14 @@ class _CharacterMotionProfile {
               Offset(259, 77),
               Offset(244, 76),
             ],
+            wardrobeEyeOffsets: [
+              Offset(-22, 1),
+              Offset(-23, 1),
+              Offset(5, 2),
+              Offset(9, -2),
+              Offset(-4, 1),
+              Offset(14, 0),
+            ],
           ),
         'tsundere-pot' => const _CharacterMotionProfile(
             speciesCode: 'tsundere-pot',
@@ -1372,30 +1452,50 @@ class _CharacterMotionProfile {
               Offset(274, 107),
               Offset(234, 90),
             ],
+            wardrobeEyeOffsets: [
+              Offset(-12, 1),
+              Offset(-3, 0),
+              Offset(1, 2),
+              Offset(4, 1),
+              Offset(8, 1),
+              Offset(6, -1),
+            ],
           ),
         _ => null,
       };
 
   int _formIndex(PlantGrowthForm? form) => form?.index ?? 0;
 
-  List<Offset> eyeCenters(PlantGrowthForm? form) {
+  List<Offset> eyeCenters(
+    PlantGrowthForm? form, {
+    bool wardrobeLayered = false,
+  }) {
     final index = _formIndex(form);
     final measured = idleEyePoints;
-    if (measured != null) return measured[index];
+    final points = measured != null
+        ? measured[index]
+        : () {
+            final center = idleEyeCenters[index];
+            final cosine = math.cos(eyeRotation);
+            final sine = math.sin(eyeRotation);
+            return [
+              Offset(
+                center.dx - eyeGap * cosine,
+                center.dy - eyeGap * sine,
+              ),
+              Offset(
+                center.dx + eyeGap * cosine,
+                center.dy + eyeGap * sine,
+              ),
+            ];
+          }();
+    if (!wardrobeLayered || wardrobeEyeOffsets.isEmpty) return points;
 
-    final center = idleEyeCenters[index];
-    final cosine = math.cos(eyeRotation);
-    final sine = math.sin(eyeRotation);
-    return [
-      Offset(
-        center.dx - eyeGap * cosine,
-        center.dy - eyeGap * sine,
-      ),
-      Offset(
-        center.dx + eyeGap * cosine,
-        center.dy + eyeGap * sine,
-      ),
-    ];
+    // 무착의형 바디는 기준 v4와 같은 512x768 캔버스에 맞추지만, 의상과
+    // 꼬리 실루엣이 달라 전체 bbox 중심만으로는 얼굴 위치가 보존되지 않는다.
+    // 기준 얼굴 패치와 합성 바디를 대조해 측정한 감정별 오프셋을 눈에만 더한다.
+    final offset = wardrobeEyeOffsets[index];
+    return points.map((point) => point + offset).toList(growable: false);
   }
 
   double eyeRotationFor(PlantGrowthForm? form) =>

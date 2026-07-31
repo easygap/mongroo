@@ -7,6 +7,7 @@ import 'package:mongroo/features/chat/data/chat_repository.dart';
 import 'package:mongroo/features/chat/domain/chat_models.dart';
 import 'package:mongroo/features/chat/presentation/chat_controller.dart';
 import 'package:mongroo/features/chat/presentation/chat_screen.dart';
+import 'package:mongroo/features/garden/presentation/garden_controller.dart';
 import 'package:mongroo/features/home/data/plant_repository.dart';
 import 'package:mongroo/features/home/domain/plant.dart';
 import 'package:mongroo/features/home/presentation/home_controller.dart';
@@ -176,6 +177,7 @@ void main() {
         overrides: [
           plantRepositoryProvider.overrideWithValue(plants),
           chatRepositoryProvider.overrideWithValue(chats),
+          equippedWardrobeLayerKeyProvider.overrideWithValue(null),
         ],
         child: MaterialApp(
           theme: AppTheme.light(),

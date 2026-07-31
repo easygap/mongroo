@@ -9,6 +9,7 @@ import '../../../core/theme/mongroo_ui.dart';
 import '../../../core/text/korean_particles.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../gallery/presentation/gallery_screen.dart';
+import '../../garden/presentation/garden_controller.dart';
 import '../../quest/presentation/quest_controller.dart';
 import '../domain/plant.dart';
 import 'home_controller.dart';
@@ -114,6 +115,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
       final speciesId = pick.speciesId;
       if (speciesId == null) return;
+      final previousOutfitKey = ref.read(equippedWardrobeLayerKeyProvider);
       final error = await ref
           .read(homeControllerProvider.notifier)
           .plantNew(speciesId: speciesId, name: pick.name);
@@ -121,6 +123,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (error != null) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(error)));
+        return;
+      }
+      await ref.read(farmControllerProvider.notifier).load();
+      if (!mounted) return;
+      if (previousOutfitKey != null &&
+          ref.read(equippedWardrobeLayerKeyProvider) == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('새 품종과 맞지 않는 의상은 자동으로 해제됐어요.'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _plantingInFlight = false);
@@ -145,6 +158,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .watch(authControllerProvider.select((s) => s.user?.seedBalance ?? 0));
     final analysisAcknowledged = ref.watch(plantReactionProvider);
     final questFeed = ref.watch(questControllerProvider).feed.valueOrNull;
+    final outfitKey = ref.watch(equippedWardrobeLayerKeyProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -195,6 +209,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     )
                   : _PlantCard(
                       plant: plant,
+                      outfitKey: outfitKey,
                       expression: analysisAcknowledged
                           ? PlantExpression.acknowledged
                           : PlantExpression.neutral,
@@ -491,6 +506,7 @@ class _HomeGreeting extends StatelessWidget {
 class _PlantCard extends StatelessWidget {
   const _PlantCard({
     required this.plant,
+    required this.outfitKey,
     required this.expression,
     required this.harvesting,
     required this.onChat,
@@ -498,6 +514,7 @@ class _PlantCard extends StatelessWidget {
   });
 
   final ActivePlant plant;
+  final String? outfitKey;
   final PlantExpression expression;
   final bool harvesting;
   final VoidCallback onChat;
@@ -517,6 +534,7 @@ class _PlantCard extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
             child: _PlantStageScene(
               plant: plant,
+              outfitKey: outfitKey,
               expression: expression,
               plantLine: plantLine,
               onChat: onChat,
@@ -756,12 +774,14 @@ class _PlantCard extends StatelessWidget {
 class _PlantStageScene extends StatelessWidget {
   const _PlantStageScene({
     required this.plant,
+    required this.outfitKey,
     required this.expression,
     required this.plantLine,
     required this.onChat,
   });
 
   final ActivePlant plant;
+  final String? outfitKey;
   final PlantExpression expression;
   final String plantLine;
   final VoidCallback onChat;
@@ -859,6 +879,7 @@ class _PlantStageScene extends StatelessWidget {
                                     speciesCode: plant.species.code,
                                     speciesName: plant.species.name,
                                     growthVisual: plant.growthVisual,
+                                    outfitKey: outfitKey,
                                     width: plantWidth,
                                     height: plantHeight,
                                   ),

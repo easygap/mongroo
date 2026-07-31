@@ -35,13 +35,37 @@
         "city-night",
         "garden-daily"
       ],
-      "route_scale": {
-        "sunny": 1.162325,
-        "rainy": 1.178862,
-        "ember": 1.181263,
-        "moonlit": 1.24197,
-        "sparkling": 1.174089,
-        "mosaic": 1.198347
+      "frame_scale": {
+        "sunny": {
+          "idle": 1.193206,
+          "diary": 1.178571,
+          "grow": 1.361502
+        },
+        "rainy": {
+          "idle": 1.239316,
+          "diary": 1.220339,
+          "grow": 1.197468
+        },
+        "ember": {
+          "idle": 1.249453,
+          "diary": 1.234043,
+          "grow": 1.468354
+        },
+        "moonlit": {
+          "idle": 1.319202,
+          "diary": 1.300448,
+          "grow": 1.333333
+        },
+        "sparkling": {
+          "idle": 1.206742,
+          "diary": 1.191176,
+          "grow": 1.15566
+        },
+        "mosaic": {
+          "idle": 1.278027,
+          "diary": 1.25,
+          "grow": 1.25
+        }
       }
     },
     "handsome-pot": {
@@ -52,13 +76,37 @@
         "city-night",
         "garden-daily"
       ],
-      "route_scale": {
-        "sunny": 0.956522,
-        "rainy": 0.952639,
-        "ember": 0.964384,
-        "moonlit": 0.95393,
-        "sparkling": 0.964384,
-        "mosaic": 0.952639
+      "frame_scale": {
+        "sunny": {
+          "idle": 0.984615,
+          "diary": 0.96662,
+          "grow": 1.067766
+        },
+        "rainy": {
+          "idle": 0.976422,
+          "diary": 0.959778,
+          "grow": 1.051095
+        },
+        "ember": {
+          "idle": 0.966713,
+          "diary": 0.968023,
+          "grow": 1.052317
+        },
+        "moonlit": {
+          "idle": 0.976422,
+          "diary": 0.96,
+          "grow": 1.092224
+        },
+        "sparkling": {
+          "idle": 0.979138,
+          "diary": 0.992722,
+          "grow": 0.972366
+        },
+        "mosaic": {
+          "idle": 0.975069,
+          "diary": 0.965422,
+          "grow": 1.057866
+        }
       }
     },
     "pretty-pot": {
@@ -69,13 +117,37 @@
         "city-night",
         "garden-daily"
       ],
-      "route_scale": {
-        "sunny": 0.957823,
-        "rainy": 0.963064,
-        "ember": 0.931217,
-        "moonlit": 0.964384,
-        "sparkling": 0.972376,
-        "mosaic": 0.946237
+      "frame_scale": {
+        "sunny": {
+          "idle": 0.973721,
+          "diary": 0.971098,
+          "grow": 1.018377
+        },
+        "rainy": {
+          "idle": 0.975069,
+          "diary": 0.97155,
+          "grow": 1.014354
+        },
+        "ember": {
+          "idle": 0.955224,
+          "diary": 0.943089,
+          "grow": 0.964063
+        },
+        "moonlit": {
+          "idle": 0.975069,
+          "diary": 0.998557,
+          "grow": 1.0288
+        },
+        "sparkling": {
+          "idle": 0.985994,
+          "diary": 0.988588,
+          "grow": 1.01875
+        },
+        "mosaic": {
+          "idle": 0.959128,
+          "diary": 0.958735,
+          "grow": 0.903785
+        }
       }
     },
     "tsundere-pot": {
@@ -86,13 +158,37 @@
         "city-night",
         "garden-daily"
       ],
-      "route_scale": {
-        "sunny": 0.903723,
-        "rainy": 0.904884,
-        "ember": 0.903723,
-        "moonlit": 0.944966,
-        "sparkling": 0.961749,
-        "mosaic": 0.900256
+      "frame_scale": {
+        "sunny": {
+          "idle": 0.943604,
+          "diary": 0.920261,
+          "grow": 1.091525
+        },
+        "rainy": {
+          "idle": 0.940195,
+          "diary": 0.92876,
+          "grow": 0.937931
+        },
+        "ember": {
+          "idle": 0.930137,
+          "diary": 0.921466,
+          "grow": 0.984241
+        },
+        "moonlit": {
+          "idle": 0.985359,
+          "diary": 0.981869,
+          "grow": 1.104796
+        },
+        "sparkling": {
+          "idle": 1.002994,
+          "diary": 0.995757,
+          "grow": 1.097826
+        },
+        "mosaic": {
+          "idle": 0.928962,
+          "diary": 0.91906,
+          "grow": 1.015101
+        }
       }
     },
     "zombie-pot": {
@@ -103,13 +199,37 @@
         "city-night",
         "garden-daily"
       ],
-      "route_scale": {
-        "sunny": 0.876712,
-        "rainy": 0.874534,
-        "ember": 0.857491,
-        "moonlit": 0.862745,
-        "sparkling": 0.88,
-        "mosaic": 0.857491
+      "frame_scale": {
+        "sunny": {
+          "idle": 0.885535,
+          "diary": 0.89502,
+          "grow": 0.83308
+        },
+        "rainy": {
+          "idle": 0.885535,
+          "diary": 0.888149,
+          "grow": 0.902588
+        },
+        "ember": {
+          "idle": 0.865929,
+          "diary": 0.873016,
+          "grow": 0.922554
+        },
+        "moonlit": {
+          "idle": 0.871287,
+          "diary": 0.873518,
+          "grow": 0.890578
+        },
+        "sparkling": {
+          "idle": 0.895674,
+          "diary": 0.892761,
+          "grow": 0.895476
+        },
+        "mosaic": {
+          "idle": 0.865929,
+          "diary": 0.863281,
+          "grow": 0.823353
+        }
       }
     },
     "gumiho-pot": {
@@ -120,13 +240,37 @@
         "city-night",
         "garden-daily"
       ],
-      "route_scale": {
-        "sunny": 1.055472,
-        "rainy": 1.088099,
-        "ember": 1.076453,
-        "moonlit": 1.144715,
-        "sparkling": 1.161716,
-        "mosaic": 1.088099
+      "frame_scale": {
+        "sunny": {
+          "idle": 1.074809,
+          "diary": 1.081994,
+          "grow": 1.173585
+        },
+        "rainy": {
+          "idle": 1.111111,
+          "diary": 1.141005,
+          "grow": 1.248062
+        },
+        "ember": {
+          "idle": 1.089783,
+          "diary": 1.096618,
+          "grow": 1.276952
+        },
+        "moonlit": {
+          "idle": 1.138614,
+          "diary": 1.144975,
+          "grow": 1.34608
+        },
+        "sparkling": {
+          "idle": 1.171141,
+          "diary": 1.175292,
+          "grow": 1.296578
+        },
+        "mosaic": {
+          "idle": 1.104596,
+          "diary": 1.101721,
+          "grow": 1.116364
+        }
       }
     },
     "ninja-pot": {
@@ -137,13 +281,37 @@
         "city-night",
         "garden-daily"
       ],
-      "route_scale": {
-        "sunny": 1.02924,
-        "rainy": 1.047619,
-        "ember": 1.032258,
-        "moonlit": 1.04142,
-        "sparkling": 1.098284,
-        "mosaic": 1.036819
+      "frame_scale": {
+        "sunny": {
+          "idle": 1.050746,
+          "diary": 1.022455,
+          "grow": 1.078809
+        },
+        "rainy": {
+          "idle": 1.081413,
+          "diary": 1.03811,
+          "grow": 1.027972
+        },
+        "ember": {
+          "idle": 1.073171,
+          "diary": 1.011958,
+          "grow": 1.035032
+        },
+        "moonlit": {
+          "idle": 1.139159,
+          "diary": 1.056061,
+          "grow": 1.130996
+        },
+        "sparkling": {
+          "idle": 1.187184,
+          "diary": 1.144026,
+          "grow": 1.273585
+        },
+        "mosaic": {
+          "idle": 1.071537,
+          "diary": 1.025487,
+          "grow": 1.081967
+        }
       }
     },
     "magical-pot": {
@@ -154,13 +322,37 @@
         "city-night",
         "garden-daily"
       ],
-      "route_scale": {
-        "sunny": 0.927536,
-        "rainy": 0.931217,
-        "ember": 0.931217,
-        "moonlit": 0.934927,
-        "sparkling": 1.02029,
-        "mosaic": 0.915475
+      "frame_scale": {
+        "sunny": {
+          "idle": 0.946629,
+          "diary": 0.944966,
+          "grow": 0.998433
+        },
+        "rainy": {
+          "idle": 0.932133,
+          "diary": 0.944966,
+          "grow": 0.943038
+        },
+        "ember": {
+          "idle": 0.952448,
+          "diary": 0.941176,
+          "grow": 0.976157
+        },
+        "moonlit": {
+          "idle": 0.921053,
+          "diary": 0.94751,
+          "grow": 0.919685
+        },
+        "sparkling": {
+          "idle": 1.069909,
+          "diary": 0.995569,
+          "grow": 1.119808
+        },
+        "mosaic": {
+          "idle": 0.950912,
+          "diary": 0.926316,
+          "grow": 0.966981
+        }
       }
     },
     "aloof-pot": {
@@ -171,13 +363,37 @@
         "city-night",
         "garden-daily"
       ],
-      "route_scale": {
-        "sunny": 0.901408,
-        "rainy": 0.911917,
-        "ember": 0.896815,
-        "moonlit": 0.911917,
-        "sparkling": 0.923885,
-        "mosaic": 0.883312
+      "frame_scale": {
+        "sunny": {
+          "idle": 0.904509,
+          "diary": 0.910737,
+          "grow": 0.882838
+        },
+        "rainy": {
+          "idle": 0.908367,
+          "diary": 0.926316,
+          "grow": 0.936242
+        },
+        "ember": {
+          "idle": 0.904888,
+          "diary": 0.904884,
+          "grow": 0.903172
+        },
+        "moonlit": {
+          "idle": 0.918558,
+          "diary": 0.921466,
+          "grow": 0.937824
+        },
+        "sparkling": {
+          "idle": 0.921918,
+          "diary": 0.93245,
+          "grow": 0.90938
+        },
+        "mosaic": {
+          "idle": 0.891645,
+          "diary": 0.897959,
+          "grow": 0.881864
+        }
       }
     },
     "student-pot": {
@@ -188,13 +404,37 @@
         "city-night",
         "garden-daily"
       ],
-      "route_scale": {
-        "sunny": 0.916667,
-        "rainy": 0.922674,
-        "ember": 0.896815,
-        "moonlit": 0.909561,
-        "sparkling": 0.961749,
-        "mosaic": 0.896815
+      "frame_scale": {
+        "sunny": {
+          "idle": 0.934174,
+          "diary": 0.92876,
+          "grow": 1.177966
+        },
+        "rainy": {
+          "idle": 0.933896,
+          "diary": 0.941176,
+          "grow": 0.989529
+        },
+        "ember": {
+          "idle": 0.909713,
+          "diary": 0.908387,
+          "grow": 0.951079
+        },
+        "moonlit": {
+          "idle": 0.931373,
+          "diary": 0.92876,
+          "grow": 1.006897
+        },
+        "sparkling": {
+          "idle": 0.985229,
+          "diary": 0.985994,
+          "grow": 1.104982
+        },
+        "mosaic": {
+          "idle": 0.926389,
+          "diary": 0.916667,
+          "grow": 0.986348
+        }
       }
     }
   },

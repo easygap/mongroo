@@ -52,6 +52,24 @@ const _moonLamp = UserGardenItem(
   ),
 );
 
+const _cityNightWardrobe = UserGardenItem(
+  id: 77,
+  item: ShopItem(
+    id: 77,
+    code: 'wardrobe_city_night',
+    type: 'wardrobe',
+    name: '시티 나이트',
+    description: '',
+    priceSeeds: 180,
+    rarity: 3,
+    assetManifest: {
+      'wardrobe_layer_key': 'city-night',
+      'compatible_species': ['gumiho-pot'],
+    },
+    owned: true,
+  ),
+);
+
 class _FarmRepository extends GardenRepository {
   _FarmRepository() : super(Dio());
 
@@ -63,6 +81,21 @@ class _FarmRepository extends GardenRepository {
           decorations: [],
         ),
         ownedItems: [UserGardenItem(id: 1, item: _deco), _moonLamp],
+      );
+}
+
+class _WardrobeFarmRepository extends GardenRepository {
+  _WardrobeFarmRepository() : super(Dio());
+
+  @override
+  Future<FarmData> getFarm() async => const FarmData(
+        layout: FarmLayout(
+          version: 1,
+          wardrobeUserItemId: 77,
+          companionUserItemIds: [],
+          decorations: [],
+        ),
+        ownedItems: [_cityNightWardrobe],
       );
 }
 
@@ -120,6 +153,38 @@ class _DelayedSaveFarmRepository extends _FarmRepository {
 }
 
 void main() {
+  test('장착 의상 provider는 farm draft의 레이어 키를 화면에 제공한다', () async {
+    final container = ProviderContainer(
+      overrides: [
+        gardenRepositoryProvider.overrideWithValue(_WardrobeFarmRepository()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(equippedWardrobeLayerKeyProvider);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(
+      container.read(equippedWardrobeLayerKeyProvider),
+      'city-night',
+    );
+
+    container.read(farmControllerProvider.notifier).equipWardrobe(null);
+    expect(container.read(equippedWardrobeLayerKeyProvider), isNull);
+  });
+
+  test('호환 의상이 없는 빈 상태는 보유 여부와 자동 해제를 구분해 안내한다', () {
+    expect(
+      farmWardrobeEmptyMessage(ownsWardrobe: false),
+      '상점에서 캐릭터 의상을 모아 보세요.',
+    );
+    expect(
+      farmWardrobeEmptyMessage(ownsWardrobe: true),
+      allOf(contains('호환되지 않아요'), contains('장착이 해제')),
+    );
+    expect(farmWardrobeAutoUnequipHint, contains('자동으로 해제'));
+  });
+
   test('선택한 의상을 편집 중인 방 배치에 반영한다', () async {
     final container = ProviderContainer(
       overrides: [

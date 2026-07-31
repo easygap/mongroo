@@ -618,7 +618,42 @@ void main() {
     expect(insets.bottom, greaterThanOrEqualTo(2));
   });
 
-  testWidgets('감정 성체에 크로스페이드와 캐릭터 고유 부분 모션·눈 깜빡임을 연결한다', (tester) async {
+  test('워드로브 바디는 감정별로 측정한 얼굴 위치에 눈 깜빡임을 맞춘다', () {
+    for (final testCase in [
+      (
+        species: 'gumiho_pot',
+        form: PlantGrowthForm.sunny,
+        expectedOffset: const Offset(-38, 2),
+      ),
+      (
+        species: 'baby_pot',
+        form: PlantGrowthForm.mosaic,
+        expectedOffset: const Offset(9, -1),
+      ),
+      (
+        species: 'handsome_pot',
+        form: PlantGrowthForm.sunny,
+        expectedOffset: const Offset(6, 1),
+      ),
+    ]) {
+      final legacy = PlantView.debugBlinkEyeCenters(
+        speciesCode: testCase.species,
+        form: testCase.form,
+      );
+      final wardrobe = PlantView.debugBlinkEyeCenters(
+        speciesCode: testCase.species,
+        form: testCase.form,
+        wardrobeLayered: true,
+      );
+
+      expect(legacy, hasLength(wardrobe.length));
+      for (var index = 0; index < legacy.length; index++) {
+        expect(wardrobe[index] - legacy[index], testCase.expectedOffset);
+      }
+    }
+  });
+
+  testWidgets('감정 성체는 원자 전환과 캐릭터 고유 부분 모션·눈 깜빡임을 연결한다', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
@@ -635,8 +670,15 @@ void main() {
     await tester.pump();
 
     expect(
-      find.byKey(const ValueKey('plant-sprite-crossfade')),
+      find.byKey(const ValueKey('plant-sprite-atomic-swap')),
       findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('plant-sprite-atomic-swap')),
+        matching: find.byType(FadeTransition),
+      ),
+      findsNothing,
     );
     expect(
       find.byKey(const ValueKey('plant-part-motion-gumiho-pot')),

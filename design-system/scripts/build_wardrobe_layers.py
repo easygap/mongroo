@@ -39,6 +39,9 @@ from extract_magenta_sprite import extract
 BASE_DIR = "base"
 INNER_DIR = "inner"
 OUTFITS_DIR = "outfits"
+DEFAULT_REFERENCE_ROOT = (
+    Path(__file__).resolve().parents[2] / "app" / "assets" / "plants"
+)
 
 CHARACTER_NAMES = dict(CHARACTERS)
 
@@ -124,6 +127,11 @@ OUTFIT_COMPONENT_MIN_RATIO = 0.02
 # Seam and antialiasing noise around a covered garment. A real neckline gap or
 # a short hem exposes far more than this.
 GARMENT_LEAK_LIMIT = 0.05
+
+# Premultiplied resize can add a 1~4px translucent fringe. The visible figure
+# still has to keep the canonical v4 top, bottom and horizontal center inside
+# that rendering tolerance so the app's eye and part-motion coordinates match.
+REFERENCE_BBOX_TOLERANCE = 4
 
 
 @dataclass
@@ -386,12 +394,35 @@ def _union_bbox(layers: list[Image.Image]) -> tuple[int, int, int, int]:
     )
 
 
-def _route_scale(slug: str, union_sizes: list[tuple[int, int]]) -> float:
-    max_width = max(width for width, _ in union_sizes)
-    max_height = max(height for _, height in union_sizes)
-    if _body_type(slug) == "child":
-        return min(390 / max_width, 580 / max_height)
-    return min(468 / max_width, 704 / max_height)
+def _reference_bbox(
+    reference_root: Path,
+    *,
+    slug: str,
+    state: str,
+    form: str,
+) -> tuple[int, int, int, int]:
+    path = (
+        reference_root
+        / f"{slug}-25d-full-bloom-{form}-v4-{state}.webp"
+    )
+    if not path.exists():
+        raise ValueError(f"기준 v4 스프라이트가 없다: {path}")
+    with Image.open(path) as image:
+        bbox = image.convert("RGBA").getchannel("A").getbbox()
+    if bbox is None:
+        raise ValueError(f"기준 v4 스프라이트가 비어 있다: {path}")
+    return bbox
+
+
+def _frame_scale(
+    base_box: tuple[int, int, int, int],
+    reference_box: tuple[int, int, int, int],
+) -> float:
+    base_height = base_box[3] - base_box[1]
+    reference_height = reference_box[3] - reference_box[1]
+    if base_height <= 0 or reference_height <= 0:
+        raise ValueError("인물 bbox 높이는 0보다 커야 한다.")
+    return reference_height / base_height
 
 
 def _save_webp_atomic(image: Image.Image, output: Path, **options: object) -> None:
@@ -419,10 +450,12 @@ def _render_layer(
     layer: Image.Image,
     *,
     crop_box: tuple[int, int, int, int],
+    base_box: tuple[int, int, int, int],
+    reference_box: tuple[int, int, int, int],
     scale: float,
     output: Path,
     clean_fragments: bool = False,
-) -> None:
+) -> tuple[int, int, int, int]:
     cropped = layer.crop(crop_box)
     width = max(1, round(cropped.width * scale))
     height = max(1, round(cropped.height * scale))
@@ -437,21 +470,39 @@ def _render_layer(
             resized.close()
             resized = cleaned
     canvas = Image.new("RGBA", CANVAS, (0, 0, 0, 0))
-    x = (CANVAS[0] - width) // 2
-    y = BASELINE_Y - height
-    if x < 0 or y < 0 or x + width > CANVAS[0] or y + height > CANVAS[1]:
-        raise ValueError(f"{output.name} does not fit the 512x768 canvas.")
+    base_center_x = (base_box[0] + base_box[2]) / 2
+    reference_center_x = (reference_box[0] + reference_box[2]) / 2
+    x = round(
+        reference_center_x - (base_center_x - crop_box[0]) * scale
+    )
+    y = round(
+        reference_box[3] - (base_box[3] - crop_box[1]) * scale
+    )
+    visible_box = resized.getchannel("A").getbbox()
+    if visible_box is not None and (
+        x + visible_box[0] < 0
+        or y + visible_box[1] < 0
+        or x + visible_box[2] > CANVAS[0]
+        or y + visible_box[3] > CANVAS[1]
+    ):
+        raise ValueError(
+            f"{output.name} 의상 픽셀이 v4 기준 512x768 캔버스를 벗어난다."
+        )
     canvas.alpha_composite(resized, (x, y))
     with canvas.getchannel("A") as alpha:
         transparent = alpha.point(lambda value: 255 if value == 0 else 0)
     canvas.paste((0, 0, 0, 0), mask=transparent)
     transparent.close()
+    rendered_box = canvas.getchannel("A").getbbox()
+    if rendered_box is None:
+        raise ValueError(f"{output.name} 렌더 결과가 비어 있다.")
     try:
         _save_webp_atomic(canvas, output, lossless=True, method=6)
     finally:
         canvas.close()
         resized.close()
         cropped.close()
+    return rendered_box
 
 
 def discover(source_root: Path) -> tuple[dict[str, list[str]], list[str]]:
@@ -1003,6 +1054,7 @@ def build(
     output_root: Path,
     qa_root: Path,
     manifest_path: Path,
+    reference_root: Path,
 ) -> BuildReport:
     report = BuildReport()
     catalog, report.pending = discover(source_root)
@@ -1027,8 +1079,9 @@ def build(
         for key in outfit_keys:
             report.outfits.setdefault(key, []).append(slug)
 
-        # One crop and one scale per emotion route across every state and every
-        # layer, so adding an outfit never shifts the body it sits on.
+        # 모든 레이어는 같은 프레임의 base bbox를 앵커로 삼는다. 의상 실루엣이
+        # 커져도 바디가 축소되지 않으며, 기준 v4 프레임의 인물 높이와 바닥선을
+        # 그대로 복원해 기존 눈·부분 모션 좌표를 함께 사용할 수 있다.
         boxes: dict[str, list[tuple[int, int, int, int]]] = {
             state: [
                 _union_bbox([panels[state][name][index] for name in names])
@@ -1036,6 +1089,30 @@ def build(
             ]
             for state in STATES
         }
+        base_boxes: dict[str, list[tuple[int, int, int, int]]] = {}
+        reference_boxes: dict[str, list[tuple[int, int, int, int]]] = {}
+        for state in STATES:
+            base_boxes[state] = []
+            reference_boxes[state] = []
+            for form_index, form in enumerate(FORMS):
+                base_box = (
+                    panels[state]["base"][form_index]
+                    .getchannel("A")
+                    .getbbox()
+                )
+                if base_box is None:
+                    raise ValueError(
+                        f"{slug}/base/{state}/{form} 인물 bbox가 비어 있다."
+                    )
+                base_boxes[state].append(base_box)
+                reference_boxes[state].append(
+                    _reference_bbox(
+                        reference_root,
+                        slug=slug,
+                        state=state,
+                        form=form,
+                    )
+                )
 
         # Sheet-level check: the six panels must vary the way the base does.
         for name in names:
@@ -1051,19 +1128,15 @@ def build(
                     source_outfits[state][name],
                 )
 
-        scales: dict[str, float] = {}
+        frame_scales: dict[str, dict[str, float]] = {}
         for form_index, form in enumerate(FORMS):
-            sizes = [
-                (
-                    boxes[state][form_index][2] - boxes[state][form_index][0],
-                    boxes[state][form_index][3] - boxes[state][form_index][1],
-                )
-                for state in STATES
-            ]
-            scale = _route_scale(slug, sizes)
-            scales[form] = round(scale, 6)
+            frame_scales[form] = {}
             for state in STATES:
                 crop_box = boxes[state][form_index]
+                base_box = base_boxes[state][form_index]
+                reference_box = reference_boxes[state][form_index]
+                scale = _frame_scale(base_box, reference_box)
+                frame_scales[form][state] = round(scale, 6)
                 base = panels[state]["base"][form_index]
                 inner = (
                     panels[state]["inner"][form_index]
@@ -1105,22 +1178,47 @@ def build(
                             report.limb.setdefault(f"{slug}/{name}", {})[
                                 f"{state}/{form}"
                             ] = round(leak, 4)
-                    _render_layer(
+                    rendered_box = _render_layer(
                         panels[state][name][form_index],
                         crop_box=crop_box,
+                        base_box=base_box,
+                        reference_box=reference_box,
                         scale=scale,
                         output=_output_path(
                             output_root, name, slug, state, form
                         ),
                         clean_fragments=name not in ("base", "inner"),
                     )
+                    if name == "base":
+                        center_drift = abs(
+                            (rendered_box[0] + rendered_box[2])
+                            - (reference_box[0] + reference_box[2])
+                        ) / 2
+                        top_drift = abs(rendered_box[1] - reference_box[1])
+                        bottom_drift = abs(
+                            rendered_box[3] - reference_box[3]
+                        )
+                        if max(center_drift, top_drift, bottom_drift) > (
+                            REFERENCE_BBOX_TOLERANCE
+                        ):
+                            report.fail(
+                                slug,
+                                name,
+                                state,
+                                form,
+                                "v4-coordinate-lock",
+                                "기준 bbox와의 차이 "
+                                f"center={center_drift:.1f}px, "
+                                f"top={top_drift}px, "
+                                f"bottom={bottom_drift}px",
+                            )
 
         manifest_layers[slug] = {
             "name": CHARACTER_NAMES.get(slug, slug),
             "body_type": _body_type(slug),
             "has_inner": "inner" in names,
             "outfits": outfit_keys,
-            "route_scale": scales,
+            "frame_scale": frame_scales,
         }
 
     _check_limb_outliers(report, qa_root)
@@ -1260,6 +1358,12 @@ def main() -> None:
     parser.add_argument("--qa-root", type=Path)
     parser.add_argument("--manifest", type=Path)
     parser.add_argument(
+        "--reference-root",
+        type=Path,
+        default=DEFAULT_REFERENCE_ROOT,
+        help="눈·부분 모션 좌표를 공유할 기존 v4 스프라이트 디렉터리.",
+    )
+    parser.add_argument(
         "--report-only",
         action="store_true",
         help="Print contract violations instead of failing the build.",
@@ -1267,7 +1371,13 @@ def main() -> None:
     args = parser.parse_args()
     qa_root = args.qa_root or args.source_root / "qa"
     manifest_path = args.manifest or args.source_root / "wardrobe-layers.json"
-    report = build(args.source_root, args.output_root, qa_root, manifest_path)
+    report = build(
+        args.source_root,
+        args.output_root,
+        qa_root,
+        manifest_path,
+        args.reference_root,
+    )
 
     for outfit_key, species in sorted(report.outfits.items()):
         build_preview(args.output_root, outfit_key, species)

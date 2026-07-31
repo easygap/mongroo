@@ -317,6 +317,7 @@ class _MoodRecordScreenState extends ConsumerState<MoodRecordScreen> {
       _saving = false;
       _dirty = false;
     });
+    final outfitKey = ref.read(equippedWardrobeLayerKeyProvider);
     final safety = result.safetyAction;
     if (safety != null) {
       // 안전 경로: 축하 연출 없이 지원 화면으로 바로 이동한다.
@@ -380,6 +381,7 @@ class _MoodRecordScreenState extends ConsumerState<MoodRecordScreen> {
             speciesCode: stagePlant?.species.code ?? 'basic_sprout',
             speciesName: stagePlant?.species.name,
             growthVisual: stagePlant?.growthVisual,
+            outfitKey: outfitKey,
           ),
         );
       });
@@ -396,6 +398,9 @@ class _MoodRecordScreenState extends ConsumerState<MoodRecordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 저장 직후 성장 다이얼로그가 열릴 때 처음 팜 상태를 읽으면 로드 전 null을
+    // 캡처한다. 작성 화면이 열려 있는 동안 미리 구독해 장착 의상을 준비한다.
+    ref.watch(equippedWardrobeLayerKeyProvider);
     final palette = MongrooPalette.of(context);
     final hasContent = _contentController.text.trim().isNotEmpty;
     return PopScope<void>(
@@ -729,6 +734,7 @@ class _StageUpDialog extends StatelessWidget {
   const _StageUpDialog({
     required this.stage,
     required this.speciesCode,
+    required this.outfitKey,
     this.form,
     this.speciesName,
     this.growthVisual,
@@ -737,6 +743,7 @@ class _StageUpDialog extends StatelessWidget {
   final int stage;
   final PlantGrowthForm? form;
   final String speciesCode;
+  final String? outfitKey;
   final String? speciesName;
   final PlantGrowthVisual? growthVisual;
 
@@ -798,6 +805,7 @@ class _StageUpDialog extends StatelessWidget {
                         speciesCode: speciesCode,
                         speciesName: speciesName,
                         growthVisual: growthVisual,
+                        outfitKey: outfitKey,
                       ),
                     ),
                     Padding(
@@ -815,6 +823,7 @@ class _StageUpDialog extends StatelessWidget {
                         speciesCode: speciesCode,
                         speciesName: speciesName,
                         growthVisual: growthVisual,
+                        outfitKey: outfitKey,
                         highlighted: true,
                       ),
                     ),
@@ -867,6 +876,7 @@ class _StageMoment extends StatelessWidget {
     required this.label,
     required this.stage,
     required this.speciesCode,
+    required this.outfitKey,
     this.form,
     this.speciesName,
     this.growthVisual,
@@ -877,6 +887,7 @@ class _StageMoment extends StatelessWidget {
   final int stage;
   final PlantGrowthForm? form;
   final String speciesCode;
+  final String? outfitKey;
   final String? speciesName;
   final PlantGrowthVisual? growthVisual;
   final bool highlighted;
@@ -913,6 +924,7 @@ class _StageMoment extends StatelessWidget {
               speciesCode: speciesCode,
               speciesName: speciesName,
               growthVisual: growthVisual,
+              outfitKey: outfitKey,
               size: 94,
             ),
             Text(

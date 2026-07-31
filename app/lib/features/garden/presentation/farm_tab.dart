@@ -23,6 +23,16 @@ bool gardenDecorationRendersBehindCharacters(ShopItem item, int zIndex) =>
     item.code == 'deco_rug_cloud' ||
     item.assetKey == 'deco/rug_cloud';
 
+@visibleForTesting
+const farmWardrobeAutoUnequipHint = '품종을 바꾸면 맞지 않는 의상은 자동으로 해제돼요.';
+
+@visibleForTesting
+String farmWardrobeEmptyMessage({required bool ownsWardrobe}) => ownsWardrobe
+    ? '보유 중인 의상은 현재 캐릭터와 호환되지 않아요. '
+        '품종을 바꿔 장착이 해제됐다면 이 캐릭터에 맞는 '
+        '의상을 상점에서 확인해 주세요.'
+    : '상점에서 캐릭터 의상을 모아 보세요.';
+
 class FarmTab extends ConsumerStatefulWidget {
   const FarmTab({super.key});
 
@@ -668,8 +678,8 @@ class _FarmControls extends ConsumerWidget {
     final palette = MongrooPalette.of(context);
     final scheme = Theme.of(context).colorScheme;
     final themes = data.itemsOfType('room_theme');
-    final wardrobes = data
-        .itemsOfType('wardrobe')
+    final ownedWardrobes = data.itemsOfType('wardrobe');
+    final wardrobes = ownedWardrobes
         .where(
           (entry) =>
               activePlant == null ||
@@ -711,28 +721,51 @@ class _FarmControls extends ConsumerWidget {
           child: activePlant == null
               ? const Text('캐릭터를 심으면 입힐 수 있는 의상이 여기에 보여요.')
               : wardrobes.isEmpty
-                  ? const Text('상점에서 캐릭터 의상을 모아 보세요.')
-                  : Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                  ? Text(
+                      farmWardrobeEmptyMessage(
+                        ownsWardrobe: ownedWardrobes.isNotEmpty,
+                      ),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ChoiceChip(
-                          label: const Text('기본 의상'),
-                          selected: layout.wardrobeUserItemId == null,
-                          onSelected: editing
-                              ? (_) => controller.equipWardrobe(null)
-                              : null,
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            ChoiceChip(
+                              label: const Text('기본 의상'),
+                              selected: layout.wardrobeUserItemId == null,
+                              onSelected: editing
+                                  ? (_) => controller.equipWardrobe(null)
+                                  : null,
+                            ),
+                            for (final entry in wardrobes)
+                              ChoiceChip(
+                                label: Text(entry.item.name),
+                                selected: layout.wardrobeUserItemId == entry.id,
+                                avatar: const Icon(
+                                  Icons.checkroom_outlined,
+                                  size: 18,
+                                ),
+                                onSelected: editing
+                                    ? (_) => controller.equipWardrobe(entry.id)
+                                    : null,
+                              ),
+                          ],
                         ),
-                        for (final entry in wardrobes)
-                          ChoiceChip(
-                            label: Text(entry.item.name),
-                            selected: layout.wardrobeUserItemId == entry.id,
-                            avatar:
-                                const Icon(Icons.checkroom_outlined, size: 18),
-                            onSelected: editing
-                                ? (_) => controller.equipWardrobe(entry.id)
-                                : null,
+                        if (layout.wardrobeUserItemId == null &&
+                            ownedWardrobes.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            farmWardrobeAutoUnequipHint,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: palette.inkMuted,
+                                      height: 1.4,
+                                    ),
                           ),
+                        ],
                       ],
                     ),
         ),

@@ -8,6 +8,7 @@ import 'package:mongroo/core/error/api_exception.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/auth/domain/user.dart';
 import 'package:mongroo/features/auth/presentation/auth_controller.dart';
+import 'package:mongroo/features/garden/presentation/garden_controller.dart';
 import 'package:mongroo/features/home/domain/reward_result.dart';
 import 'package:mongroo/features/mood/data/mood_repository.dart';
 import 'package:mongroo/features/mood/domain/mood_entry.dart';
@@ -148,6 +149,8 @@ Future<void> _pumpRecordScreen(
   MoodEntry? existing,
   Size size = const Size(800, 2400),
   double textScale = 1,
+  String? outfitKey,
+  VoidCallback? onWardrobeRead,
 }) async {
   // ListView 하단의 저장 버튼까지 모두 빌드되도록 화면을 길게 잡는다.
   tester.view.physicalSize = size;
@@ -173,6 +176,10 @@ Future<void> _pumpRecordScreen(
       overrides: [
         moodRepositoryProvider.overrideWithValue(repository),
         authControllerProvider.overrideWith(_SignedInAuthController.new),
+        equippedWardrobeLayerKeyProvider.overrideWith((ref) {
+          onWardrobeRead?.call();
+          return outfitKey;
+        }),
       ],
       child: MaterialApp.router(
         theme: AppTheme.light(),
@@ -212,6 +219,18 @@ void main() {
 
     expect(find.text('저장하기'), findsOneWidget);
     expect(_saveButton(tester).onPressed, isNull);
+  });
+
+  testWidgets('기록 화면이 열릴 때 장착 의상 상태를 미리 구독한다', (tester) async {
+    var wardrobeReads = 0;
+    await _pumpRecordScreen(
+      tester,
+      repository: FakeMoodRepository(),
+      outfitKey: 'city-night',
+      onWardrobeRead: () => wardrobeReads++,
+    );
+
+    expect(wardrobeReads, 1);
   });
 
   testWidgets('일기 본문을 적으면 저장하고 수동 감정 값은 보내지 않는다', (tester) async {

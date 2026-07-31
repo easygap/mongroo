@@ -6,6 +6,7 @@ import '../../../core/routing/app_router.dart';
 import '../../../core/text/korean_particles.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
+import '../../garden/presentation/garden_controller.dart';
 import '../../home/domain/plant.dart';
 import '../../home/presentation/home_controller.dart';
 import '../../home/presentation/plant_view.dart';
@@ -79,6 +80,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final state = ref.watch(chatControllerProvider);
     final scheme = Theme.of(context).colorScheme;
     final activePlant = ref.watch(homeControllerProvider).valueOrNull;
+    final outfitKey = ref.watch(equippedWardrobeLayerKeyProvider);
     final character = state.character;
     final displayName = character?.name ?? activePlant?.name;
     final availableWidth = MediaQuery.sizeOf(context).width;
@@ -159,6 +161,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             child: !state.hasSession
                 ? _SessionIntro(
                     plant: activePlant,
+                    outfitKey: outfitKey,
                     starting: state.starting,
                     errorMessage: state.errorMessage,
                     onStart: () => ref
@@ -584,12 +587,14 @@ class _ClosedSessionPanel extends StatelessWidget {
 class _SessionIntro extends StatelessWidget {
   const _SessionIntro({
     required this.plant,
+    required this.outfitKey,
     required this.starting,
     required this.errorMessage,
     required this.onStart,
   });
 
   final ActivePlant? plant;
+  final String? outfitKey;
   final bool starting;
   final String? errorMessage;
   final VoidCallback onStart;
@@ -621,6 +626,7 @@ class _SessionIntro extends StatelessWidget {
                       speciesCode: plant?.species.code ?? 'basic_sprout',
                       speciesName: plant?.species.name,
                       growthVisual: plant?.growthVisual,
+                      outfitKey: outfitKey,
                       size: 140,
                     ),
                     const SizedBox(height: 8),

@@ -541,3 +541,15 @@ class FarmController extends Notifier<FarmUiState> {
 
 final farmControllerProvider =
     NotifierProvider<FarmController, FarmUiState>(FarmController.new);
+
+/// 현재 방 배치에 장착된 의상의 렌더 레이어 키.
+///
+/// 방 편집 중에는 미리보기와 다른 화면의 캐릭터가 같은 의상을 보여 주도록
+/// draft를 우선하고, 저장된 보유 아이템에서 실제 레이어 키를 찾는다.
+final equippedWardrobeLayerKeyProvider = Provider<String?>((ref) {
+  final state = ref.watch(farmControllerProvider);
+  final farm = state.data.valueOrNull;
+  final layout = state.draft ?? farm?.layout;
+  final wardrobe = farm?.itemByUserItemId(layout?.wardrobeUserItemId);
+  return wardrobe?.item.wardrobeLayerKey;
+});
