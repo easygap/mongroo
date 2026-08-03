@@ -105,16 +105,20 @@ commit한다. 단일 프로세스의 동일 키 요청은 메모리 lock으로 �
 
 ```json
 {
-  "events": [{"event_type": "mood_first_daily", "exp_delta": 20, "seed_delta": 0}],
-  "plant": {"id": 3, "exp": 20, "stage": 2, "stage_changed": true, "harvestable": false},
-  "daily_exp_granted": 20, "daily_exp_cap": 50,
-  "seed_balance": 30
+  "events": [
+    {"event_type": "mood_first_daily", "exp_delta": 10, "seed_delta": 0},
+    {"event_type": "diary_first_daily", "exp_delta": 30, "seed_delta": 15}
+  ],
+  "plant": {"id": 3, "exp": 40, "stage": 2, "stage_changed": true, "harvestable": false},
+  "daily_exp_granted": 40, "daily_exp_cap": 50,
+  "seed_balance": 15
 }
 ```
 
-`event_type`: `mood_first_daily`(+20) · `diary_first_daily`(+10, 50자 이상) ·
+`event_type`: `mood_first_daily`(+10) · `diary_first_daily`(+30, 씨앗 +15, 50자 이상) ·
 `chat_first_daily`(+5) · `streak_week`(서로 다른 기록 날 누적 7일마다 씨앗 +30) ·
-`quest_completed`(+20, 씨앗 +5). `streak_week`는 기존 원장 코드를 유지한
+`quest_completed`(+20, 씨앗 +5) · `patrol_claimed`(씨앗 +3) ·
+`dungeon_cleared`(+10, 씨앗 +4). `streak_week`는 기존 원장 코드를 유지한
 이름이며 연속 출석을 요구하지 않는다.
 일일 경험치 상한은 50이다.
 
@@ -467,7 +471,7 @@ session DTO: `{id, plant_id, reflection_stage, status: "active"|"closed", starte
 | GET `/health/live` | `{status: "ok"}` |
 | GET `/health/ready` | `{status: "ok"\|"degraded"\|"down", checks: {database: {status}, ai_worker: {status, last_heartbeat}, classifier: {status, mode}, ollama: {status, mode}}}` — DB 불능만 `down`, AI 의존성 불능은 `degraded` |
 
-## 퀘스트·상점·컬렉션·마이팜 (P1)
+## 퀘스트·상점·컬렉션·마이팜·탐험 (P1)
 
 | Method/Path | 설명 |
 |---|---|
@@ -482,6 +486,15 @@ session DTO: `{id, plant_id, reflection_stage, status: "active"|"closed", starte
 | GET `/collection` | 보유 인벤토리 `items`, 잠금 항목까지 포함한 전체 아이템 도감 `catalog_items`, 품종 도감, 현재 씨앗 잔액 |
 | GET `/farm` | 현재 layout과 배치 가능한 보유 아이템 |
 | PUT `/farm/layout` | `expected_version` 기반 전체 배치 저장. 소유권·아이템 유형·중복 배치와 회전각 범위 검증 |
+| GET `/adventure` | 오늘의 일기 개방 상태, 활성 캐릭터 스탯, 의상 성능, 순찰·던전·수집품을 반환. 안전 지원 활성일에는 `suspended=true` |
+| POST `/adventure/patrols` (멱등) | `{route_code}`로 하루 한 번 순찰 시작. 오늘 50자 이상 일기와 경로별 성장 단계 필요 |
+| POST `/adventure/patrols/{id}/claim` (멱등) | 귀환 시 씨앗 3개와 수집품 지급, 경로의 던전을 처음 발견하면 해금 |
+| POST `/adventure/dungeons/{code}/run` (멱등) | 발견된 던전을 하루 한 번 탐험해 +10 XP/+4 씨앗과 수집품 지급 |
+
+탐험은 오늘 50자 이상 마음 일기를 쓴 뒤에만 열린다. 일기 한 편의 합산 보상은
++40 XP/+15 씨앗이며, 퀘스트(+20/+5), 던전(+10/+4), 순찰(+0/+3)보다 크다.
+감정 성장형별 스탯 추가 총합은 모두 4로 같고, 의상 보너스는 탐험 수집량에만
+영향을 주므로 감정의 종류와 의상 유무가 일기 경험치·씨앗 효율을 바꾸지 않는다.
 
 안전 지원이 활성화된 퀘스트 응답은
 `{date, suspended:true, suspension_reason, items:[]}`이다. 일반 응답은

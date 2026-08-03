@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../adventure/presentation/adventure_tab.dart';
 import '../../auth/presentation/auth_controller.dart';
 import 'collection_tab.dart';
 import 'farm_tab.dart';
@@ -27,8 +28,8 @@ class GardenScreen extends ConsumerWidget {
     final palette = MongrooPalette.of(context);
     return DefaultTabController(
       key: ValueKey((initialTab, initialSpeciesCode)),
-      length: 3,
-      initialIndex: initialTab.clamp(0, 2).toInt(),
+      length: 4,
+      initialIndex: initialTab.clamp(0, 3).toInt(),
       child: Scaffold(
         appBar: AppBar(
           title: Row(
@@ -89,6 +90,10 @@ class GardenScreen extends ConsumerWidget {
                       icon: Icon(Icons.auto_stories_outlined, size: 19),
                       text: '도감',
                     ),
+                    Tab(
+                      icon: Icon(Icons.explore_outlined, size: 19),
+                      text: '탐험',
+                    ),
                   ],
                 ),
               ),
@@ -100,6 +105,7 @@ class GardenScreen extends ConsumerWidget {
             const FarmTab(),
             ShopTab(initialSpeciesCode: initialSpeciesCode),
             const CollectionTab(),
+            const AdventureTab(),
           ],
         ),
       ),

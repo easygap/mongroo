@@ -37,6 +37,7 @@ flutter:
     - assets/wardrobe/outfits/
     - assets/wardrobe/previews/
     - assets/rooms/
+    - assets/adventure/
     - assets/species/
   fonts:
     - family: Galmuri11

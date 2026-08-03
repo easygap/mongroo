@@ -21,7 +21,7 @@ async def test_full_p0_flow(client, session_factory):
         headers=auth_headers(tokens, idem=True),
     )
     assert res.status_code == 201
-    assert res.json()["reward"]["plant"]["exp"] == 20
+    assert res.json()["reward"]["plant"]["exp"] == 10
 
     # 2) 직접 감정 체크 없이 일기 세 편 → 본문 분석과 성장 분기
     mood_id = None
@@ -134,7 +134,7 @@ async def test_alpha_flow_without_ai(client, session_factory, monkeypatch):
         )
         assert res.status_code == 201
         assert res.json()["mood"]["analysis_status"] == "not_requested"
-        assert res.json()["reward"]["plant"]["exp"] == 20
+        assert res.json()["reward"]["plant"]["exp"] == 10
 
         # 대화는 degraded로 명시적 실패
         res = await client.post("/chat/sessions", json={}, headers=auth_headers(tokens))

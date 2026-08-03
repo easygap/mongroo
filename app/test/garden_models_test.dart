@@ -4,6 +4,33 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/features/garden/domain/garden_models.dart';
 
 void main() {
+  test('의상 탐험 보너스 메타데이터를 읽는다', () {
+    final item = ShopItem.fromJson({
+      'id': 99,
+      'code': 'wardrobe_garden_daily',
+      'type': 'wardrobe',
+      'name': '정원 데일리 셋',
+      'description': '정원 의상',
+      'price_seeds': 180,
+      'rarity': 2,
+      'asset_manifest': {
+        'wardrobe_layer_key': 'garden-daily',
+        'adventure_bonus': {
+          'context': 'patrol',
+          'stat': 'care',
+          'amount': 2,
+          'label': '순찰 돌봄 +2',
+        },
+      },
+    });
+
+    expect(item.isWardrobe, isTrue);
+    expect(item.adventureBonusContext, 'patrol');
+    expect(item.adventureBonusStat, 'care');
+    expect(item.adventureBonusAmount, 2);
+    expect(item.adventureBonusLabel, '순찰 돌봄 +2');
+  });
+
   test('상점 카탈로그와 구매 가능 정보를 파싱한다', () {
     final catalog = ShopCatalog.fromJson({
       'seed_balance': 35,

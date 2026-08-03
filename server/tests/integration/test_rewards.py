@@ -26,7 +26,7 @@ async def test_first_record_grants_exp_once(client):
     assert body["reward"] is not None
     events = {e["event_type"] for e in body["reward"]["events"]}
     assert "mood_first_daily" in events
-    assert body["reward"]["plant"]["exp"] == 20
+    assert body["reward"]["plant"]["exp"] == 10
 
     # 같은 날 두 번째 기록은 기록만 되고 보상은 없다
     res = await client.post(
@@ -98,9 +98,9 @@ async def test_reward_without_active_plant_does_not_consume_exp_cap(
     )
     assert recorded.status_code == 201
     recorded_reward = recorded.json()["reward"]
-    assert recorded_reward["daily_exp_granted"] == 30
-    assert recorded_reward["plant"]["exp"] == 30
-    assert recorded_reward["seed_balance"] == 5
+    assert recorded_reward["daily_exp_granted"] == 40
+    assert recorded_reward["plant"]["exp"] == 40
+    assert recorded_reward["seed_balance"] == 20
 
 
 async def test_seventh_recorded_day_grants_cumulative_week_reward(
@@ -198,8 +198,9 @@ async def test_diary_bonus_and_daily_cap(client):
     body = res.json()
     events = {e["event_type"] for e in body["reward"]["events"]}
     assert events == {"mood_first_daily", "diary_first_daily"}
-    # 일일 상한 50 안에서 첫 기록 20 + 긴 일기 10 = 30 지급
-    assert body["reward"]["daily_exp_granted"] == 30
+    # 마음 일기 한 번이 일일 활동 중 가장 큰 40 XP와 씨앗 15개를 지급한다.
+    assert body["reward"]["daily_exp_granted"] == 40
+    assert body["reward"]["seed_balance"] == 15
     assert body["reward"]["daily_exp_cap"] == 50
 
 

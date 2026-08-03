@@ -90,6 +90,10 @@ class PlantMuseumFeatureRequest(BaseModel):
     is_featured: bool
 
 
+class PatrolStartRequest(BaseModel):
+    route_code: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9_]+$")
+
+
 class ChatSessionCreateRequest(BaseModel):
     plant_id: int | None = None
 

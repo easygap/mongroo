@@ -1433,6 +1433,144 @@
         }
       }
     },
+    "/api/v1/adventure": {
+      "get": {
+        "tags": [
+          "adventure"
+        ],
+        "summary": "Adventure State",
+        "operationId": "adventure_state_api_v1_adventure_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/patrols": {
+      "post": {
+        "tags": [
+          "adventure"
+        ],
+        "summary": "Start Patrol",
+        "operationId": "start_patrol_api_v1_adventure_patrols_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatrolStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/patrols/{patrol_id}/claim": {
+      "post": {
+        "tags": [
+          "adventure"
+        ],
+        "summary": "Claim Patrol",
+        "operationId": "claim_patrol_api_v1_adventure_patrols__patrol_id__claim_post",
+        "parameters": [
+          {
+            "name": "patrol_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Patrol Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/dungeons/{dungeon_code}/run": {
+      "post": {
+        "tags": [
+          "adventure"
+        ],
+        "summary": "Run Dungeon",
+        "operationId": "run_dungeon_api_v1_adventure_dungeons__dungeon_code__run_post",
+        "parameters": [
+          {
+            "name": "dungeon_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dungeon Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health/live": {
       "get": {
         "tags": [
@@ -1595,6 +1733,17 @@
               }
             ],
             "title": "Main Character User Item Id"
+          },
+          "wardrobe_user_item_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wardrobe User Item Id"
           },
           "companion_user_item_ids": {
             "items": {
@@ -1785,6 +1934,22 @@
         },
         "type": "object",
         "title": "MoodPatchRequest"
+      },
+      "PatrolStartRequest": {
+        "properties": {
+          "route_code": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Route Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "route_code"
+        ],
+        "title": "PatrolStartRequest"
       },
       "PlantCreateRequest": {
         "properties": {

@@ -1,4 +1,10 @@
 from app.models.base import Base
+from app.models.adventure import (
+    AdventurePatrol,
+    DungeonRun,
+    UserAdventureItem,
+    UserDungeon,
+)
 from app.models.chat import ChatMessage, ChatRun, ChatSession
 from app.models.game import FarmLayout, Item, Quest, UserItem, UserQuest, UserSpeciesUnlock
 from app.models.mood import MoodEntry
@@ -13,5 +19,6 @@ __all__ = [
     "Base", "User", "AuthSession", "RefreshToken", "MoodEntry", "Plant", "PlantSpecies",
     "RewardEvent", "ChatSession", "ChatMessage", "ChatRun", "Report", "SafetyEvent",
     "AiJob", "IdempotencyKey", "WorkerHeartbeat", "Quest", "UserQuest", "Item",
-    "UserItem", "FarmLayout", "UserSpeciesUnlock",
+    "UserItem", "FarmLayout", "UserSpeciesUnlock", "AdventurePatrol",
+    "UserDungeon", "DungeonRun", "UserAdventureItem",
 ]

@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.errors import register_error_handlers
-from app.api.routers import auth, chat, game, health, moods, plants, reports
+from app.api.routers import adventure, auth, chat, game, health, moods, plants, reports
 from app.core.config import get_settings
 from app.core.logging import RequestLogMiddleware, setup_logging
 
@@ -34,6 +34,7 @@ def create_app() -> FastAPI:
     app.include_router(chat.router, prefix=prefix)
     app.include_router(reports.router, prefix=prefix)
     app.include_router(game.router, prefix=prefix)
+    app.include_router(adventure.router, prefix=prefix)
     app.include_router(health.router, prefix=prefix)
     return app
 

@@ -210,7 +210,7 @@ Alembic `0010_diary_growth`는 당시 대표 라벨로 v2 프로필을 만들었
 | id | bigint PK | |
 | user_id | bigint FK(users) | |
 | plant_id | bigint FK(plants) NULL | 씨앗 포인트처럼 식물 귀속이 없는 이벤트는 NULL |
-| event_type | varchar | (확정) `mood_first_daily\|diary_first_daily\|chat_first_daily\|streak_week\|quest_completed\|shop_purchase`. `streak_week`는 호환용 이름이며 누적 기록 7일 보상을 의미 |
+| event_type | varchar | (확정) `mood_first_daily\|diary_first_daily\|chat_first_daily\|streak_week\|quest_completed\|patrol_claimed\|dungeon_cleared\|shop_purchase`. `streak_week`는 호환용 이름이며 누적 기록 7일 보상을 의미 |
 | source_type | varchar | 근거 리소스 타입 (mood_entry, chat_session, user_quest 등) |
 | source_id | bigint | 근거 리소스 id |
 | dedupe_key | varchar UK | 중복 지급 방지 키. 예: `mood_daily:{user_id}:{local_date}`, `record_week:{user_id}:{recorded_days}`, `harvest:{plant_id}` |
@@ -460,7 +460,22 @@ API가 반환하는 `current`, `target`, `eligible`은 저장값이 아니라 �
 
 **UNIQUE(user_id, species_id)**. `unlock_price=0` 품종은 행 없이도 항상 해금 상태다.
 
-### 2.7 assessments — PHQ-9 자가설문
+### 2.7 adventure_patrols / user_dungeons / dungeon_runs / user_adventure_items
+
+탐험은 오늘 50자 이상 일기 뒤에 열리는 보조 성장 루프다. 일기 보상보다 큰
+경험치·씨앗 조합을 만들지 않고, 캐릭터 스탯과 의상 보너스는 수집품 수량에만 쓴다.
+
+| 테이블 | 핵심 키·제약 | 역할 |
+|--------|--------------|------|
+| `adventure_patrols` | `UNIQUE(user_id, local_date)`, status `active\|claimed` | 하루 한 번 순찰의 경로·귀환 시각·발견 결과 |
+| `user_dungeons` | `UNIQUE(user_id, dungeon_code)` | 순찰에서 발견한 던전과 누적 클리어 수 |
+| `dungeon_runs` | `UNIQUE(user_id, local_date)` | 하루 한 번 던전 결과와 실제 보상 스냅샷 |
+| `user_adventure_items` | `UNIQUE(user_id, item_code)`, quantity ≥ 0 | 순찰·던전 수집품 수량 |
+
+순찰과 던전 쓰기 API는 `Idempotency-Key`, 사용자 row 잠금, 보상 원장 dedupe를
+같이 적용한다. 당일 안전 지원이 활성화되면 새 탐험과 보상 수령을 중단한다.
+
+### 2.8 assessments — PHQ-9 자가설문
 
 정확한 한국어 판본과 사용 근거 확인 전에는 feature flag로 비활성(설계서 3.2).
 결과는 선별용 자가설문으로만 표시하고 감정 추세와 합쳐 위험 점수를 만들지

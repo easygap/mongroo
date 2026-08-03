@@ -399,8 +399,8 @@ async def test_p1_daily_exp_cap_is_independent_of_action_order(client):
     assert reward["daily_exp_cap"] == 50
     assert reward["daily_exp_granted"] == 50
     assert {event["event_type"]: event["exp_delta"] for event in reward["events"]} == {
-        "mood_first_daily": 20,
-        "diary_first_daily": 10,
+        "mood_first_daily": 10,
+        "diary_first_daily": 20,
     }
 
 

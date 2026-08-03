@@ -1,6 +1,6 @@
 # 몽그루 품질 검증 기준
 
-최종 갱신: 2026-07-15
+최종 갱신: 2026-08-03
 
 현재 반복 실행할 수 있는 검사와 아직 확인하지 못한 항목을 기록한다. 기능·UI·콘텐츠를
 바꾼 뒤에는 자동 검사와 주요 사용자 흐름을 다시 확인한다.
@@ -12,7 +12,7 @@
 | Flutter 정적 분석 | `cd app; dart analyze` | 경고·오류 0 |
 | Flutter 단위/위젯 | `cd app; flutter test` | 137 passed |
 | Web 릴리스 빌드 | `cd app; flutter build web --wasm --release --dart-define=API_BASE_URL=...` | 성공 |
-| 서버 전체 | `cd server; pytest -q` | 164 passed |
+| 서버 전체 | `cd server; pytest -q` | 282 passed |
 | Python import/문법 | `python -m compileall server/app server/tests` | 성공 |
 | API 계약 | `cd server; python -m app.export_openapi` | `server/openapi.json`과 일치 |
 | 공백·줄끝 검사 | `git diff --check` | 오류 0 |
@@ -35,6 +35,8 @@ Android APK/AAB는 Android SDK와 release keystore가 준비된 환경에서 별
 8. 씨앗·새싹 공통 성장 → 줄기부터 외형·성격 분기 → 만개 모습 그대로 수확 → 최근 10그루/대표 10그루
    박물관 전시 → 선택 해제와 10그루 제한 오류 복구
 9. 위기 표현 기록 → 안전 화면 즉시 이동 → 퀘스트 억제 → 공식 지원 경로 노출
+10. 50자 일기 전 탐험 잠금 → 일기 후 순찰 → 귀환 수집 → 던전 발견·1일 1회 탐험
+    → 캐릭터 성장·씨앗 잔액·의상 성능 동기화
 
 퀘스트는 36종·10개 카테고리이며, 같은 사용자/날짜에 결정적으로 재현된다. 최근
 14일 중복을 피하고 직전 2회의 같은 카테고리를 피하는 회전 테스트와 30일 시뮬레이션을
@@ -51,6 +53,8 @@ Android APK/AAB는 Android SDK와 release keystore가 준비된 환경에서 별
 - 긴 한국어 문구, 빈 상태, 로딩·오류·재시도·저장 충돌 상태
 - 방 테마 6종의 16:9 crop, 잠금 scrim, 긴 획득 조건, 진행도 0/중간/달성,
   구매·claim 중복 탭, 획득 직후 바로 적용과 reduced motion 상태
+- 탐험 탭의 1초 로컬 카운트다운, 백그라운드 복귀 후 서버 귀환 시각 보정,
+  일기·안전 잠금, 1일 제한, 360px/200% 글자에서 버튼과 스탯 레이블 오버플로 없음
 - BI 심볼 16/24/34/160px 가독성, favicon 16/32/48px, PWA normal/maskable
   안전영역, Android adaptive/monochrome resource, native splash와 첫 Flutter frame 색 일치
 

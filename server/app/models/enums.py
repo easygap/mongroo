@@ -75,6 +75,8 @@ class RewardEventType:
     CHAT_FIRST_DAILY = "chat_first_daily"
     STREAK_WEEK = "streak_week"
     QUEST_COMPLETED = "quest_completed"
+    PATROL_CLAIMED = "patrol_claimed"
+    DUNGEON_CLEARED = "dungeon_cleared"
     SHOP_PURCHASE = "shop_purchase"
     ALL = (
         MOOD_FIRST_DAILY,
@@ -82,14 +84,18 @@ class RewardEventType:
         CHAT_FIRST_DAILY,
         STREAK_WEEK,
         QUEST_COMPLETED,
+        PATROL_CLAIMED,
+        DUNGEON_CLEARED,
         SHOP_PURCHASE,
     )
 
 
 REWARD_AMOUNTS = {
-    RewardEventType.MOOD_FIRST_DAILY: (20, 0),
-    RewardEventType.DIARY_FIRST_DAILY: (10, 0),
+    RewardEventType.MOOD_FIRST_DAILY: (10, 0),
+    RewardEventType.DIARY_FIRST_DAILY: (30, 15),
     RewardEventType.CHAT_FIRST_DAILY: (5, 0),
     RewardEventType.STREAK_WEEK: (0, 30),
     RewardEventType.QUEST_COMPLETED: (20, 5),
+    RewardEventType.PATROL_CLAIMED: (0, 3),
+    RewardEventType.DUNGEON_CLEARED: (10, 4),
 }

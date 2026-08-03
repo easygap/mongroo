@@ -222,6 +222,12 @@ class ShopItem {
   bool get isWardrobe => type == 'wardrobe';
   String? get wardrobeLayerKey =>
       gardenString(assetManifest, 'wardrobe_layer_key');
+  Map<String, dynamic> get adventureBonus =>
+      gardenMap(assetManifest['adventure_bonus']);
+  String? get adventureBonusLabel => gardenString(adventureBonus, 'label');
+  String? get adventureBonusContext => gardenString(adventureBonus, 'context');
+  String? get adventureBonusStat => gardenString(adventureBonus, 'stat');
+  int get adventureBonusAmount => gardenInt(adventureBonus['amount']);
   String get wardrobeSlot =>
       gardenString(assetManifest, 'wardrobe_slot') ?? 'outfit';
   List<String> get compatibleSpecies {

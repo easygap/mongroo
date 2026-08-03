@@ -662,7 +662,9 @@ class _ShopItemCardState extends State<_ShopItemCard> {
           button: opensPreview || actionable,
           label: item.isMoodResonance
               ? '${item.name}, ${item.affinityLabel} 기념품, ${item.acquisitionHint}'
-              : '${item.name}, ${item.rarityLabel}, ${item.acquisitionHint}',
+              : item.adventureBonusLabel == null
+                  ? '${item.name}, ${item.rarityLabel}, ${item.acquisitionHint}'
+                  : '${item.name}, ${item.rarityLabel}, ${item.adventureBonusLabel}, ${item.acquisitionHint}',
           hint: opensPreview
               ? '두 번 탭하여 방 미리보기와 획득 조건 열기'
               : actionable
@@ -783,6 +785,32 @@ class _ShopItemCardState extends State<_ShopItemCard> {
                           fontWeight: FontWeight.w600,
                           color: accent,
                         ),
+                      ),
+                    ],
+                    if (item.isWardrobe &&
+                        item.adventureBonusLabel != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.explore_outlined,
+                            size: 15,
+                            color: accent,
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              item.adventureBonusLabel!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: accent,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                     const SizedBox(height: 8),
