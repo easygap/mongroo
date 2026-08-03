@@ -78,6 +78,15 @@ class AdventureController extends Notifier<AdventureUiState> {
             ),
       );
 
+  Future<bool> completeResearch(String projectCode) => _perform(
+        action: 'research:$projectCode',
+        request: (key) =>
+            ref.read(adventureRepositoryProvider).completeResearch(
+                  projectCode: projectCode,
+                  idempotencyKey: key,
+                ),
+      );
+
   Future<bool> _perform({
     required String action,
     required Future<AdventureActionResult> Function(String key) request,

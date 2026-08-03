@@ -47,6 +47,24 @@ void main() {
       'dungeon_run_available': true,
       'dungeons': [],
       'inventory': [],
+      'research_projects': [
+        {
+          'code': 'pressed_leaf_atlas',
+          'name': '압화 길잡이 도감',
+          'description': '작은 흔적을 찾아요.',
+          'completed': false,
+          'can_complete': true,
+          'requirements': [
+            {
+              'code': 'pressed_leaf_map',
+              'name': '눌러 말린 잎 지도',
+              'current': 2,
+              'required': 2,
+            },
+          ],
+          'effect': {'label': '순찰 수집량 영구 +1'},
+        },
+      ],
     });
 
     expect(state.diaryReady, isTrue);
@@ -62,6 +80,9 @@ void main() {
     expect(state.character?.outfit?.layerKey, 'garden-daily');
     expect(state.character?.outfit?.bonusLabel, '순찰 돌봄 +2');
     expect(state.routes.single.available, isTrue);
+    expect(state.researchProjects.single.canComplete, isTrue);
+    expect(state.researchProjects.single.requirements.single.fulfilled, isTrue);
+    expect(state.researchProjects.single.effectLabel, '순찰 수집량 영구 +1');
   });
 
   test('돌아오는 시각과 발견한 던전 상태를 파싱한다', () {

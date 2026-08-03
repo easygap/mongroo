@@ -262,6 +262,66 @@ class AdventureInventoryItem {
       );
 }
 
+class AdventureResearchRequirement {
+  const AdventureResearchRequirement({
+    required this.code,
+    required this.name,
+    required this.current,
+    required this.required,
+  });
+
+  final String code;
+  final String name;
+  final int current;
+  final int required;
+
+  bool get fulfilled => current >= required;
+
+  factory AdventureResearchRequirement.fromJson(Map<String, dynamic> json) =>
+      AdventureResearchRequirement(
+        code: json['code']?.toString() ?? '',
+        name: json['name']?.toString() ?? '',
+        current: _int(json['current']),
+        required: _int(json['required']),
+      );
+}
+
+class AdventureResearchProject {
+  const AdventureResearchProject({
+    required this.code,
+    required this.name,
+    required this.description,
+    required this.completed,
+    required this.canComplete,
+    required this.requirements,
+    required this.effectLabel,
+  });
+
+  final String code;
+  final String name;
+  final String description;
+  final bool completed;
+  final bool canComplete;
+  final List<AdventureResearchRequirement> requirements;
+  final String effectLabel;
+
+  factory AdventureResearchProject.fromJson(Map<String, dynamic> json) {
+    final effect = _map(json['effect']);
+    return AdventureResearchProject(
+      code: json['code']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      completed: json['completed'] == true,
+      canComplete: json['can_complete'] == true,
+      requirements: ((json['requirements'] as List<dynamic>?) ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(AdventureResearchRequirement.fromJson)
+          .toList(growable: false),
+      effectLabel: effect['label']?.toString() ?? '',
+    );
+  }
+}
+
 class AdventureState {
   const AdventureState({
     required this.suspended,
@@ -271,6 +331,7 @@ class AdventureState {
     required this.routes,
     required this.dungeons,
     required this.inventory,
+    required this.researchProjects,
     required this.dungeonRunAvailable,
     this.character,
     this.patrol,
@@ -286,6 +347,7 @@ class AdventureState {
   final bool dungeonRunAvailable;
   final List<AdventureDungeon> dungeons;
   final List<AdventureInventoryItem> inventory;
+  final List<AdventureResearchProject> researchProjects;
 
   factory AdventureState.fromJson(Map<String, dynamic> json) {
     final requirement = _map(json['diary_requirement']);
@@ -317,6 +379,11 @@ class AdventureState {
           .whereType<Map<String, dynamic>>()
           .map(AdventureInventoryItem.fromJson)
           .toList(growable: false),
+      researchProjects:
+          ((json['research_projects'] as List<dynamic>?) ?? const [])
+              .whereType<Map<String, dynamic>>()
+              .map(AdventureResearchProject.fromJson)
+              .toList(growable: false),
     );
   }
 }

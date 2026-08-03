@@ -111,3 +111,21 @@ class UserAdventureItem(Base):
     updated_at: Mapped[datetime] = mapped_column(
         PreciseDateTime, nullable=False, default=utcnow, onupdate=utcnow
     )
+
+
+class UserAdventureResearch(Base):
+    __tablename__ = "user_adventure_research"
+    __table_args__ = (
+        sa.UniqueConstraint(
+            "user_id", "project_code", name="uq_user_adventure_research"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigIntPK, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    project_code: Mapped[str] = mapped_column(sa.String(40), nullable=False)
+    completed_at: Mapped[datetime] = mapped_column(
+        PreciseDateTime, nullable=False, default=utcnow
+    )

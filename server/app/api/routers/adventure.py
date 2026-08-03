@@ -94,3 +94,28 @@ async def run_dungeon(
             {"dungeon_code": dungeon_code},
             handler,
         )
+
+
+@router.post("/research/{project_code}/complete")
+async def complete_research(
+    project_code: str,
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    key = idempotency.require_key(request)
+
+    async def handler():
+        result = await adventure_service.complete_research(db, user.id, project_code)
+        await db.flush()
+        return 201, result
+
+    async with game_service.inventory_lock(user.id):
+        return await idempotency.run_idempotent(
+            db,
+            user.id,
+            "adventure_research_complete",
+            key,
+            {"project_code": project_code},
+            handler,
+        )

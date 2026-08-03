@@ -3,7 +3,12 @@ from datetime import timedelta
 import sqlalchemy as sa
 
 from app.core.timeutil import utcnow
-from app.models.adventure import AdventurePatrol, UserDungeon
+from app.models.adventure import (
+    AdventurePatrol,
+    UserAdventureItem,
+    UserAdventureResearch,
+    UserDungeon,
+)
 from app.models.enums import RewardEventType
 from app.models.game import FarmLayout, Item, UserItem
 from app.models.reward import RewardEvent
@@ -211,3 +216,97 @@ async def test_equipped_outfit_bonus_changes_collection_performance(
     )
     assert started.status_code == 201
     assert started.json()["patrol"]["performance_score"] == 14
+
+
+async def test_research_consumes_materials_and_improves_future_collection(
+    client, session_factory
+):
+    tokens = await signup(client)
+    user_id = tokens["user"]["id"]
+
+    initial = await client.get("/adventure", headers=auth_headers(tokens))
+    assert initial.status_code == 200
+    atlas = next(
+        project
+        for project in initial.json()["research_projects"]
+        if project["code"] == "pressed_leaf_atlas"
+    )
+    assert atlas["completed"] is False
+    assert atlas["can_complete"] is False
+    assert atlas["effect"]["label"] == "순찰 수집량 영구 +1"
+
+    missing = await client.post(
+        "/adventure/research/pressed_leaf_atlas/complete",
+        headers=auth_headers(tokens, idem=True),
+    )
+    assert missing.status_code == 409
+    assert missing.json()["code"] == "RESEARCH_MATERIALS_REQUIRED"
+    assert {item["code"] for item in missing.json()["details"]["missing"]} == {
+        "pressed_leaf_map",
+        "moss_key",
+    }
+
+    async with session_factory() as db:
+        db.add_all(
+            [
+                UserAdventureItem(
+                    user_id=user_id, item_code="pressed_leaf_map", quantity=2
+                ),
+                UserAdventureItem(user_id=user_id, item_code="moss_key", quantity=1),
+            ]
+        )
+        await db.commit()
+
+    complete_headers = {
+        **auth_headers(tokens),
+        "Idempotency-Key": "research-complete-pressed-leaf-atlas",
+    }
+    completed = await client.post(
+        "/adventure/research/pressed_leaf_atlas/complete",
+        headers=complete_headers,
+    )
+    assert completed.status_code == 201, completed.text
+    assert completed.json()["research"]["effect"]["context"] == "patrol"
+    completed_atlas = next(
+        project
+        for project in completed.json()["state"]["research_projects"]
+        if project["code"] == "pressed_leaf_atlas"
+    )
+    assert completed_atlas["completed"] is True
+    assert completed.json()["state"]["inventory"] == []
+
+    replay = await client.post(
+        "/adventure/research/pressed_leaf_atlas/complete",
+        headers=complete_headers,
+    )
+    assert replay.status_code == 201
+    duplicate = await client.post(
+        "/adventure/research/pressed_leaf_atlas/complete",
+        headers=auth_headers(tokens, idem=True),
+    )
+    assert duplicate.status_code == 409
+    assert duplicate.json()["code"] == "RESEARCH_ALREADY_COMPLETED"
+
+    async with session_factory() as db:
+        saved = await db.scalar(
+            sa.select(UserAdventureResearch).where(
+                UserAdventureResearch.user_id == user_id,
+                UserAdventureResearch.project_code == "pressed_leaf_atlas",
+            )
+        )
+        assert saved is not None
+
+    diary = await client.post(
+        "/moods",
+        json={"content": LONG_DIARY},
+        headers=auth_headers(tokens, idem=True),
+    )
+    assert diary.status_code == 201
+    started = await client.post(
+        "/adventure/patrols",
+        json={"route_code": "greenhouse_edge"},
+        headers=auth_headers(tokens, idem=True),
+    )
+    assert started.status_code == 201
+    assert started.json()["patrol"]["performance_score"] == 12
+    assert started.json()["patrol"]["found_quantity"] == 2

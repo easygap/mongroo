@@ -486,15 +486,19 @@ session DTO: `{id, plant_id, reflection_stage, status: "active"|"closed", starte
 | GET `/collection` | 보유 인벤토리 `items`, 잠금 항목까지 포함한 전체 아이템 도감 `catalog_items`, 품종 도감, 현재 씨앗 잔액 |
 | GET `/farm` | 현재 layout과 배치 가능한 보유 아이템 |
 | PUT `/farm/layout` | `expected_version` 기반 전체 배치 저장. 소유권·아이템 유형·중복 배치와 회전각 범위 검증 |
-| GET `/adventure` | 오늘의 일기 개방 상태, 활성 캐릭터 스탯, 의상 성능, 순찰·던전·수집품을 반환. 안전 지원 활성일에는 `suspended=true` |
+| GET `/adventure` | 오늘의 일기 개방 상태, 활성 캐릭터 스탯, 의상 성능, 순찰·던전·수집품·표본 연구 진행도를 반환. 안전 지원 활성일에는 `suspended=true` |
 | POST `/adventure/patrols` (멱등) | `{route_code}`로 하루 한 번 순찰 시작. 오늘 50자 이상 일기와 경로별 성장 단계 필요 |
 | POST `/adventure/patrols/{id}/claim` (멱등) | 귀환 시 씨앗 3개와 수집품 지급, 경로의 던전을 처음 발견하면 해금 |
 | POST `/adventure/dungeons/{code}/run` (멱등) | 발견된 던전을 하루 한 번 탐험해 +10 XP/+4 씨앗과 수집품 지급 |
+| POST `/adventure/research/{code}/complete` (멱등) | 필요한 수집품을 원자적으로 차감하고 계정 단위 표본 연구를 영구 완성. 부족 재료는 `RESEARCH_MATERIALS_REQUIRED`의 `details.missing`으로 반환 |
 
 탐험은 오늘 50자 이상 마음 일기를 쓴 뒤에만 열린다. 일기 한 편의 합산 보상은
 +40 XP/+15 씨앗이며, 퀘스트(+20/+5), 던전(+10/+4), 순찰(+0/+3)보다 크다.
 감정 성장형별 스탯 추가 총합은 모두 4로 같고, 의상 보너스는 탐험 수집량에만
 영향을 주므로 감정의 종류와 의상 유무가 일기 경험치·씨앗 효율을 바꾸지 않는다.
+표본 연구도 경험치·씨앗을 직접 지급하지 않고 이후 순찰 또는 던전 수집량만 최대
+3개 범위에서 높인다. 수집품 정리는 시간 제한 활동이 아니므로 일기 개방 여부와
+무관하게 할 수 있다.
 
 안전 지원이 활성화된 퀘스트 응답은
 `{date, suspended:true, suspension_reason, items:[]}`이다. 일반 응답은

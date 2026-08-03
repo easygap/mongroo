@@ -39,6 +39,7 @@ def test_adventure_migration_creates_tables_and_outfit_bonuses(tmp_path, monkeyp
             "user_dungeons",
             "dungeon_runs",
             "user_adventure_items",
+            "user_adventure_research",
         } <= tables
         manifests = _outfit_manifests(database_path)
         assert manifests["wardrobe_garden_daily"]["adventure_bonus"] == {
@@ -50,6 +51,17 @@ def test_adventure_migration_creates_tables_and_outfit_bonuses(tmp_path, monkeyp
         assert (
             manifests["wardrobe_city_night"]["adventure_bonus"]["context"] == "dungeon"
         )
+
+        command.downgrade(config, "0021_adventure_loop")
+        with sqlite3.connect(database_path) as connection:
+            tables = {
+                row[0]
+                for row in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table'"
+                )
+            }
+        assert "user_adventure_research" not in tables
+        assert "user_adventure_items" in tables
 
         command.downgrade(config, "0020_complete_wardrobe")
         downgraded = _outfit_manifests(database_path)

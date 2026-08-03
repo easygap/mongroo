@@ -12,7 +12,7 @@
 | Flutter 정적 분석 | `cd app; dart analyze` | 경고·오류 0 |
 | Flutter 단위/위젯 | `cd app; flutter test` | 137 passed |
 | Web 릴리스 빌드 | `cd app; flutter build web --wasm --release --dart-define=API_BASE_URL=...` | 성공 |
-| 서버 전체 | `cd server; pytest -q` | 282 passed |
+| 서버 전체 | `cd server; pytest -q` | 284 passed |
 | Python import/문법 | `python -m compileall server/app server/tests` | 성공 |
 | API 계약 | `cd server; python -m app.export_openapi` | `server/openapi.json`과 일치 |
 | 공백·줄끝 검사 | `git diff --check` | 오류 0 |
@@ -36,6 +36,7 @@ Android APK/AAB는 Android SDK와 release keystore가 준비된 환경에서 별
    박물관 전시 → 선택 해제와 10그루 제한 오류 복구
 9. 위기 표현 기록 → 안전 화면 즉시 이동 → 퀘스트 억제 → 공식 지원 경로 노출
 10. 50자 일기 전 탐험 잠금 → 일기 후 순찰 → 귀환 수집 → 던전 발견·1일 1회 탐험
+    → 표본 연구 재료 차감·중복 완료 방지·다음 탐험 수집 보너스
     → 캐릭터 성장·씨앗 잔액·의상 성능 동기화
 
 퀘스트는 36종·10개 카테고리이며, 같은 사용자/날짜에 결정적으로 재현된다. 최근

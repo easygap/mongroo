@@ -125,10 +125,22 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
                       const _SectionTitle(
                         icon: Icons.inventory_2_outlined,
                         title: '탐험 수집함',
-                        description: '발견한 재료는 이후 제작과 교환 콘텐츠로 이어져요.',
+                        description: '발견한 재료를 모아 표본 연구를 완성할 수 있어요.',
                       ),
                       const SizedBox(height: 10),
                       _Inventory(items: data.inventory),
+                      const SizedBox(height: 24),
+                      const _SectionTitle(
+                        icon: Icons.science_outlined,
+                        title: '표본 연구대',
+                        description: '재료를 정리해 수집 효율을 높여요. 성장 보상은 마음 일기가 가장 커요.',
+                      ),
+                      const SizedBox(height: 10),
+                      _ResearchGrid(
+                        projects: data.researchProjects,
+                        busyAction: ui.busyAction,
+                        onComplete: _completeResearch,
+                      ),
                     ],
                   ),
                 ),
@@ -165,6 +177,18 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
     if (!mounted || !success) return;
     await HapticFeedback.lightImpact();
     _showSuccess('던전 탐험을 마치고 성장 보상을 받았어요.');
+  }
+
+  Future<void> _completeResearch(String projectCode) async {
+    final success = await ref
+        .read(adventureControllerProvider.notifier)
+        .completeResearch(projectCode);
+    if (!mounted || !success) return;
+    final suspended =
+        ref.read(adventureControllerProvider).data.valueOrNull?.suspended ??
+            false;
+    if (!suspended) await HapticFeedback.mediumImpact();
+    _showSuccess('표본 연구를 완성했어요. 다음 탐험부터 효과가 적용돼요.');
   }
 
   void _showSuccess(String message) {
@@ -810,6 +834,160 @@ class _Inventory extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _ResearchGrid extends StatelessWidget {
+  const _ResearchGrid({
+    required this.projects,
+    required this.busyAction,
+    required this.onComplete,
+  });
+
+  final List<AdventureResearchProject> projects;
+  final String? busyAction;
+  final ValueChanged<String> onComplete;
+
+  @override
+  Widget build(BuildContext context) {
+    if (projects.isEmpty) {
+      return const MongrooPanel(
+        shadowOffset: Offset.zero,
+        child: Text('준비 중인 표본 연구가 없어요.'),
+      );
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) => Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: [
+          for (final project in projects)
+            SizedBox(
+              width: constraints.maxWidth >= 680
+                  ? (constraints.maxWidth - 12) / 2
+                  : constraints.maxWidth,
+              child: _ResearchCard(
+                project: project,
+                busy: busyAction == 'research:${project.code}',
+                anyBusy: busyAction != null,
+                onComplete: () => onComplete(project.code),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ResearchCard extends StatelessWidget {
+  const _ResearchCard({
+    required this.project,
+    required this.busy,
+    required this.anyBusy,
+    required this.onComplete,
+  });
+
+  final AdventureResearchProject project;
+  final bool busy;
+  final bool anyBusy;
+  final VoidCallback onComplete;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = MongrooPalette.of(context);
+    final status = project.completed
+        ? '완료'
+        : project.canComplete
+            ? '완성 가능'
+            : '재료 수집 중';
+    return Semantics(
+      container: true,
+      label: '${project.name}. $status. 효과 ${project.effectLabel}',
+      child: MongrooPanel(
+        borderColor: project.completed ? palette.leaf.withAlpha(110) : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  project.completed
+                      ? Icons.task_alt_rounded
+                      : Icons.biotech_outlined,
+                  color: project.completed ? palette.leaf : palette.wood,
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    project.name,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                MongrooTag(
+                  label: status,
+                  backgroundColor: project.completed || project.canComplete
+                      ? palette.leaf.withAlpha(34)
+                      : palette.paperDeep,
+                  foregroundColor: palette.night,
+                ),
+              ],
+            ),
+            const SizedBox(height: 7),
+            Text(
+              project.description,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 11),
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: [
+                for (final requirement in project.requirements)
+                  MongrooTag(
+                    label: project.completed
+                        ? '${requirement.name} 사용 완료'
+                        : '${requirement.name} ${requirement.current}/${requirement.required}',
+                    icon: requirement.fulfilled || project.completed
+                        ? Icons.check_rounded
+                        : _itemIcon(requirement.code),
+                    backgroundColor: requirement.fulfilled || project.completed
+                        ? palette.leaf.withAlpha(34)
+                        : palette.paperDeep,
+                    foregroundColor: palette.night,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 11),
+            Text(
+              project.effectLabel,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.tonalIcon(
+              onPressed: !project.completed && project.canComplete && !anyBusy
+                  ? onComplete
+                  : null,
+              icon: busy
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(project.completed
+                      ? Icons.check_rounded
+                      : Icons.auto_awesome_outlined),
+              label: Text(project.completed
+                  ? '연구 완료'
+                  : project.canComplete
+                      ? '재료 정리해 완성'
+                      : '재료가 더 필요해요'),
+            ),
+          ],
+        ),
       ),
     );
   }

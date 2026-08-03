@@ -51,6 +51,18 @@ class AdventureRepository {
         );
         return AdventureActionResult.fromJson(response.data ?? const {});
       });
+
+  Future<AdventureActionResult> completeResearch({
+    required String projectCode,
+    required String idempotencyKey,
+  }) =>
+      guardApi(() async {
+        final response = await _dio.post<Map<String, dynamic>>(
+          '/adventure/research/$projectCode/complete',
+          options: Options(headers: {'Idempotency-Key': idempotencyKey}),
+        );
+        return AdventureActionResult.fromJson(response.data ?? const {});
+      });
 }
 
 final adventureRepositoryProvider = Provider<AdventureRepository>(

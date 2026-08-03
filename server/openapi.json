@@ -1571,6 +1571,46 @@
         }
       }
     },
+    "/api/v1/adventure/research/{project_code}/complete": {
+      "post": {
+        "tags": [
+          "adventure"
+        ],
+        "summary": "Complete Research",
+        "operationId": "complete_research_api_v1_adventure_research__project_code__complete_post",
+        "parameters": [
+          {
+            "name": "project_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Project Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health/live": {
       "get": {
         "tags": [

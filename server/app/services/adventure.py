@@ -9,6 +9,7 @@ from app.models.adventure import (
     AdventurePatrol,
     DungeonRun,
     UserAdventureItem,
+    UserAdventureResearch,
     UserDungeon,
 )
 from app.models.enums import PlantStatus, RewardEventType
@@ -65,6 +66,44 @@ ITEMS = {
     "moon_dew": ("달빛 이슬", "밤의 식물에서만 맺히는 맑은 이슬"),
     "moss_key": ("이끼 열쇠", "기억서고의 잠긴 표본함을 여는 작은 열쇠"),
     "echo_seed": ("메아리 씨앗", "흔들면 아주 작은 울림이 돌아오는 씨앗"),
+}
+
+RESEARCH_PROJECTS = {
+    "pressed_leaf_atlas": {
+        "name": "압화 길잡이 도감",
+        "description": "잎 지도와 이끼 열쇠를 엮어 순찰 중 놓치던 작은 흔적을 찾아요.",
+        "requirements": {"pressed_leaf_map": 2, "moss_key": 1},
+        "effect": {
+            "context": "patrol",
+            "amount": 1,
+            "label": "순찰 수집량 영구 +1",
+        },
+    },
+    "echo_listening_kit": {
+        "name": "메아리 청음 키트",
+        "description": "달빛 이슬로 조율한 씨앗이 던전의 희미한 울림을 구분해 줘요.",
+        "requirements": {"moon_dew": 2, "echo_seed": 1},
+        "effect": {
+            "context": "dungeon",
+            "amount": 1,
+            "label": "던전 수집량 영구 +1",
+        },
+    },
+    "memory_specimen_case": {
+        "name": "기억 씨앗 표본함",
+        "description": "서로 다른 네 발견물을 한자리에 정리해 첫 탐험 기록을 완성해요.",
+        "requirements": {
+            "pressed_leaf_map": 1,
+            "moon_dew": 1,
+            "moss_key": 1,
+            "echo_seed": 1,
+        },
+        "effect": {
+            "context": "archive",
+            "amount": 0,
+            "label": "첫 탐험 기록 완성",
+        },
+    },
 }
 
 STAT_LABELS = {
@@ -171,7 +210,10 @@ async def _equipped_outfit(db: AsyncSession, user_id: int) -> dict | None:
 
 
 def _performance(
-    character: dict, stats: tuple[str, str], context: str
+    character: dict,
+    stats: tuple[str, str],
+    context: str,
+    research_bonus: int = 0,
 ) -> tuple[int, int]:
     score = sum(character["stats"][stat] for stat in stats)
     outfit = character.get("outfit") or {}
@@ -180,8 +222,58 @@ def _performance(
         score += int(bonus.get("amount") or 0)
     # 성장과 의상은 수집량에만 반영한다. 핵심 XP/씨앗은 고정해 일기보다
     # 효율이 커지는 조합을 만들지 않는다.
-    quantity = 2 if score >= 17 else 1
+    quantity = min(3, (2 if score >= 17 else 1) + research_bonus)
     return score, quantity
+
+
+async def _research_bonus(db: AsyncSession, user_id: int, context: str) -> int:
+    completed = set(
+        (
+            await db.execute(
+                sa.select(UserAdventureResearch.project_code).where(
+                    UserAdventureResearch.user_id == user_id
+                )
+            )
+        ).scalars()
+    )
+    return sum(
+        int(project["effect"]["amount"])
+        for code, project in RESEARCH_PROJECTS.items()
+        if code in completed and project["effect"]["context"] == context
+    )
+
+
+def _research_payloads(
+    completed: set[str], inventory: dict[str, int]
+) -> list[dict]:
+    payloads = []
+    for code, project in RESEARCH_PROJECTS.items():
+        requirements = [
+            {
+                "code": item_code,
+                "name": ITEMS[item_code][0],
+                "current": inventory.get(item_code, 0),
+                "required": required,
+            }
+            for item_code, required in project["requirements"].items()
+        ]
+        is_completed = code in completed
+        payloads.append(
+            {
+                "code": code,
+                "name": project["name"],
+                "description": project["description"],
+                "completed": is_completed,
+                "can_complete": not is_completed
+                and all(
+                    requirement["current"] >= requirement["required"]
+                    for requirement in requirements
+                ),
+                "requirements": requirements,
+                "effect": project["effect"],
+            }
+        )
+    return payloads
 
 
 def _character_payload(character: dict | None) -> dict | None:
@@ -274,6 +366,16 @@ async def state_payload(db: AsyncSession, user_id: int) -> dict:
             )
         ).scalars()
     )
+    inventory = {row.item_code: row.quantity for row in inventory_rows}
+    completed_research = set(
+        (
+            await db.execute(
+                sa.select(UserAdventureResearch.project_code).where(
+                    UserAdventureResearch.user_id == user_id
+                )
+            )
+        ).scalars()
+    )
     return {
         "date": today.isoformat(),
         "suspended": suspended,
@@ -324,6 +426,7 @@ async def state_payload(db: AsyncSession, user_id: int) -> dict:
             }
             for row in inventory_rows
         ],
+        "research_projects": _research_payloads(completed_research, inventory),
     }
 
 
@@ -367,7 +470,10 @@ async def start_patrol(db: AsyncSession, user_id: int, route_code: str) -> dict:
     )
     if exists is not None:
         raise AppError(409, "PATROL_ALREADY_STARTED", "오늘 순찰은 이미 보냈어요.")
-    score, quantity = _performance(character, route["stats"], "patrol")
+    research_bonus = await _research_bonus(db, user_id, "patrol")
+    score, quantity = _performance(
+        character, route["stats"], "patrol", research_bonus
+    )
     patrol = AdventurePatrol(
         user_id=user_id,
         plant_id=character["plant"].id,
@@ -516,7 +622,10 @@ async def run_dungeon(db: AsyncSession, user_id: int, dungeon_code: str) -> dict
             "DUNGEON_STAGE_REQUIRED",
             f"{dungeon['required_stage']}단계부터 들어갈 수 있어요.",
         )
-    score, quantity = _performance(character, dungeon["stats"], "dungeon")
+    research_bonus = await _research_bonus(db, user_id, "dungeon")
+    score, quantity = _performance(
+        character, dungeon["stats"], "dungeon", research_bonus
+    )
     run = DungeonRun(
         user_id=user_id,
         plant_id=character["plant"].id,
@@ -557,5 +666,80 @@ async def run_dungeon(db: AsyncSession, user_id: int, dungeon_code: str) -> dict
             "found_quantity": run.found_quantity,
         },
         "reward": outcome.payload(),
+        "state": await state_payload(db, user_id),
+    }
+
+
+async def complete_research(
+    db: AsyncSession, user_id: int, project_code: str
+) -> dict:
+    project = RESEARCH_PROJECTS.get(project_code)
+    if project is None:
+        raise AppError(
+            404,
+            "RESEARCH_PROJECT_NOT_FOUND",
+            "표본 연구 항목을 찾을 수 없습니다.",
+        )
+    completed = await db.scalar(
+        sa.select(UserAdventureResearch)
+        .where(
+            UserAdventureResearch.user_id == user_id,
+            UserAdventureResearch.project_code == project_code,
+        )
+        .with_for_update()
+    )
+    if completed is not None:
+        raise AppError(409, "RESEARCH_ALREADY_COMPLETED", "이미 완성한 연구예요.")
+
+    required_codes = tuple(project["requirements"])
+    rows = list(
+        (
+            await db.execute(
+                sa.select(UserAdventureItem)
+                .where(
+                    UserAdventureItem.user_id == user_id,
+                    UserAdventureItem.item_code.in_(required_codes),
+                )
+                .with_for_update()
+            )
+        ).scalars()
+    )
+    inventory = {row.item_code: row for row in rows}
+    missing = [
+        {
+            "code": item_code,
+            "name": ITEMS[item_code][0],
+            "current": inventory[item_code].quantity if item_code in inventory else 0,
+            "required": required,
+        }
+        for item_code, required in project["requirements"].items()
+        if item_code not in inventory or inventory[item_code].quantity < required
+    ]
+    if missing:
+        raise AppError(
+            409,
+            "RESEARCH_MATERIALS_REQUIRED",
+            "연구를 완성하려면 탐험 재료가 더 필요해요.",
+            {"missing": missing},
+        )
+
+    now = utcnow()
+    for item_code, required in project["requirements"].items():
+        inventory[item_code].quantity -= required
+        inventory[item_code].updated_at = now
+    db.add(
+        UserAdventureResearch(
+            user_id=user_id,
+            project_code=project_code,
+            completed_at=now,
+        )
+    )
+    await db.flush()
+    return {
+        "research": {
+            "code": project_code,
+            "name": project["name"],
+            "effect": project["effect"],
+        },
         "state": await state_payload(db, user_id),
     }

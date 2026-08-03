@@ -3,6 +3,7 @@ from app.models.adventure import (
     AdventurePatrol,
     DungeonRun,
     UserAdventureItem,
+    UserAdventureResearch,
     UserDungeon,
 )
 from app.models.chat import ChatMessage, ChatRun, ChatSession
@@ -20,5 +21,5 @@ __all__ = [
     "RewardEvent", "ChatSession", "ChatMessage", "ChatRun", "Report", "SafetyEvent",
     "AiJob", "IdempotencyKey", "WorkerHeartbeat", "Quest", "UserQuest", "Item",
     "UserItem", "FarmLayout", "UserSpeciesUnlock", "AdventurePatrol",
-    "UserDungeon", "DungeonRun", "UserAdventureItem",
+    "UserDungeon", "DungeonRun", "UserAdventureItem", "UserAdventureResearch",
 ]
