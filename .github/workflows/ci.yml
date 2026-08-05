@@ -72,6 +72,7 @@ jobs:
       run:
         working-directory: server
     env:
+      APP_ENV: test
       AI_MODE: fake
       DATABASE_URL: sqlite+aiosqlite:///./ci.db
       JWT_SECRET: ci-only-secret-0123456789abcdef0123456789
@@ -88,6 +89,8 @@ jobs:
         run: python -m ruff check app tests
       - name: Test
         run: python -m pytest -q
+      - name: Validate expedition content
+        run: python -m app.content.expeditions.validator app/content/expeditions/v1/*.json
       - name: OpenAPI drift check
         run: |
           python -m app.export_openapi
@@ -106,3 +109,18 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
+      - name: Build WebAssembly release
+        run: flutter build web --wasm --release --no-pub
+      - name: Build Android debug APK
+        run: flutter build apk --debug --no-pub
+
+  production-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate production compose
+        run: MONGROO_ENV_FILE=.env.production.example docker compose --env-file .env.production.example -f docker-compose.prod.yml config --quiet
+      - name: Build API image
+        run: docker build --pull --tag mongroo-api:ci server
+      - name: Build Web image
+        run: docker build --pull --tag mongroo-web:ci app

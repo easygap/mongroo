@@ -77,6 +77,9 @@ class RewardEventType:
     QUEST_COMPLETED = "quest_completed"
     PATROL_CLAIMED = "patrol_claimed"
     DUNGEON_CLEARED = "dungeon_cleared"
+    ADVENTURE_WEEKLY = "adventure_weekly"
+    ADVENTURE_DONATED = "adventure_donated"
+    EXPEDITION_COMPLETED = "expedition_completed"
     SHOP_PURCHASE = "shop_purchase"
     ALL = (
         MOOD_FIRST_DAILY,
@@ -86,6 +89,9 @@ class RewardEventType:
         QUEST_COMPLETED,
         PATROL_CLAIMED,
         DUNGEON_CLEARED,
+        ADVENTURE_WEEKLY,
+        ADVENTURE_DONATED,
+        EXPEDITION_COMPLETED,
         SHOP_PURCHASE,
     )
 
@@ -98,4 +104,5 @@ REWARD_AMOUNTS = {
     RewardEventType.QUEST_COMPLETED: (20, 5),
     RewardEventType.PATROL_CLAIMED: (0, 3),
     RewardEventType.DUNGEON_CLEARED: (10, 4),
+    RewardEventType.EXPEDITION_COMPLETED: (6, 2),
 }

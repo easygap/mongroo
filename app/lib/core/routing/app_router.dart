@@ -7,6 +7,7 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/chat/presentation/chat_screen.dart';
+import '../../features/expedition/presentation/expedition_screen.dart';
 import '../../features/gallery/presentation/gallery_screen.dart';
 import '../../features/garden/presentation/garden_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
@@ -112,6 +113,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/chat',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const ChatScreen(),
+      ),
+      GoRoute(
+        path: '/expedition',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const ExpeditionScreen(),
       ),
       GoRoute(
         path: '/gallery',

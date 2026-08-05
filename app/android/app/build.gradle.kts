@@ -1,8 +1,20 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+val releasePropertiesFile = rootProject.file("key.properties")
+val releaseProperties = Properties()
+if (releasePropertiesFile.exists()) {
+    releasePropertiesFile.inputStream().use(releaseProperties::load)
+}
+
+fun releaseProperty(name: String): String =
+    releaseProperties.getProperty(name)
+        ?: throw GradleException("key.properties에 $name 값이 필요합니다.")
 
 android {
     namespace = "com.easygap.mongroo"
@@ -22,12 +34,34 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (releasePropertiesFile.exists()) {
+            create("release") {
+                keyAlias = releaseProperty("keyAlias")
+                keyPassword = releaseProperty("keyPassword")
+                storeFile = file(releaseProperty("storeFile"))
+                storePassword = releaseProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // 로컬 release smoke test 전용. 스토어 배포 전 자체 서명으로 교체한다
-            // (docs/deployment.md §4).
-            signingConfig = signingConfigs.getByName("debug")
+            if (releasePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
+    }
+}
+
+gradle.taskGraph.whenReady {
+    val releaseRequested = allTasks.any { task ->
+        task.path.contains("Release", ignoreCase = true)
+    }
+    if (releaseRequested && !releasePropertiesFile.exists()) {
+        throw GradleException(
+            "release 빌드는 android/key.properties와 운영 upload key가 필요합니다."
+        )
     }
 }
 

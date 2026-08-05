@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "content_version": "2026.08.1",
+  "region": {
+    "code": "moss_archive",
+    "name": "이끼 기억서고",
+    "description": "젖은 표찰과 뿌리 목록 사이에서 잊힌 마음의 기록을 찾아가는 첫 탐험지예요.",
+    "recommended_stage": 2,
+    "stat_cap": 7,
+    "reward": {"exp": 6, "seeds": 2, "item_code": "moss_key"}
+  },
+  "map": {
+    "code": "archive_loop_a",
+    "name": "숨 쉬는 목록실",
+    "entrance": "entrance",
+    "nodes": [
+      {"code": "entrance", "name": "서고 입구", "type": "entrance", "x": 0.08, "y": 0.50, "cost": 0},
+      {"code": "wet_labels", "name": "젖은 표찰길", "type": "event", "x": 0.28, "y": 0.27, "cost": 1, "event_code": "wet_label_order"},
+      {"code": "root_catalogue", "name": "뿌리 목록실", "type": "event", "x": 0.29, "y": 0.72, "cost": 1, "event_code": "root_catalogue"},
+      {"code": "quiet_camp", "name": "숨 고르는 온실", "type": "camp", "x": 0.49, "y": 0.19, "cost": 1},
+      {"code": "pressed_gallery", "name": "압화 회랑", "type": "discovery", "x": 0.50, "y": 0.81, "cost": 1},
+      {"code": "ledger_keeper", "name": "장부지기의 문", "type": "guardian", "x": 0.69, "y": 0.50, "cost": 1, "event_code": "ledger_keeper"},
+      {"code": "memory_drawer", "name": "기억 서랍", "type": "objective", "x": 0.84, "y": 0.34, "cost": 1},
+      {"code": "exit", "name": "귀환 통로", "type": "exit", "x": 0.93, "y": 0.67, "cost": 0}
+    ],
+    "edges": [
+      ["entrance", "wet_labels"],
+      ["entrance", "root_catalogue"],
+      ["wet_labels", "quiet_camp"],
+      ["root_catalogue", "pressed_gallery"],
+      ["quiet_camp", "ledger_keeper"],
+      ["pressed_gallery", "ledger_keeper"],
+      ["ledger_keeper", "memory_drawer"],
+      ["memory_drawer", "exit"]
+    ],
+    "initial_revealed": ["entrance", "wet_labels", "root_catalogue"]
+  },
+  "map_templates": [
+    {
+      "code": "archive_crossroads_b",
+      "name": "엇갈린 압화 서가",
+      "edges": [
+        ["entrance", "wet_labels"],
+        ["entrance", "root_catalogue"],
+        ["wet_labels", "quiet_camp"],
+        ["wet_labels", "pressed_gallery"],
+        ["root_catalogue", "quiet_camp"],
+        ["root_catalogue", "pressed_gallery"],
+        ["quiet_camp", "ledger_keeper"],
+        ["pressed_gallery", "ledger_keeper"],
+        ["ledger_keeper", "memory_drawer"],
+        ["memory_drawer", "exit"]
+      ],
+      "coordinate_overrides": {
+        "quiet_camp": {"x": 0.48, "y": 0.30},
+        "pressed_gallery": {"x": 0.48, "y": 0.70},
+        "memory_drawer": {"x": 0.84, "y": 0.50},
+        "exit": {"x": 0.95, "y": 0.50}
+      }
+    },
+    {
+      "code": "archive_ring_c",
+      "name": "되울림 원형서고",
+      "edges": [
+        ["entrance", "wet_labels"],
+        ["entrance", "root_catalogue"],
+        ["wet_labels", "quiet_camp"],
+        ["root_catalogue", "pressed_gallery"],
+        ["quiet_camp", "pressed_gallery"],
+        ["quiet_camp", "ledger_keeper"],
+        ["pressed_gallery", "ledger_keeper"],
+        ["ledger_keeper", "memory_drawer"],
+        ["memory_drawer", "exit"]
+      ],
+      "coordinate_overrides": {
+        "wet_labels": {"x": 0.27, "y": 0.20},
+        "root_catalogue": {"x": 0.27, "y": 0.80},
+        "quiet_camp": {"x": 0.50, "y": 0.22},
+        "pressed_gallery": {"x": 0.50, "y": 0.78},
+        "ledger_keeper": {"x": 0.68, "y": 0.50}
+      }
+    }
+  ],
+  "events": {
+    "wet_label_order": {
+      "title": "번진 이름들",
+      "text": "비에 젖은 표찰들이 바닥에 붙어 있어요. 흐릿한 글자를 어떤 방식으로 되살릴까요?",
+      "tags": ["puzzle", "mystery"],
+      "choices": [
+        {"code": "trace_ink", "label": "번진 잉크의 결을 따라간다", "stat": "insight", "difficulty": 8, "resolve_cost": 1},
+        {"code": "sort_slowly", "label": "숨을 맞추며 한 장씩 분류한다", "stat": "focus", "difficulty": 8, "resolve_cost": 1},
+        {"code": "mark_return", "label": "안전한 표식만 남기고 돌아선다", "stat": null, "difficulty": 0, "resolve_cost": 0, "safe": true}
+      ]
+    },
+    "root_catalogue": {
+      "title": "엉킨 뿌리 목록",
+      "text": "목록 서랍을 뿌리들이 단단히 감싸고 있어요. 억지로 끊지 않고 길을 만들 수 있을까요?",
+      "tags": ["care", "nature"],
+      "choices": [
+        {"code": "loosen_roots", "label": "상처 나지 않게 뿌리를 풀어 준다", "stat": "care", "difficulty": 8, "resolve_cost": 1},
+        {"code": "open_path", "label": "앞에서 틈을 찾아 길을 연다", "stat": "courage", "difficulty": 8, "resolve_cost": 1},
+        {"code": "listen_first", "label": "뿌리의 떨림이 잦아들 때까지 기다린다", "stat": null, "difficulty": 0, "resolve_cost": 0, "safe": true}
+      ]
+    },
+    "ledger_keeper": {
+      "title": "장부지기의 질문",
+      "text": "문 위의 이끼가 속삭여요. ‘간직할 마음과 놓아줄 마음을 어떻게 구분할래?’",
+      "tags": ["guardian", "social"],
+      "choices": [
+        {"code": "read_spaces", "label": "문장 사이의 빈칸까지 읽는다", "stat": "insight", "difficulty": 10, "resolve_cost": 1},
+        {"code": "answer_together", "label": "서로의 답을 듣고 하나로 엮는다", "stat": "care", "difficulty": 10, "resolve_cost": 1},
+        {"code": "leave_question", "label": "오늘 답하지 않아도 된다고 말한다", "stat": null, "difficulty": 0, "resolve_cost": 0, "safe": true}
+      ]
+    }
+  },
+  "discoveries": {
+    "pressed_gallery": {
+      "title": "겹쳐 둔 계절",
+      "text": "오래된 압화마다 누군가의 날짜가 적혀 있어요. 탐험대는 가장 작은 잎 하나를 기억해 두기로 해요."
+    }
+  },
+  "run_threads": [
+    {
+      "code": "archive_breathing_ledger",
+      "seed": "서고 전체가 아주 천천히 숨 쉬는 것처럼 바닥이 오르내려요.",
+      "echo": "처음 느낀 호흡이 표찰과 압화 사이에서 다시 이어져요.",
+      "payoff": "기억 서랍을 닫자 서고의 호흡이 탐험대와 같은 박자로 잦아들어요."
+    }
+  ]
+}

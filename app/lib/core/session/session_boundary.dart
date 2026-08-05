@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/chat/presentation/chat_controller.dart';
+import '../../features/expedition/presentation/expedition_controller.dart';
 import '../../features/gallery/presentation/gallery_screen.dart';
 import '../../features/garden/presentation/garden_controller.dart';
 import '../../features/home/presentation/home_controller.dart';
@@ -31,6 +32,7 @@ final sessionBoundaryProvider = Provider<void>((ref) {
     ref.invalidate(homeControllerProvider);
     ref.invalidate(plantReactionProvider);
     ref.invalidate(chatControllerProvider);
+    ref.invalidate(expeditionControllerProvider);
     ref.invalidate(questControllerProvider);
     ref.invalidate(shopControllerProvider);
     ref.invalidate(collectionControllerProvider);

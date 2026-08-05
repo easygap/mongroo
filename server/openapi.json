@@ -1549,6 +1549,23 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/DungeonRunRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1589,6 +1606,511 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/weekly-goals/{goal_code}/claim": {
+      "post": {
+        "tags": [
+          "adventure"
+        ],
+        "summary": "Claim Weekly Goal",
+        "operationId": "claim_weekly_goal_api_v1_adventure_weekly_goals__goal_code__claim_post",
+        "parameters": [
+          {
+            "name": "goal_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Goal Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/donations": {
+      "post": {
+        "tags": [
+          "adventure"
+        ],
+        "summary": "Donate Adventure Item",
+        "operationId": "donate_adventure_item_api_v1_adventure_donations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdventureDonationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/expeditions/catalog": {
+      "get": {
+        "tags": [
+          "expeditions"
+        ],
+        "summary": "Expedition Catalog",
+        "operationId": "expedition_catalog_api_v1_adventure_expeditions_catalog_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/expeditions/roster": {
+      "get": {
+        "tags": [
+          "expeditions"
+        ],
+        "summary": "Expedition Roster",
+        "operationId": "expedition_roster_api_v1_adventure_expeditions_roster_get",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 30,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/expeditions/active": {
+      "get": {
+        "tags": [
+          "expeditions"
+        ],
+        "summary": "Active Expedition",
+        "operationId": "active_expedition_api_v1_adventure_expeditions_active_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/expeditions/{run_id}": {
+      "get": {
+        "tags": [
+          "expeditions"
+        ],
+        "summary": "Expedition Detail",
+        "operationId": "expedition_detail_api_v1_adventure_expeditions__run_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/expeditions": {
+      "post": {
+        "tags": [
+          "expeditions"
+        ],
+        "summary": "Start Expedition",
+        "operationId": "start_expedition_api_v1_adventure_expeditions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpeditionStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/expeditions/{run_id}/move": {
+      "post": {
+        "tags": [
+          "expeditions"
+        ],
+        "summary": "Move Expedition",
+        "operationId": "move_expedition_api_v1_adventure_expeditions__run_id__move_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpeditionMoveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/expeditions/{run_id}/choices": {
+      "post": {
+        "tags": [
+          "expeditions"
+        ],
+        "summary": "Choose Expedition Event",
+        "operationId": "choose_expedition_event_api_v1_adventure_expeditions__run_id__choices_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpeditionChoiceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/expeditions/{run_id}/skills": {
+      "post": {
+        "tags": [
+          "expeditions"
+        ],
+        "summary": "Use Expedition Skill",
+        "operationId": "use_expedition_skill_api_v1_adventure_expeditions__run_id__skills_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpeditionSkillRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/expeditions/{run_id}/extract": {
+      "post": {
+        "tags": [
+          "expeditions"
+        ],
+        "summary": "Extract Expedition",
+        "operationId": "extract_expedition_api_v1_adventure_expeditions__run_id__extract_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpeditionFinishRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/expeditions/{run_id}/retreat": {
+      "post": {
+        "tags": [
+          "expeditions"
+        ],
+        "summary": "Retreat Expedition",
+        "operationId": "retreat_expedition_api_v1_adventure_expeditions__run_id__retreat_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpeditionFinishRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1652,6 +2174,22 @@
   },
   "components": {
     "schemas": {
+      "AdventureDonationRequest": {
+        "properties": {
+          "item_code": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Item Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_code"
+        ],
+        "title": "AdventureDonationRequest"
+      },
       "ChatMessageRequest": {
         "properties": {
           "content": {
@@ -1695,6 +2233,201 @@
         },
         "type": "object",
         "title": "ChatSessionCreateRequest"
+      },
+      "DungeonRunRequest": {
+        "properties": {
+          "approach_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1,
+                "pattern": "^[a-z0-9_]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approach Code"
+          }
+        },
+        "type": "object",
+        "title": "DungeonRunRequest"
+      },
+      "ExpeditionChoiceRequest": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "client_action_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 8,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Client Action Id"
+          },
+          "choice_code": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[a-z0-9_-]+$",
+            "title": "Choice Code"
+          },
+          "acting_member_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Acting Member Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "client_action_id",
+          "choice_code",
+          "acting_member_id"
+        ],
+        "title": "ExpeditionChoiceRequest"
+      },
+      "ExpeditionFinishRequest": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "client_action_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 8,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Client Action Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "client_action_id"
+        ],
+        "title": "ExpeditionFinishRequest"
+      },
+      "ExpeditionMoveRequest": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "client_action_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 8,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Client Action Id"
+          },
+          "node_code": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[a-z0-9_-]+$",
+            "title": "Node Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "client_action_id",
+          "node_code"
+        ],
+        "title": "ExpeditionMoveRequest"
+      },
+      "ExpeditionSkillRequest": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "client_action_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 8,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Client Action Id"
+          },
+          "member_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Member Id"
+          },
+          "skill_type": {
+            "type": "string",
+            "pattern": "^(signature|form)$",
+            "title": "Skill Type"
+          },
+          "mode_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1,
+                "pattern": "^[a-z0-9_-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "client_action_id",
+          "member_id",
+          "skill_type"
+        ],
+        "title": "ExpeditionSkillRequest"
+      },
+      "ExpeditionStartRequest": {
+        "properties": {
+          "region_code": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Region Code",
+            "default": "moss_archive"
+          },
+          "mode": {
+            "type": "string",
+            "pattern": "^(tutorial|heart_resonance|free_explore)$",
+            "title": "Mode"
+          },
+          "plant_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Plant Ids"
+          },
+          "guide_count": {
+            "type": "integer",
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Guide Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "mode",
+          "plant_ids"
+        ],
+        "title": "ExpeditionStartRequest"
       },
       "FarmDecorationRequest": {
         "properties": {

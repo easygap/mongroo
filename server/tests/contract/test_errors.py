@@ -16,6 +16,15 @@ async def test_request_id_echo(client):
     assert res.headers["X-Request-ID"] == "test-rid-123"
 
 
+async def test_api_security_headers(client):
+    res = await client.get("/health/live")
+
+    assert res.headers["X-Content-Type-Options"] == "nosniff"
+    assert res.headers["X-Frame-Options"] == "DENY"
+    assert res.headers["Referrer-Policy"] == "no-referrer"
+    assert res.headers["Cache-Control"] == "no-store"
+
+
 async def test_validation_error_shape(client, user_tokens):
     res = await client.post(
         "/moods", json={"mood_level": 9}, headers=auth_headers(user_tokens, idem=True)
@@ -48,4 +57,9 @@ async def test_health_ready_shape(client):
     res = await client.get("/health/ready")
     body = res.json()
     assert body["status"] in ("ok", "degraded", "down")
-    assert set(body["checks"].keys()) == {"database", "ai_worker", "classifier", "ollama"}
+    assert set(body["checks"].keys()) == {
+        "database",
+        "ai_worker",
+        "classifier",
+        "ollama",
+    }

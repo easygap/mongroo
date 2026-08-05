@@ -1,4 +1,5 @@
 """구조화 JSON 로그. 본문/토큰/프롬프트는 절대 남기지 않는다 (design.md 9.3)."""
+
 import json
 import logging
 import sys
@@ -19,8 +20,19 @@ class JsonFormatter(logging.Formatter):
             "logger": record.name,
             "message": record.getMessage(),
         }
-        for key in ("request_id", "method", "path", "status", "latency_ms", "job_id", "run_id",
-                    "job_type", "attempts", "error_code", "model_version"):
+        for key in (
+            "request_id",
+            "method",
+            "path",
+            "status",
+            "latency_ms",
+            "job_id",
+            "run_id",
+            "job_type",
+            "attempts",
+            "error_code",
+            "model_version",
+        ):
             value = getattr(record, key, None)
             if value is not None:
                 payload[key] = value
@@ -56,4 +68,19 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
                 "latency_ms": latency_ms,
             },
         )
+        return response
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """API 응답을 브라우저에서 문서나 프레임으로 오인하지 않게 한다."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault(
+            "Permissions-Policy", "camera=(), microphone=(), geolocation=()"
+        )
+        response.headers.setdefault("Cache-Control", "no-store")
         return response

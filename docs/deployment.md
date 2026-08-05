@@ -5,6 +5,32 @@
 운영 서비스가 되는 것은 아니다. 개인정보·암호화 검토 항목은
 [design.md §9](design.md#9-보안개인정보제품-안전)를 별도로 충족해야 한다.
 
+## 0. 운영 스택 즉시 기동
+
+루트의 `docker-compose.prod.yml`은 MySQL → Alembic 마이그레이션 → API →
+Flutter Web 순서를 health gate로 올린다. Web 컨테이너는 `/api/`를 내부
+API로 프록시하므로 클라이언트와 API를 하나의 HTTPS origin으로 배포할 수
+있다. 8080 포트 앞에는 반드시 TLS를 종료하는 load balancer나 reverse proxy를
+둔다.
+
+```powershell
+Copy-Item .env.production.example .env.production
+# .env.production의 replace-with-* 값과 도메인을 실제 secret/domain으로 교체
+docker compose --env-file .env.production -f docker-compose.prod.yml config --quiet
+docker compose --env-file .env.production -f docker-compose.prod.yml build --pull
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d
+docker compose --env-file .env.production -f docker-compose.prod.yml ps
+```
+
+`APP_ENV=production`은 시작 시 약한 JWT, SQLite, fake AI, HTTP/wildcard CORS,
+로컬/wildcard Host를 발견하면 API를 즉시 종료한다. 예시 파일 그대로는
+기동하지 않는 것이 정상이다. `/api/v1/health/live`은 프로세스, `/ready`는
+DB 준비 상태이며 DB 불가시 `/ready`는 HTTP 503을 반환한다.
+
+AI 없이 기록·성장·탐험 코어만 운영할 때는 `AI_MODE=disabled`를 쓰고 worker를
+올리지 않는다. 운영 Ollama·분류기 모델·`local-ai` Python 의존성을 포함한
+전용 이미지가 준비된 환경만 `AI_MODE=local`과 `--profile ai`를 함께 쓴다.
+
 ## 1. 클라이언트 API 주소
 
 Flutter의 API 주소는 컴파일 시 `API_BASE_URL`로 고정된다. 생략 시 Android
@@ -85,9 +111,10 @@ curl.exe -I https://app.example.com/index.html
   Android toolchain 오류가 없어야 APK/AAB 검증이 가능하다.
 - 로컬 HTTP 허용은 `debug`/`profile` manifest에만 있다. 공개 빌드는 HTTPS API를
   사용한다.
-- 현재 `release` build type은 로컬 기본 동작 확인을 위해 debug keystore로
-  서명한다. 스토어 제출 전 자체 upload key/keystore와 CI secret을 연결하고
-  debug 서명 대체 설정을 제거해야 한다. keystore와 비밀번호는 커밋하지 않는다.
+- `release` build는 `app/android/key.properties`와 운영 upload key가 없으면
+  실패한다. `app/android/key.properties.example`을 복사해 네 값을 입력하고,
+  keystore·`key.properties`·비밀번호는 커밋하지 않는다. release에 debug
+  keystore로 대체하는 경로는 없다.
 - application ID는 `com.easygap.mongroo`이다. 스토어 등록 뒤에는 호환성에 영향을
   주므로 임의로 변경하지 않는다.
 
@@ -110,3 +137,17 @@ flutter build appbundle --release --dart-define=API_BASE_URL=https://api.example
   없으면 기록은 남아도 분석·대화·요약 job이 처리되지 않는다.
 - `server/openapi.json`은 `cd server; python -m app.export_openapi`로 재생성하고
   클라이언트 계약 변경과 같은 커밋에서 검토한다.
+
+## 6. 마이그레이션·백업·롤백
+
+1. 배포 전 현재 이미지 tag, Git SHA, DB 마이그레이션 revision을 기록한다.
+2. MySQL volume snapshot 또는 암호화된 `mysqldump --single-transaction` 백업을 생성하고
+   복구 테스트가 있는 백업만 사용한다.
+3. 마이그레이션 job이 0으로 종료된 뒤 API를 교체한다. API와 Web은 최소
+   직전 클라이언트 계약을 유지한다.
+4. 배포 후 가입·로그인, 일기 저장, 탐험 시작→이동→사건→귀환,
+   `/ready`, 보안 헤더, worker heartbeat(AI 활성 시)를 smoke test한다.
+5. 실패하면 Web·API를 직전 immutable image tag로 되돌린다. 이미 적용된
+   추가형 마이그레이션은 즉시 downgrade하지 않고 전방 호환 API를 유지한다.
+   정말 DB 복구가 필요하면 쓰기를 중단하고 검증된 snapshot을 별도 인스턴스에
+   복구한 뒤 전환한다.

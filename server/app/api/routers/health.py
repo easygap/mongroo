@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import sqlalchemy as sa
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -18,7 +18,7 @@ async def live():
 
 
 @router.get("/health/ready")
-async def ready(db: AsyncSession = Depends(get_db)):
+async def ready(response: Response, db: AsyncSession = Depends(get_db)):
     settings = get_settings()
     checks: dict[str, dict] = {}
 
@@ -36,7 +36,9 @@ async def ready(db: AsyncSession = Depends(get_db)):
         beat = None
         if checks["database"]["status"] == "ok":
             beat = await db.scalar(
-                sa.select(WorkerHeartbeat.beat_at).where(WorkerHeartbeat.worker_name == "ai-worker")
+                sa.select(WorkerHeartbeat.beat_at).where(
+                    WorkerHeartbeat.worker_name == "ai-worker"
+                )
             )
         alive = beat is not None and beat > utcnow() - timedelta(
             seconds=settings.worker_heartbeat_stale_seconds
@@ -50,13 +52,17 @@ async def ready(db: AsyncSession = Depends(get_db)):
             from app.ai.llm import OllamaClient
 
             ok = await OllamaClient().ping()
-            checks["ollama"] = {"status": "ok" if ok else "down", "mode": settings.ai_mode}
+            checks["ollama"] = {
+                "status": "ok" if ok else "down",
+                "mode": settings.ai_mode,
+            }
         else:
             checks["ollama"] = {"status": "ok", "mode": settings.ai_mode}
 
     # DB 불능만 down, AI 의존성 불능은 degraded (design.md 12.2)
     if checks["database"]["status"] != "ok":
         status = "down"
+        response.status_code = 503
     elif any(c["status"] == "down" for c in checks.values()):
         status = "degraded"
     else:

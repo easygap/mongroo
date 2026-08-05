@@ -12,16 +12,19 @@ class AdventureUiState {
     this.data = const AsyncLoading(),
     this.busyAction,
     this.actionError,
+    this.actionMessage,
   });
 
   final AsyncValue<AdventureState> data;
   final String? busyAction;
   final String? actionError;
+  final String? actionMessage;
 
   AdventureUiState copyWith({
     AsyncValue<AdventureState>? data,
     Object? busyAction = _unset,
     Object? actionError = _unset,
+    Object? actionMessage = _unset,
   }) =>
       AdventureUiState(
         data: data ?? this.data,
@@ -29,6 +32,9 @@ class AdventureUiState {
             busyAction == _unset ? this.busyAction : busyAction as String?,
         actionError:
             actionError == _unset ? this.actionError : actionError as String?,
+        actionMessage: actionMessage == _unset
+            ? this.actionMessage
+            : actionMessage as String?,
       );
 }
 
@@ -70,10 +76,11 @@ class AdventureController extends Notifier<AdventureUiState> {
             ),
       );
 
-  Future<bool> runDungeon(String dungeonCode) => _perform(
-        action: 'dungeon:$dungeonCode',
+  Future<bool> runDungeon(String dungeonCode, String approachCode) => _perform(
+        action: 'dungeon:$dungeonCode:$approachCode',
         request: (key) => ref.read(adventureRepositoryProvider).runDungeon(
               dungeonCode: dungeonCode,
+              approachCode: approachCode,
               idempotencyKey: key,
             ),
       );
@@ -87,12 +94,32 @@ class AdventureController extends Notifier<AdventureUiState> {
                 ),
       );
 
+  Future<bool> claimWeeklyGoal(String goalCode) => _perform(
+        action: 'weekly:$goalCode',
+        request: (key) => ref.read(adventureRepositoryProvider).claimWeeklyGoal(
+              goalCode: goalCode,
+              idempotencyKey: key,
+            ),
+      );
+
+  Future<bool> donateItem(String itemCode) => _perform(
+        action: 'donation:$itemCode',
+        request: (key) => ref.read(adventureRepositoryProvider).donateItem(
+              itemCode: itemCode,
+              idempotencyKey: key,
+            ),
+      );
+
   Future<bool> _perform({
     required String action,
     required Future<AdventureActionResult> Function(String key) request,
   }) async {
     if (state.busyAction != null) return false;
-    state = state.copyWith(busyAction: action, actionError: null);
+    state = state.copyWith(
+      busyAction: action,
+      actionError: null,
+      actionMessage: null,
+    );
     try {
       final key = _keys.putIfAbsent(action, () => _uuid.v4());
       final result = await request(key);
@@ -106,6 +133,7 @@ class AdventureController extends Notifier<AdventureUiState> {
       state = state.copyWith(
         data: AsyncData(result.state),
         busyAction: null,
+        actionMessage: result.outcomeMessage,
       );
       return true;
     } on ApiException catch (error) {

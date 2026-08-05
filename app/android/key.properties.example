@@ -1,0 +1,5 @@
+# app/android/key.properties로 복사하고 실제 값을 넣습니다. 이 파일과 keystore는 커밋하지 않습니다.
+storePassword=replace-with-store-password
+keyPassword=replace-with-key-password
+keyAlias=mongroo-upload
+storeFile=C:/secure/mongroo-upload.jks

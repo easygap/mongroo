@@ -42,11 +42,13 @@ class AdventureRepository {
 
   Future<AdventureActionResult> runDungeon({
     required String dungeonCode,
+    required String approachCode,
     required String idempotencyKey,
   }) =>
       guardApi(() async {
         final response = await _dio.post<Map<String, dynamic>>(
           '/adventure/dungeons/$dungeonCode/run',
+          data: {'approach_code': approachCode},
           options: Options(headers: {'Idempotency-Key': idempotencyKey}),
         );
         return AdventureActionResult.fromJson(response.data ?? const {});
@@ -59,6 +61,31 @@ class AdventureRepository {
       guardApi(() async {
         final response = await _dio.post<Map<String, dynamic>>(
           '/adventure/research/$projectCode/complete',
+          options: Options(headers: {'Idempotency-Key': idempotencyKey}),
+        );
+        return AdventureActionResult.fromJson(response.data ?? const {});
+      });
+
+  Future<AdventureActionResult> claimWeeklyGoal({
+    required String goalCode,
+    required String idempotencyKey,
+  }) =>
+      guardApi(() async {
+        final response = await _dio.post<Map<String, dynamic>>(
+          '/adventure/weekly-goals/$goalCode/claim',
+          options: Options(headers: {'Idempotency-Key': idempotencyKey}),
+        );
+        return AdventureActionResult.fromJson(response.data ?? const {});
+      });
+
+  Future<AdventureActionResult> donateItem({
+    required String itemCode,
+    required String idempotencyKey,
+  }) =>
+      guardApi(() async {
+        final response = await _dio.post<Map<String, dynamic>>(
+          '/adventure/donations',
+          data: {'item_code': itemCode},
           options: Options(headers: {'Idempotency-Key': idempotencyKey}),
         );
         return AdventureActionResult.fromJson(response.data ?? const {});

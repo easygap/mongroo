@@ -1,4 +1,5 @@
 """요청 DTO. 응답 형태는 docs/api.md 계약을 따른다."""
+
 from math import pi
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
@@ -86,12 +87,81 @@ class PlantCreateRequest(BaseModel):
             raise ValueError("식물 이름은 한 글자 이상이어야 합니다")
         return cleaned
 
+
 class PlantMuseumFeatureRequest(BaseModel):
     is_featured: bool
 
 
 class PatrolStartRequest(BaseModel):
     route_code: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9_]+$")
+
+
+class DungeonRunRequest(BaseModel):
+    approach_code: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=40,
+        pattern=r"^[a-z0-9_]+$",
+    )
+
+
+class AdventureDonationRequest(BaseModel):
+    item_code: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9_]+$")
+
+
+class ExpeditionStartRequest(BaseModel):
+    region_code: str = Field(
+        default="moss_archive",
+        min_length=1,
+        max_length=40,
+        pattern=r"^[a-z0-9_]+$",
+    )
+    mode: str = Field(pattern="^(tutorial|heart_resonance|free_explore)$")
+    plant_ids: list[int] = Field(min_length=1, max_length=3)
+    guide_count: int = Field(default=0, ge=0, le=2)
+
+    @field_validator("plant_ids")
+    @classmethod
+    def validate_unique_plants(cls, plant_ids: list[int]) -> list[int]:
+        if len(plant_ids) != len(set(plant_ids)):
+            raise ValueError("같은 캐릭터를 두 번 편성할 수 없습니다")
+        return plant_ids
+
+    @model_validator(mode="after")
+    def validate_party_size(self):
+        if not 1 <= len(self.plant_ids) + self.guide_count <= 3:
+            raise ValueError("탐험대는 1명 이상 3명 이하여야 합니다")
+        return self
+
+
+class ExpeditionActionRequest(BaseModel):
+    expected_revision: int = Field(ge=0)
+    client_action_id: str = Field(
+        min_length=8,
+        max_length=64,
+        pattern=r"^[A-Za-z0-9_-]+$",
+    )
+
+
+class ExpeditionMoveRequest(ExpeditionActionRequest):
+    node_code: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9_-]+$")
+
+
+class ExpeditionChoiceRequest(ExpeditionActionRequest):
+    choice_code: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9_-]+$")
+    acting_member_id: int = Field(ge=1)
+
+
+class ExpeditionSkillRequest(ExpeditionActionRequest):
+    member_id: int = Field(ge=1)
+    skill_type: str = Field(pattern="^(signature|form)$")
+    mode_code: str | None = Field(
+        default=None, min_length=1, max_length=40, pattern=r"^[a-z0-9_-]+$"
+    )
+
+
+class ExpeditionFinishRequest(ExpeditionActionRequest):
+    pass
 
 
 class ChatSessionCreateRequest(BaseModel):
@@ -131,7 +201,9 @@ class FarmLayoutRequest(BaseModel):
     main_character_user_item_id: int | None = None
     wardrobe_user_item_id: int | None = None
     companion_user_item_ids: list[int] = Field(default_factory=list, max_length=3)
-    decorations: list[FarmDecorationRequest] = Field(default_factory=list, max_length=30)
+    decorations: list[FarmDecorationRequest] = Field(
+        default_factory=list, max_length=30
+    )
 
     @model_validator(mode="after")
     def validate_unique_items(self):

@@ -486,11 +486,13 @@ session DTO: `{id, plant_id, reflection_stage, status: "active"|"closed", starte
 | GET `/collection` | 보유 인벤토리 `items`, 잠금 항목까지 포함한 전체 아이템 도감 `catalog_items`, 품종 도감, 현재 씨앗 잔액 |
 | GET `/farm` | 현재 layout과 배치 가능한 보유 아이템 |
 | PUT `/farm/layout` | `expected_version` 기반 전체 배치 저장. 소유권·아이템 유형·중복 배치와 회전각 범위 검증 |
-| GET `/adventure` | 오늘의 일기 개방 상태, 활성 캐릭터 스탯, 의상 성능, 순찰·던전·수집품·표본 연구 진행도를 반환. 안전 지원 활성일에는 `suspended=true` |
-| POST `/adventure/patrols` (멱등) | `{route_code}`로 하루 한 번 순찰 시작. 오늘 50자 이상 일기와 경로별 성장 단계 필요 |
-| POST `/adventure/patrols/{id}/claim` (멱등) | 귀환 시 씨앗 3개와 수집품 지급, 경로의 던전을 처음 발견하면 해금 |
-| POST `/adventure/dungeons/{code}/run` (멱등) | 발견된 던전을 하루 한 번 탐험해 +10 XP/+4 씨앗과 수집품 지급 |
+| GET `/adventure` | 오늘의 일기 개방 상태, 주간 탐험 약속, 장기 탐험 발자국, 활성 캐릭터 스탯, 의상 성능, 순찰·던전·수집품·표본 연구, 최근 기록과 탐험 이야기 도감을 반환. 던전별 `approaches`에는 현재 캐릭터 기준 예상 수집량이 포함된다. 안전 지원 활성일에는 `suspended=true` |
+| POST `/adventure/patrols` (멱등) | `{route_code}`로 하루 한 번 순찰 시작. 오늘 50자 이상 일기와 경로별 성장 단계가 필요하며, 경로별 발견 이야기는 출발 시 고정하되 귀환 전에는 공개하지 않음 |
+| POST `/adventure/patrols/{id}/claim` (멱등) | 귀환 시 씨앗 3개와 수집품 지급, 경로의 던전을 처음 발견하면 해금. 고정된 발견 이야기 `encounter`와 표시 문구 `outcome_message`를 함께 반환 |
+| POST `/adventure/dungeons/{code}/run` (멱등) | 선택 본문 `{approach_code}`로 발견된 던전을 하루 한 번 탐험해 +10 XP/+4 씨앗과 수집품 지급. 던전 내부 장면 `scene`과 결과 문구를 함께 반환하며, 본문이 없는 구버전 요청은 `steady` 방식으로 처리 |
 | POST `/adventure/research/{code}/complete` (멱등) | 필요한 수집품을 원자적으로 차감하고 계정 단위 표본 연구를 영구 완성. 부족 재료는 `RESEARCH_MATERIALS_REQUIRED`의 `details.missing`으로 반환 |
+| POST `/adventure/weekly-goals/{code}/claim` (멱등) | 완료한 이번 주 목표의 씨앗 보상을 한 번 수령. 오늘 일기 개방은 요구하지 않지만 안전 지원 활성일에는 중단 |
+| POST `/adventure/donations` (멱등) | `{item_code}`의 연구 필요량을 제외한 여분 표본 3개를 하루 한 번 기증하고 씨앗 2개 수령. XP는 지급하지 않음 |
 
 탐험은 오늘 50자 이상 마음 일기를 쓴 뒤에만 열린다. 일기 한 편의 합산 보상은
 +40 XP/+15 씨앗이며, 퀘스트(+20/+5), 던전(+10/+4), 순찰(+0/+3)보다 크다.
@@ -499,6 +501,85 @@ session DTO: `{id, plant_id, reflection_stage, status: "active"|"closed", starte
 표본 연구도 경험치·씨앗을 직접 지급하지 않고 이후 순찰 또는 던전 수집량만 최대
 3개 범위에서 높인다. 수집품 정리는 시간 제한 활동이 아니므로 일기 개방 여부와
 무관하게 할 수 있다.
+
+`weekly_board`는 월요일부터 일요일까지의 `week_start`, `week_end`와 `goals`를
+반환한다. 각 목표는 `{code, name, description, progress, target, reward_exp,
+reward_seeds, completed, claimed, can_claim}` 형태다. 일기 3일은 씨앗 20개,
+순찰 귀환 3회는 8개, 던전 탐험 2회는 6개이며 모두 XP는 0이다. 일기 일수는 같은
+날 여러 편을 써도 50자 이상 기록이 있는 서로 다른 날짜만 센다. 수령 여부는
+`adventure_weekly:{user_id}:{week_start}:{goal_code}` 원장 키로 판정하므로 재요청이나
+다른 기기에서의 동시 요청으로 중복 지급되지 않는다. 미완료는
+`WEEKLY_GOAL_INCOMPLETE`, 이미 받은 목표는 `WEEKLY_GOAL_ALREADY_CLAIMED`를 반환한다.
+
+`milestones`는 `{current_title, unlocked_count, total_count, items}` 형태의 읽기 전용
+장기 발자국이다. 각 항목은 `{code, name, description, progress, target, unlocked,
+title}`을 반환한다. 50자 일기 7일, 순찰 귀환 5회, 던전 탐험 5회, 표본 연구 3개,
+`온실 밖 탐험 1장` 완성을 차례로 보여 준다. 일기·순찰·던전 진행도는 삭제 후에도
+남는 기존 보상 원장 완료 이벤트를 세고 연구 진행도는 영구 연구 행을 사용한다.
+칭호는 씨앗·XP·수집 성능을 추가하지 않으며 별도 claim API도 없다.
+
+`donation`은 `{available_today, used_today, has_eligible_item,
+required_quantity, reward_exp, reward_seeds, message}`를 반환한다. 각 `inventory` 항목에는
+`reserved_quantity`, `donatable_quantity`, `can_donate`가 추가된다. 서버는 아직
+완성하지 않은 모든 연구의 요구량을 아이템별로 합산해 먼저 예약하고, 현재 수량에서
+예약분을 뺀 여분이 3개 이상일 때만 기증을 허용한다. 하루 한 번 여분 3개를 씨앗
+2개로 바꾸며 XP는 0이다. 부족하면 `ADVENTURE_DONATION_EXCESS_REQUIRED`, 이미
+기증했으면 `ADVENTURE_DONATION_DAILY_LIMIT`를 반환한다. 안전 지원 활성일에는 기증도
+중단한다.
+
+`starlight_greenhouse_clock` 연구는 예외적으로 수집량 대신 모든 순찰 시간을 5분
+줄인다. 각 route는 적용 후 `duration_minutes`와 원래 시간
+`base_duration_minutes`, 차이 `time_reduction_minutes`를 함께 반환하며 최소 시간은
+5분이다.
+
+각 route의 `performance_score`, `projected_quantity`, `best_match`는 현재 캐릭터의
+성장 스탯과 장착 의상, 완료한 순찰 연구를 반영한 읽기 전용 미리보기다. 잠긴 경로는
+두 수치를 0으로 반환한다. 열린 경로 중 성능 점수가 가장 높은 하나만
+`best_match=true`이며 동률이면 요구 성장 단계가 높은 경로를 고른다. 이 값은
+수집량에만 쓰고 route의 고정 XP·씨앗 보상은 바꾸지 않는다.
+
+순찰을 시작하면 사용자·날짜·경로를 기준으로 경로별 세 가지 발견 이야기 중 하나를
+결정해 `encounter_code`, `encounter_title`, `encounter_text`로 저장한다. 진행 중
+`patrol.encounter`는 `null`이고 `encounter_pending=true`이며, 귀환 수령 뒤에만
+`encounter={code,title,text,reaction}`을 공개한다. `reaction`은 출발 당시 활성
+캐릭터의 `{form,speaker,text}`를 담는다. claim 응답의 루트 `encounter`와
+`outcome_message`도 같은 스냅샷을 사용하므로 콘텐츠 문구가 바뀌어도 과거 기록은
+달라지지 않는다. 이야기 선택은 씨앗·XP·수집량·던전 발견 확률에 영향을 주지 않는다.
+
+탐험 상태의 `research_summary`는
+`{completed_count, total_count, chapter_completed, chapter_name}`을 반환한다.
+`chapter_completed`는 선택 연구를 전부 끝냈는지가 아니라 최종
+`outside_greenhouse_atlas` 완성 여부를 뜻한다. 5단계 `새벽 수관 회랑`에서
+`마음나무 관측실`을 발견하고 앞선 장소의 핵심 표본과 함께 연구하면
+`온실 밖 탐험 1장`이 완성된다.
+
+`journal`은 별도 보상을 만들지 않는 읽기 전용 탐험 기록이다.
+`{discovered_count, total_dungeons, total_clear_count, recent_entries}`를 반환하며,
+`recent_entries`는 완료한 순찰과 던전 탐험을 최신순으로 합친 최대 6건이다. 각 항목은
+`{kind, title, description, occurred_at, location_code, item_code, item_name,
+quantity, outcome_code}` 형태다. 진행 중 순찰은 기록에 포함하지 않는다.
+발견 이야기가 저장된 순찰은 이야기 제목을 `title`로, 본문과 수집품을 묶은 문장을
+`description`으로 사용한다. 캐릭터 반응 스냅샷이 있으면 이름과 대사를 본문 뒤에
+함께 표시한다. 마이그레이션 이전 순찰은 저장된 범위까지만 기존 문구로 표시한다.
+
+`story_collection`은 최근 6건에서 밀려난 장면까지 다시 읽는 무보상 도감이다.
+`{collected_count, total_count, completed, chapters}`를 반환하며 전체 수는 순찰 이야기
+12개와 던전 장면 12개를 합친 24개다. 각 장은
+`{code, name, description, collected_count, total_count, items}` 형태이고, 항목은
+`{kind, code, location_code, location_name, discovered, title, text, detail,
+discovered_at}`을 담는다. 발견한 코드는 시간순으로 가장 먼저 남은 스냅샷을 사용한다.
+미발견 항목은 위치만 공개하고 `title`, `text`, `detail`, `discovered_at`은 `null`로
+숨긴다. 도감 완성과 다시 읽기에는 씨앗·XP·수집량 효과나 별도 claim이 없다.
+
+던전 접근 방식은 `care`, `focus`, `courage`, `insight` 네 가지다. 해당 스탯의 현재
+값에 장소 추천 보정과 장착 의상 보너스를 합산해 수집량만 결정한다. 선택과 결과는
+던전 실행 행에 스냅샷으로 남고, 어떤 방식을 골라도 고정 경험치·씨앗은 동일하다.
+
+각 던전에는 세 가지 내부 장면이 있다. 실행 시 사용자·날짜·던전·접근 방식을 기준으로
+하나를 결정해 `dungeon_runs.scene_code`, `scene_title`, `scene_text`에 저장한다.
+응답의 `run.scene={code,title,text}`와 `run.outcome_message`는 같은 스냅샷을 사용하고,
+탐험 기록장도 장면 제목과 본문을 표시한다. 장면 선택은 공명 판정·수집량·보상에
+영향을 주지 않으며 기존 실행 행은 던전 이름 중심의 이전 문구로 표시한다.
 
 안전 지원이 활성화된 퀘스트 응답은
 `{date, suspended:true, suspension_reason, items:[]}`이다. 일반 응답은
@@ -608,6 +689,50 @@ burden_level, estimated_minutes, reward_exp, reward_seeds}}` 형태다.
 409 `FARM_LAYOUT_VERSION_CONFLICT`와 `{expected_version, current_version}`를 반환한다.
 클라이언트는 이때 로컬 초안을 덮어쓰지 않고 최신 배치를 별도로 받아, 사용자가
 최신본을 불러올지 로컬 초안을 최신 version 위에 다시 저장할지 선택하게 한다.
+
+## 직접 조작형 탐험 API
+
+`/adventure/expeditions`는 기존 즉시 판정형 던전과 독립된 서버 권위형 런이다.
+클라이언트가 지도 결과를 계산하지 않으며, 모든 이동·선택·스킬·귀환은 서버에 저장된
+현재 상태와 `revision`을 기준으로 확정한다.
+
+| 메서드 | 경로 | 역할 |
+|--------|------|------|
+| GET | `/adventure/expeditions/catalog` | 오늘의 일기·안전·보상 게이트와 지역 목록 |
+| GET | `/adventure/expeditions/roster?cursor=&limit=` | 탐험 가능 캐릭터 목록. 서명된 커서, 기본 30·최대 50 |
+| GET | `/adventure/expeditions/active` | 현재 진행 중인 런. 없으면 `{"expedition":null}` |
+| GET | `/adventure/expeditions/{run_id}` | 완료 런을 포함한 소유 런 스냅샷 |
+| POST | `/adventure/expeditions` | 1~3명 편성으로 런 시작. `Idempotency-Key` 필수 |
+| POST | `/adventure/expeditions/{run_id}/move` | 인접하고 공개된 노드로 이동 |
+| POST | `/adventure/expeditions/{run_id}/choices` | 사건 담당 캐릭터와 선택지 확정 |
+| POST | `/adventure/expeditions/{run_id}/skills` | 담당 캐릭터의 고유·성장형 스킬과 효과 모드 사용 |
+| POST | `/adventure/expeditions/{run_id}/extract` | 목표 확보 후 안전 지점에서 귀환·보상 확정 |
+| POST | `/adventure/expeditions/{run_id}/retreat` | 보상 없이 안전 귀환 |
+
+시작 본문은 `{region_code, mode, plant_ids, guide_count}`다. `mode`는
+`tutorial|heart_resonance|free_explore`이며, 성장·씨앗·수집품을 지급하는 것은 오늘
+50자 이상 마음 일기를 쓴 뒤 시작한 `heart_resonance`를 목표 확보 상태로 끝낸 경우뿐이다.
+`tutorial`과 `free_explore`, 중도 귀환, 결의 소진 안전 귀환에는 경제 보상이 없다.
+
+런 행동 본문에는 공통으로 `{expected_revision, client_action_id}`가 들어간다.
+같은 `client_action_id`와 같은 본문을 재전송하면 첫 응답을 그대로 돌려주고, 같은 키로
+다른 행동을 보내면 409 `EXPEDITION_ACTION_ID_CONFLICT`다. 화면이 오래돼 revision이
+달라졌으면 409 `EXPEDITION_REVISION_CONFLICT`와 현재 revision을 반환한다. 앱은 이때
+행동을 임의 재적용하지 않고 `/active`를 다시 읽는다.
+스킬 행동은 `{member_id, skill_type: "signature"|"form", mode_code?}`를 추가로
+보낸다. 서버가 내려 준 `party[].skills.*.modes[].code`만 허용하며,
+복수 효과 스킬은 `mode_code`가 필수다.
+
+런 응답은 `{run, region, party, map, current_event, available_actions, run_thread,
+memory, loot, summary}`다. 숨은 노드는 `{code,status:hidden,type:unknown}`만 반환해
+좌표와 사건을 미리 노출하지 않는다. `current_event.choices[].previews`는 탐험대원별
+사용 스탯·현재 값·기준·스킬 보정을 제공한다. `available_actions`는 화면이 활성화할
+수 있는 이동·귀환 행동의 단일 원본이다.
+`party[]`는 출발 시점의 `raw_stats`, 지역 상한을 적용한
+`effective_stats`, `stat_cap`을 함께 제공하고 판정은 effective 값을 쓴다.
+완주 요약의 `return_scene`은 보상보다 먼저 보여 줄 파티원별 활약 스냅샷이다.
+catalog의 `entry.tutorial_completed`는 완주 런을 기준으로 첫 조작 안내 노출을
+결정한다.
 
 ## P1 남은 예정 범위
 

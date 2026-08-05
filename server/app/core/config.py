@@ -1,13 +1,18 @@
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import urlparse
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
 
     app_name: str = "mongroo-api"
+    app_env: Literal["development", "test", "production"] = "development"
     # demo 프로파일에서는 합성 데이터만 사용한다 (design.md 9.1)
     data_profile: Literal["demo"] = "demo"
 
@@ -51,11 +56,62 @@ class Settings(BaseSettings):
 
     # Flutter web 로컬 개발용. credentials와 함께 wildcard origin은 사용하지 않는다.
     cors_origins: list[str] = [
-        "http://localhost:3000", "http://127.0.0.1:3000",
-        "http://localhost:5173", "http://127.0.0.1:5173",
-        "http://localhost:8080", "http://127.0.0.1:8080",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
     ]
     cors_origin_regex: str | None = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+    allowed_hosts: list[str] = ["localhost", "127.0.0.1", "test"]
+
+    @model_validator(mode="after")
+    def validate_production_settings(self):
+        if self.app_env != "production":
+            return self
+        errors: list[str] = []
+        if len(self.jwt_secret.encode()) < 32 or self.jwt_secret in {
+            "dev-only-secret-change-me",
+            "change-me-to-a-random-32byte-or-longer-secret",
+        }:
+            errors.append("JWT_SECRET must be a non-default value of at least 32 bytes")
+        database = urlparse(self.database_url)
+        if (
+            database.scheme != "mysql+aiomysql"
+            or not database.hostname
+            or not database.username
+            or not database.password
+            or "replace-with" in database.password
+            or database.password == "mongroo"
+        ):
+            errors.append(
+                "DATABASE_URL must use mysql+aiomysql with non-placeholder credentials"
+            )
+        if self.ai_mode == "fake":
+            errors.append("AI_MODE=fake is not allowed in production")
+        if self.cors_origin_regex:
+            errors.append("CORS_ORIGIN_REGEX must be empty in production")
+        if not self.cors_origins:
+            errors.append("CORS_ORIGINS must contain the public app origin")
+        for origin in self.cors_origins:
+            parsed = urlparse(origin)
+            if (
+                parsed.scheme != "https"
+                or not parsed.netloc
+                or parsed.path not in ("", "/")
+            ):
+                errors.append(
+                    f"CORS origin must be an HTTPS origin without a path: {origin}"
+                )
+        if not self.allowed_hosts or any(
+            host == "*" or host.startswith("localhost") or host.startswith("127.")
+            for host in self.allowed_hosts
+        ):
+            errors.append("ALLOWED_HOSTS must contain explicit public hosts")
+        if errors:
+            raise ValueError("; ".join(errors))
+        return self
 
 
 @lru_cache

@@ -1,5 +1,6 @@
 # env / secrets
 .env
+.env.production
 *.env.local
 
 # python
@@ -24,6 +25,11 @@ Thumbs.db
 
 # local deployment state
 .wrangler/
+
+# Android release signing
+app/android/key.properties
+*.jks
+*.keystore
 
 # local QA artifacts
 .playwright-cli/

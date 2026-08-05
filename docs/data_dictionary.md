@@ -210,10 +210,10 @@ Alembic `0010_diary_growth`는 당시 대표 라벨로 v2 프로필을 만들었
 | id | bigint PK | |
 | user_id | bigint FK(users) | |
 | plant_id | bigint FK(plants) NULL | 씨앗 포인트처럼 식물 귀속이 없는 이벤트는 NULL |
-| event_type | varchar | (확정) `mood_first_daily\|diary_first_daily\|chat_first_daily\|streak_week\|quest_completed\|patrol_claimed\|dungeon_cleared\|shop_purchase`. `streak_week`는 호환용 이름이며 누적 기록 7일 보상을 의미 |
+| event_type | varchar | (확정) `mood_first_daily\|diary_first_daily\|chat_first_daily\|streak_week\|quest_completed\|patrol_claimed\|dungeon_cleared\|adventure_weekly\|adventure_donated\|shop_purchase`. `streak_week`는 호환용 이름이며 누적 기록 7일 보상을 의미 |
 | source_type | varchar | 근거 리소스 타입 (mood_entry, chat_session, user_quest 등) |
 | source_id | bigint | 근거 리소스 id |
-| dedupe_key | varchar UK | 중복 지급 방지 키. 예: `mood_daily:{user_id}:{local_date}`, `record_week:{user_id}:{recorded_days}`, `harvest:{plant_id}` |
+| dedupe_key | varchar UK | 중복 지급 방지 키. 예: `mood_daily:{user_id}:{local_date}`, `record_week:{user_id}:{recorded_days}`, `adventure_weekly:{user_id}:{week_start}:{goal_code}`, `harvest:{plant_id}` |
 | exp_delta | int | 일일 상한(P0 30, P1 50) 적용 후 실제 반영값 |
 | seed_delta | int | |
 | seed_balance_after | int | 반영 후 잔액 스냅샷 |
@@ -467,9 +467,9 @@ API가 반환하는 `current`, `target`, `eligible`은 저장값이 아니라 �
 
 | 테이블 | 핵심 키·제약 | 역할 |
 |--------|--------------|------|
-| `adventure_patrols` | `UNIQUE(user_id, local_date)`, status `active\|claimed` | 하루 한 번 순찰의 경로·귀환 시각·발견 결과 |
+| `adventure_patrols` | `UNIQUE(user_id, local_date)`, status `active\|claimed` | 하루 한 번 순찰의 경로·귀환 시각·던전·수집품·발견 이야기 스냅샷 |
 | `user_dungeons` | `UNIQUE(user_id, dungeon_code)` | 순찰에서 발견한 던전과 누적 클리어 수 |
-| `dungeon_runs` | `UNIQUE(user_id, local_date)` | 하루 한 번 던전 결과와 실제 보상 스냅샷 |
+| `dungeon_runs` | `UNIQUE(user_id, local_date)` | 하루 한 번 던전의 접근 방식·사용 스탯·결과와 실제 보상 스냅샷 |
 | `user_adventure_items` | `UNIQUE(user_id, item_code)`, quantity ≥ 0 | 순찰·던전 수집품 수량 |
 | `user_adventure_research` | `UNIQUE(user_id, project_code)` | 수집품을 소비해 영구 완성한 표본 연구 |
 
@@ -477,7 +477,81 @@ API가 반환하는 `current`, `target`, `eligible`은 저장값이 아니라 �
 적용한다. 순찰과 던전 보상은 원장 dedupe도 함께 적용한다. 당일 안전 지원이
 활성화되면 새 탐험과 보상 수령을 중단한다.
 
-### 2.8 assessments — PHQ-9 자가설문
+주간 탐험 약속은 별도 테이블을 두지 않는다. 월요일 시작 주차의 50자 이상 일기
+날짜, `claimed` 순찰, 던전 실행 행을 집계해 진행도를 만들고, 목표별 수령 상태만
+`reward_events.event_type=adventure_weekly`로 남긴다. 일기 3일 20씨앗, 순찰 3회
+8씨앗, 던전 2회 6씨앗이며 세 목표 모두 XP는 0이다.
+
+장기 탐험 발자국도 별도 테이블을 두지 않는다. `diary_first_daily`,
+`patrol_claimed`, `dungeon_cleared` 원장 이벤트 수와 `user_adventure_research` 완료
+행을 읽어 다섯 칭호 진행도를 계산한다. 발자국은 읽기 전용이므로 원장 추가·재화
+지급·능력치 변경·claim 상태가 없다.
+
+표본 기증도 새 테이블을 두지 않는다. 미완성 `RESEARCH_PROJECTS` 요구량을 아이템별로
+합산해 `user_adventure_items.quantity`에서 예약하고, 그보다 3개 이상 남은 행만
+차감한다. 지급은 `reward_events.event_type=adventure_donated`, dedupe key
+`adventure_donation:{user_id}:{local_date}`로 하루 한 번 기록한다. 원장·인벤토리·
+씨앗 잔액은 같은 트랜잭션에서 반영하며 XP는 0이다.
+
+`dungeon_runs.approach_code`, `approach_stat`, `outcome_code`는 선택 당시 결과를
+보존한다. 본문 없이 호출한 구버전 클라이언트는 `approach_code=steady`로 저장한다.
+`scene_code`, `scene_title`, `scene_text`는 사용자·날짜·던전·접근 방식으로 정한 내부
+장면을 보존한다. 기존 실행 행 호환을 위해 nullable이며 보상이나 수집량 계산에는
+사용하지 않는다.
+
+`adventure_patrols.encounter_code`, `encounter_title`, `encounter_text`는 출발 시
+결정한 경로별 발견 이야기를 보존한다. 기존 순찰 호환을 위해 nullable이며 진행 중에는
+API가 값을 숨기고 귀환 수령 뒤에만 공개한다. 이야기 결과는 보상과 수집량 계산에
+사용하지 않는다.
+
+`reaction_form`, `reaction_speaker`, `reaction_text`는 같은 출발 시점의 활성 캐릭터
+성장 결, 이름, 귀환 대사를 보존한다. 성장 결은 `sunny`, `rainy`, `ember`, `moonlit`,
+`sparkling`, `mosaic` 중 하나이며, 캐릭터가 나중에 성장하거나 이름이 달라져도 완료 기록의 반응은
+바꾸지 않는다. 기존 순찰 호환을 위해 세 컬럼은 nullable이다.
+
+탐험 기록장은 새 테이블을 두지 않는다. 완료된 `adventure_patrols`와
+`dungeon_runs`를 최신순으로 합쳐 최근 6건을 만들고, 이야기 스냅샷이 있는 순찰은
+그 제목·본문·캐릭터 반응을 표시하고, 장면 스냅샷이 있는 던전 실행은 던전 이름 대신
+장면 제목과 본문을 표시한다. 발견 수와 누적 클리어 수는
+`user_dungeons`에서 계산한다. 같은 활동에 대한 별도 원장이나 중복 보상은 생성하지
+않는다.
+
+탐험 이야기 도감도 새 테이블을 두지 않는다. `claimed` 순찰의 발견 이야기와 던전
+실행의 내부 장면을 코드별로 묶고, 각 코드에서 시간순으로 가장 먼저 저장된 스냅샷을
+다시 보여 준다. 카탈로그는 순찰 12개·던전 12개로 고정하며 미발견 항목은 장소만
+공개한다. 도감에는 별도 원장·claim·보상·성능 효과가 없다.
+
+### 2.8 직접 조작형 탐험 런
+
+| 테이블 | 핵심 키·제약 | 역할 |
+|--------|--------------|------|
+| `expedition_runs` | 사용자 FK, status·phase·자원 CHECK, revision | 콘텐츠 버전·지도·런 스레드·기억·현재 노드·자원·완료 요약 스냅샷 |
+| `user_active_expeditions` | `user_id` PK, `run_id` UNIQUE | 사용자당 진행 중 런 하나를 강제하는 활성 슬롯 |
+| `expedition_party_members` | `UNIQUE(run_id,position)`, `UNIQUE(run_id,plant_id)` | 출발 시 캐릭터 이름·품종·성장형·스탯과 스킬 사용 상태 |
+| `expedition_node_states` | `UNIQUE(run_id,node_code)` | 노드 공개·방문·해결 상태, 담당 캐릭터와 결과 이야기 |
+| `expedition_actions` | `UNIQUE(run_id,action_index)`, `UNIQUE(run_id,client_action_id)` | revision 기반 이동·선택·스킬·귀환 멱등 행동 원장 |
+| `expedition_loot` | 런·노드·아이템·종류 UNIQUE | 후보·기록·지급으로 구분한 런 수집품 |
+| `expedition_content_exposures` | 런·종류·코드·순번 UNIQUE | 지도 템플릿과 런 스레드 노출 이력 |
+| `plant_adventure_bonds` | `plant_id` PK, 사용자 FK | 실제 캐릭터의 일일 1회 유대 점수와 마지막 획득일 |
+| `user_region_progress` | `PK(user_id,region_code)` | 지역 최초 완주·누적 완주·본 지도/사건·길의 지식 |
+| `plant_region_familiarity` | `PK(plant_id,region_code)` | 캐릭터별 지역 참여 횟수·일일 1회/최대 6 친숙도·발견 장면 |
+
+`expedition_runs.map_snapshot`은 시작 시점의 노드·간선·사건·발견·지역 보상 계약을
+보존한다. 라이브 콘텐츠가 바뀌어도 진행 중인 런과 과거 기록의 판정은 바뀌지 않는다.
+`run_thread_snapshot`, `run_memory_snapshot`, `spotlight_snapshot`,
+`runtime_effects_snapshot`은 각각 런 단위 서사, 선택 결과, 캐릭터 활약 배정, 다음
+선택에 적용할 일회성 스킬을 저장한다.
+`expedition_party_members.snapshot`은 원래 `raw_stats`와 지역 상한 후
+`effective_stats`를 둘 다 고정해 나중의 밸런스 변경이 진행 중 런을 바꾸지 못하게
+한다. 유대와 친숙도 점수는 정상 완주 시만 적용하며 같은 로컬 날짜의
+반복 자유 탐험으로 점수를 반복 획득할 수 없다.
+
+`expedition_actions.result_payload`는 네트워크 응답 유실 뒤 같은 `client_action_id`가
+왔을 때 재생할 서버 확정 응답이다. `expected_revision`이 현재 런과 다르면 새 행동을
+기록하지 않는다. 마음 공명 완주 보상은 `reward_events.event_type=expedition_completed`,
+dedupe key `active_expedition_daily:{user_id}:{local_date}`로 하루 한 번만 지급한다.
+
+### 2.9 assessments — PHQ-9 자가설문
 
 정확한 한국어 판본과 사용 근거 확인 전에는 feature flag로 비활성(설계서 3.2).
 결과는 선별용 자가설문으로만 표시하고 감정 추세와 합쳐 위험 점수를 만들지
