@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
 import '../domain/expedition_models.dart';
 import 'expedition_controller.dart';
+import 'moss_archive_scene.dart';
 
 class ExpeditionScreen extends ConsumerWidget {
   const ExpeditionScreen({super.key});
@@ -168,42 +169,58 @@ class _PreparationHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return MongrooPanel(
-      color: scheme.primaryContainer,
       borderColor: scheme.primary.withAlpha(80),
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: scheme.surface.withAlpha(210),
-              borderRadius: BorderRadius.circular(16),
+      radius: 18,
+      padding: EdgeInsets.zero,
+      child: MossArchiveScene(
+        borderRadius: BorderRadius.circular(18),
+        semanticLabel: '갈림길과 오래된 서가가 보이는 이끼 기억서고 탐험지',
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                MongrooPalette.of(context).night.withAlpha(205),
+                MongrooPalette.of(context).night.withAlpha(84),
+                Colors.transparent,
+              ],
+              stops: const [0, .62, 1],
             ),
-            alignment: Alignment.center,
-            child:
-                Icon(Icons.explore_outlined, size: 30, color: scheme.primary),
           ),
-          const SizedBox(width: 16),
-          Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                MongrooTag(
+                  label: '첫 지역 · 이끼 기억서고',
+                  icon: Icons.map_outlined,
+                  backgroundColor: scheme.surface.withAlpha(232),
+                ),
+                const SizedBox(height: 72),
                 Text(
-                  '내가 키운 캐릭터와 직접 길을 골라요',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  '내가 키운 캐릭터와\n직접 길을 골라요',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: AppTheme.onNight,
+                      ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  catalog.diaryReady
-                      ? '오늘 마음 일기가 탐험의 공명을 열었어요. 이동과 선택, 스킬 판정을 직접 진행해요.'
-                      : '자유 탐험은 언제든 가능해요. 오늘 마음 일기를 쓰면 성장과 씨앗이 있는 공명 탐험이 열려요.',
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 540),
+                  child: Text(
+                    catalog.diaryReady
+                        ? '오늘 마음 일기가 탐험의 공명을 열었어요. 이동과 선택, 스킬 판정을 직접 진행해요.'
+                        : '자유 탐험은 언제든 가능해요. 오늘 마음 일기를 쓰면 성장과 씨앗이 있는 공명 탐험이 열려요.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.onNightMuted,
+                        ),
+                  ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -570,7 +587,7 @@ class _MapColumn extends StatelessWidget {
         MongrooPanel(
           padding: const EdgeInsets.all(10),
           child: AspectRatio(
-            aspectRatio: 1.25,
+            aspectRatio: 1.55,
             child: _ExpeditionMap(state: state, expedition: expedition),
           ),
         ),
@@ -599,47 +616,52 @@ class _ExpeditionMap extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final nodes = expedition.nodes.where((node) => node.isPositioned).toList();
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const size = 66.0;
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _MapEdgePainter(
-                  nodes: nodes,
-                  edges: expedition.edges,
-                  currentCode: expedition.run.currentNodeCode,
-                  lineColor: scheme.outlineVariant,
-                  activeColor: scheme.primary,
+    return MossArchiveScene(
+      semanticLabel: '${expedition.region.name}의 갈림길 탐험 지도',
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const nodeWidth = 74.0;
+          const nodeHeight = 68.0;
+          return Stack(
+            clipBehavior: Clip.hardEdge,
+            children: [
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _MapEdgePainter(
+                    nodes: nodes,
+                    edges: expedition.edges,
+                    currentCode: expedition.run.currentNodeCode,
+                    lineColor: AppTheme.onNight.withAlpha(125),
+                    activeColor: scheme.primary,
+                  ),
                 ),
               ),
-            ),
-            for (final node in nodes)
-              Positioned(
-                left: (node.x! * constraints.maxWidth - size / 2)
-                    .clamp(0.0, constraints.maxWidth - size),
-                top: (node.y! * constraints.maxHeight - size / 2)
-                    .clamp(0.0, constraints.maxHeight - size),
-                width: size,
-                height: size,
-                child: _MapNodeButton(
-                  node: node,
-                  current: node.code == expedition.run.currentNodeCode,
-                  available: expedition.availableMoveCodes.contains(node.code),
-                  busy: state.busyAction != null,
-                  onTap: () async {
-                    final moved = await ref
-                        .read(expeditionControllerProvider.notifier)
-                        .move(node.code);
-                    if (moved) HapticFeedback.selectionClick();
-                  },
+              for (final node in nodes)
+                Positioned(
+                  left: (node.x! * constraints.maxWidth - nodeWidth / 2)
+                      .clamp(0.0, constraints.maxWidth - nodeWidth),
+                  top: (node.y! * constraints.maxHeight - nodeHeight / 2)
+                      .clamp(0.0, constraints.maxHeight - nodeHeight),
+                  width: nodeWidth,
+                  height: nodeHeight,
+                  child: _MapNodeButton(
+                    node: node,
+                    current: node.code == expedition.run.currentNodeCode,
+                    available:
+                        expedition.availableMoveCodes.contains(node.code),
+                    busy: state.busyAction != null,
+                    onTap: () async {
+                      final moved = await ref
+                          .read(expeditionControllerProvider.notifier)
+                          .move(node.code);
+                      if (moved) HapticFeedback.selectionClick();
+                    },
+                  ),
                 ),
-              ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -666,8 +688,8 @@ class _MapNodeButton extends StatelessWidget {
     final background = current
         ? scheme.primary
         : available
-            ? scheme.primaryContainer
-            : scheme.surfaceContainerHighest;
+            ? scheme.primaryContainer.withAlpha(238)
+            : scheme.surface.withAlpha(205);
     final foreground = current
         ? scheme.onPrimary
         : available
@@ -682,38 +704,105 @@ class _MapNodeButton extends StatelessWidget {
           : available
               ? '${node.name}, 길빛 ${node.cost}를 사용해 이동'
               : '${node.name}, 현재 이동할 수 없음',
-      child: Material(
-        color: background,
-        shape: CircleBorder(
-          side: BorderSide(
-            color:
-                current || available ? scheme.primary : scheme.outlineVariant,
-            width: current ? 3 : 1,
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: enabled ? onTap : null,
-          child: Tooltip(
-            message: node.name,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(_nodeIcon(node.type), color: foreground, size: 23),
-                Text(
-                  current
-                      ? '현재'
-                      : node.cost > 0
-                          ? '-${node.cost}'
-                          : '',
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelSmall
-                      ?.copyWith(color: foreground),
+      child: Tooltip(
+        message: node.name,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox.square(
+              dimension: 48,
+              child: AnimatedContainer(
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : MongrooMotion.standard,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: background,
+                  border: Border.all(
+                    color: current || available
+                        ? scheme.primary
+                        : scheme.outlineVariant,
+                    width: current ? 3 : 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(current ? 95 : 58),
+                      blurRadius: current ? 14 : 7,
+                      offset: const Offset(0, 3),
+                    ),
+                    if (current)
+                      BoxShadow(
+                        color: scheme.primary.withAlpha(90),
+                        blurRadius: 18,
+                        spreadRadius: 2,
+                      ),
+                  ],
                 ),
-              ],
+                child: Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: enabled ? onTap : null,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(_nodeIcon(node.type), color: foreground, size: 23),
+                        if (available && node.cost > 0)
+                          Positioned(
+                            right: 1,
+                            bottom: 1,
+                            child: Container(
+                              constraints: const BoxConstraints(
+                                minWidth: 18,
+                                minHeight: 18,
+                              ),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: scheme.inverseSurface,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                '-${node.cost}',
+                                textScaler: TextScaler.noScaling,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(
+                                      color: scheme.onInverseSurface,
+                                      fontSize: 10,
+                                    ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(height: 2),
+            if (current || available)
+              Container(
+                constraints: const BoxConstraints(maxWidth: 74),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                decoration: BoxDecoration(
+                  color: MongrooPalette.of(context).night.withAlpha(205),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  current ? '현재 · ${node.name}' : node.name,
+                  textScaler: TextScaler.noScaling,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppTheme.onNight,
+                        fontSize: 10,
+                      ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -742,13 +831,38 @@ class _MapEdgePainter extends CustomPainter {
       final left = byCode[edge[0]];
       final right = byCode[edge[1]];
       if (left == null || right == null) continue;
+      final start = Offset(left.x! * size.width, left.y! * size.height);
+      final end = Offset(right.x! * size.width, right.y! * size.height);
       final active = left.code == currentCode || right.code == currentCode;
-      canvas.drawLine(
-        Offset(left.x! * size.width, left.y! * size.height),
-        Offset(right.x! * size.width, right.y! * size.height),
+      final midpoint = (start.dx + end.dx) / 2;
+      final path = Path()
+        ..moveTo(start.dx, start.dy)
+        ..cubicTo(midpoint, start.dy, midpoint, end.dy, end.dx, end.dy);
+      canvas.drawPath(
+        path,
         Paint()
-          ..color = active ? activeColor.withAlpha(150) : lineColor
-          ..strokeWidth = active ? 4 : 3
+          ..color = Colors.black.withAlpha(95)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = active ? 9 : 7
+          ..strokeCap = StrokeCap.round,
+      );
+      if (active) {
+        canvas.drawPath(
+          path,
+          Paint()
+            ..color = activeColor.withAlpha(65)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 12
+            ..strokeCap = StrokeCap.round
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+        );
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = active ? activeColor : lineColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = active ? 4 : 2.5
           ..strokeCap = StrokeCap.round,
       );
     }

@@ -61,11 +61,21 @@ class AuthController extends Notifier<AuthState> {
     required String email,
     required String password,
     required String nickname,
+    required bool ageOver18,
+    required bool termsAccepted,
+    required bool privacyAccepted,
+    required bool sensitiveDataConsent,
   }) async {
     try {
-      final user = await ref
-          .read(authRepositoryProvider)
-          .signup(email: email, password: password, nickname: nickname);
+      final user = await ref.read(authRepositoryProvider).signup(
+            email: email,
+            password: password,
+            nickname: nickname,
+            ageOver18: ageOver18,
+            termsAccepted: termsAccepted,
+            privacyAccepted: privacyAccepted,
+            sensitiveDataConsent: sensitiveDataConsent,
+          );
       state = AuthState(status: AuthStatus.signedIn, user: user);
       return null;
     } on ApiException catch (e) {
@@ -82,6 +92,22 @@ class AuthController extends Notifier<AuthState> {
     } finally {
       // 서버 폐기나 보안 저장소 정리가 실패해도 현재 UI 세션은 즉시 닫는다.
       state = const AuthState(status: AuthStatus.signedOut);
+    }
+  }
+
+  Future<String?> deleteAccount({
+    required String password,
+    required String confirmation,
+  }) async {
+    try {
+      await ref.read(authRepositoryProvider).deleteAccount(
+            password: password,
+            confirmation: confirmation,
+          );
+      state = const AuthState(status: AuthStatus.signedOut);
+      return null;
+    } on ApiException catch (error) {
+      return error.message;
     }
   }
 

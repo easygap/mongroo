@@ -176,11 +176,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           PopupMenuButton<String>(
             tooltip: '메뉴',
             onSelected: (value) {
-              if (value == 'logout') {
+              if (value == 'account') {
+                context.push('/account');
+              } else if (value == 'logout') {
                 ref.read(authControllerProvider.notifier).logout();
               }
             },
             itemBuilder: (context) => const [
+              PopupMenuItem(value: 'account', child: Text('계정과 데이터')),
               PopupMenuItem(value: 'logout', child: Text('로그아웃')),
             ],
           ),

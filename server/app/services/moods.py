@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import AppError
 from app.core.config import get_settings
+from app.core.text_metadata import diary_content_marker
 from app.core.timeutil import local_date_of, to_utc_iso, utcnow
 from app.ai import safety
 from app.models.enums import AnalysisStatus, JobStatus, JobType, RewardEventType
@@ -130,6 +131,7 @@ async def enqueue_analysis(db: AsyncSession, entry: MoodEntry) -> None:
     entry.analysis_error_code = None
     db.add(
         AiJob(
+            user_id=entry.user_id,
             job_type=JobType.MOOD_ANALYSIS,
             resource_type="mood_entry",
             resource_id=entry.id,
@@ -189,6 +191,7 @@ async def create_mood(
         mood_level_explicit=mood_level is not None,
         emotion_tags=emotion_tags,
         content=content,
+        content_length=diary_content_marker(content),
         analysis_status=AnalysisStatus.NOT_REQUESTED,
     )
     db.add(entry)
@@ -287,6 +290,7 @@ async def patch_mood(
     if "content" in fields:
         # PATCH의 explicit null은 일기 본문을 비우는 의미다.
         entry.content = fields["content"]
+        entry.content_length = diary_content_marker(entry.content)
     if "ai_emotion_override" in fields:
         entry.ai_emotion_override = fields["ai_emotion_override"]
     if fields.get("ai_label_hidden") is not None:

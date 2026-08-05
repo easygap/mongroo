@@ -199,6 +199,7 @@ class _MongrooPressableState extends State<MongrooPressable> {
       button: true,
       enabled: widget.onTap != null,
       label: widget.semanticLabel,
+      onTap: widget.semanticLabel == null ? null : widget.onTap,
       child: widget.semanticLabel == null
           ? content
           : ExcludeSemantics(child: content),

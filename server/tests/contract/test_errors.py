@@ -1,3 +1,5 @@
+from app.api.routers.health import EXPECTED_SCHEMA_REVISION
+from app.protect_sensitive_data import PROTECTION_SCHEMA_REVISION
 from tests.conftest import auth_headers, signup
 
 
@@ -59,7 +61,15 @@ async def test_health_ready_shape(client):
     assert body["status"] in ("ok", "degraded", "down")
     assert set(body["checks"].keys()) == {
         "database",
+        "schema",
+        "sensitive_storage",
+        "consent_contract",
         "ai_worker",
         "classifier",
         "ollama",
     }
+
+
+def test_health_tracks_database_head_separately_from_protection_contract():
+    assert EXPECTED_SCHEMA_REVISION == "0030_ai_job_ownership"
+    assert PROTECTION_SCHEMA_REVISION == "0029_real_data_protection"

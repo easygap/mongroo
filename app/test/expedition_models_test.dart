@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/expedition/domain/expedition_models.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_controller.dart';
+import 'package:mongroo/features/expedition/presentation/moss_archive_scene.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_screen.dart';
 
 Map<String, dynamic> _snapshotJson() => {
@@ -191,6 +192,8 @@ void main() {
     expect(find.text('온기 나누기'), findsOneWidget);
     expect(find.textContaining('관찰 5 · 기준 8'), findsOneWidget);
     expect(find.byTooltip('젖은 표찰길'), findsOneWidget);
+    expect(find.byType(MossArchiveScene), findsOneWidget);
+    expect(find.text('현재 · 젖은 표찰길'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -259,7 +262,9 @@ void main() {
 
     await tester.ensureVisible(find.text('온기 나누기'));
     await tester.tap(find.text('온기 나누기'));
-    await tester.pumpAndSettle();
+    // 탐험 배경의 잔잔한 환경 모션은 계속 재생되므로 바텀시트 전환
+    // 시간만 진행하고 무한 애니메이션의 settle을 기다리지 않는다.
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('돌봄 +3'), findsOneWidget);
     expect(find.text('결의 1 회복'), findsOneWidget);

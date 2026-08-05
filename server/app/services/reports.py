@@ -3,6 +3,7 @@
 통계는 결정적으로 동기 계산하고, 자연어 요약만 AI job으로 미룬다.
 각 통계 bucket에 entry_ids를 붙여 원 기록으로 내려갈 수 있게 한다.
 """
+
 import hashlib
 import json
 from collections import defaultdict
@@ -13,7 +14,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import AppError
 from app.core.config import get_settings
-from app.core.timeutil import time_of_day_bucket, to_utc_iso, utcnow, week_period, month_period
+from app.core.timeutil import (
+    time_of_day_bucket,
+    to_utc_iso,
+    utcnow,
+    week_period,
+    month_period,
+)
 from app.models.enums import AnalysisStatus, JobStatus, JobType, ReportStatus
 from app.models.mood import MoodEntry
 from app.models.ops import AiJob
@@ -30,7 +37,9 @@ def resolve_period(period_type: str, period_start: date) -> tuple[date, date]:
             return month_period(period_start)
     except ValueError as exc:
         raise AppError(400, "REPORT_PERIOD_INVALID", str(exc)) from exc
-    raise AppError(400, "REPORT_PERIOD_INVALID", "period_type은 weekly 또는 monthly만 가능합니다.")
+    raise AppError(
+        400, "REPORT_PERIOD_INVALID", "period_type은 weekly 또는 monthly만 가능합니다."
+    )
 
 
 async def _entries_in_period(
@@ -64,21 +73,29 @@ def compute_input_hash(entries: list[MoodEntry], period_type: str, start: date) 
             part = f"{part}:{label_settings}"
         parts.append(part)
     raw = json.dumps(
-        {"v": STATS_VERSION, "period": f"{period_type}:{start.isoformat()}", "entries": parts},
+        {
+            "v": STATS_VERSION,
+            "period": f"{period_type}:{start.isoformat()}",
+            "entries": parts,
+        },
         sort_keys=True,
     )
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
 def compute_stats(
-    entries: list[MoodEntry], start: date, end: date,
+    entries: list[MoodEntry],
+    start: date,
+    end: date,
     excluded_text_entry_ids: frozenset[int] = frozenset(),
 ) -> tuple[dict, float]:
     """excluded_text_entry_ids: 안전 신호가 있었던 기록. 기분·태그 집계에는
     포함하되 자유본문은 키워드 추출과 LLM 입력에서 제외한다 (docs/safety.md 6절)."""
     from app.services.keywords import extract_keywords
 
-    mood_daily: dict[str, dict] = defaultdict(lambda: {"sum": 0, "count": 0, "entry_ids": []})
+    mood_daily: dict[str, dict] = defaultdict(
+        lambda: {"sum": 0, "count": 0, "entry_ids": []}
+    )
     tag_dist: dict[str, dict] = defaultdict(lambda: {"count": 0, "entry_ids": []})
     ai_dist: dict[str, dict] = defaultdict(lambda: {"count": 0, "entry_ids": []})
     tod: dict[str, dict] = defaultdict(lambda: {"count": 0, "entry_ids": []})
@@ -114,7 +131,9 @@ def compute_stats(
     longest = current = 0
     prev: date | None = None
     for day in recorded_days:
-        current = current + 1 if prev is not None and day - prev == timedelta(days=1) else 1
+        current = (
+            current + 1 if prev is not None and day - prev == timedelta(days=1) else 1
+        )
         longest = max(longest, current)
         prev = day
     tail_current = 0
@@ -127,7 +146,9 @@ def compute_stats(
 
     stats = {
         "total_entries": len(entries),
-        "explicit_mood_entries": sum(1 for entry in entries if entry.mood_level_explicit),
+        "explicit_mood_entries": sum(
+            1 for entry in entries if entry.mood_level_explicit
+        ),
         "entries_with_text": with_text,
         "analyzed_entries": analyzed,
         "mood_daily": [
@@ -141,16 +162,17 @@ def compute_stats(
         ],
         "tag_distribution": [
             {"tag": tag, **v}
-            for tag, v in sorted(tag_dist.items(), key=lambda kv: kv[1]["count"], reverse=True)
+            for tag, v in sorted(
+                tag_dist.items(), key=lambda kv: kv[1]["count"], reverse=True
+            )
         ],
         "ai_emotion_distribution": [
             {"emotion": emotion, **v}
-            for emotion, v in sorted(ai_dist.items(), key=lambda kv: kv[1]["count"], reverse=True)
+            for emotion, v in sorted(
+                ai_dist.items(), key=lambda kv: kv[1]["count"], reverse=True
+            )
         ],
-        "time_of_day": [
-            {"bucket": bucket, **v}
-            for bucket, v in tod.items()
-        ],
+        "time_of_day": [{"bucket": bucket, **v} for bucket, v in tod.items()],
         "streak": {"current": tail_current, "longest_in_period": longest},
         "keywords": extract_keywords(text_docs),
     }
@@ -232,9 +254,13 @@ async def get_or_create(
     if ai_on:
         db.add(
             AiJob(
-                job_type=JobType.REPORT_SUMMARY, resource_type="report",
-                resource_id=report.id, input_version=1,
-                status=JobStatus.PENDING, available_at=utcnow(),
+                user_id=user_id,
+                job_type=JobType.REPORT_SUMMARY,
+                resource_type="report",
+                resource_id=report.id,
+                input_version=1,
+                status=JobStatus.PENDING,
+                available_at=utcnow(),
             )
         )
     return report, True
@@ -242,5 +268,10 @@ async def get_or_create(
 
 async def is_stale(db: AsyncSession, report: Report) -> bool:
     """기록 변경·삭제로 입력이 달라졌으면 stale (design.md 5.4)."""
-    entries = await _entries_in_period(db, report.user_id, report.period_start, report.period_end)
-    return compute_input_hash(entries, report.period_type, report.period_start) != report.input_hash
+    entries = await _entries_in_period(
+        db, report.user_id, report.period_start, report.period_end
+    )
+    return (
+        compute_input_hash(entries, report.period_type, report.period_start)
+        != report.input_hash
+    )

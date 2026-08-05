@@ -1,7 +1,7 @@
 """인증. refresh는 매 사용 시 회전하고 재사용을 감지한다 (design.md 9.2)."""
-import time
+import hashlib
+import hmac
 import uuid
-from collections import defaultdict, deque
 from datetime import timedelta
 
 import sqlalchemy as sa
@@ -20,38 +20,98 @@ from app.core.timeutil import to_utc_iso, utcnow
 from app.models.enums import PlantStatus
 from app.models.game import Item, UserItem
 from app.models.plant import Plant, PlantSpecies
-from app.models.user import AuthSession, RefreshToken, User
-from app.schemas.requests import LoginRequest, LogoutRequest, RefreshRequest, SignupRequest
+from app.models.user import AuthSession, LoginRateLimit, RefreshToken, User
+from app.schemas.requests import (
+    AccountDeleteRequest,
+    LoginRequest,
+    LogoutRequest,
+    RefreshRequest,
+    SignupRequest,
+)
 from app.services import plants as plant_service
+from app.services.account import build_account_export, delete_account_data
 
 router = APIRouter(tags=["auth"])
 
-# 단일 프로세스 데모 기준의 실패한 로그인 시도 제한
-_login_attempts: dict[str, deque] = defaultdict(deque)
+def _login_rate_key(scope: str, identifier: str) -> str:
+    """식별자 원문 대신 서버 secret 기반 HMAC만 DB에 남긴다."""
+
+    secret = get_settings().jwt_secret.encode("utf-8")
+    message = f"login|{scope}|{identifier.lower()}".encode("utf-8")
+    return hmac.new(secret, message, hashlib.sha256).hexdigest()
 
 
-def _check_login_rate(key: str) -> None:
+async def _check_login_rate(db: AsyncSession, key: str, limit: int) -> None:
     settings = get_settings()
-    window = settings.login_rate_limit_window_seconds
-    now = time.monotonic()
-    attempts = _login_attempts.get(key)
-    if not attempts:
+    now = utcnow()
+    row = await db.scalar(
+        sa.select(LoginRateLimit)
+        .where(LoginRateLimit.rate_key == key)
+        .with_for_update()
+    )
+    if row is None:
         return
-    while attempts and now - attempts[0] > window:
-        attempts.popleft()
-    if not attempts:
-        _login_attempts.pop(key, None)
+    if row.window_started_at <= now - timedelta(
+        seconds=settings.login_rate_limit_window_seconds
+    ):
+        await db.delete(row)
+        await db.flush()
         return
-    if len(attempts) >= settings.login_rate_limit_count:
+    if row.failure_count >= limit:
         raise AppError(429, "RATE_LIMITED", "잠시 후 다시 시도해 주세요.")
 
 
-def _record_login_failure(key: str) -> None:
-    _login_attempts[key].append(time.monotonic())
+async def _record_login_failure(db: AsyncSession, key: str) -> None:
+    settings = get_settings()
+    now = utcnow()
+    await db.execute(
+        sa.delete(LoginRateLimit).where(
+            LoginRateLimit.updated_at
+            < now - timedelta(seconds=settings.login_rate_limit_window_seconds * 2)
+        )
+    )
+    row = await db.scalar(
+        sa.select(LoginRateLimit)
+        .where(LoginRateLimit.rate_key == key)
+        .with_for_update()
+    )
+    if row is None:
+        try:
+            async with db.begin_nested():
+                row = LoginRateLimit(
+                    rate_key=key,
+                    failure_count=1,
+                    window_started_at=now,
+                    updated_at=now,
+                )
+                db.add(row)
+                await db.flush([row])
+            return
+        except IntegrityError:
+            # 다른 API 프로세스가 같은 HMAC bucket을 먼저 만들었다. SAVEPOINT만
+            # 롤백해 이 요청에서 먼저 기록한 계정/IP bucket을 잃지 않는다.
+            row = await db.scalar(
+                sa.select(LoginRateLimit)
+                .where(LoginRateLimit.rate_key == key)
+                .with_for_update()
+            )
+            if row is None:
+                raise
+    if row.window_started_at <= now - timedelta(
+        seconds=settings.login_rate_limit_window_seconds
+    ):
+        row.window_started_at = now
+        row.failure_count = 1
+    else:
+        row.failure_count += 1
+    row.updated_at = now
+    await db.flush()
 
 
-def _clear_login_failures(key: str) -> None:
-    _login_attempts.pop(key, None)
+async def _clear_login_failures(db: AsyncSession, key: str) -> None:
+    row = await db.get(LoginRateLimit, key)
+    if row is not None:
+        await db.delete(row)
 
 
 def user_payload(user: User) -> dict:
@@ -62,6 +122,12 @@ def user_payload(user: User) -> dict:
         "timezone": user.timezone,
         "seed_balance": user.seed_balance,
         "streak_days": user.streak_days,
+        "consent": {
+            "terms_version": user.terms_version,
+            "privacy_version": user.privacy_version,
+            "sensitive_consent_version": user.sensitive_consent_version,
+            "age_confirmed": user.age_confirmed_at is not None,
+        },
         "created_at": to_utc_iso(user.created_at),
     }
 
@@ -95,14 +161,47 @@ async def _issue_tokens(db: AsyncSession, user: User) -> dict:
 
 @router.post("/auth/signup", status_code=201)
 async def signup(body: SignupRequest, db: AsyncSession = Depends(get_db)):
+    settings = get_settings()
+    accepted = all(
+        (
+            body.terms_accepted,
+            body.privacy_accepted,
+            body.sensitive_data_consent,
+            body.age_over_18,
+        )
+    )
+    if settings.data_profile == "real-data" and not accepted:
+        raise AppError(
+            422,
+            "CONSENT_REQUIRED",
+            "만 18세 이상 확인과 필수 약관·개인정보·민감정보 동의가 필요합니다.",
+        )
+    if settings.data_profile == "real-data" and (
+        body.terms_version != settings.terms_version
+        or body.privacy_version != settings.privacy_version
+        or body.sensitive_consent_version != settings.sensitive_consent_version
+    ):
+        raise AppError(
+            409,
+            "CONSENT_VERSION_OUTDATED",
+            "약관과 동의 내용이 갱신되었습니다. 앱을 새로고침한 뒤 다시 확인해 주세요.",
+        )
     exists = await db.scalar(sa.select(User.id).where(User.email == body.email.lower()))
     if exists is not None:
         raise AppError(409, "EMAIL_ALREADY_EXISTS", "이미 가입된 이메일입니다.")
 
+    consented_at = utcnow() if accepted else None
     user = User(
         email=body.email.lower(),
         password_hash=hash_password(body.password),
         nickname=body.nickname.strip(),
+        terms_version=settings.terms_version if accepted else None,
+        privacy_version=settings.privacy_version if accepted else None,
+        sensitive_consent_version=(
+            settings.sensitive_consent_version if accepted else None
+        ),
+        age_confirmed_at=consented_at,
+        consented_at=consented_at,
     )
     db.add(user)
     try:
@@ -143,15 +242,20 @@ async def signup(body: SignupRequest, db: AsyncSession = Depends(get_db)):
 @router.post("/auth/login")
 async def login(body: LoginRequest, request: Request, db: AsyncSession = Depends(get_db)):
     client_ip = request.client.host if request.client else "unknown"
-    rate_key = f"{body.email.lower()}|{client_ip}"
-    _check_login_rate(rate_key)
+    account_rate_key = _login_rate_key("account", body.email)
+    ip_rate_key = _login_rate_key("ip", client_ip)
+    settings = get_settings()
+    await _check_login_rate(db, account_rate_key, settings.login_rate_limit_count)
+    await _check_login_rate(db, ip_rate_key, settings.login_ip_rate_limit_count)
 
     user = await db.scalar(sa.select(User).where(User.email == body.email.lower()))
     # 계정 존재 여부가 드러나지 않게 오류 문구를 통일한다
     if user is None or not verify_password(user.password_hash, body.password):
-        _record_login_failure(rate_key)
+        await _record_login_failure(db, account_rate_key)
+        await _record_login_failure(db, ip_rate_key)
+        await db.commit()
         raise AppError(401, "AUTH_INVALID_CREDENTIALS", "이메일 또는 비밀번호를 확인해 주세요.")
-    _clear_login_failures(rate_key)
+    await _clear_login_failures(db, account_rate_key)
     payload = await _issue_tokens(db, user)
     await db.commit()
     return payload
@@ -259,3 +363,34 @@ async def logout_all(
 @router.get("/users/me")
 async def me(user: User = Depends(get_current_user)):
     return user_payload(user)
+
+
+@router.get("/users/me/export")
+async def export_account(
+    response: Response,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    response.headers["Content-Disposition"] = (
+        'attachment; filename="mongroo-account-export.json"'
+    )
+    return await build_account_export(db, user)
+
+
+@router.delete("/users/me", status_code=204)
+async def delete_account(
+    body: AccountDeleteRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if body.confirmation != "몽그루 탈퇴" or not verify_password(
+        user.password_hash, body.password
+    ):
+        raise AppError(
+            422,
+            "ACCOUNT_DELETE_CONFIRMATION_INVALID",
+            "확인 문구와 현재 비밀번호를 다시 확인해 주세요.",
+        )
+    await delete_account_data(db, user)
+    await db.commit()
+    return Response(status_code=204)

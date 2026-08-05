@@ -8,8 +8,13 @@ from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.timeutil import utcnow
 from app.models.ops import WorkerHeartbeat
+from app.protect_sensitive_data import (
+    PROTECTION_SCHEMA_REVISION,
+    PROTECTION_STATE_KEY,
+)
 
 router = APIRouter(tags=["health"])
+EXPECTED_SCHEMA_REVISION = "0030_ai_job_ownership"
 
 
 @router.get("/health/live")
@@ -27,6 +32,63 @@ async def ready(response: Response, db: AsyncSession = Depends(get_db)):
         checks["database"] = {"status": "ok"}
     except Exception:
         checks["database"] = {"status": "down"}
+
+    if settings.data_profile == "real-data" and checks["database"]["status"] == "ok":
+        try:
+            revision = await db.scalar(
+                sa.text("SELECT version_num FROM alembic_version")
+            )
+            checks["schema"] = {
+                "status": "ok" if revision == EXPECTED_SCHEMA_REVISION else "down"
+            }
+            protection_state = (
+                await db.execute(
+                    sa.text(
+                        "SELECT schema_revision, active_key_id, remaining_plaintext "
+                        "FROM data_protection_states WHERE protection_key = :key"
+                    ),
+                    {"key": PROTECTION_STATE_KEY},
+                )
+            ).one_or_none()
+            protection_valid = (
+                protection_state is not None
+                and protection_state.schema_revision == PROTECTION_SCHEMA_REVISION
+                and protection_state.active_key_id
+                == settings.active_field_encryption_key_id
+                and protection_state.remaining_plaintext == 0
+            )
+            checks["sensitive_storage"] = {
+                "status": "ok" if protection_valid else "down"
+            }
+            stale_consents = int(
+                await db.scalar(
+                    sa.text(
+                        "SELECT COUNT(*) FROM users WHERE "
+                        "terms_version IS NULL OR terms_version != :terms OR "
+                        "privacy_version IS NULL OR privacy_version != :privacy OR "
+                        "sensitive_consent_version IS NULL OR "
+                        "sensitive_consent_version != :sensitive OR "
+                        "age_confirmed_at IS NULL"
+                    ),
+                    {
+                        "terms": settings.terms_version,
+                        "privacy": settings.privacy_version,
+                        "sensitive": settings.sensitive_consent_version,
+                    },
+                )
+                or 0
+            )
+            checks["consent_contract"] = {
+                "status": "ok" if stale_consents == 0 else "down"
+            }
+        except Exception:
+            checks["schema"] = {"status": "down"}
+            checks["sensitive_storage"] = {"status": "down"}
+            checks["consent_contract"] = {"status": "down"}
+    else:
+        checks["schema"] = {"status": "disabled"}
+        checks["sensitive_storage"] = {"status": "disabled"}
+        checks["consent_contract"] = {"status": "disabled"}
 
     if settings.ai_mode == "disabled":
         checks["ai_worker"] = {"status": "disabled", "last_heartbeat": None}
@@ -56,11 +118,19 @@ async def ready(response: Response, db: AsyncSession = Depends(get_db)):
                 "status": "ok" if ok else "down",
                 "mode": settings.ai_mode,
             }
+        elif settings.ai_mode == "rules":
+            checks["ollama"] = {"status": "disabled", "mode": settings.ai_mode}
         else:
             checks["ollama"] = {"status": "ok", "mode": settings.ai_mode}
 
-    # DB 불능만 down, AI 의존성 불능은 degraded (design.md 12.2)
-    if checks["database"]["status"] != "ok":
+    # DB·스키마·암호화·동의는 트래픽 수신 전 필수, AI는 degraded 허용이다.
+    critical_checks = (
+        "database",
+        "schema",
+        "sensitive_storage",
+        "consent_contract",
+    )
+    if any(checks[name]["status"] == "down" for name in critical_checks):
         status = "down"
         response.status_code = 503
     elif any(c["status"] == "down" for c in checks.values()):

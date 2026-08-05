@@ -270,7 +270,14 @@ class FarmController extends Notifier<FarmUiState> {
 
   @override
   FarmUiState build() {
-    Future.microtask(load);
+    final authStatus = ref.watch(
+      authControllerProvider.select((state) => state.status),
+    );
+    // 계정 삭제·로그아웃 뒤 세션 캐시를 비울 때 provider가 다시 생성되더라도
+    // 폐기된 토큰으로 방 배치를 재조회하지 않는다.
+    if (authStatus != AuthStatus.signedOut) {
+      Future.microtask(load);
+    }
     return const FarmUiState();
   }
 

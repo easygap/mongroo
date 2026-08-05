@@ -10,7 +10,7 @@ dependencies = [
     "alembic>=1.13",
     "aiosqlite>=0.20",
     "aiomysql>=0.2.0",
-    "cryptography>=42",
+    "cryptography>=50.0.0",
     "pydantic[email]>=2.9",
     "pydantic-settings>=2.5",
     "argon2-cffi>=23.1",
@@ -24,7 +24,12 @@ dependencies = [
 analysis = ["kiwipiepy>=0.18"]
 # AI_MODE=local에서 감정 분류기 실행에 필요
 local-ai = ["transformers>=4.44", "torch>=2.3"]
-dev = ["pytest>=8.2", "pytest-asyncio>=0.24"]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.24",
+    "ruff==0.16.0",
+    "pip-audit==2.10.1",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

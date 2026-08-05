@@ -265,6 +265,7 @@ async def post_message(
             existing.assistant_message_id = None
             db.add(
                 AiJob(
+                    user_id=user_id,
                     job_type=JobType.CHAT_GENERATION,
                     resource_type="chat_run",
                     resource_id=existing.id,
@@ -358,6 +359,7 @@ async def post_message(
     await db.flush()
     db.add(
         AiJob(
+            user_id=user_id,
             job_type=JobType.CHAT_GENERATION,
             resource_type="chat_run",
             resource_id=run.id,

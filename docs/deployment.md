@@ -1,14 +1,14 @@
 # 몽그루 실행·배포 전제
 
-이 문서는 로컬 데모 실행과 공개 배포 준비를 구분한다. 현재 서버의
-`DATA_PROFILE`은 `demo`만 허용하므로, 아래 설정을 마쳐도 실제 민감정보를 받는
-운영 서비스가 되는 것은 아니다. 개인정보·암호화 검토 항목은
-[design.md §9](design.md#9-보안개인정보제품-안전)를 별도로 충족해야 한다.
+이 문서는 로컬 데모와 실제 사용자 데이터를 받는 공개 배포를 구분한다. 운영은
+`APP_ENV=production`, `DATA_PROFILE=real-data` 조합만 허용하며, API 시작 전에
+AES-256-GCM 필드 암호화 backfill과 전수 검증을 통과해야 한다. 개인정보·제품 안전
+정책은 [design.md §9](design.md#9-보안개인정보제품-안전)를 함께 따른다.
 
 ## 0. 운영 스택 즉시 기동
 
-루트의 `docker-compose.prod.yml`은 MySQL → Alembic 마이그레이션 → API →
-Flutter Web 순서를 health gate로 올린다. Web 컨테이너는 `/api/`를 내부
+루트의 `docker-compose.prod.yml`은 MySQL → Alembic 마이그레이션 → 민감 컬럼
+암호화·검증 → API/worker → Flutter Web 순서를 health gate로 올린다. Web 컨테이너는 `/api/`를 내부
 API로 프록시하므로 클라이언트와 API를 하나의 HTTPS origin으로 배포할 수
 있다. 8080 포트 앞에는 반드시 TLS를 종료하는 load balancer나 reverse proxy를
 둔다.
@@ -22,32 +22,48 @@ docker compose --env-file .env.production -f docker-compose.prod.yml up -d
 docker compose --env-file .env.production -f docker-compose.prod.yml ps
 ```
 
-`APP_ENV=production`은 시작 시 약한 JWT, SQLite, fake AI, HTTP/wildcard CORS,
-로컬/wildcard Host를 발견하면 API를 즉시 종료한다. 예시 파일 그대로는
-기동하지 않는 것이 정상이다. `/api/v1/health/live`은 프로세스, `/ready`는
-DB 준비 상태이며 DB 불가시 `/ready`는 HTTP 503을 반환한다.
+`APP_ENV=production`은 약한 JWT, SQLite, demo 데이터 프로파일, 유효하지 않은
+암호화 키, fake AI, HTTP/wildcard CORS, 로컬/wildcard Host를 발견하면 API를 즉시
+종료한다. 예시 파일의 `replace-with-*`를 실제 값으로 바꾸지 않으면 빌드 또는
+기동이 실패하는 것이 정상이다. `/api/v1/health/live`은 프로세스,
+`/ready`는 DB revision·암호화 검증 마커·동의 계약을 확인하며 위반 시 HTTP 503이다.
 
-AI 없이 기록·성장·탐험 코어만 운영할 때는 `AI_MODE=disabled`를 쓰고 worker를
-올리지 않는다. 운영 Ollama·분류기 모델·`local-ai` Python 의존성을 포함한
-전용 이미지가 준비된 환경만 `AI_MODE=local`과 `--profile ai`를 함께 쓴다.
+기본 운영값 `AI_MODE=rules`는 GPU와 외부 전송 없이 검수된 결정적 분류·대화·요약을
+worker에서 처리한다. 모델 품질 검증과 전용 `local-ai` 이미지가 준비된 환경만
+`AI_MODE=local`을 사용한다. 장애 격리 중 `AI_MODE=disabled`로 내릴 수 있지만 이때
+일기 저장·성장·탐험 외의 분석·대화·요약은 명시적으로 비활성화된다.
 
 ## 1. 클라이언트 API 주소
 
-Flutter의 API 주소는 컴파일 시 `API_BASE_URL`로 고정된다. 생략 시 Android
-에뮬레이터용 `http://10.0.2.2:8000/api/v1`가 들어가므로 Web 또는 배포 빌드에서는
-반드시 명시한다.
+Flutter의 API 주소는 `API_BASE_URL`을 지정하면 컴파일 시 고정된다. 생략하면 Web은
+현재 origin의 `/api/v1`을 사용하고 Android는 에뮬레이터용
+`http://10.0.2.2:8000/api/v1`을 사용한다. 공식 Web 컨테이너는 `/api/`를 내부 API로
+프록시하므로 동일 출처 배포에서는 주소를 생략한다. Web과 API를 서로 다른 origin으로
+배포하거나 Android를 빌드할 때는 HTTPS 운영 주소를 명시한다.
 
 ```powershell
 # 로컬 Web
 flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
 
-# 공개 Web 예시: HTTPS API만 사용
-flutter build web --wasm --dart-define=API_BASE_URL=https://api.example.com/api/v1
+# 공개 Web 예시: 법적 고지값도 빌드에 고정한다.
+flutter build web --wasm --no-web-resources-cdn `
+  --dart-define=API_BASE_URL=https://api.example.com/api/v1 `
+  --dart-define=SERVICE_OPERATOR_NAME="실제 운영자명" `
+  --dart-define=SERVICE_OPERATOR_ADDRESS="실제 운영자 주소" `
+  --dart-define=PRIVACY_CONTACT_EMAIL=privacy@example.com `
+  --dart-define=DATA_HOSTING_DISCLOSURE="사업자·리전·국가" `
+  --dart-define=TERMS_VERSION=2026-08-05 `
+  --dart-define=PRIVACY_VERSION=2026-08-05 `
+  --dart-define=SENSITIVE_CONSENT_VERSION=2026-08-05
 
 # USB Android 실기기 로컬 데모
 adb reverse tcp:8000 tcp:8000
 flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
 ```
+
+`--no-web-resources-cdn`은 제거하지 않는다. 운영 CSP는 외부 폰트를 허용하지
+않으며, Gothic A1과 Flutter Web 엔진 자원을 동일 출처에서 제공해 초기
+렌더링이 Google Fonts 가용성에 의존하지 않게 한다.
 
 환경별 주소를 바꾼 뒤에는 앱을 다시 빌드해야 한다. 토큰이나 비밀값은
 `--dart-define`에 넣지 않는다.
@@ -130,9 +146,15 @@ flutter build appbundle --release --dart-define=API_BASE_URL=https://api.example
 ## 5. 서버 공개 전 설정
 
 - `JWT_SECRET`을 32바이트 이상의 무작위 값으로 교체하고 secret store에서 주입한다.
+- `FIELD_ENCRYPTION_KEYS`에는 base64 32바이트 키 ring을 JSON으로 넣고
+  `ACTIVE_FIELD_ENCRYPTION_KEY_ID`로 쓰기 키를 선택한다. 키는 DB·백업·저장소와
+  분리하며 예시 키를 운영에 사용하지 않는다.
 - `DATABASE_URL`, CORS, Ollama 주소를 환경별로 분리하고 MySQL/Ollama를 공용망에
   직접 노출하지 않는다.
-- `alembic upgrade head`를 먼저 적용하고 API와 AI worker를 함께 실행한다.
+- `alembic upgrade head` 다음 `python -m app.protect_sensitive_data`를 실행한다.
+  평문이 하나라도 남거나 현재 active key 검증 마커가 없으면 API readiness가 닫힌다.
+- 기존 사용자가 있는 demo DB를 real-data로 승격할 때는 유효한 연령 확인·약관·민감정보
+  동의를 별도 수집해야 한다. 동의 버전을 임의 backfill하지 않는다.
 - `/api/v1/health/ready`가 의도한 상태인지 확인한다. AI 기능을 쓸 배포에서 worker가
   없으면 기록은 남아도 분석·대화·요약 job이 처리되지 않는다.
 - `server/openapi.json`은 `cd server; python -m app.export_openapi`로 재생성하고
@@ -151,3 +173,39 @@ flutter build appbundle --release --dart-define=API_BASE_URL=https://api.example
    추가형 마이그레이션은 즉시 downgrade하지 않고 전방 호환 API를 유지한다.
    정말 DB 복구가 필요하면 쓰기를 중단하고 검증된 snapshot을 별도 인스턴스에
    복구한 뒤 전환한다.
+
+### 암호화 키 회전
+
+1. 기존 키와 새 32바이트 키를 key ring에 함께 넣고 새 ID를 active로 지정한다.
+2. 쓰기 트래픽을 중단하거나 maintenance로 전환한 뒤
+   `python -m app.protect_sensitive_data --rotate`를 한 번만 실행한다.
+3. `remaining_plaintext=0`, `/ready`의 `sensitive_storage=ok`, 계정 export 복호화를
+   확인하고 백업 복구 리허설을 한다.
+4. 이전 백업의 보존기간이 끝나기 전에는 구 키를 폐기하지 않는다. 회전 도중 실패하면
+   구·신 키를 모두 유지한 채 같은 명령을 재실행한다.
+
+## 7. GitHub 릴리스 입력과 산출물
+
+`.github/workflows/release.yml`은 `vX.Y.Z` tag 또는 수동 version으로 실행한다. 서버·앱
+전체 테스트와 MySQL production smoke를 통과한 뒤 서명 AAB, GHCR API/Web 이미지,
+SBOM·provenance attestations, GitHub Release를 만든다. 컨테이너는 비root 사용자로
+실행하고, HIGH/CRITICAL 취약점 검사를 통과한 digest만 `vX.Y.Z` tag로 승격한다.
+이미 존재하는 tag가 다른 digest를 가리키면 덮어쓰지 않고 릴리스를 실패시킨다.
+
+Repository secrets:
+
+- `PRODUCTION_API_BASE_URL`(HTTPS)
+- `ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_PASSWORD`,
+  `ANDROID_KEY_ALIAS`
+
+Repository variables:
+
+- `SERVICE_OPERATOR_NAME`, `SERVICE_OPERATOR_ADDRESS`
+- `PRIVACY_CONTACT_EMAIL`
+- `DATA_HOSTING_DISCLOSURE`(호스팅 사업자·리전·국가)
+- `TERMS_VERSION`, `PRIVACY_VERSION`, `SENSITIVE_CONSENT_VERSION`
+
+일곱 법적 고지·동의 버전 변수 중 하나라도 비었거나 이메일 형식이 아니면 Web 이미지와
+Android AAB 생성을 중단한다. 앱이 가입 때 보낸 세 문서 버전과 서버의 현재 버전이
+다르면 동의를 저장하지 않고 409로 새로고침을 요구한다. 실제 배포 환경의 DB/JWT/암호화 키는 GitHub 이미지 빌드에 넣지
+않고 런타임 secret store에서 주입한다.

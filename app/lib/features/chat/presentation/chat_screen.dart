@@ -467,6 +467,7 @@ class _ConversationStarters extends StatelessWidget {
                   child: Semantics(
                     button: true,
                     label: '시작 문장 입력: $starter',
+                    onTap: () => onSelected(starter),
                     child: ExcludeSemantics(
                       child: ActionChip(
                         avatar: const Icon(Icons.edit_outlined, size: 16),

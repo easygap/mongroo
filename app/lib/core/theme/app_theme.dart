@@ -91,6 +91,7 @@ abstract final class MongrooMotion {
 }
 
 abstract final class AppTheme {
+  static const bodyFont = 'GothicA1';
   static const pixelFont = 'Galmuri11';
   static const seed = MongrooBrandColors.sprout;
   static const onNight = MongrooBrandColors.paper;
@@ -192,6 +193,10 @@ abstract final class AppTheme {
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
+      fontFamily: bodyFont,
+      // CanvasKit이 한글 글리프를 원격 Noto CDN에서 동적으로 찾지 않도록
+      // pubspec에 같은 로컬 파일로 등록한 fallback family만 사용한다.
+      fontFamilyFallback: const ['Noto Sans KR', 'Roboto'],
       scaffoldBackgroundColor: canvas,
       visualDensity: VisualDensity.standard,
       splashFactory: InkRipple.splashFactory,

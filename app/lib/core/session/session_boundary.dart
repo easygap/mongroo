@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/presentation/auth_controller.dart';
@@ -19,6 +21,13 @@ final authSessionIdentityProvider = Provider<int?>((ref) {
   );
 });
 
+/// 로그아웃 redirect와 화면 전환이 끝난 뒤 메모리 상태를 폐기한다.
+///
+/// 활성 탭이 아직 mounted인 순간 provider를 invalidate하면 삭제된 세션으로 조회가
+/// 한 번 더 실행될 수 있다. 로그인 중 계정 교체는 즉시 격리하고, 로그아웃만 기본
+/// Material 전환 시간보다 뒤에 정리한다.
+const signedOutSessionPurgeDelay = Duration(milliseconds: 500);
+
 /// 사용자 ID가 바뀔 때 메모리에 남은 사용자 전용 화면 상태를 모두 폐기한다.
 ///
 /// `StatefulShellRoute.indexedStack`는 탭 화면을 의도적으로 보존하므로 로그아웃만
@@ -26,9 +35,9 @@ final authSessionIdentityProvider = Provider<int?>((ref) {
 /// provider를 watch해 계정 경계를 한곳에서 관리한다. 일반 refresh는 ID가
 /// 유지되므로 화면 상태를 불필요하게 버리지 않는다.
 final sessionBoundaryProvider = Provider<void>((ref) {
-  ref.listen<int?>(authSessionIdentityProvider, (previous, next) {
-    if (previous == next) return;
+  Timer? signedOutPurge;
 
+  void invalidateUserState() {
     ref.invalidate(homeControllerProvider);
     ref.invalidate(plantReactionProvider);
     ref.invalidate(chatControllerProvider);
@@ -42,5 +51,21 @@ final sessionBoundaryProvider = Provider<void>((ref) {
     ref.invalidate(moodCalendarProvider);
     ref.invalidate(dayEntriesProvider);
     ref.invalidate(moodDetailProvider);
+  }
+
+  ref.listen<int?>(authSessionIdentityProvider, (previous, next) {
+    if (previous == next) return;
+
+    signedOutPurge?.cancel();
+    if (next != null) {
+      invalidateUserState();
+      return;
+    }
+    signedOutPurge = Timer(signedOutSessionPurgeDelay, () {
+      if (ref.read(authSessionIdentityProvider) == null) {
+        invalidateUserState();
+      }
+    });
   });
+  ref.onDispose(() => signedOutPurge?.cancel());
 });

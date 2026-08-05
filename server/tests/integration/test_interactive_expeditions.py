@@ -269,6 +269,41 @@ async def test_species_signature_skill_uses_its_own_name_and_effect(
     preview = run["current_event"]["choices"][0]["previews"][0]
     assert preview["value"] == before + 2
     assert preview["skill_bonus"] == 2
+    assert {action["type"] for action in run["available_actions"]} == {"choice"}
+    assert all(
+        skill["available"] is False
+        for member in run["party"]
+        for skill in member["skills"].values()
+    )
+
+    run = await _action(
+        client,
+        headers,
+        run,
+        "choices",
+        {"choice_code": "trace_ink", "acting_member_id": actor["id"]},
+        "skill-command-choice-0001",
+    )
+    run = await _action(
+        client,
+        headers,
+        run,
+        "move",
+        {"node_code": "quiet_camp"},
+        "skill-command-camp-0001",
+    )
+    run = await _action(
+        client,
+        headers,
+        run,
+        "move",
+        {"node_code": "ledger_keeper"},
+        "skill-command-keeper-0001",
+    )
+    refreshed_actor = next(member for member in run["party"] if not member["is_guide"])
+    assert refreshed_actor["skills"]["signature"]["used"] is True
+    assert refreshed_actor["skills"]["form"]["available"] is True
+    assert "skill" in {action["type"] for action in run["available_actions"]}
 
 
 async def test_region_cap_preserves_raw_stats_and_uses_effective_stats(

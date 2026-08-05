@@ -129,6 +129,7 @@ class _DockDestination extends StatelessWidget {
       button: true,
       selected: selected,
       label: item.label,
+      onTap: onTap,
       child: ExcludeSemantics(
         child: Tooltip(
           message: item.label,
@@ -284,6 +285,7 @@ class _RailDestination extends StatelessWidget {
       button: true,
       selected: selected,
       label: item.label,
+      onTap: onTap,
       child: ExcludeSemantics(
         child: extended
             ? destination

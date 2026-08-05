@@ -1,0 +1,171 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mongroo/core/theme/app_theme.dart';
+import 'package:mongroo/features/auth/presentation/auth_controller.dart';
+import 'package:mongroo/features/expedition/presentation/moss_archive_scene.dart';
+import 'package:mongroo/features/trial/data/trial_progress_store.dart';
+import 'package:mongroo/features/trial/domain/trial_progress.dart';
+import 'package:mongroo/features/trial/presentation/trial_screen.dart';
+
+class _MemoryTrialStorage implements TrialProgressStorage {
+  _MemoryTrialStorage({this.value, this.failWrites = false});
+
+  String? value;
+  final bool failWrites;
+
+  @override
+  Future<void> clear() async => value = null;
+
+  @override
+  Future<String?> read() async => value;
+
+  @override
+  Future<void> write(String value) async {
+    if (failWrites) throw StateError('storage disabled');
+    this.value = value;
+  }
+}
+
+class _SignedOutAuthController extends AuthController {
+  @override
+  AuthState build() => const AuthState(status: AuthStatus.signedOut);
+}
+
+Future<void> _pumpTrial(
+  WidgetTester tester,
+  _MemoryTrialStorage storage, {
+  Size size = const Size(390, 844),
+  double textScale = 1,
+  bool dark = false,
+}) async {
+  tester.view.physicalSize = size;
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        trialProgressStorageProvider.overrideWithValue(storage),
+        authControllerProvider.overrideWith(_SignedOutAuthController.new),
+      ],
+      child: MaterialApp(
+        theme: dark ? AppTheme.dark() : AppTheme.light(),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScale),
+            disableAnimations: true,
+          ),
+          child: child!,
+        ),
+        home: const TrialScreen(),
+      ),
+    ),
+  );
+  await tester.pump();
+  await tester.pump();
+}
+
+Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
+  await tester.ensureVisible(finder);
+  await tester.pump();
+  await tester.tap(finder);
+  await tester.pump();
+}
+
+void main() {
+  testWidgets('가입 없이 일기부터 선택 탐험과 귀환까지 직접 진행한다', (tester) async {
+    final storage = _MemoryTrialStorage();
+    await _pumpTrial(tester, storage);
+
+    expect(find.text('회원가입 없는 로컬 체험'), findsOneWidget);
+    expect(find.text('이 기기에만 저장'), findsOneWidget);
+    expect(find.byType(MossArchiveScene), findsOneWidget);
+
+    await _tapVisible(tester, find.byKey(const Key('trial-start')));
+    expect(find.text('오늘 마음의 날씨는 어떤가요?'), findsOneWidget);
+    expect(find.textContaining('체험에서는 서버 분석 없이'), findsOneWidget);
+
+    await _tapVisible(tester, find.byKey(const Key('trial-sample')));
+    final save = tester.widget<FilledButton>(
+      find.byKey(const Key('trial-save-diary')),
+    );
+    expect(save.onPressed, isNotNull);
+    await _tapVisible(tester, find.byKey(const Key('trial-save-diary')));
+
+    expect(find.textContaining('햇살형 새싹'), findsOneWidget);
+    expect(find.text('성장 +30 · 씨앗 +12'), findsOneWidget);
+    await _tapVisible(tester, find.byKey(const Key('trial-open-exploration')));
+
+    expect(find.text('첫 갈림길'), findsOneWidget);
+    final scrollable = tester.state<ScrollableState>(
+      find.byType(Scrollable).first,
+    );
+    expect(scrollable.position.pixels, 0);
+    await _tapVisible(tester, find.byKey(const Key('trial-path-labels')));
+    expect(find.text('번진 이름표'), findsOneWidget);
+    await _tapVisible(tester, find.byKey(const Key('trial-resolve-event')));
+
+    expect(find.text('첫 마음 탐험을 마쳤어요'), findsOneWidget);
+    expect(find.textContaining('이끼 열쇠 조각'), findsOneWidget);
+    final restored = TrialProgress.decode(storage.value!);
+    expect(restored.stage, TrialStage.complete);
+    expect(restored.selectedPath, 'labels');
+    expect(restored.selectedChoice, 'trace');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('저장된 단계에서 체험을 이어서 시작한다', (tester) async {
+    final storage = _MemoryTrialStorage(
+      value: const TrialProgress(
+        stage: TrialStage.growth,
+        diaryText: '조용히 산책해서 마음이 조금 편안해졌다.',
+        emotionCode: 'rainy',
+      ).encode(),
+    );
+
+    await _pumpTrial(tester, storage);
+
+    expect(find.textContaining('빗결형 새싹'), findsOneWidget);
+    expect(find.byKey(const Key('trial-start')), findsNothing);
+  });
+
+  testWidgets('기기 저장이 막혀도 안내 후 체험은 계속된다', (tester) async {
+    final storage = _MemoryTrialStorage(failWrites: true);
+    await _pumpTrial(tester, storage);
+
+    await _tapVisible(tester, find.byKey(const Key('trial-start')));
+    expect(find.textContaining('저장소를 사용할 수 없어'), findsOneWidget);
+    expect(find.text('오늘 마음의 날씨는 어떤가요?'), findsOneWidget);
+  });
+
+  testWidgets('320px 200% 글자에서도 체험 시작 화면이 오버플로우하지 않는다', (tester) async {
+    await _pumpTrial(
+      tester,
+      _MemoryTrialStorage(),
+      size: const Size(320, 720),
+      textScale: 2,
+    );
+
+    expect(find.text('가입하기 전에, 먼저 같이 걸어 봐요'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('trial-start')));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('가로 화면과 어두운 테마에서도 핵심 CTA를 스크롤해 사용할 수 있다', (tester) async {
+    await _pumpTrial(
+      tester,
+      _MemoryTrialStorage(),
+      size: const Size(640, 360),
+      textScale: 1.25,
+      dark: true,
+    );
+
+    expect(find.byType(MossArchiveScene), findsOneWidget);
+    final start = find.byKey(const Key('trial-start'));
+    await tester.ensureVisible(start);
+    await tester.pump();
+    expect(tester.widget<FilledButton>(start).onPressed, isNotNull);
+    expect(tester.takeException(), isNull);
+  });
+}

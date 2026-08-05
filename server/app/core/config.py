@@ -1,8 +1,11 @@
+import base64
+import binascii
+import re
 from functools import lru_cache
 from typing import Literal
 from urllib.parse import urlparse
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,8 +16,16 @@ class Settings(BaseSettings):
 
     app_name: str = "mongroo-api"
     app_env: Literal["development", "test", "production"] = "development"
-    # demo 프로파일에서는 합성 데이터만 사용한다 (design.md 9.1)
-    data_profile: Literal["demo"] = "demo"
+    # demo는 합성 데이터 전용, real-data는 필드 암호화와 명시적 동의를 강제한다.
+    data_profile: Literal["demo", "real-data"] = "demo"
+
+    # 민감 필드는 ``enc:v1:{key_id}:...`` envelope로 저장한다. 키 값은
+    # base64로 인코딩한 정확히 32바이트여야 하며 DB나 저장소에 넣지 않는다.
+    field_encryption_keys: dict[str, str] = Field(default_factory=dict)
+    active_field_encryption_key_id: str = ""
+    terms_version: str = "2026-08-05"
+    privacy_version: str = "2026-08-05"
+    sensitive_consent_version: str = "2026-08-05"
 
     database_url: str = "mysql+aiomysql://mongroo:mongroo@127.0.0.1:3306/mongroo"
 
@@ -25,12 +36,17 @@ class Settings(BaseSettings):
     refresh_token_ttl_days: int = 30
 
     login_rate_limit_count: int = 10
+    login_ip_rate_limit_count: int = 50
     login_rate_limit_window_seconds: int = 300
+
+    database_pool_size: int = 10
+    database_max_overflow: int = 20
+    database_pool_recycle_seconds: int = 1800
 
     user_timezone: str = "Asia/Seoul"
 
-    # disabled: AI job 생성 안 함 / fake: 결정적 가짜 응답 / local: 로컬 모델 사용
-    ai_mode: Literal["disabled", "fake", "local"] = "fake"
+    # rules: 배포 가능한 결정적 규칙 분석/대화, local: 로컬 모델, fake: 테스트 전용
+    ai_mode: Literal["disabled", "fake", "rules", "local"] = "fake"
 
     ollama_base_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen3:8b-q4_K_M"
@@ -68,9 +84,45 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_settings(self):
-        if self.app_env != "production":
-            return self
         errors: list[str] = []
+        if self.data_profile == "real-data":
+            if not re.fullmatch(r"[A-Za-z0-9_-]{1,32}", self.active_field_encryption_key_id):
+                errors.append(
+                    "ACTIVE_FIELD_ENCRYPTION_KEY_ID must be 1-32 URL-safe characters"
+                )
+            if self.active_field_encryption_key_id not in self.field_encryption_keys:
+                errors.append(
+                    "ACTIVE_FIELD_ENCRYPTION_KEY_ID must select a configured key"
+                )
+            for key_id, encoded_key in self.field_encryption_keys.items():
+                if not re.fullmatch(r"[A-Za-z0-9_-]{1,32}", key_id):
+                    errors.append(
+                        f"field encryption key ID {key_id!r} must be 1-32 URL-safe characters"
+                    )
+                    continue
+                try:
+                    decoded = base64.b64decode(encoded_key, validate=True)
+                except (binascii.Error, ValueError):
+                    decoded = b""
+                if len(decoded) != 32:
+                    errors.append(
+                        f"field encryption key {key_id!r} must be base64 for exactly 32 bytes"
+                    )
+            for version_name, version in (
+                ("TERMS_VERSION", self.terms_version),
+                ("PRIVACY_VERSION", self.privacy_version),
+                ("SENSITIVE_CONSENT_VERSION", self.sensitive_consent_version),
+            ):
+                if not version.strip():
+                    errors.append(f"{version_name} must not be empty")
+
+        if self.app_env != "production":
+            if errors:
+                raise ValueError("; ".join(errors))
+            return self
+
+        if self.data_profile != "real-data":
+            errors.append("DATA_PROFILE=real-data is required in production")
         if len(self.jwt_secret.encode()) < 32 or self.jwt_secret in {
             "dev-only-secret-change-me",
             "change-me-to-a-random-32byte-or-longer-secret",

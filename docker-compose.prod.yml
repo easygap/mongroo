@@ -29,12 +29,21 @@ services:
         condition: service_healthy
     command: ["python", "-m", "alembic", "upgrade", "head"]
 
+  protect-data:
+    build: ./server
+    restart: "no"
+    env_file: ${MONGROO_ENV_FILE:-.env.production}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    command: ["python", "-m", "app.protect_sensitive_data"]
+
   api:
     build: ./server
     restart: unless-stopped
     env_file: ${MONGROO_ENV_FILE:-.env.production}
     depends_on:
-      migrate:
+      protect-data:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/ready', timeout=3)"]
@@ -45,16 +54,24 @@ services:
 
   worker:
     build: ./server
-    profiles: ["ai"]
-    restart: unless-stopped
+    restart: on-failure
     env_file: ${MONGROO_ENV_FILE:-.env.production}
     depends_on:
-      migrate:
+      protect-data:
         condition: service_completed_successfully
     command: ["python", "-m", "app.workers.ai_worker"]
 
   web:
-    build: ./app
+    build:
+      context: ./app
+      args:
+        SERVICE_OPERATOR_NAME: ${SERVICE_OPERATOR_NAME:?SERVICE_OPERATOR_NAME is required}
+        SERVICE_OPERATOR_ADDRESS: ${SERVICE_OPERATOR_ADDRESS:?SERVICE_OPERATOR_ADDRESS is required}
+        PRIVACY_CONTACT_EMAIL: ${PRIVACY_CONTACT_EMAIL:?PRIVACY_CONTACT_EMAIL is required}
+        DATA_HOSTING_DISCLOSURE: ${DATA_HOSTING_DISCLOSURE:?DATA_HOSTING_DISCLOSURE is required}
+        TERMS_VERSION: ${TERMS_VERSION:?TERMS_VERSION is required}
+        PRIVACY_VERSION: ${PRIVACY_VERSION:?PRIVACY_VERSION is required}
+        SENSITIVE_CONSENT_VERSION: ${SENSITIVE_CONSENT_VERSION:?SENSITIVE_CONSENT_VERSION is required}
     restart: unless-stopped
     depends_on:
       api:

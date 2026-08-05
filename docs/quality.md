@@ -1,6 +1,6 @@
 # 몽그루 품질 검증 기준
 
-최종 갱신: 2026-08-04
+최종 갱신: 2026-08-05
 
 현재 반복 실행할 수 있는 검사와 아직 확인하지 못한 항목을 기록한다. 기능·UI·콘텐츠를
 바꾼 뒤에는 자동 검사와 주요 사용자 흐름을 다시 확인한다.
@@ -10,20 +10,28 @@
 | 영역 | 명령 | 현재 기준 |
 |---|---|---|
 | Flutter 정적 분석 | `cd app; dart analyze` | 경고·오류 0 |
-| Flutter 단위/위젯 | `cd app; flutter test` | 231 passed |
-| Web 릴리스 빌드 | `cd app; flutter build web --wasm --release --dart-define=API_BASE_URL=...` | 성공 |
-| 서버 전체 | `cd server; pytest -q` | 318 passed |
+| Flutter 단위/위젯 | `cd app; flutter test` | 254 passed |
+| Web 릴리스 빌드 | `cd app; flutter build web --wasm --release --no-web-resources-cdn --dart-define=API_BASE_URL=...` | 성공 |
+| 서버 전체 | `cd server; pytest -q` | 335 passed |
 | Python import/문법 | `python -m compileall server/app server/tests` | 성공 |
 | API 계약 | `cd server; python -m app.export_openapi` | `server/openapi.json`과 일치 |
+| Python 보안 감사 | lock export 후 `pip-audit` | 알려진 취약점 0 |
+| 저장소 보안 감사 | Trivy filesystem(`vuln,misconfig`, HIGH/CRITICAL) | lockfile 취약점 0, Dockerfile 위반 0 |
+| GitHub Actions | `actionlint` | 오류 0, 외부 action commit SHA 고정 |
 | 공백·줄끝 검사 | `git diff --check` | 오류 0 |
 
 Android APK/AAB는 Android SDK와 release keystore가 준비된 환경에서 별도로 검증한다.
 현재 개발 PC는 Android SDK가 없어 Web 빌드까지만 실행 가능하다.
+CI는 MySQL 8.4 production 설정에서 migration → 민감정보 암호화 → readiness →
+가입·일기·원문 비저장·데이터 export·RESTRICT 이력 포함 계정 삭제를 smoke test한다.
 
 ## 2. 핵심 사용자 여정
 
 390×844 모바일 Web에서 실제 API·worker·DB를 연결해 다음 순서를 검증한다.
 
+0. 로그아웃 상태에서 `회원가입 없이 3분 체험` → 로컬 일기 → 감정별 성장 → 지도
+   갈림길 → 스탯 사건 → 발견물 귀환. API 요청 0, 기기 저장 복원, 손상 캐시 초기화,
+   저장소 차단 시 소실 안내, 가입 화면 이동 시 체험 일기 미전송을 함께 확인
 1. 가입 → starter 캐릭터 자동 장착 → 로그인/토큰 갱신
 2. 감정을 직접 고르지 않고 일기 작성 → 본문 분석 → XP/씨앗 즉시 반영
 3. 방 테마 미리보기 → 씨앗 구매 → 도감 소유 상태 → 바로 적용·저장
@@ -50,6 +58,11 @@ Android APK/AAB는 Android SDK와 release keystore가 준비된 환경에서 별
     → 장기 발자국 다섯 개의 원장 기반 진행도·현재 칭호·무보상 계약 확인
     → 미완성 연구 재료 예약 → 여분 표본 3개 기증 → 2씨앗·일일 제한 확인
     → 캐릭터 성장·씨앗 잔액·의상 성능 동기화
+11. 만 18세·약관·개인정보·민감정보 동의가 모두 없으면 real-data 가입 거절 →
+    계정 화면 JSON export에서 비밀번호·토큰 제외 → 비밀번호와 정확한 확인 문구로
+    탐험 이력과 완료된 AI 작업을 포함한 계정 영구 삭제 → 기존 access/refresh로 재접근 불가
+12. 평문 demo fixture를 real-data로 승격 → 17개 보호 컬럼 전수 암호화 → active key
+    회전 → 변조 ciphertext 복호화 거절 → 현재 schema/key의 검증 마커가 없으면 readiness 503
 
 퀘스트는 36종·10개 카테고리이며, 같은 사용자/날짜에 결정적으로 재현된다. 최근
 14일 중복을 피하고 직전 2회의 같은 카테고리를 피하는 회전 테스트와 30일 시뮬레이션을
@@ -64,10 +77,20 @@ Android APK/AAB는 Android SDK와 release keystore가 준비된 환경에서 별
 - 움직임 줄이기 설정(`prefers-reduced-motion`, Flutter `disableAnimations`)
 - 키보드 포커스, 최소 48×48 logical pixel 터치 영역, 의미 레이블
 - 긴 한국어 문구, 빈 상태, 로딩·오류·재시도·저장 충돌 상태
+- 가입 전 체험의 320px/200% 글자, 375px/390px 세로, 모바일 가로, 밝은/어두운
+  테마와 reduced motion. 각 단계 전환 때 스크롤이 맨 위로 돌아가고 앱바 제목·초기화
+  버튼·주 CTA가 겹치지 않아야 한다.
+- 가입 전 체험 저장값에 일기 평문이 노출되지 않고, 체험 중 `/api/v1` 요청이 0이며,
+  새로고침 뒤 마지막 단계가 복원되는지 확인한다. 저장소 쓰기 실패는 플레이를 막지
+  않고 해당 화면을 닫으면 사라진다는 문구를 즉시 읽어 줘야 한다.
 - 방 테마 6종의 16:9 crop, 잠금 scrim, 긴 획득 조건, 진행도 0/중간/달성,
   구매·claim 중복 탭, 획득 직후 바로 적용과 reduced motion 상태
 - 탐험 탭의 1초 로컬 카운트다운, 백그라운드 복귀 후 서버 귀환 시각 보정,
   일기·안전 잠금, 1일 제한, 360px/200% 글자에서 버튼과 스탯 레이블 오버플로 없음
+- 직접 탐험 준비 화면의 목적지 → 편성 → 출발 방식 순서, 2.5D 배경 크롭, 48px 이상
+  지도 노드, 현재/이동 가능/잠김 상태의 비색상 구분을 확인한다. 활성 지도에서 노드
+  이동 → 사건 → 캐릭터·스킬 선택 → 다음 갈림길까지 실제 API로 진행하고, 배경의
+  저주파 시차와 광점은 reduced motion에서 완전히 멈춰야 한다.
 - 탐험 기록장의 빈 상태·최근 6건·성장 공명 표시와 320px/200% 글자에서 히어로 및
   기록 행의 세로 오버플로 없음
 - 탐험 이야기 도감의 0/24·부분 수집·24/24 상태, 장별 접기/펼치기, 발견 항목의 최초
@@ -98,11 +121,12 @@ Best Practices 100, SEO 100을 기록했다. 접근성 감점은 Flutter 3.44 �
 
 2026-07-15 릴리스 빌드에서 다음을 확인했다.
 
-- `main.dart.wasm`: 압축 전 3,462,876 bytes
+- `main.dart.wasm`: 압축 전 3,578,353 bytes
 - 방 배경 WebP: 파일당 약 50~130KB
 - 390×844 박물관 화면에서는 `night-museum-ink.webp`를 요청하지 않고 세로 목록만 렌더링
-- 로딩 셸은 Flutter 첫 프레임까지 유지되며, 20초가 지나면 네트워크 안내와 다시
-  불러오기 버튼을 표시
+- CSP에서 inline script를 허용하지 않도록 로딩 제어를 `mongroo-shell.js`로 분리했다.
+  로딩 셸은 Flutter 첫 프레임까지 유지되며, 20초가 지나면 네트워크 안내와 다시
+  불러오기 버튼을 표시한다.
 - 실제 화면 흐름에서 브라우저 콘솔 오류·경고 0
 
 로컬 Python 정적 서버는 압축·캐시·COOP/COEP 헤더를 제공하지 않으므로 여기서 얻은
@@ -110,11 +134,21 @@ Best Practices 100, SEO 100을 기록했다. 접근성 감점은 Flutter 3.44 �
 적중률은 최종 CDN에서 모바일 네트워크 조건으로 다시 측정한다. 공개 배포 설정은
 [deployment.md](deployment.md#3-web-정적-호스팅과-원자적-배포)를 따른다.
 
-## 5. 공개 배포 전 남은 조건
+## 5. 외부 환경에서 마쳐야 할 출시 입력·검증
 
-- `DATA_PROFILE=demo` 제한을 해제하기 전 개인정보 보관·삭제·암호화 정책 검증
-- 무작위 운영 JWT secret, HTTPS, 정확한 CORS, MySQL/Ollama 비공개 네트워크
-- 실제 MySQL 인스턴스에서 다중 API 프로세스 동시성·부하 테스트
-- Android SDK에서 AAB 회귀 테스트와 운영 keystore 서명
-- 실제 CDN에서 Brotli/gzip, MIME, cache, COOP/COEP, 원자적 되돌리기 확인
-- 운영 AI 모델에서 안전 분류·지원 경로·latency 모니터링 재검증
+코드와 CI는 `real-data` 암호화·동의·권리행사·MySQL lifecycle·릴리스 산출물 생성을
+fail-closed로 구성했다. 다음 항목은 저장소에서 임의값으로 대신할 수 없으므로 실제
+운영 환경에서 입력하고 확인한다.
+
+- 실제 운영자명·주소·개인정보 문의 이메일·호스팅 사업자/리전/국가와 해당 국가의
+  법률·스토어 심사에 맞춘 최종 약관 검토
+- 무작위 운영 JWT/필드 암호화 키, DB 비밀번호, HTTPS 도메인·인증서, 정확한
+  CORS/Host, 암호화 백업과 복구 리허설
+- 실제 MySQL 인스턴스의 다중 API 프로세스 동시성·목표 트래픽 부하 테스트
+- GitHub release variables/secrets 입력 후 운영 keystore로 서명된 AAB 설치·스토어
+  내부 테스트와 계정 생성/삭제 확인. 앱과 서버의 약관·개인정보·민감정보 동의 버전이
+  같은지도 함께 확인
+- 실제 CDN/LB에서 Brotli/gzip, Wasm MIME, CSP/COOP/COEP/HSTS, SSE buffering,
+  캐시 무효화와 직전 immutable 이미지 롤백 확인
+- `AI_MODE=local`을 선택하는 경우 실제 모델의 안전 분류·품질·latency·장애 격리
+  재검증. 기본 `rules` 모드는 외부 모델 없이 동작한다.

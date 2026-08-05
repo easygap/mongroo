@@ -9,6 +9,15 @@ class SignupRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     nickname: str = Field(min_length=1, max_length=30)
+    terms_accepted: bool = False
+    privacy_accepted: bool = False
+    sensitive_data_consent: bool = False
+    age_over_18: bool = False
+    terms_version: str | None = Field(default=None, min_length=1, max_length=32)
+    privacy_version: str | None = Field(default=None, min_length=1, max_length=32)
+    sensitive_consent_version: str | None = Field(
+        default=None, min_length=1, max_length=32
+    )
 
     @field_validator("nickname")
     @classmethod
@@ -30,6 +39,11 @@ class RefreshRequest(BaseModel):
 
 class LogoutRequest(BaseModel):
     refresh_token: str
+
+
+class AccountDeleteRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=128)
+    confirmation: str = Field(min_length=1, max_length=30)
 
 
 class MoodCreateRequest(BaseModel):

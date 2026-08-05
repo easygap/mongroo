@@ -50,4 +50,30 @@ void main() {
     expect(container.read(chatControllerProvider).hasSession, isFalse);
     expect(container.read(chatControllerProvider).bubbles, isEmpty);
   });
+
+  test('로그아웃은 화면 전환 뒤에 이전 계정 상태를 폐기한다', () async {
+    final container = ProviderContainer(
+      overrides: [
+        authSessionIdentityProvider.overrideWith(
+          (ref) => ref.watch(_testIdentityProvider),
+        ),
+        chatRepositoryProvider.overrideWithValue(_FakeChatRepository()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(sessionBoundaryProvider);
+    await container.read(chatControllerProvider.notifier).startSession();
+    expect(container.read(chatControllerProvider).hasSession, isTrue);
+
+    container.read(_testIdentityProvider.notifier).state = null;
+    await Future<void>.delayed(Duration.zero);
+    expect(container.read(chatControllerProvider).hasSession, isTrue);
+
+    await Future<void>.delayed(
+      signedOutSessionPurgeDelay + const Duration(milliseconds: 50),
+    );
+    expect(container.read(chatControllerProvider).hasSession, isFalse);
+    expect(container.read(chatControllerProvider).bubbles, isEmpty);
+  });
 }

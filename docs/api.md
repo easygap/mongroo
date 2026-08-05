@@ -46,6 +46,9 @@
 | 409 | INSUFFICIENT_SEEDS / ITEM_ALREADY_OWNED | 상점 잔액 부족 또는 중복 구매 |
 | 409 | FARM_LAYOUT_VERSION_CONFLICT | 마이팜 낙관적 잠금 버전 충돌 |
 | 422 | VALIDATION_ERROR | 필드 검증 실패 (`details.errors`에 필드별 사유) |
+| 422 | CONSENT_REQUIRED | real-data 가입의 연령 확인·필수 동의 누락 |
+| 409 | CONSENT_VERSION_OUTDATED | 가입 화면의 약관·개인정보·민감정보 문서 버전이 서버 현재 버전과 다름 |
+| 422 | ACCOUNT_DELETE_CONFIRMATION_INVALID | 탈퇴 확인 문구 또는 현재 비밀번호 불일치 |
 | 429 | RATE_LIMITED | 로그인 시도 제한 |
 | 503 | SERVICE_DEGRADED | AI 의존성 불능으로 해당 기능만 불가 |
 | 500 | INTERNAL_ERROR | 내부 오류 (원문 비노출) |
@@ -330,12 +333,14 @@ stage/form/persona 중심의 축약 성장 상태다. 품종별 `growth_visual`�
 
 | Method/Path | 인증 | 설명 |
 |---|---|---|
-| POST `/auth/signup` | 공개 | `{email, password(8자 이상), nickname(1~30자)}` → 201 아래 AuthResponse. 기본 품종 활성 식물과 무료 `아기 화분` 캐릭터 자동 생성 |
+| POST `/auth/signup` | 공개 | `{email, password(8자 이상), nickname(1~30자), age_over_18, terms_accepted, privacy_accepted, sensitive_data_consent, terms_version, privacy_version, sensitive_consent_version}` → 201 아래 AuthResponse. real-data에서는 네 확인이 모두 필수이고 세 문서 버전이 서버 현재 버전과 일치해야 한다. 기본 품종 활성 식물과 무료 `아기 화분` 캐릭터 자동 생성 |
 | POST `/auth/login` | 공개 | `{email, password}` → 200 AuthResponse. 연속 실패 시 429 |
 | POST `/auth/refresh` | 공개 | `{refresh_token}` → 200 AuthResponse(회전된 새 refresh). 재사용 감지 시 401 AUTH_REFRESH_REUSED + 패밀리 폐기 |
 | POST `/auth/logout` | 필요 | `{refresh_token}` → 204. 해당 세션 패밀리 폐기 |
 | POST `/auth/logout-all` | 필요 | 204. 내 모든 세션 폐기 |
-| GET `/users/me` | 필요 | `{id, email, nickname, timezone, seed_balance, streak_days, created_at}` |
+| GET `/users/me` | 필요 | `{id, email, nickname, timezone, seed_balance, streak_days, consent, created_at}` |
+| GET `/users/me/export` | 필요 | 비밀번호·token·rate-limit key를 제외한 사용자 소유 데이터를 복호화한 JSON. `Content-Disposition` 포함 |
+| DELETE `/users/me` | 필요 | `{password, confirmation:"몽그루 탈퇴"}`. 세션·일기·대화·식물·정원·탐험을 FK cascade로 영구 삭제 → 204 |
 
 AuthResponse:
 
@@ -736,4 +741,4 @@ catalog의 `entry.tutorial_completed`는 완주 런을 기준으로 첫 조작 �
 
 ## P1 남은 예정 범위
 
-`/assessment-instruments/{code}`, `/assessments`, `DELETE /users/me`
+`/assessment-instruments/{code}`, `/assessments`

@@ -3,6 +3,8 @@ from datetime import date, datetime
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.field_encryption import ProtectedJSON, ProtectedText
+from app.core.text_metadata import diary_content_marker
 from app.models.base import Base, BigIntPK, PreciseDateTime, TimestampMixin
 from app.models.enums import AnalysisStatus
 
@@ -27,8 +29,16 @@ class MoodEntry(TimestampMixin, Base):
     mood_level_explicit: Mapped[bool] = mapped_column(
         sa.Boolean, nullable=False, default=True, server_default=sa.true()
     )
-    emotion_tags: Mapped[list] = mapped_column(sa.JSON, nullable=False, default=list)
-    content: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    emotion_tags: Mapped[list] = mapped_column(
+        ProtectedJSON("mood_entries.emotion_tags"), nullable=False, default=list
+    )
+    content: Mapped[str | None] = mapped_column(
+        ProtectedText("mood_entries.content"), nullable=True
+    )
+    # 정확한 길이는 남기지 않고 0(없음)·1(50자 미만)·50(50자 이상)만 저장한다.
+    content_length: Mapped[int] = mapped_column(
+        sa.Integer, nullable=False, default=0, server_default="0"
+    )
     # 사용자 편집만 증가시키는 낙관적 잠금 버전이다. AI 분석 상태처럼 백그라운드
     # 메타데이터가 updated_at을 바꿔도 사용자의 편집 토큰은 흔들리지 않는다.
     edit_version: Mapped[int] = mapped_column(
@@ -43,10 +53,14 @@ class MoodEntry(TimestampMixin, Base):
     analysis_status: Mapped[str] = mapped_column(
         sa.String(20), nullable=False, default=AnalysisStatus.NOT_REQUESTED
     )
-    ai_emotion: Mapped[str | None] = mapped_column(sa.String(20), nullable=True)
-    ai_scores: Mapped[dict | None] = mapped_column(sa.JSON, nullable=True)
+    ai_emotion: Mapped[str | None] = mapped_column(
+        ProtectedText("mood_entries.ai_emotion"), nullable=True
+    )
+    ai_scores: Mapped[dict | None] = mapped_column(
+        ProtectedJSON("mood_entries.ai_scores"), nullable=True
+    )
     ai_emotion_override: Mapped[str | None] = mapped_column(
-        sa.String(20), nullable=True
+        ProtectedText("mood_entries.ai_emotion_override"), nullable=True
     )
     ai_label_hidden: Mapped[bool] = mapped_column(
         sa.Boolean, nullable=False, default=False
@@ -58,3 +72,11 @@ class MoodEntry(TimestampMixin, Base):
     analysis_error_code: Mapped[str | None] = mapped_column(
         sa.String(40), nullable=True
     )
+
+
+@sa.event.listens_for(MoodEntry, "before_insert")
+@sa.event.listens_for(MoodEntry, "before_update")
+def _sync_content_length(_mapper, _connection, target: MoodEntry) -> None:
+    """API·worker·관리 스크립트 어느 경로로 써도 암호문 길이를 쓰지 않게 한다."""
+
+    target.content_length = diary_content_marker(target.content)

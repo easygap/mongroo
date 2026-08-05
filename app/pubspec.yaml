@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   flutter_riverpod: ^2.6.1
   go_router: ^14.8.0
   dio: ^5.7.0
@@ -39,7 +41,29 @@ flutter:
     - assets/rooms/
     - assets/adventure/
     - assets/species/
+    - assets/fonts/LICENSE-GothicA1.txt
+    - assets/fonts/LICENSE-Galmuri.txt
   fonts:
+    - family: GothicA1
+      fonts:
+        - asset: assets/fonts/GothicA1-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/GothicA1-Bold.ttf
+          weight: 700
+    # Flutter Web 엔진의 기본 대체 서체도 같은 로컬 파일로
+    # 해결해 운영 CSP에서 Google Fonts 요청이 발생하지 않게 한다.
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/GothicA1-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/GothicA1-Bold.ttf
+          weight: 700
+    - family: Noto Sans KR
+      fonts:
+        - asset: assets/fonts/GothicA1-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/GothicA1-Bold.ttf
+          weight: 700
     - family: Galmuri11
       fonts:
         - asset: assets/fonts/Galmuri11-Bold.ttf

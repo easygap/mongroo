@@ -171,6 +171,26 @@ Constraints: no people, no characters, no creatures, no readable text, no letter
 Avoid: photorealism, horror, skulls, weapons, neon, magical particle clutter, excessive gold, ornate filigree, glossy plastic, dramatic fog.
 ```
 
+### 직접 조작 지도용 2.5D 배경
+
+- 생성 방식: 내장 ImageGen 신규 생성 후, 이미지 안의 가짜 글자·표식만 같은 원본을
+  참조해 제거
+- 원본 생성 파일: 로컬 생성 이력에 보존
+- 프로젝트 출력: `app/assets/adventure/expedition-moss-archive-map.webp`
+- 출력 규격: 1600×800 RGB WebP, Flutter 코드 노드·경로 오버레이 전용
+- 검수: 인물·UI·읽을 수 있는 글자 0, 좌우 갈림길과 중앙 출입구 유지, 모바일
+  390×844 준비 화면과 346×223 활성 지도 크롭 확인
+
+```text
+Use case: stylized-concept
+Asset type: wide 2.5D mobile exploration-map environment background
+Primary request: an old moss-covered botanical archive and glasshouse library with a clear entrance, two readable branching paths, practical drawers and blank paper tags, and open ground for code-rendered nodes and links.
+Style/medium: Mongroo hand-inked warm-brown outlines, matte gouache and cel shading, restrained paper texture, cozy storybook mobile game, subdued practical detail.
+Composition: wide 2:1 canvas, slightly elevated view, strong midground paths, central landmark, safe edge crop, no essential object in the lower UI band.
+Constraints: no people, creatures, path lines, nodes, icons, UI, letters, numbers, logos, watermark, or readable writing. Paper labels must remain completely blank.
+Avoid: photorealism, glossy 3D, neon, magical runes, ornate gold, excessive flowers, perfect symmetry, dramatic fog, AI-overdecorated clutter.
+```
+
 ## 메아리 우물정원
 
 - 프로젝트 출력: `app/assets/adventure/dungeon-echo-well.webp`

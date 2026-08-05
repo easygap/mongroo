@@ -3,6 +3,7 @@ from datetime import date
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.field_encryption import ProtectedJSON
 from app.models.base import Base, BigIntPK, TimestampMixin
 from app.models.enums import ReportStatus
 
@@ -24,8 +25,12 @@ class Report(TimestampMixin, Base):
     period_end: Mapped[date] = mapped_column(sa.Date, nullable=False)
     input_hash: Mapped[str] = mapped_column(sa.String(64), nullable=False)
     status: Mapped[str] = mapped_column(sa.String(20), nullable=False, default=ReportStatus.PENDING)
-    stats: Mapped[dict] = mapped_column(sa.JSON, nullable=False, default=dict)
+    stats: Mapped[dict] = mapped_column(
+        ProtectedJSON("reports.stats"), nullable=False, default=dict
+    )
     analysis_coverage: Mapped[float] = mapped_column(sa.Float, nullable=False, default=0.0)
-    summary: Mapped[dict | None] = mapped_column(sa.JSON, nullable=True)
+    summary: Mapped[dict | None] = mapped_column(
+        ProtectedJSON("reports.summary"), nullable=True
+    )
     summary_model_version: Mapped[str | None] = mapped_column(sa.String(80), nullable=True)
     error_code: Mapped[str | None] = mapped_column(sa.String(40), nullable=True)

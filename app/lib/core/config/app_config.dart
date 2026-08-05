@@ -7,12 +7,34 @@ import 'package:flutter/foundation.dart';
 abstract final class AppConfig {
   static const String _configuredBaseUrl =
       String.fromEnvironment('API_BASE_URL');
+  static const String serviceOperatorName =
+      String.fromEnvironment('SERVICE_OPERATOR_NAME');
+  static const String serviceOperatorAddress =
+      String.fromEnvironment('SERVICE_OPERATOR_ADDRESS');
+  static const String privacyContactEmail =
+      String.fromEnvironment('PRIVACY_CONTACT_EMAIL');
+  static const String dataHostingDisclosure =
+      String.fromEnvironment('DATA_HOSTING_DISCLOSURE');
+  static const String termsVersion =
+      String.fromEnvironment('TERMS_VERSION', defaultValue: '2026-08-05');
+  static const String privacyVersion =
+      String.fromEnvironment('PRIVACY_VERSION', defaultValue: '2026-08-05');
+  static const String sensitiveConsentVersion = String.fromEnvironment(
+    'SENSITIVE_CONSENT_VERSION',
+    defaultValue: '2026-08-05',
+  );
 
   static String get baseUrl {
     if (_configuredBaseUrl.isNotEmpty) return _configuredBaseUrl;
     if (kIsWeb) return '${Uri.base.origin}/api/v1';
     return 'http://10.0.2.2:8000/api/v1';
   }
+
+  static bool get publicLegalMetadataConfigured =>
+      serviceOperatorName.trim().isNotEmpty &&
+      serviceOperatorAddress.trim().isNotEmpty &&
+      privacyContactEmail.trim().isNotEmpty &&
+      dataHostingDisclosure.trim().isNotEmpty;
 
   /// access token TTL(서버 15분)보다 훨씬 짧은 일반 요청 timeout.
   static const Duration connectTimeout = Duration(seconds: 10);

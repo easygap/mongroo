@@ -1,7 +1,12 @@
 import pytest
 
 from app.ai import classifier as classifier_module
-from app.ai.classifier import FakeClassifier, LocalClassifier, UNCERTAIN
+from app.ai.classifier import (
+    FakeClassifier,
+    LocalClassifier,
+    RulesClassifier,
+    UNCERTAIN,
+)
 from app.core.config import get_settings
 
 
@@ -164,6 +169,12 @@ def test_classifier_cache_isolated_across_fake_disabled_transitions(monkeypatch)
         monkeypatch.setenv("AI_MODE", "disabled")
         get_settings.cache_clear()
         assert classifier_module.get_classifier() is None
+
+        monkeypatch.setenv("AI_MODE", "rules")
+        get_settings.cache_clear()
+        rules = classifier_module.get_classifier()
+        assert isinstance(rules, RulesClassifier)
+        assert rules.model_version == "rules-clf-1"
 
         monkeypatch.setenv("AI_MODE", "fake")
         get_settings.cache_clear()

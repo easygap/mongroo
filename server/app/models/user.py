@@ -21,6 +21,15 @@ class User(TimestampMixin, Base):
     seed_balance: Mapped[int] = mapped_column(sa.Integer, nullable=False, default=0)
     streak_days: Mapped[int] = mapped_column(sa.Integer, nullable=False, default=0)
     last_recorded_local_date: Mapped[date | None] = mapped_column(sa.Date, nullable=True)
+    terms_version: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
+    privacy_version: Mapped[str | None] = mapped_column(sa.String(32), nullable=True)
+    sensitive_consent_version: Mapped[str | None] = mapped_column(
+        sa.String(32), nullable=True
+    )
+    age_confirmed_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(), nullable=True
+    )
+    consented_at: Mapped[datetime | None] = mapped_column(sa.DateTime(), nullable=True)
 
 
 class AuthSession(Base):
@@ -49,3 +58,24 @@ class RefreshToken(Base):
     revoked_at: Mapped[datetime | None] = mapped_column(sa.DateTime(), nullable=True)
     replaced_by_id: Mapped[int | None] = mapped_column(sa.BigInteger, nullable=True)
     created_at: Mapped[datetime] = mapped_column(sa.DateTime(), default=utcnow, nullable=False)
+
+
+class LoginRateLimit(Base):
+    """이메일·IP HMAC 키별 로그인 실패 횟수. 원문 식별자는 저장하지 않는다."""
+
+    __tablename__ = "login_rate_limits"
+    __table_args__ = (
+        sa.CheckConstraint(
+            "failure_count >= 0", name="ck_login_rate_limit_nonnegative"
+        ),
+        sa.Index("ix_login_rate_limits_updated_at", "updated_at"),
+    )
+
+    rate_key: Mapped[str] = mapped_column(sa.String(64), primary_key=True)
+    failure_count: Mapped[int] = mapped_column(
+        sa.Integer, nullable=False, default=0, server_default="0"
+    )
+    window_started_at: Mapped[datetime] = mapped_column(sa.DateTime(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(), default=utcnow, onupdate=utcnow, nullable=False
+    )

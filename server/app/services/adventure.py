@@ -475,18 +475,17 @@ def character_stats(stage: int, form: str | None) -> dict[str, int]:
 
 
 async def _diary_ready(db: AsyncSession, user_id: int, today) -> bool:
-    contents = list(
-        (
-            await db.execute(
-                sa.select(MoodEntry.content).where(
-                    MoodEntry.user_id == user_id,
-                    MoodEntry.local_date == today,
-                    MoodEntry.content.is_not(None),
-                )
+    return bool(
+        await db.scalar(
+            sa.select(MoodEntry.id)
+            .where(
+                MoodEntry.user_id == user_id,
+                MoodEntry.local_date == today,
+                MoodEntry.content_length >= 50,
             )
-        ).scalars()
+            .limit(1)
+        )
     )
-    return any(len((content or "").strip()) >= 50 for content in contents)
 
 
 async def _active_character(db: AsyncSession, user_id: int):
@@ -1434,8 +1433,7 @@ async def _weekly_board_payload(
                     MoodEntry.user_id == user_id,
                     MoodEntry.local_date >= week_start,
                     MoodEntry.local_date < next_week,
-                    MoodEntry.content.is_not(None),
-                    sa.func.length(sa.func.trim(MoodEntry.content)) >= 50,
+                    MoodEntry.content_length >= 50,
                 )
             )
             or 0

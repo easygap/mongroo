@@ -151,16 +151,17 @@ def _guide_snapshot(position: int, *, stat_cap: int | None = None) -> dict:
 
 
 async def _diary_ready(db: AsyncSession, user_id: int, local_date) -> bool:
-    contents = (
-        await db.execute(
-            sa.select(MoodEntry.content).where(
+    return bool(
+        await db.scalar(
+            sa.select(MoodEntry.id)
+            .where(
                 MoodEntry.user_id == user_id,
                 MoodEntry.local_date == local_date,
-                MoodEntry.content.is_not(None),
+                MoodEntry.content_length >= 50,
             )
+            .limit(1)
         )
-    ).scalars()
-    return any(len((content or "").strip()) >= 50 for content in contents)
+    )
 
 
 async def _reward_used(db: AsyncSession, user_id: int, local_date) -> bool:
@@ -307,7 +308,9 @@ async def _node_rows(db: AsyncSession, run_id: int) -> list[ExpeditionNodeState]
     )
 
 
-def _member_payload(member: ExpeditionPartyMember, phase: str) -> dict:
+def _member_payload(
+    member: ExpeditionPartyMember, phase: str, *, skill_pending: bool
+) -> dict:
     if member.is_guide:
         skills = {
             "signature": {"used": True, "available": False},
@@ -322,12 +325,20 @@ def _member_payload(member: ExpeditionPartyMember, phase: str) -> dict:
             "signature": {
                 **signature,
                 "used": member.signature_used,
-                "available": phase in signature["phases"] and not member.signature_used,
+                "available": (
+                    not skill_pending
+                    and phase in signature["phases"]
+                    and not member.signature_used
+                ),
             },
             "form": {
                 **form_skill,
                 "used": member.form_used,
-                "available": phase in form_skill["phases"] and not member.form_used,
+                "available": (
+                    not skill_pending
+                    and phase in form_skill["phases"]
+                    and not member.form_used
+                ),
             },
         }
     return {
@@ -413,6 +424,9 @@ async def run_payload(db: AsyncSession, run: ExpeditionRun) -> dict:
         )
 
     current_state = states[run.current_node_code]
+    skill_pending = bool(
+        (run.runtime_effects_snapshot or {}).get("pending_skill")
+    )
     current_event = None
     event = _event(run, current_state.event_code)
     if run.status == "active" and run.phase == "awaiting_event" and event:
@@ -461,7 +475,7 @@ async def run_payload(db: AsyncSession, run: ExpeditionRun) -> dict:
             "entrance",
         ):
             available.append({"type": "extract"})
-        if any(
+        if not skill_pending and any(
             not member.is_guide
             and (
                 (
@@ -488,7 +502,9 @@ async def run_payload(db: AsyncSession, run: ExpeditionRun) -> dict:
             available.append({"type": "skill"})
         available.append({"type": "retreat"})
     elif run.status == "active" and run.phase == "awaiting_event":
-        available.extend(({"type": "choice"}, {"type": "skill"}))
+        available.append({"type": "choice"})
+        if not skill_pending:
+            available.append({"type": "skill"})
 
     loots = list(
         (
@@ -514,7 +530,10 @@ async def run_payload(db: AsyncSession, run: ExpeditionRun) -> dict:
             "completed_at": to_utc_iso(run.completed_at),
         },
         "region": run.map_snapshot["region"],
-        "party": [_member_payload(member, run.phase) for member in members],
+        "party": [
+            _member_payload(member, run.phase, skill_pending=skill_pending)
+            for member in members
+        ],
         "map": {
             "code": run.map_snapshot["code"],
             "name": run.map_snapshot["name"],

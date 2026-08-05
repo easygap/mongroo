@@ -3,6 +3,7 @@ from datetime import date, datetime
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.field_encryption import ProtectedJSON
 from app.core.timeutil import utcnow
 from app.models.base import Base, BigIntPK, PreciseDateTime
 
@@ -60,7 +61,9 @@ class ExpeditionRun(Base):
     completed_at: Mapped[datetime | None] = mapped_column(
         PreciseDateTime, nullable=True
     )
-    summary_snapshot: Mapped[dict | None] = mapped_column(sa.JSON, nullable=True)
+    summary_snapshot: Mapped[dict | None] = mapped_column(
+        ProtectedJSON("expedition_runs.summary_snapshot"), nullable=True
+    )
     home_reflection_seen_at: Mapped[datetime | None] = mapped_column(
         PreciseDateTime, nullable=True
     )
@@ -102,7 +105,9 @@ class ExpeditionPartyMember(Base):
     is_guide: Mapped[bool] = mapped_column(
         sa.Boolean, nullable=False, default=False, server_default=sa.false()
     )
-    snapshot: Mapped[dict] = mapped_column(sa.JSON, nullable=False)
+    snapshot: Mapped[dict] = mapped_column(
+        ProtectedJSON("expedition_party_members.snapshot"), nullable=False
+    )
     signature_used: Mapped[bool] = mapped_column(
         sa.Boolean, nullable=False, default=False, server_default=sa.false()
     )
@@ -161,7 +166,9 @@ class ExpeditionAction(Base):
     expected_revision: Mapped[int] = mapped_column(sa.Integer, nullable=False)
     action_type: Mapped[str] = mapped_column(sa.String(24), nullable=False)
     request_payload: Mapped[dict] = mapped_column(sa.JSON, nullable=False)
-    result_payload: Mapped[dict] = mapped_column(sa.JSON, nullable=False)
+    result_payload: Mapped[dict] = mapped_column(
+        ProtectedJSON("expedition_actions.result_payload"), nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         PreciseDateTime, nullable=False, default=utcnow
     )

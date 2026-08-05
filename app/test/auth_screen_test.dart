@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show SemanticsAction;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +48,10 @@ class _DelayedAuthRepository extends AuthRepository {
     required String email,
     required String password,
     required String nickname,
+    required bool ageOver18,
+    required bool termsAccepted,
+    required bool privacyAccepted,
+    required bool sensitiveDataConsent,
   }) {
     signupCalls++;
     return signupGate.future;
@@ -104,6 +109,16 @@ void main() {
     await tester.pump();
   }
 
+  test('한글 본문 서체는 외부 네트워크 없이 제공한다', () {
+    expect(
+        AppTheme.light().textTheme.bodyMedium?.fontFamily, AppTheme.bodyFont);
+    expect(AppTheme.dark().textTheme.bodyMedium?.fontFamily, AppTheme.bodyFont);
+    expect(
+      AppTheme.light().textTheme.bodyMedium?.fontFamilyFallback,
+      contains('Noto Sans KR'),
+    );
+  });
+
   testWidgets('로그인은 몽그루 심볼과 필수 입력만 간결하게 보여 준다', (tester) async {
     await pumpAuth(tester, const LoginScreen());
 
@@ -113,6 +128,8 @@ void main() {
     expect(mongrooSymbol, findsOneWidget);
     expect(find.byType(MongrooPocketMark), findsOneWidget);
     expect(find.byType(AutofillGroup), findsOneWidget);
+    expect(find.text('회원가입 없이 3분 체험'), findsOneWidget);
+    expect(find.textContaining('이 기기에만 저장'), findsOneWidget);
 
     final fields =
         tester.widgetList<EditableText>(find.byType(EditableText)).toList();
@@ -203,6 +220,9 @@ void main() {
     expect(find.text('NEW SPECIMEN CARD'), findsNothing);
     expect(mongrooSymbol, findsOneWidget);
     expect(find.byType(TextFormField), findsNWidgets(3));
+    expect(find.text('이용약관에 동의해요'), findsOneWidget);
+    expect(find.text('개인정보 수집·이용에 동의해요'), findsOneWidget);
+    expect(find.text('마음 기록의 민감정보 처리에 동의해요'), findsOneWidget);
     expect(
       tester.getCenter(find.text('몽그루')).dx,
       lessThan(tester.getCenter(find.text('처음 시작하기')).dx),
@@ -222,10 +242,19 @@ void main() {
     await tester.enterText(fields.at(0), '무드');
     await tester.enterText(fields.at(1), 'mood@example.com');
     await tester.enterText(fields.at(2), 'password1');
+    for (var index = 0; index < 4; index++) {
+      final checkbox = find.byType(Checkbox).at(index);
+      await tester.ensureVisible(checkbox);
+      await tester.tap(checkbox);
+      await tester.pump();
+    }
+    await tester.ensureVisible(fields.at(2));
     await tester.tap(fields.at(2));
     await tester.pump();
     await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.tap(find.widgetWithText(FilledButton, '가입하기'));
+    final submit = find.byType(FilledButton);
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
     await tester.pump();
 
     expect(repository.signupCalls, 1);
@@ -263,6 +292,61 @@ void main() {
     expect(find.byType(SingleChildScrollView), findsWidgets);
     expect(find.text('로그인'), findsWidgets);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('320px 200% 글자에서도 네 가지 가입 확인과 제출 버튼을 읽을 수 있다', (tester) async {
+    await pumpAuth(
+      tester,
+      const SignupScreen(),
+      size: const Size(320, 640),
+      textScale: 2,
+    );
+
+    final sensitiveConsent = find.text('마음 기록의 민감정보 처리에 동의해요');
+    await tester.ensureVisible(sensitiveConsent);
+    await tester.pump();
+    expect(sensitiveConsent, findsOneWidget);
+    final submit = find.widgetWithText(FilledButton, '가입하기');
+    await tester.ensureVisible(submit);
+    await tester.pump();
+    expect(submit, findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('인증 제출 버튼은 보조 기기에서도 탭할 수 있다', (tester) async {
+    final semantics = tester.ensureSemantics();
+    Finder submitSemantics(String label) => find.byWidgetPredicate(
+          (widget) =>
+              widget is Semantics &&
+              widget.properties.button == true &&
+              widget.properties.label == label,
+        );
+
+    await pumpAuth(tester, const LoginScreen());
+    final login = submitSemantics('로그인');
+    expect(login, findsOneWidget);
+    expect(
+      tester
+          .getSemantics(login)
+          .getSemanticsData()
+          .hasAction(SemanticsAction.tap),
+      isTrue,
+    );
+
+    await pumpAuth(tester, const SignupScreen());
+    final signup = submitSemantics('가입하기');
+    expect(signup, findsOneWidget);
+    await tester.ensureVisible(signup);
+    await tester.pump();
+    expect(
+      tester
+          .getSemantics(signup)
+          .getSemanticsData()
+          .hasAction(SemanticsAction.tap),
+      isTrue,
+    );
+
+    semantics.dispose();
   });
 
   testWidgets('스플래시는 몽그루 심볼과 짧은 로딩 안내만 보여 준다', (tester) async {

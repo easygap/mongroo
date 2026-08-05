@@ -76,8 +76,7 @@ async def _today_quest_context(
         .where(
             MoodEntry.user_id == user_id,
             MoodEntry.local_date == today,
-            MoodEntry.content.is_not(None),
-            sa.func.length(sa.func.trim(MoodEntry.content)) > 0,
+            MoodEntry.content_length > 0,
         )
         .order_by(MoodEntry.recorded_at_utc.desc(), MoodEntry.id.desc())
         .limit(1)

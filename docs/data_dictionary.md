@@ -39,6 +39,9 @@
 | seed_balance | int | 씨앗 포인트 잔액. 음수 불가(트랜잭션에서 보장) |
 | streak_days | int | 연속 기록 일수 (KST 기준) |
 | last_recorded_local_date | date | 마지막 기록의 local_date. 스트릭 계산용 |
+| terms_version / privacy_version | varchar NULL | 가입 시 동의한 이용약관·개인정보처리방침 버전 |
+| sensitive_consent_version | varchar NULL | 동의한 민감정보 처리 문서 버전 |
+| age_confirmed_at / consented_at | datetime NULL | 만 18세 이상 확인·필수 동의 시각 |
 
 ### 1.2 auth_sessions — 로그인 세션 패밀리
 
@@ -64,6 +67,34 @@ refresh token rotation의 단위. 재사용 감지 시 family 전체를 폐기�
 | revoked_at | datetime NULL | |
 | replaced_by_id | bigint NULL | rotation으로 발급된 다음 토큰 id |
 
+### 1.3a login_rate_limits — 다중 API 로그인 제한
+
+| 컬럼 | 타입 | 의미·제약 |
+|------|------|-----------|
+| rate_key | varchar PK | 이메일 또는 IP를 서버 secret으로 HMAC한 값. 원문 식별자 비저장 |
+| failure_count | int | 현재 5분 창의 실패 횟수. 음수 불가 |
+| window_started_at | datetime | 제한 창 시작 |
+| updated_at | datetime | 만료 bucket 정리 인덱스 |
+
+계정별 10회와 IP별 50회를 별도 bucket으로 제한한다. 성공 로그인은 계정 bucket만
+지우며 IP bucket은 이메일을 바꾸는 공격을 계속 제한한다.
+
+### 1.3b data_protection_states — 암호화 전수 검증 마커
+
+| 컬럼 | 타입 | 의미·제약 |
+|------|------|-----------|
+| protection_key | varchar PK | 현재 계약 `sensitive-fields-v1` |
+| schema_revision | varchar | 검증한 Alembic revision |
+| active_key_id | varchar | 전수 검사·회전에 사용한 active key ID |
+| remaining_plaintext | int | 0만 readiness 통과. 검사 중에는 -1 |
+| verified_at | datetime | 전수 검증 완료 시각 |
+
+`protect_sensitive_data`가 모든 보호 컬럼을 배치 단위로 암호화하고, 모든 암호문의
+키·인증 태그와 보호 JSON 형식을 전수 검사한 뒤
+기록한다. readiness는 대용량 사용자 테이블을 매 요청마다 스캔하지 않고 이 한 행의
+revision·active key·잔여 평문 수를 확인한다. 새 ORM 쓰기는 같은 필드 타입에서 즉시
+암호화되므로 마커 이후 평문 쓰기를 허용하는 우회 경로를 두지 않는다.
+
 ### 1.4 mood_entries — 감정 기록
 
 신규 기록의 원본은 일기 본문이다. 기분·태그는 구 클라이언트 호환용 선택 필드이고
@@ -77,15 +108,16 @@ AI 결과는 본문에서 만든 보조 라벨이다. 원본과 분석 결과를
 | recorded_at_utc | datetime(6) | 기록 시각(UTC). MySQL에서도 마이크로초 보존 |
 | mood_level | tinyint | CHECK 1~5. 구 클라이언트 호환 필드. 신규 content-only 요청은 내부값 3 저장, 식물 분기에는 사용하지 않음 |
 | mood_level_explicit | boolean | 사용자가 실제로 1~5를 보냈는지 여부. false인 내부 3은 캘린더·리포트 평균·채팅 기분 문맥에서 제외 |
-| emotion_tags | json | 구 클라이언트의 선택적 다중 태그. 최대 10개. 식물 분기에는 사용하지 않음 |
-| content | text NULL | 자유 텍스트 일기. 최대 5,000자. 신규 요청에서는 공백이 아닌 본문 필수, legacy mood_level 요청에서는 생략 가능 |
+| emotion_tags | protected text | 구 클라이언트의 선택적 다중 태그. JSON 직렬화 후 AES-256-GCM 암호화 |
+| content | protected text NULL | 자유 텍스트 일기. 최대 5,000자. real-data에서는 AES-256-GCM 암호문만 허용 |
+| content_length | int | 정확한 길이를 노출하지 않는 본문 상태 마커. 0=없음, 1=50자 미만, 50=50자 이상 |
 | edit_version | int | 사용자 PATCH 낙관적 잠금 버전. 최초/기존 행 1, 수락된 비어 있지 않은 PATCH마다 +1. AI worker 갱신은 영향 없음 |
 | input_version | int | 리포트 입력 버전. 기분·태그·본문 중 하나가 바뀌면 +1, 리포트 input_hash에 포함 |
 | analysis_version | int | 본문 분류 버전. 본문 변경 때만 +1. mood_analysis job의 버전과 달라진 구결과는 적용하지 않음 |
 | analysis_status | varchar | (확정) `not_requested\|pending\|running\|succeeded\|failed`. 텍스트 없음·안전 경로 전환 시 `not_requested` |
-| ai_emotion | varchar NULL | 모델의 단일 보조 라벨 (기쁨/슬픔/분노/불안/상처/당황/uncertain) |
-| ai_scores | json NULL | 클래스별 확률 |
-| ai_emotion_override | varchar NULL | 사용자가 수정한 라벨. 원 모델 출력은 ai_emotion에 보존 |
+| ai_emotion | protected text NULL | 암호화된 모델 보조 라벨 |
+| ai_scores | protected text NULL | 암호화된 클래스별 확률 JSON |
+| ai_emotion_override | protected text NULL | 암호화된 사용자 수정 라벨 |
 | ai_label_hidden | tinyint | 1이면 UI·리포트 집계에서 AI 라벨 제외 |
 | analysis_model_version | varchar NULL | 분석에 쓴 분류기 버전 |
 | analyzed_at | datetime NULL | |
@@ -105,14 +137,14 @@ AI 결과는 본문에서 만든 보조 라벨이다. 원본과 분석 결과를
 | id | bigint PK | |
 | user_id | bigint FK(users) | |
 | species_id | bigint FK(plant_species) | restrict 삭제 |
-| name | varchar | 사용자가 붙인 이름 |
+| name | protected text | 사용자가 붙인 이름. real-data에서 암호화 |
 | exp | int | 돌봄 행동 누적 경험치. `stage`는 저장하지 않고 `stage_from_exp()`로 계산하며 감정 종류와 무관 |
 | status | varchar | (확정) `active\|harvested` |
 | planted_at | datetime(6) | 식물 생애 시작 시각. 기록과 같은 초여도 순서를 보존 |
 | harvested_at | datetime(6) NULL | 수확 시각. exp·분석 준비 조건을 충족한 active 식물에서 1회 |
-| final_form | varchar NULL | 수확 시 고정한 최종 표현형. `sunny\|rainy\|ember\|moonlit\|sparkling\|mosaic`; active 식물은 NULL |
-| emotion_profile | json NULL | active에서는 현재 본문 분석 growth_profile v3 캐시, harvested에서는 수확 시 생애 스냅샷. `growth_profile` API 필드의 하위 호환 저장 원본 |
-| growth_branch | varchar NULL | active의 안정화된 분기 또는 harvested의 최종 분기. `joy\|sadness\|anger\|anxiety\|surprise\|mixed` |
+| final_form | protected text NULL | 암호화된 수확 시 최종 표현형. `sunny\|rainy\|ember\|moonlit\|sparkling\|mosaic`; active 식물은 NULL |
+| emotion_profile | protected text NULL | active의 분석 캐시·수확 생애 스냅샷. JSON 직렬화 후 암호화 |
+| growth_branch | protected text NULL | 암호화된 active 안정화 분기 또는 harvested 최종 분기. `joy\|sadness\|anger\|anxiety\|surprise\|mixed` |
 | branch_decided_at | datetime(6) NULL | 현재 growth_branch가 처음 정해지거나 강한 근거로 바뀐 시각. 수확 때 최종 분기가 달라지면 수확 시각 |
 | museum_featured | boolean | 사용자가 대표 전시에 고른 수확 식물인지 여부. 기본 false |
 
@@ -241,7 +273,7 @@ Alembic `0010_diary_growth`는 당시 대표 라벨로 v2 프로필을 만들었
 | id | bigint PK | |
 | session_id | bigint FK(chat_sessions) | |
 | role | varchar | (확정) `user\|plant` |
-| content | text | 최대 2,000자(user). 출력 가드 통과분만 저장(plant) |
+| content | protected text | 최대 2,000자(user). 출력 가드 통과분만 저장하고 AES-256-GCM 암호화 |
 | safety_status | varchar | (확정) `normal\|concern\|imminent`. 해당 메시지 입력 검사 라우팅 (plant 메시지는 normal) |
 | ai_emotion | varchar NULL | 보조 감정 라벨 (선택) |
 | model_version | varchar NULL | plant 메시지 생성 모델 버전. 인사말은 `template` |
@@ -280,9 +312,9 @@ UI timeout(60초)과 무관하게 run은 terminal 상태까지 서버에 유지�
 | period_end | date | 기간 끝 (미포함, `[start, end)`) |
 | input_hash | varchar | 기간 내 정렬된 `(mood_entry_id, input_version, analysis_model_version)` 목록에 기본값이 아닌 `ai_emotion_override`·`ai_label_hidden`, stats_version, 기간을 더한 해시 |
 | status | varchar | (확정) `pending\|succeeded\|failed` |
-| stats | json | 결정적 통계. bucket마다 근거 mood_entry_id 목록 포함 |
+| stats | protected text | 결정적 통계 JSON을 암호화. bucket마다 근거 mood_entry_id 목록 포함 |
 | analysis_coverage | decimal | 분석 성공 건수 / 텍스트 포함 건수 |
-| summary | json NULL | LLM 요약 (overview/patterns/reflection_questions). 실패 시 NULL + 고정 안내 |
+| summary | protected text NULL | 요약 JSON 암호화. 실패 시 NULL + 고정 안내 |
 | summary_model_version | varchar NULL | |
 | error_code | varchar NULL | |
 
@@ -314,6 +346,7 @@ BackgroundTasks를 쓰지 않는 이유는 설계서 5.4 참고.
 | 컬럼 | 타입 | 의미·제약 |
 |------|------|-----------|
 | id | bigint PK | |
+| user_id | bigint FK(users) | 작업 소유자. 계정 삭제 시 완료·실패 작업까지 `ON DELETE CASCADE`로 제거 |
 | job_type | varchar | (확정) `mood_analysis\|chat_generation\|report_summary` |
 | resource_type | varchar | 대상 리소스 타입 |
 | resource_id | bigint | 대상 리소스 id |
@@ -325,7 +358,7 @@ BackgroundTasks를 쓰지 않는 이유는 설계서 5.4 참고.
 | last_error_code | varchar NULL | |
 
 **UNIQUE(job_type, resource_type, resource_id, input_version)**.
-인덱스: `(status, available_at)`.
+인덱스: `(status, available_at)`, `(user_id)`.
 
 ### 1.14 idempotency_keys — 쓰기 요청 멱등성
 
@@ -337,7 +370,7 @@ BackgroundTasks를 쓰지 않는 이유는 설계서 5.4 참고.
 | idempotency_key | varchar | 클라이언트 헤더 값 |
 | request_hash | varchar | 정규화한 요청 본문 SHA-256. 같은 key+다른 hash면 409 `IDEMPOTENCY_KEY_CONFLICT` |
 | response_status | int | 최초 완료 응답의 HTTP 상태 코드. 처리 전 선점 row는 트랜잭션 밖에 노출되지 않음 |
-| response_body | json | 같은 key 재시도에 그대로 재생할 최초 응답 본문 |
+| response_body | protected text | 재생할 최초 응답 JSON을 암호화. 일기 본문 포함 응답도 평문으로 남지 않음 |
 | created_at | datetime | key 생성 시각. 현재 자동 만료·정리 정책은 없음 |
 
 **UNIQUE(user_id, route_scope, idempotency_key)**. key 선점, 도메인 변경,
@@ -507,7 +540,8 @@ API가 값을 숨기고 귀환 수령 뒤에만 공개한다. 이야기 결과�
 `reaction_form`, `reaction_speaker`, `reaction_text`는 같은 출발 시점의 활성 캐릭터
 성장 결, 이름, 귀환 대사를 보존한다. 성장 결은 `sunny`, `rainy`, `ember`, `moonlit`,
 `sparkling`, `mosaic` 중 하나이며, 캐릭터가 나중에 성장하거나 이름이 달라져도 완료 기록의 반응은
-바꾸지 않는다. 기존 순찰 호환을 위해 세 컬럼은 nullable이다.
+바꾸지 않는다. 사용자 지정 이름을 복제하는 `reaction_speaker`는 real-data에서
+암호화한다. 기존 순찰 호환을 위해 세 컬럼은 nullable이다.
 
 탐험 기록장은 새 테이블을 두지 않는다. 완료된 `adventure_patrols`와
 `dungeon_runs`를 최신순으로 합쳐 최근 6건을 만들고, 이야기 스냅샷이 있는 순찰은
@@ -525,11 +559,11 @@ API가 값을 숨기고 귀환 수령 뒤에만 공개한다. 이야기 결과�
 
 | 테이블 | 핵심 키·제약 | 역할 |
 |--------|--------------|------|
-| `expedition_runs` | 사용자 FK, status·phase·자원 CHECK, revision | 콘텐츠 버전·지도·런 스레드·기억·현재 노드·자원·완료 요약 스냅샷 |
+| `expedition_runs` | 사용자 FK, status·phase·자원 CHECK, revision | 콘텐츠 버전·지도·런 스레드·기억·현재 노드·자원·암호화된 완료 요약 스냅샷 |
 | `user_active_expeditions` | `user_id` PK, `run_id` UNIQUE | 사용자당 진행 중 런 하나를 강제하는 활성 슬롯 |
-| `expedition_party_members` | `UNIQUE(run_id,position)`, `UNIQUE(run_id,plant_id)` | 출발 시 캐릭터 이름·품종·성장형·스탯과 스킬 사용 상태 |
+| `expedition_party_members` | `UNIQUE(run_id,position)`, `UNIQUE(run_id,plant_id)` | 출발 시 캐릭터 이름·품종·성장형·스탯과 스킬 사용 상태를 암호화한 스냅샷 |
 | `expedition_node_states` | `UNIQUE(run_id,node_code)` | 노드 공개·방문·해결 상태, 담당 캐릭터와 결과 이야기 |
-| `expedition_actions` | `UNIQUE(run_id,action_index)`, `UNIQUE(run_id,client_action_id)` | revision 기반 이동·선택·스킬·귀환 멱등 행동 원장 |
+| `expedition_actions` | `UNIQUE(run_id,action_index)`, `UNIQUE(run_id,client_action_id)` | revision 기반 이동·선택·스킬·귀환 멱등 행동 원장. 이름이 포함될 수 있는 결과는 암호화 |
 | `expedition_loot` | 런·노드·아이템·종류 UNIQUE | 후보·기록·지급으로 구분한 런 수집품 |
 | `expedition_content_exposures` | 런·종류·코드·순번 UNIQUE | 지도 템플릿과 런 스레드 노출 이력 |
 | `plant_adventure_bonds` | `plant_id` PK, 사용자 FK | 실제 캐릭터의 일일 1회 유대 점수와 마지막 획득일 |
@@ -548,7 +582,9 @@ API가 값을 숨기고 귀환 수령 뒤에만 공개한다. 이야기 결과�
 
 `expedition_actions.result_payload`는 네트워크 응답 유실 뒤 같은 `client_action_id`가
 왔을 때 재생할 서버 확정 응답이다. `expected_revision`이 현재 런과 다르면 새 행동을
-기록하지 않는다. 마음 공명 완주 보상은 `reward_events.event_type=expedition_completed`,
+기록하지 않는다. 파티 이름과 귀환 요약이 복제될 수 있는 `snapshot`,
+`summary_snapshot`, `result_payload`는 real-data에서 JSON 전체를 암호화한다. 마음 공명
+완주 보상은 `reward_events.event_type=expedition_completed`,
 dedupe key `active_expedition_daily:{user_id}:{local_date}`로 하루 한 번만 지급한다.
 
 ### 2.9 assessments — PHQ-9 자가설문

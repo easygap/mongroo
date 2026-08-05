@@ -147,6 +147,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 enabled: !_submitting,
                 liveRegion: _submitting,
                 label: _submitting ? '로그인 중' : '로그인',
+                onTap: _submitting ? null : _submit,
                 child: ExcludeSemantics(
                   child: FilledButton.icon(
                     onPressed: _submitting ? null : _submit,
@@ -159,6 +160,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     label: Text(_submitting ? '로그인 중…' : '로그인'),
                   ),
                 ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      '또는',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 14),
+              FilledButton.tonalIcon(
+                key: const Key('open-local-trial'),
+                onPressed: _submitting ? null : () => context.push('/trial'),
+                icon: const Icon(Icons.play_circle_outline_rounded),
+                label: const Text('회원가입 없이 3분 체험'),
+              ),
+              const SizedBox(height: 7),
+              Text(
+                '체험 기록은 서버로 보내지 않고 이 기기에만 저장해요.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
               const SizedBox(height: 8),
               TextButton(

@@ -329,6 +329,12 @@ class FakeClassifier:
         return top, scores
 
 
+class RulesClassifier(FakeClassifier):
+    """외부 모델 없이 운영할 수 있는 보수적 규칙 분류기."""
+
+    model_version = "rules-clf-1"
+
+
 class LocalClassifier:
     """MONGROO_MODEL_ROOT의 파인튜닝 모델을 CPU에서 lazy load한다."""
 
@@ -390,6 +396,8 @@ def _classifier_for(mode: str, model_dir: str) -> EmotionClassifier | None:
     """
     if mode == "local":
         return LocalClassifier(model_dir)
+    if mode == "rules":
+        return RulesClassifier()
     if mode == "fake":
         return FakeClassifier()
     return None

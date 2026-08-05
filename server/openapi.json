@@ -187,6 +187,57 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Delete Account",
+        "operationId": "delete_account_api_v1_users_me_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountDeleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/export": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Export Account",
+        "operationId": "export_account_api_v1_users_me_export_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/moods": {
@@ -2174,6 +2225,28 @@
   },
   "components": {
     "schemas": {
+      "AccountDeleteRequest": {
+        "properties": {
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password"
+          },
+          "confirmation": {
+            "type": "string",
+            "maxLength": 30,
+            "minLength": 1,
+            "title": "Confirmation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "password",
+          "confirmation"
+        ],
+        "title": "AccountDeleteRequest"
+      },
       "AdventureDonationRequest": {
         "properties": {
           "item_code": {
@@ -2817,6 +2890,65 @@
             "maxLength": 30,
             "minLength": 1,
             "title": "Nickname"
+          },
+          "terms_accepted": {
+            "type": "boolean",
+            "title": "Terms Accepted",
+            "default": false
+          },
+          "privacy_accepted": {
+            "type": "boolean",
+            "title": "Privacy Accepted",
+            "default": false
+          },
+          "sensitive_data_consent": {
+            "type": "boolean",
+            "title": "Sensitive Data Consent",
+            "default": false
+          },
+          "age_over_18": {
+            "type": "boolean",
+            "title": "Age Over 18",
+            "default": false
+          },
+          "terms_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terms Version"
+          },
+          "privacy_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Privacy Version"
+          },
+          "sensitive_consent_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensitive Consent Version"
           }
         },
         "type": "object",

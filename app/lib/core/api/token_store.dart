@@ -40,8 +40,8 @@ class TokenStore extends ChangeNotifier {
     required String accessToken,
     required String refreshToken,
   }) async {
-    _accessToken = accessToken;
     await _refreshStorage.write(refreshToken);
+    _accessToken = accessToken;
     notifyListeners();
   }
 
@@ -49,7 +49,11 @@ class TokenStore extends ChangeNotifier {
 
   Future<void> clear() async {
     _accessToken = null;
-    await _refreshStorage.clear();
-    notifyListeners();
+    try {
+      await _refreshStorage.clear();
+    } finally {
+      // 보안 저장소가 실패해도 메모리 토큰 제거와 세션 경계 알림은 보장한다.
+      notifyListeners();
+    }
   }
 }

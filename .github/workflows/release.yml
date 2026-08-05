@@ -1,0 +1,325 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "배포 버전(예: 1.0.0)"
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ github.ref }}-${{ inputs.version }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      REQUESTED_VERSION: ${{ inputs.version }}
+      SERVICE_OPERATOR_NAME: ${{ vars.SERVICE_OPERATOR_NAME }}
+      SERVICE_OPERATOR_ADDRESS: ${{ vars.SERVICE_OPERATOR_ADDRESS }}
+      PRIVACY_CONTACT_EMAIL: ${{ vars.PRIVACY_CONTACT_EMAIL }}
+      DATA_HOSTING_DISCLOSURE: ${{ vars.DATA_HOSTING_DISCLOSURE }}
+      TERMS_VERSION: ${{ vars.TERMS_VERSION }}
+      PRIVACY_VERSION: ${{ vars.PRIVACY_VERSION }}
+      SENSITIVE_CONSENT_VERSION: ${{ vars.SENSITIVE_CONSENT_VERSION }}
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - id: release
+        name: Validate immutable release metadata
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            version="$REQUESTED_VERSION"
+          fi
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          test -n "$SERVICE_OPERATOR_NAME"
+          test -n "$SERVICE_OPERATOR_ADDRESS"
+          test -n "$PRIVACY_CONTACT_EMAIL"
+          [[ "$PRIVACY_CONTACT_EMAIL" =~ ^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$ ]]
+          test -n "$DATA_HOSTING_DISCLOSURE"
+          test -n "$TERMS_VERSION"
+          test -n "$PRIVACY_VERSION"
+          test -n "$SENSITIVE_CONSENT_VERSION"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  quality-gate:
+    needs: validate-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - name: Verify server
+        working-directory: server
+        run: |
+          python -m pip install uv==0.11.13
+          uv sync --frozen --extra dev --no-install-project
+          uv run --no-sync python -m ruff check app tests
+          uv run --no-sync python -m pytest -q
+          uv export --frozen --no-dev --format requirements-txt --no-hashes \
+            --output-file "$RUNNER_TEMP/mongroo-production-requirements.txt"
+          uv run --no-sync pip-audit \
+            --requirement "$RUNNER_TEMP/mongroo-production-requirements.txt" \
+            --progress-spinner off
+          uv run --no-sync python -m app.export_openapi
+          git diff --exit-code openapi.json
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: "3.44.6"
+          cache: true
+      - name: Verify Flutter
+        working-directory: app
+        run: |
+          flutter pub get --enforce-lockfile
+          flutter analyze
+          flutter test
+
+  mysql-smoke:
+    needs: validate-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.4.6
+        env:
+          MYSQL_DATABASE: mongroo
+          MYSQL_USER: mongroo
+          MYSQL_PASSWORD: release-smoke-password
+          MYSQL_ROOT_PASSWORD: release-smoke-root-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -prelease-smoke-root-password --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      APP_ENV: production
+      DATA_PROFILE: real-data
+      DATABASE_URL: mysql+aiomysql://mongroo:release-smoke-password@127.0.0.1:3306/mongroo
+      JWT_SECRET: release-smoke-secret-0123456789abcdef0123456789
+      FIELD_ENCRYPTION_KEYS: '{"v1":"MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="}'
+      ACTIVE_FIELD_ENCRYPTION_KEY_ID: v1
+      AI_MODE: disabled
+      CORS_ORIGINS: '["https://app.mongroo.test"]'
+      CORS_ORIGIN_REGEX: ""
+      ALLOWED_HOSTS: '["api.mongroo.test"]'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - name: Run MySQL production lifecycle
+        working-directory: server
+        run: |
+          python -m pip install uv==0.11.13
+          uv sync --frozen --no-dev --no-install-project
+          uv run --no-sync python -m alembic upgrade head
+          uv run --no-sync python -m app.protect_sensitive_data
+          uv run --no-sync python -m app.release_smoke
+
+  android-bundle:
+    needs: [validate-release, quality-gate, mysql-smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RELEASE_VERSION: ${{ needs.validate-release.outputs.version }}
+      PRODUCTION_API_BASE_URL: ${{ secrets.PRODUCTION_API_BASE_URL }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      SERVICE_OPERATOR_NAME: ${{ vars.SERVICE_OPERATOR_NAME }}
+      SERVICE_OPERATOR_ADDRESS: ${{ vars.SERVICE_OPERATOR_ADDRESS }}
+      PRIVACY_CONTACT_EMAIL: ${{ vars.PRIVACY_CONTACT_EMAIL }}
+      DATA_HOSTING_DISCLOSURE: ${{ vars.DATA_HOSTING_DISCLOSURE }}
+      TERMS_VERSION: ${{ vars.TERMS_VERSION }}
+      PRIVACY_VERSION: ${{ vars.PRIVACY_VERSION }}
+      SENSITIVE_CONSENT_VERSION: ${{ vars.SENSITIVE_CONSENT_VERSION }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: "3.44.6"
+          cache: true
+      - name: Validate release inputs
+        shell: bash
+        run: |
+          test -n "$PRODUCTION_API_BASE_URL"
+          [[ "$PRODUCTION_API_BASE_URL" =~ ^https:// ]]
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_STORE_PASSWORD"
+          test -n "$ANDROID_KEY_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+      - name: Restore Android upload key
+        working-directory: app
+        shell: bash
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/mongroo-upload.jks
+          {
+            echo "storePassword=$ANDROID_STORE_PASSWORD"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "storeFile=mongroo-upload.jks"
+          } > android/key.properties
+      - name: Build signed release AAB
+        working-directory: app
+        run: |
+          flutter pub get --enforce-lockfile
+          flutter build appbundle --release --no-pub \
+            --build-name="$RELEASE_VERSION" \
+            --build-number="${GITHUB_RUN_NUMBER}" \
+            --dart-define="API_BASE_URL=$PRODUCTION_API_BASE_URL" \
+            --dart-define="SERVICE_OPERATOR_NAME=$SERVICE_OPERATOR_NAME" \
+            --dart-define="SERVICE_OPERATOR_ADDRESS=$SERVICE_OPERATOR_ADDRESS" \
+            --dart-define="PRIVACY_CONTACT_EMAIL=$PRIVACY_CONTACT_EMAIL" \
+            --dart-define="DATA_HOSTING_DISCLOSURE=$DATA_HOSTING_DISCLOSURE" \
+            --dart-define="TERMS_VERSION=$TERMS_VERSION" \
+            --dart-define="PRIVACY_VERSION=$PRIVACY_VERSION" \
+            --dart-define="SENSITIVE_CONSENT_VERSION=$SENSITIVE_CONSENT_VERSION"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mongroo-android-${{ env.RELEASE_VERSION }}
+          path: app/build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove signing material
+        if: always()
+        working-directory: app
+        run: rm -f android/key.properties android/app/mongroo-upload.jks
+
+  container-images:
+    needs: [validate-release, quality-gate, mysql-smoke]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    strategy:
+      matrix:
+        include:
+          - component: api
+            context: server
+          - component: web
+            context: app
+    env:
+      RELEASE_VERSION: ${{ needs.validate-release.outputs.version }}
+      IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/mongroo-${{ matrix.component }}
+      SERVICE_OPERATOR_NAME: ${{ vars.SERVICE_OPERATOR_NAME }}
+      SERVICE_OPERATOR_ADDRESS: ${{ vars.SERVICE_OPERATOR_ADDRESS }}
+      PRIVACY_CONTACT_EMAIL: ${{ vars.PRIVACY_CONTACT_EMAIL }}
+      DATA_HOSTING_DISCLOSURE: ${{ vars.DATA_HOSTING_DISCLOSURE }}
+      TERMS_VERSION: ${{ vars.TERMS_VERSION }}
+      PRIVACY_VERSION: ${{ vars.PRIVACY_VERSION }}
+      SENSITIVE_CONSENT_VERSION: ${{ vars.SENSITIVE_CONSENT_VERSION }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-
+      - id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}
+          build-args: |
+            SERVICE_OPERATOR_NAME=${{ env.SERVICE_OPERATOR_NAME }}
+            SERVICE_OPERATOR_ADDRESS=${{ env.SERVICE_OPERATOR_ADDRESS }}
+            PRIVACY_CONTACT_EMAIL=${{ env.PRIVACY_CONTACT_EMAIL }}
+            DATA_HOSTING_DISCLOSURE=${{ env.DATA_HOSTING_DISCLOSURE }}
+            TERMS_VERSION=${{ env.TERMS_VERSION }}
+            PRIVACY_VERSION=${{ env.PRIVACY_VERSION }}
+            SENSITIVE_CONSENT_VERSION=${{ env.SENSITIVE_CONSENT_VERSION }}
+          provenance: mode=max
+          sbom: true
+      - name: Scan immutable image digest
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          hide-progress: true
+      - name: Promote scanned image without moving an existing release
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        shell: bash
+        run: |
+          release_ref="$IMAGE_NAME:v$RELEASE_VERSION"
+          existing_digest="$(
+            docker buildx imagetools inspect "$release_ref" 2>/dev/null \
+              | awk '$1 == "Digest:" { print $2; exit }'
+          )"
+          if [ -n "$existing_digest" ]; then
+            test "$existing_digest" = "$IMAGE_DIGEST"
+            exit 0
+          fi
+          docker buildx imagetools create \
+            --tag "$release_ref" \
+            "$IMAGE_NAME@$IMAGE_DIGEST"
+      - uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45 # v2
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/mongroo-${{ matrix.component }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+  github-release:
+    needs: [validate-release, android-bundle, container-images]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: mongroo-android-*
+          merge-multiple: true
+          path: release-artifacts
+      - name: Publish immutable release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          tag="$GITHUB_REF_NAME"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            tag="v${{ needs.validate-release.outputs.version }}"
+          fi
+          gh release create "$tag" release-artifacts/app-release.aab \
+            --target "$GITHUB_SHA" \
+            --title "몽그루 $tag" \
+            --generate-notes

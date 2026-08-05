@@ -242,21 +242,6 @@ _EMOTION_ALIASES = {
     "혼합": "mixed",
 }
 
-# 쓰기 경로의 str.strip()과 어긋나기 쉬운 대표 공백들이다. 본문 자체를 가져오지
-# 않으면서 줄바꿈·탭·전각 공백뿐인 구 기록도 빈 기록으로 판정한다. 중첩 함수 수는
-# SQLite parser 한도 안으로 유지한다.
-_SQL_WHITESPACE_CHARS = (
-    "\t",
-    "\n",
-    "\v",
-    "\f",
-    "\r",
-    " ",
-    "\x85",
-    "\u00a0",
-    "\u3000",
-)
-
 _GENERIC_GROWTH_IDENTITY = {
     "seed_shape": "round_seed",
     "vessel_style": "soft_terracotta_pot",
@@ -758,13 +743,8 @@ def final_form_from_profile(profile: dict, current_branch: str | None = None) ->
 async def _lifecycle_entries(
     db: AsyncSession, plant: Plant, observed_at: datetime, *, lock: bool = False
 ) -> list[Any]:
-    # 최대 5000자 본문·사용자 태그·기분 점수는 읽지 않고 분류 결과만 가져온다.
-    content_without_whitespace = sa.func.coalesce(MoodEntry.content, "")
-    for whitespace in _SQL_WHITESPACE_CHARS:
-        content_without_whitespace = sa.func.replace(
-            content_without_whitespace, whitespace, ""
-        )
-    has_content = (sa.func.length(content_without_whitespace) > 0).label("has_content")
+    # 암호문 본문을 SQL 함수로 검사하지 않고 저장 시 계산한 길이만 읽는다.
+    has_content = (MoodEntry.content_length > 0).label("has_content")
     query = (
         sa.select(
             MoodEntry.id,

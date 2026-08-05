@@ -66,12 +66,10 @@ async def test_signup_creates_default_plant(client):
 
 
 async def test_login_rate_limit_counts_failures_only(client, monkeypatch):
-    from app.api.routers import auth as auth_router
     from app.core.config import get_settings
 
     monkeypatch.setenv("LOGIN_RATE_LIMIT_COUNT", "2")
     get_settings.cache_clear()
-    auth_router._login_attempts.clear()
     try:
         await signup(client, email="rate-limit@example.com")
 
@@ -96,7 +94,6 @@ async def test_login_rate_limit_counts_failures_only(client, monkeypatch):
         assert blocked.status_code == 429
         assert blocked.json()["code"] == "RATE_LIMITED"
     finally:
-        auth_router._login_attempts.clear()
         monkeypatch.delenv("LOGIN_RATE_LIMIT_COUNT", raising=False)
         get_settings.cache_clear()
 

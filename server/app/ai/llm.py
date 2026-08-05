@@ -261,10 +261,18 @@ class FakeLlm:
         return True
 
 
+class RulesLlm(FakeLlm):
+    """검수된 결정적 문장만 조합하는 운영 fallback 대화·요약 엔진."""
+
+    model_version = "rules-dialogue-1"
+
+
 def get_llm() -> LlmClient | None:
     mode = get_settings().ai_mode
     if mode == "local":
         return OllamaClient()
+    if mode == "rules":
+        return RulesLlm()
     if mode == "fake":
         return FakeLlm()
     return None

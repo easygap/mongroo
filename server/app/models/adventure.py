@@ -3,6 +3,7 @@ from datetime import date, datetime
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.field_encryption import ProtectedText
 from app.core.timeutil import utcnow
 from app.models.base import Base, BigIntPK, PreciseDateTime
 
@@ -42,7 +43,9 @@ class AdventurePatrol(Base):
     encounter_title: Mapped[str | None] = mapped_column(sa.String(100), nullable=True)
     encounter_text: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     reaction_form: Mapped[str | None] = mapped_column(sa.String(20), nullable=True)
-    reaction_speaker: Mapped[str | None] = mapped_column(sa.String(40), nullable=True)
+    reaction_speaker: Mapped[str | None] = mapped_column(
+        ProtectedText("adventure_patrols.reaction_speaker"), nullable=True
+    )
     reaction_text: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     found_item_code: Mapped[str] = mapped_column(sa.String(40), nullable=False)
     found_quantity: Mapped[int] = mapped_column(sa.Integer, nullable=False, default=1)

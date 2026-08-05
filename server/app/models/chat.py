@@ -3,6 +3,7 @@ from datetime import datetime
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.field_encryption import ProtectedText
 from app.models.base import Base, BigIntPK
 from app.models.enums import ChatSessionStatus, ReflectionStage, RunStatus, SafetyState
 from app.core.timeutil import utcnow
@@ -41,7 +42,9 @@ class ChatMessage(Base):
         sa.ForeignKey("chat_sessions.id", ondelete="CASCADE"), nullable=False
     )
     role: Mapped[str] = mapped_column(sa.String(10), nullable=False)  # user | plant
-    content: Mapped[str] = mapped_column(sa.Text, nullable=False)
+    content: Mapped[str] = mapped_column(
+        ProtectedText("chat_messages.content"), nullable=False
+    )
     safety_status: Mapped[str] = mapped_column(sa.String(20), nullable=False, default="normal")
     ai_emotion: Mapped[str | None] = mapped_column(sa.String(20), nullable=True)
     model_version: Mapped[str | None] = mapped_column(sa.String(80), nullable=True)

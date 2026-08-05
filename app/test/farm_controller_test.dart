@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/core/error/api_exception.dart';
+import 'package:mongroo/features/auth/presentation/auth_controller.dart';
 import 'package:mongroo/features/garden/data/garden_repository.dart';
 import 'package:mongroo/features/garden/domain/garden_models.dart';
 import 'package:mongroo/features/garden/presentation/garden_controller.dart';
@@ -152,7 +153,39 @@ class _DelayedSaveFarmRepository extends _FarmRepository {
   }
 }
 
+class _CountingFarmRepository extends _FarmRepository {
+  int loadCalls = 0;
+
+  @override
+  Future<FarmData> getFarm() {
+    loadCalls++;
+    return super.getFarm();
+  }
+}
+
+class _SignedOutAuthController extends AuthController {
+  @override
+  AuthState build() => const AuthState(status: AuthStatus.signedOut);
+}
+
 void main() {
+  test('로그아웃 상태에서 방 provider가 재생성돼도 API를 호출하지 않는다', () async {
+    final repository = _CountingFarmRepository();
+    final container = ProviderContainer(
+      overrides: [
+        gardenRepositoryProvider.overrideWithValue(repository),
+        authControllerProvider.overrideWith(_SignedOutAuthController.new),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(farmControllerProvider);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(repository.loadCalls, 0);
+    expect(container.read(farmControllerProvider).data, isA<AsyncLoading>());
+  });
+
   test('장착 의상 provider는 farm draft의 레이어 키를 화면에 제공한다', () async {
     final container = ProviderContainer(
       overrides: [

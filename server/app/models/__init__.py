@@ -28,18 +28,19 @@ from app.models.game import (
     UserSpeciesUnlock,
 )
 from app.models.mood import MoodEntry
-from app.models.ops import AiJob, IdempotencyKey, WorkerHeartbeat
+from app.models.ops import AiJob, DataProtectionState, IdempotencyKey, WorkerHeartbeat
 from app.models.plant import Plant, PlantSpecies
 from app.models.report import Report
 from app.models.reward import RewardEvent
 from app.models.safety import SafetyEvent
-from app.models.user import AuthSession, RefreshToken, User
+from app.models.user import AuthSession, LoginRateLimit, RefreshToken, User
 
 __all__ = [
     "Base",
     "User",
     "AuthSession",
     "RefreshToken",
+    "LoginRateLimit",
     "MoodEntry",
     "Plant",
     "PlantSpecies",
@@ -50,6 +51,7 @@ __all__ = [
     "Report",
     "SafetyEvent",
     "AiJob",
+    "DataProtectionState",
     "IdempotencyKey",
     "WorkerHeartbeat",
     "Quest",

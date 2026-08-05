@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_providers.dart';
 import '../../../core/api/token_store.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/error/api_exception.dart';
 import '../domain/user.dart';
 
@@ -25,14 +26,54 @@ class AuthRepository {
     required String email,
     required String password,
     required String nickname,
+    required bool ageOver18,
+    required bool termsAccepted,
+    required bool privacyAccepted,
+    required bool sensitiveDataConsent,
   }) =>
       guardApi(() async {
         final response = await _dio.post<Map<String, dynamic>>(
           '/auth/signup',
-          data: {'email': email, 'password': password, 'nickname': nickname},
+          data: {
+            'email': email,
+            'password': password,
+            'nickname': nickname,
+            'age_over_18': ageOver18,
+            'terms_accepted': termsAccepted,
+            'privacy_accepted': privacyAccepted,
+            'sensitive_data_consent': sensitiveDataConsent,
+            'terms_version': AppConfig.termsVersion,
+            'privacy_version': AppConfig.privacyVersion,
+            'sensitive_consent_version': AppConfig.sensitiveConsentVersion,
+          },
         );
         return _applyAuthResponse(response.data!);
       });
+
+  Future<Map<String, dynamic>> exportAccount() => guardApi(() async {
+        final response =
+            await _dio.get<Map<String, dynamic>>('/users/me/export');
+        return response.data ?? <String, dynamic>{};
+      });
+
+  Future<void> deleteAccount({
+    required String password,
+    required String confirmation,
+  }) async {
+    await guardApi(() async {
+      await _dio.delete<void>(
+        '/users/me',
+        data: {'password': password, 'confirmation': confirmation},
+      );
+    });
+    try {
+      // 서버 삭제가 성공한 뒤 로컬 저장소 오류를 계정 삭제 실패로 오인시키지 않는다.
+      // 남은 refresh token도 서버에서 이미 폐기되어 다음 복원 요청에 쓸 수 없다.
+      await _tokenStore.clear();
+    } catch (_) {
+      // TokenStore가 메모리 토큰 제거와 상태 알림은 finally에서 보장한다.
+    }
+  }
 
   /// 앱 시작 시 저장된 refresh token으로 세션을 복원한다.
   /// AuthResponse에 user가 포함되므로 별도 프로필 조회가 필요 없다.

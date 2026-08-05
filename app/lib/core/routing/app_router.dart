@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/auth_controller.dart';
+import '../../features/auth/presentation/account_screen.dart';
+import '../../features/auth/presentation/legal_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
@@ -21,6 +23,7 @@ import '../../features/report/presentation/report_screen.dart';
 import '../../features/quest/presentation/quest_screen.dart';
 import '../../features/safety/domain/safety_action.dart';
 import '../../features/safety/presentation/safety_screen.dart';
+import '../../features/trial/presentation/trial_screen.dart';
 import 'app_shell.dart';
 
 /// 전역 navigator/messenger key.
@@ -44,6 +47,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final auth = ref.read(authControllerProvider);
       final location = state.matchedLocation;
       final onAuthScreen = location == '/login' || location == '/signup';
+      final onLegalScreen = location.startsWith('/legal/');
+      final onTrialScreen = location == '/trial';
       switch (auth.status) {
         case AuthStatus.restoring:
           if (location != '/splash') {
@@ -52,7 +57,9 @@ final routerProvider = Provider<GoRouter>((ref) {
           return location == '/splash' ? null : '/splash';
         case AuthStatus.signedOut:
           pendingLocation = null;
-          return onAuthScreen ? null : '/login';
+          return onAuthScreen || onLegalScreen || onTrialScreen
+              ? null
+              : '/login';
         case AuthStatus.signedIn:
           if (onAuthScreen || location == '/splash') {
             final destination = pendingLocation ?? '/home';
@@ -74,6 +81,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/signup',
         builder: (context, state) => const SignupScreen(),
+      ),
+      GoRoute(
+        path: '/trial',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const TrialScreen(),
+      ),
+      GoRoute(
+        path: '/legal/:document',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => LegalScreen(
+          document: LegalDocument.fromPath(state.pathParameters['document']),
+        ),
+      ),
+      GoRoute(
+        path: '/account',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const AccountScreen(),
       ),
       GoRoute(
         path: '/record',
