@@ -40,8 +40,7 @@ void main() {
     }
   });
 
-  testWidgets('320px 200% 글자에서도 개인정보처리방침이 오버플로우하지 않는다',
-      (tester) async {
+  testWidgets('320px 200% 글자에서도 개인정보처리방침이 오버플로우하지 않는다', (tester) async {
     await pumpLegal(
       tester,
       LegalDocument.privacy,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../expedition/presentation/expedition_scene.dart';
 import '../../expedition/presentation/moss_archive_scene.dart';
 import '../domain/trial_progress.dart';
 import 'trial_controller.dart';
@@ -311,44 +312,110 @@ class _TrialWelcome extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(
+          key: const Key('trial-diary-growth-hero'),
           height: MediaQuery.sizeOf(context).width < 420 ? 220 : 280,
-          child: MossArchiveScene(
-            semanticLabel: '아기 몽그루와 함께 들어갈 이끼 기억서고',
-            child: Stack(
-              children: [
-                Positioned(
-                  left: 14,
-                  bottom: 4,
-                  width: 142,
-                  height: 176,
-                  child: Image.asset(
-                    'assets/plants/baby-pot-25d-sprout-sunny.webp',
-                    fit: BoxFit.contain,
-                    alignment: Alignment.bottomCenter,
-                    semanticLabel: '체험을 안내하는 아기 몽그루',
+          child: Semantics(
+            image: true,
+            label: '마음 기록을 받아 따뜻한 방에서 자라는 아기 몽그루',
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(
+                    'assets/illustrations/cozy-room.webp',
+                    fit: BoxFit.cover,
+                    excludeFromSemantics: true,
                   ),
-                ),
-                Positioned(
-                  right: 16,
-                  top: 16,
-                  child: MongrooTag(
-                    label: '약 3분',
-                    icon: Icons.timer_outlined,
-                    backgroundColor: palette.paper.withAlpha(235),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          palette.night.withAlpha(18),
+                          Colors.transparent,
+                          palette.night.withAlpha(112),
+                        ],
+                        stops: const [0, .55, 1],
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 42,
+                    height: MediaQuery.sizeOf(context).width < 420 ? 178 : 222,
+                    child: Transform.scale(
+                      key: const Key('trial-growth-character'),
+                      scale: 2.45,
+                      alignment: Alignment.bottomCenter,
+                      child: Image.asset(
+                        'assets/plants/baby-pot-25d-sprout-sunny.webp',
+                        fit: BoxFit.contain,
+                        alignment: Alignment.bottomCenter,
+                        excludeFromSemantics: true,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 14,
+                    top: 14,
+                    child: MongrooTag(
+                      label: '마음 기록 → 성장',
+                      icon: Icons.edit_note_rounded,
+                      backgroundColor: palette.paper.withAlpha(235),
+                    ),
+                  ),
+                  Positioned(
+                    right: 14,
+                    top: 14,
+                    child: MongrooTag(
+                      label: '약 3분',
+                      icon: Icons.timer_outlined,
+                      backgroundColor: palette.paper.withAlpha(235),
+                    ),
+                  ),
+                  Positioned(
+                    left: 14,
+                    right: 14,
+                    bottom: 14,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: palette.paper.withAlpha(235),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(24),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Padding(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                        child: Text(
+                          '“오늘 마음은 어떤 날씨인가요?”',
+                          maxLines: 2,
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
         const SizedBox(height: 22),
         Text(
-          '가입하기 전에, 먼저 같이 걸어 봐요',
+          '가입하기 전에, 마음 하나를 키워 봐요',
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: 8),
         Text(
-          '짧은 마음 기록으로 캐릭터를 키우고, 갈림길과 사건을 직접 골라 첫 탐험까지 끝낼 수 있어요.',
+          '좋고 나쁜 감정을 가르지 않고 지금 마음을 짧게 기록해 보세요. 그 기록으로 캐릭터가 자라고, 원할 때 함께 첫 탐험도 연습할 수 있어요.',
           style: Theme.of(context).textTheme.bodyLarge,
         ),
         const SizedBox(height: 16),
@@ -358,7 +425,7 @@ class _TrialWelcome extends StatelessWidget {
           children: [
             MongrooTag(label: '마음 일기', icon: Icons.edit_note_rounded),
             MongrooTag(label: '캐릭터 성장', icon: Icons.spa_outlined),
-            MongrooTag(label: '선택형 탐험', icon: Icons.route_outlined),
+            MongrooTag(label: '탐험은 보조 활동', icon: Icons.route_outlined),
           ],
         ),
         const SizedBox(height: 20),
@@ -692,43 +759,128 @@ class _TrialExploration extends StatelessWidget {
   final Future<void> Function(String choice) onResolve;
 
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('지도를 보고 다음 걸음을 직접 골라요',
-              style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 7),
-          Text(
-            progress.explorationStep == 0
-                ? '위쪽 길은 관찰, 아래쪽 길은 돌봄에 유리해요. 어느 쪽도 정답은 아니에요.'
-                : '선택한 장소에서 사건이 생겼어요. 캐릭터의 능력과 예상 결과를 보고 행동을 골라요.',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+  Widget build(BuildContext context) {
+    final selectedPath = progress.selectedPath;
+    final sceneKey = selectedPath == 'labels'
+        ? 'flooded_cave'
+        : selectedPath == 'roots'
+            ? 'root_tunnel'
+            : 'dungeon_gate';
+    final scene = expeditionSceneTheme(sceneKey);
+    final sceneTitle = selectedPath == 'labels'
+        ? '침수 표찰 동굴'
+        : selectedPath == 'roots'
+            ? '기억 뿌리 땅굴'
+            : '기억 던전 입구';
+    final sceneDescription = selectedPath == 'labels'
+        ? '수정빛 물길 위로 젖은 이름표가 흘러가요.'
+        : selectedPath == 'roots'
+            ? '목재 지주 사이로 오래된 뿌리와 광차 길이 엉켜 있어요.'
+            : '유리온실 아래의 석문이 열려 있어요. 두 갈래 통로를 직접 살펴보세요.';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('장면을 살피고 다음 걸음을 직접 골라요',
+            style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 7),
+        Text(
+          progress.explorationStep == 0
+              ? '물길은 관찰, 뿌리 통로는 돌봄에 유리해요. 어느 쪽도 정답은 아니에요.'
+              : '선택한 장소에서 사건이 생겼어요. 캐릭터의 능력과 예상 결과를 보고 행동을 골라요.',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(height: 14),
-          AspectRatio(
-            aspectRatio: 1.6,
-            child: MossArchiveScene(
-              child: _TrialMap(progress: progress, onPath: onPath),
-            ),
+        ),
+        const SizedBox(height: 14),
+        MongrooPanel(
+          padding: EdgeInsets.zero,
+          radius: 18,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: MossArchiveScene(
+                  semanticLabel: '동굴과 땅굴, 수호자 소굴과 탑이 지형으로 이어진 체험 탐험 지도',
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(18)),
+                  child: _TrialMap(progress: progress, onPath: onPath),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(13, 10, 13, 12),
+                child: Text(
+                  selectedPath == null
+                      ? '입구에서 갈라지는 물길과 뿌리길을 지형에서 직접 골라요.'
+                      : '선택한 길의 발자국이 소굴과 기억 탑 방향으로 이어져요.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 14),
-          AnimatedSwitcher(
-            duration: MediaQuery.disableAnimationsOf(context)
-                ? Duration.zero
-                : MongrooMotion.standard,
-            child: progress.explorationStep == 0
-                ? _TrialPathDecision(
-                    key: const ValueKey('path'), onPath: onPath)
-                : _TrialEventDecision(
-                    key: const ValueKey('event'),
-                    path: progress.selectedPath!,
-                    onResolve: onResolve,
+        ),
+        const SizedBox(height: 12),
+        AspectRatio(
+          aspectRatio: 16 / 9,
+          child: ExpeditionSceneBackdrop(
+            scene: scene,
+            semanticLabel: '$sceneTitle 탐험 장면. $sceneDescription',
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: MediaQuery.withNoTextScaling(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: MongrooPalette.of(context).night.withAlpha(205),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: scene.accent.withAlpha(145)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(scene.icon, color: scene.accent, size: 18),
+                        const SizedBox(width: 7),
+                        Text(
+                          sceneTitle,
+                          style: const TextStyle(
+                            color: AppTheme.onNight,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                ),
+              ),
+            ),
           ),
-        ],
-      );
+        ),
+        const SizedBox(height: 10),
+        Text(sceneTitle, style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 4),
+        Text(sceneDescription),
+        const SizedBox(height: 14),
+        AnimatedSwitcher(
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : MongrooMotion.standard,
+          child: progress.explorationStep == 0
+              ? _TrialPathDecision(key: const ValueKey('path'), onPath: onPath)
+              : _TrialEventDecision(
+                  key: const ValueKey('event'),
+                  path: progress.selectedPath!,
+                  onResolve: onResolve,
+                ),
+        ),
+      ],
+    );
+  }
 }
 
 class _TrialMap extends StatelessWidget {
@@ -742,10 +894,9 @@ class _TrialMap extends StatelessWidget {
     final selected = progress.selectedPath;
     return LayoutBuilder(
       builder: (context, constraints) {
-        const nodeSize = 58.0;
+        const nodeSize = 44.0;
         Widget node({
           required String label,
-          required IconData icon,
           required double x,
           required double y,
           required bool current,
@@ -762,7 +913,6 @@ class _TrialMap extends StatelessWidget {
               child: _TrialMapNode(
                 key: key,
                 label: label,
-                icon: icon,
                 current: current,
                 onTap: onTap,
               ),
@@ -779,40 +929,35 @@ class _TrialMap extends StatelessWidget {
             ),
             node(
               label: '입구',
-              icon: Icons.login_outlined,
-              x: .09,
-              y: .55,
+              x: .08,
+              y: .50,
               current: selected == null,
             ),
             node(
               key: const Key('trial-path-labels'),
               label: '표찰길',
-              icon: Icons.visibility_outlined,
-              x: .34,
-              y: .28,
+              x: .28,
+              y: .27,
               current: selected == 'labels',
               onTap: selected == null ? () => onPath('labels') : null,
             ),
             node(
               key: const Key('trial-path-roots'),
               label: '뿌리길',
-              icon: Icons.eco_outlined,
-              x: .34,
+              x: .29,
               y: .72,
               current: selected == 'roots',
               onTap: selected == null ? () => onPath('roots') : null,
             ),
             node(
-              label: '서고 문',
-              icon: Icons.door_front_door_outlined,
-              x: .70,
+              label: '장부지기 소굴',
+              x: .69,
               y: .50,
               current: false,
             ),
             node(
-              label: '기억 서랍',
-              icon: Icons.inventory_2_outlined,
-              x: .89,
+              label: '기억 탑',
+              x: .84,
               y: .34,
               current: false,
             ),
@@ -827,13 +972,11 @@ class _TrialMapNode extends StatelessWidget {
   const _TrialMapNode({
     super.key,
     required this.label,
-    required this.icon,
     required this.current,
     required this.onTap,
   });
 
   final String label;
-  final IconData icon;
   final bool current;
   final VoidCallback? onTap;
 
@@ -848,29 +991,68 @@ class _TrialMapNode extends StatelessWidget {
       child: Tooltip(
         message: label,
         child: Material(
-          color: current
-              ? scheme.primary
-              : enabled
-                  ? scheme.primaryContainer.withAlpha(238)
-                  : scheme.surface.withAlpha(205),
-          shape: CircleBorder(
-            side: BorderSide(
-              color:
-                  current || enabled ? scheme.primary : scheme.outlineVariant,
-              width: current ? 3 : 1,
-            ),
-          ),
-          elevation: current ? 5 : 1,
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
+          color: Colors.transparent,
+          child: InkResponse(
             onTap: onTap,
-            child: Icon(
-              icon,
-              color: current
-                  ? scheme.onPrimary
-                  : enabled
-                      ? scheme.onPrimaryContainer
-                      : scheme.onSurfaceVariant,
+            radius: 22,
+            containedInkWell: true,
+            child: Center(
+              child: Container(
+                width: current
+                    ? 22
+                    : enabled
+                        ? 15
+                        : 7,
+                height: current
+                    ? 22
+                    : enabled
+                        ? 15
+                        : 7,
+                transform:
+                    enabled ? (Matrix4.identity()..rotateZ(.785398)) : null,
+                decoration: BoxDecoration(
+                  shape: enabled ? BoxShape.rectangle : BoxShape.circle,
+                  borderRadius: enabled ? BorderRadius.circular(3) : null,
+                  color: current
+                      ? const Color(0xFFFFE3A0)
+                      : enabled
+                          ? const Color(0xFFFFD47A)
+                          : AppTheme.onNight.withAlpha(90),
+                  border: current
+                      ? Border.all(color: Colors.white, width: 2)
+                      : enabled
+                          ? Border.all(color: Colors.white.withAlpha(210))
+                          : null,
+                  boxShadow: current || enabled
+                      ? [
+                          BoxShadow(
+                            color: (current
+                                    ? const Color(0xFFFFE3A0)
+                                    : scheme.primary)
+                                .withAlpha(120),
+                            blurRadius: 13,
+                            spreadRadius: 3,
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withAlpha(120),
+                            blurRadius: 5,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: current
+                    ? Center(
+                        child: Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: MongrooPalette.of(context).night,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
             ),
           ),
         ),
@@ -887,11 +1069,11 @@ class _TrialPathPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final entrance = Offset(.09 * size.width, .55 * size.height);
-    final labels = Offset(.34 * size.width, .28 * size.height);
-    final roots = Offset(.34 * size.width, .72 * size.height);
-    final door = Offset(.70 * size.width, .50 * size.height);
-    final drawer = Offset(.89 * size.width, .34 * size.height);
+    final entrance = Offset(.08 * size.width, .50 * size.height);
+    final labels = Offset(.28 * size.width, .27 * size.height);
+    final roots = Offset(.29 * size.width, .72 * size.height);
+    final door = Offset(.69 * size.width, .50 * size.height);
+    final drawer = Offset(.84 * size.width, .34 * size.height);
     final pairs = [
       (entrance, labels, selectedPath == 'labels'),
       (entrance, roots, selectedPath == 'roots'),
@@ -910,22 +1092,37 @@ class _TrialPathPainter extends CustomPainter {
           pair.$2.dx,
           pair.$2.dy,
         );
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = Colors.black.withAlpha(90)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 7
-          ..strokeCap = StrokeCap.round,
-      );
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = pair.$3 ? color : Colors.white.withAlpha(145)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = pair.$3 ? 4 : 2.5
-          ..strokeCap = StrokeCap.round,
-      );
+      for (final metric in path.computeMetrics()) {
+        for (var distance = 7.0;
+            distance < metric.length - 5;
+            distance += pair.$3 ? 17 : 21) {
+          final tangent = metric.getTangentForOffset(distance);
+          if (tangent == null) continue;
+          canvas.save();
+          canvas.translate(tangent.position.dx, tangent.position.dy);
+          canvas.rotate(tangent.angle);
+          final paint = Paint()
+            ..color =
+                pair.$3 ? color.withAlpha(190) : AppTheme.onNight.withAlpha(48);
+          canvas.drawOval(
+            Rect.fromCenter(
+              center: const Offset(-2, -2),
+              width: pair.$3 ? 4 : 3,
+              height: pair.$3 ? 7 : 5,
+            ),
+            paint,
+          );
+          canvas.drawOval(
+            Rect.fromCenter(
+              center: const Offset(3, 2),
+              width: pair.$3 ? 4 : 3,
+              height: pair.$3 ? 7 : 5,
+            ),
+            paint,
+          );
+          canvas.restore();
+        }
+      }
     }
   }
 
@@ -946,22 +1143,142 @@ class _TrialPathDecision extends StatelessWidget {
           children: [
             Text('첫 갈림길', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 5),
-            const Text('지도 노드나 아래 선택지를 눌러 이동하세요.'),
+            const Text('두 장소를 살펴보고 캐릭터에게 맞는 통로를 고르세요.'),
             const SizedBox(height: 12),
-            FilledButton.tonalIcon(
-              onPressed: () => onPath('labels'),
-              icon: const Icon(Icons.visibility_outlined),
-              label: const Text('위쪽 표찰길 · 관찰로 흔적 읽기'),
+            _TrialPathSceneCard(
+              sceneKey: 'flooded_cave',
+              title: '침수 표찰 동굴',
+              description: '수정빛 물길의 흔적을 관찰해요.',
+              statLabel: '관찰 판정',
+              onTap: () => onPath('labels'),
             ),
             const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: () => onPath('roots'),
-              icon: const Icon(Icons.eco_outlined),
-              label: const Text('아래쪽 뿌리길 · 돌봄으로 길 열기'),
+            _TrialPathSceneCard(
+              sceneKey: 'root_tunnel',
+              title: '기억 뿌리 땅굴',
+              description: '엉킨 뿌리와 통로를 돌봄으로 풀어요.',
+              statLabel: '돌봄 판정',
+              onTap: () => onPath('roots'),
             ),
           ],
         ),
       );
+}
+
+class _TrialPathSceneCard extends StatelessWidget {
+  const _TrialPathSceneCard({
+    required this.sceneKey,
+    required this.title,
+    required this.description,
+    required this.statLabel,
+    required this.onTap,
+  });
+
+  final String sceneKey;
+  final String title;
+  final String description;
+  final String statLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scene = expeditionSceneTheme(sceneKey);
+    return Semantics(
+      button: true,
+      label: '$title. $description. $statLabel.',
+      child: Material(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        clipBehavior: Clip.antiAlias,
+        elevation: 2,
+        child: InkWell(
+          onTap: onTap,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AspectRatio(
+                aspectRatio: 2.35,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(
+                      scene.assetPath,
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.medium,
+                      excludeFromSemantics: true,
+                    ),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            MongrooPalette.of(context).night.withAlpha(210),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: MediaQuery.withNoTextScaling(
+                          child: Row(
+                            children: [
+                              Icon(scene.icon, color: scene.accent, size: 19),
+                              const SizedBox(width: 7),
+                              Expanded(
+                                child: Text(
+                                  title,
+                                  style: const TextStyle(
+                                    color: AppTheme.onNight,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(description),
+                          const SizedBox(height: 4),
+                          Text(
+                            statLabel,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(
+                                  color: scene.accent,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward_rounded),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _TrialEventDecision extends StatelessWidget {
@@ -1056,27 +1373,43 @@ class _TrialComplete extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          height: 250,
-          child: MossArchiveScene(
-            semanticLabel: '첫 탐험을 마치고 빛나는 기억 서랍에 도착한 길',
+        AspectRatio(
+          aspectRatio: 16 / 9,
+          child: ExpeditionSceneBackdrop(
+            scene: expeditionSceneTheme('treasure_vault'),
+            semanticLabel: '첫 탐험을 마치고 도착한 압화 보물고와 빛나는 보물상자',
             child: Align(
-              alignment: const Alignment(.78, -.25),
-              child: Container(
-                width: 92,
-                height: 92,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: scheme.primaryContainer.withAlpha(220),
-                  boxShadow: [
-                    BoxShadow(
-                      color: scheme.primary.withAlpha(100),
-                      blurRadius: 30,
-                      spreadRadius: 8,
+              alignment: Alignment.bottomLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: MediaQuery.withNoTextScaling(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: MongrooPalette.of(context).night.withAlpha(210),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: const Color(0xFFFFD166).withAlpha(150),
+                      ),
                     ),
-                  ],
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.key_rounded,
+                            color: Color(0xFFFFD166), size: 19),
+                        SizedBox(width: 7),
+                        Text(
+                          '획득 · 이끼 열쇠 조각',
+                          style: TextStyle(
+                            color: AppTheme.onNight,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                child: Icon(Icons.key_rounded, size: 46, color: scheme.primary),
               ),
             ),
           ),

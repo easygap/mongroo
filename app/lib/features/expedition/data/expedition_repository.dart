@@ -111,6 +111,24 @@ class ExpeditionRepository {
         clientActionId: clientActionId,
       );
 
+  Future<ExpeditionSnapshot> resolveCombatTurn({
+    required int runId,
+    required List<ExpeditionCombatCommand> commands,
+    required int expectedRevision,
+    required String clientActionId,
+  }) =>
+      _action(
+        runId: runId,
+        path: 'combat/turns',
+        data: {
+          'commands': commands
+              .map((command) => command.toJson())
+              .toList(growable: false),
+        },
+        expectedRevision: expectedRevision,
+        clientActionId: clientActionId,
+      );
+
   Future<ExpeditionSnapshot> extract({
     required int runId,
     required int expectedRevision,

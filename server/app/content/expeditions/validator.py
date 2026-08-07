@@ -11,6 +11,16 @@ from typing import Any
 
 
 ALLOWED_STATS = {"care", "focus", "courage", "insight"}
+ALLOWED_SCENE_KEYS = {
+    "dungeon_gate",
+    "flooded_cave",
+    "root_tunnel",
+    "echo_well",
+    "treasure_vault",
+    "monster_den",
+    "moon_tower",
+}
+ALLOWED_COMBAT_EFFECT_KEYS = {"insight_arc", "care_vines", "safe_guard"}
 
 
 class ContentValidationError(ValueError):
@@ -115,6 +125,99 @@ def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:
     if not isinstance(choices, list) or len(choices) < 3:
         errors.append(f"{prefix}.choices: 능력치 선택 2개와 안전 선택이 필요합니다")
         return
+    encounter = event.get("encounter")
+    if encounter is not None:
+        if not isinstance(encounter, dict):
+            errors.append(f"{prefix}.encounter: 객체가 필요합니다")
+        else:
+            if encounter.get("kind") != "guardian":
+                errors.append(f"{prefix}.encounter.kind: guardian이어야 합니다")
+            for field in (
+                "enemy_name",
+                "attack_name",
+                "telegraph",
+                "damage_target",
+            ):
+                if not isinstance(encounter.get(field), str) or not encounter[
+                    field
+                ].strip():
+                    errors.append(f"{prefix}.encounter.{field}: 값이 필요합니다")
+            max_guard = encounter.get("enemy_max_guard")
+            if (
+                not isinstance(max_guard, int)
+                or isinstance(max_guard, bool)
+                or max_guard <= 0
+            ):
+                errors.append(
+                    f"{prefix}.encounter.enemy_max_guard: 1 이상의 정수가 필요합니다"
+                )
+            for field, minimum in (
+                ("max_rounds", 2),
+                ("starting_focus", 0),
+                ("max_focus", 1),
+            ):
+                value = encounter.get(field)
+                if (
+                    not isinstance(value, int)
+                    or isinstance(value, bool)
+                    or value < minimum
+                ):
+                    errors.append(
+                        f"{prefix}.encounter.{field}: {minimum} 이상의 정수가 필요합니다"
+                    )
+            if isinstance(encounter.get("starting_focus"), int) and isinstance(
+                encounter.get("max_focus"), int
+            ) and encounter["starting_focus"] > encounter["max_focus"]:
+                errors.append(
+                    f"{prefix}.encounter.starting_focus: max_focus 이하여야 합니다"
+                )
+            weaknesses = encounter.get("weakness_cycle")
+            if (
+                not isinstance(weaknesses, list)
+                or len(weaknesses) < 2
+                or any(item not in ALLOWED_STATS for item in weaknesses)
+            ):
+                errors.append(
+                    f"{prefix}.encounter.weakness_cycle: 서로 다른 감정 상성 2개 이상이 필요합니다"
+                )
+            elif len(weaknesses) != len(set(weaknesses)):
+                errors.append(
+                    f"{prefix}.encounter.weakness_cycle: 같은 상성을 중복할 수 없습니다"
+                )
+            intents = encounter.get("intents")
+            if not isinstance(intents, list) or len(intents) < 2:
+                errors.append(
+                    f"{prefix}.encounter.intents: 예고 공격이 2개 이상 필요합니다"
+                )
+            else:
+                intent_codes: set[str] = set()
+                for index, intent in enumerate(intents):
+                    intent_prefix = f"{prefix}.encounter.intents[{index}]"
+                    if not isinstance(intent, dict):
+                        errors.append(f"{intent_prefix}: 객체가 필요합니다")
+                        continue
+                    code = intent.get("code")
+                    if not isinstance(code, str) or not code:
+                        errors.append(f"{intent_prefix}.code: 값이 필요합니다")
+                    elif code in intent_codes:
+                        errors.append(f"{intent_prefix}.code: {code}가 중복됩니다")
+                    intent_codes.add(code)
+                    for field in ("name", "telegraph"):
+                        if not isinstance(intent.get(field), str) or not intent[
+                            field
+                        ].strip():
+                            errors.append(f"{intent_prefix}.{field}: 값이 필요합니다")
+                    if intent.get("target") not in {"front", "all", "lowest"}:
+                        errors.append(
+                            f"{intent_prefix}.target: front, all, lowest 중 하나여야 합니다"
+                        )
+                    power = intent.get("power")
+                    if (
+                        not isinstance(power, int)
+                        or isinstance(power, bool)
+                        or power < 1
+                    ):
+                        errors.append(f"{intent_prefix}.power: 1 이상이어야 합니다")
     choice_codes: set[str] = set()
     stats: set[str] = set()
     safe_count = 0
@@ -134,6 +237,27 @@ def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:
             if choice.get("stat") is not None or choice.get("resolve_cost") != 0:
                 errors.append(
                     f"{choice_prefix}: 안전 선택은 stat=null, resolve_cost=0이어야 합니다"
+                )
+        elif encounter is not None:
+            guard_damage = choice.get("guard_damage")
+            if (
+                not isinstance(guard_damage, int)
+                or isinstance(guard_damage, bool)
+                or guard_damage <= 0
+            ):
+                errors.append(
+                    f"{choice_prefix}.guard_damage: 전투 선택에는 1 이상의 정수가 필요합니다"
+                )
+        if encounter is not None:
+            effect_key = choice.get("effect_key")
+            if effect_key not in ALLOWED_COMBAT_EFFECT_KEYS:
+                errors.append(
+                    f"{choice_prefix}.effect_key: 지원하지 않는 전투 이펙트입니다"
+                )
+        if choice.get("safe") is True:
+            if encounter is not None and choice.get("guard_damage") != 0:
+                errors.append(
+                    f"{choice_prefix}.guard_damage: 안전 선택은 0이어야 합니다"
                 )
             continue
         stat = choice.get("stat")
@@ -187,6 +311,21 @@ def _validate_map(
             errors.append(f"{node_prefix}.y: 0~1 좌표가 필요합니다")
         if not isinstance(node.get("cost"), int) or node["cost"] < 0:
             errors.append(f"{node_prefix}.cost: 0 이상의 정수가 필요합니다")
+        scene_key = node.get("scene_key")
+        if scene_key not in ALLOWED_SCENE_KEYS:
+            errors.append(f"{node_prefix}.scene_key: 지원하지 않는 장면입니다")
+        for field in ("scene_label", "scene_description", "depth_label"):
+            if not isinstance(node.get(field), str) or not node[field].strip():
+                errors.append(
+                    f"{node_prefix}.{field}: 비어 있지 않은 문장이 필요합니다"
+                )
+        threat_level = node.get("threat_level")
+        if (
+            not isinstance(threat_level, int)
+            or isinstance(threat_level, bool)
+            or not 0 <= threat_level <= 3
+        ):
+            errors.append(f"{node_prefix}.threat_level: 0~3 정수가 필요합니다")
         event_code = node.get("event_code")
         if event_code is not None and event_code not in events:
             errors.append(f"{node_prefix}.event_code: {event_code} 사건이 없습니다")

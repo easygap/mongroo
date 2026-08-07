@@ -7,6 +7,7 @@ from app.models.expedition import (
     PlantRegionFamiliarity,
     UserRegionProgress,
 )
+from app.models.game import FarmLayout, Item, UserItem
 from app.models.plant import Plant
 from app.models.reward import RewardEvent
 
@@ -52,6 +53,75 @@ async def _action(
     return response.json()
 
 
+async def _fight_guardian(client, headers: dict, run: dict, key_prefix: str) -> dict:
+    """테스트도 실제 클라이언트처럼 대원별 행동을 순서대로 예약한다."""
+
+    turn = 1
+    while (run.get("current_event") or {}).get("battle", {}).get("status") == "active":
+        battle = run["current_event"]["battle"]
+        focus = battle["focus"]
+        commands = []
+        for member in battle["party"]:
+            if member["hp"] <= 0:
+                continue
+            skill_cost = member["kit"]["skill"]["focus_cost"]
+            if focus >= skill_cost:
+                action = "skill"
+                focus -= skill_cost
+            else:
+                action = "attack"
+                focus = min(battle["max_focus"], focus + 1)
+            commands.append({"member_id": member["member_id"], "action": action})
+        run = await _action(
+            client,
+            headers,
+            run,
+            "combat/turns",
+            {"commands": commands},
+            f"{key_prefix}-{turn:04d}",
+        )
+        assert run["last_combat_exchange"]
+        turn += 1
+        assert turn <= 7
+    return run
+
+
+async def _reach_guardian(client, headers: dict, run: dict, key_prefix: str) -> dict:
+    run = await _action(
+        client,
+        headers,
+        run,
+        "move",
+        {"node_code": "wet_labels"},
+        f"{key_prefix}-wet",
+    )
+    actor = run["party"][0]["id"]
+    run = await _action(
+        client,
+        headers,
+        run,
+        "choices",
+        {"choice_code": "mark_return", "acting_member_id": actor},
+        f"{key_prefix}-choice",
+    )
+    run = await _action(
+        client,
+        headers,
+        run,
+        "move",
+        {"node_code": "quiet_camp"},
+        f"{key_prefix}-camp",
+    )
+    return await _action(
+        client,
+        headers,
+        run,
+        "move",
+        {"node_code": "ledger_keeper"},
+        f"{key_prefix}-keeper",
+    )
+
+
 async def _complete_run(client, headers: dict, run: dict) -> dict:
     run = await _action(
         client, headers, run, "move", {"node_code": "wet_labels"}, "move-wet-0001"
@@ -79,14 +149,22 @@ async def _complete_run(client, headers: dict, run: dict) -> dict:
     run = await _action(
         client, headers, run, "move", {"node_code": "ledger_keeper"}, "move-keeper-0001"
     )
-    run = await _action(
-        client,
-        headers,
-        run,
-        "choices",
-        {"choice_code": "answer_together", "acting_member_id": actor},
-        "choice-keeper-0001",
-    )
+    assert {action["type"] for action in run["available_actions"]} == {
+        "combat_turn",
+        "retreat",
+    }
+    run = await _fight_guardian(client, headers, run, "combat-keeper")
+    resolution = run["last_resolution"]
+    assert resolution["event_code"] == "ledger_keeper"
+    assert resolution["actor_name"]
+    assert resolution["battle_status"] == "victory"
+    assert resolution["score"] == 100
+    assert run["last_combat_exchange"][-1] == {
+        "sequence": run["last_combat_exchange"][-1]["sequence"],
+        "type": "outcome",
+        "outcome": "victory",
+        "caption": "수호 장벽이 부서지고 장부지기가 길을 열었어요!",
+    }
     run = await _action(
         client,
         headers,
@@ -127,6 +205,11 @@ async def test_expedition_map_actions_are_authoritative_and_replayable(
 
     run = await _start(client, headers, plant_id, mode="free_explore")
     assert run["run"]["revision"] == 0
+    entrance = next(node for node in run["map"]["nodes"] if node["code"] == "entrance")
+    assert entrance["scene_key"] == "dungeon_gate"
+    assert entrance["scene_label"] == "폐허 던전"
+    assert entrance["depth_label"] == "지하 1층 · 관문"
+    assert entrance["threat_level"] == 1
     hidden = next(
         node for node in run["map"]["nodes"] if node["code"] == "ledger_keeper"
     )
@@ -151,6 +234,11 @@ async def test_expedition_map_actions_are_authoritative_and_replayable(
     assert first.json() == replay.json()
     run = first.json()
     assert run["run"]["phase"] == "awaiting_event"
+    flooded_cave = next(
+        node for node in run["map"]["nodes"] if node["code"] == "wet_labels"
+    )
+    assert flooded_cave["scene_key"] == "flooded_cave"
+    assert flooded_cave["depth_label"] == "지하 2층 · 수몰 구역"
     assert run["current_event"]["choices"][0]["previews"][0]["difficulty"] == 8
 
     stale = await client.post(
@@ -187,6 +275,33 @@ async def test_tutorial_uses_fixed_visible_map_and_active_character_with_guide(
     user_id = user_tokens["user"]["id"]
     plant_id = await _prepare_stage_two(session_factory, user_id)
 
+    async with session_factory() as db:
+        outfit = Item(
+            code="wardrobe_expedition_snapshot",
+            type="wardrobe",
+            name="탐험 의상",
+            description="탐험 스냅샷 검증용 의상",
+            price_seeds=0,
+            rarity=1,
+            asset_manifest={
+                "wardrobe_layer_key": "garden-daily",
+                "compatible_species": ["basic_sprout"],
+            },
+        )
+        db.add(outfit)
+        await db.flush()
+        owned = UserItem(user_id=user_id, item_id=outfit.id)
+        db.add(owned)
+        await db.flush()
+        db.add(
+            FarmLayout(
+                user_id=user_id,
+                version=1,
+                layout={"wardrobe_user_item_id": owned.id},
+            )
+        )
+        await db.commit()
+
     invalid_party = await client.post(
         "/adventure/expeditions",
         headers={**headers, "Idempotency-Key": "tutorial-without-guide-0001"},
@@ -207,7 +322,9 @@ async def test_tutorial_uses_fixed_visible_map_and_active_character_with_guide(
     assert len(run["party"]) == 2
     assert run["party"][0]["is_guide"] is False
     assert run["party"][0]["plant_id"] == plant_id
+    assert run["party"][0]["outfit_key"] == "garden-daily"
     assert run["party"][1]["is_guide"] is True
+    assert run["party"][1]["outfit_key"] is None
 
     guide_skill = await client.post(
         f"/adventure/expeditions/{run['run']['id']}/skills",
@@ -303,7 +420,14 @@ async def test_species_signature_skill_uses_its_own_name_and_effect(
     refreshed_actor = next(member for member in run["party"] if not member["is_guide"])
     assert refreshed_actor["skills"]["signature"]["used"] is True
     assert refreshed_actor["skills"]["form"]["available"] is True
-    assert "skill" in {action["type"] for action in run["available_actions"]}
+    assert {action["type"] for action in run["available_actions"]} == {
+        "combat_turn",
+        "retreat",
+    }
+    assert (
+        run["current_event"]["battle"]["party"][0]["kit"]["skill"]["name"]
+        == "온기 지휘"
+    )
 
 
 async def test_region_cap_preserves_raw_stats_and_uses_effective_stats(
@@ -446,3 +570,109 @@ async def test_free_explore_keeps_choices_but_does_not_create_economy_rewards(
             )
         )
         assert item is None
+
+
+async def test_guardian_requires_manual_commands_and_replays_each_round(
+    client, user_tokens, session_factory
+):
+    headers = auth_headers(user_tokens)
+    plant_id = await _prepare_stage_two(
+        session_factory,
+        user_tokens["user"]["id"],
+    )
+    run = await _reach_guardian(
+        client,
+        headers,
+        await _start(client, headers, plant_id),
+        "manual-contract",
+    )
+    battle = run["current_event"]["battle"]
+    assert battle["round"] == 1
+    assert battle["enemy"]["intent"]["target"] == "front"
+    assert {action["type"] for action in run["available_actions"]} == {
+        "combat_turn",
+        "retreat",
+    }
+
+    legacy = await client.post(
+        f"/adventure/expeditions/{run['run']['id']}/choices",
+        headers=headers,
+        json={
+            "choice_code": "answer_together",
+            "acting_member_id": run["party"][0]["id"],
+            "expected_revision": run["run"]["revision"],
+            "client_action_id": "manual-legacy-choice",
+        },
+    )
+    assert legacy.status_code == 409
+    assert legacy.json()["code"] == "EXPEDITION_COMBAT_COMMAND_REQUIRED"
+
+    revision = run["run"]["revision"]
+    commands = [
+        {"member_id": member["member_id"], "action": "attack"}
+        for member in battle["party"]
+        if member["hp"] > 0
+    ]
+    body = {
+        "commands": commands,
+        "expected_revision": revision,
+        "client_action_id": "manual-turn-replay-0001",
+    }
+    first = await client.post(
+        f"/adventure/expeditions/{run['run']['id']}/combat/turns",
+        headers=headers,
+        json=body,
+    )
+    replay = await client.post(
+        f"/adventure/expeditions/{run['run']['id']}/combat/turns",
+        headers=headers,
+        json=body,
+    )
+    assert first.status_code == replay.status_code == 200
+    assert first.json() == replay.json()
+    assert first.json()["current_event"]["battle"]["round"] == 2
+    assert any(
+        event["type"] == "enemy_action"
+        for event in first.json()["last_combat_exchange"]
+    )
+
+
+async def test_guardian_defeat_forces_safe_return_and_loses_carried_rewards(
+    client, user_tokens, session_factory
+):
+    headers = auth_headers(user_tokens)
+    plant_id = await _prepare_stage_two(
+        session_factory,
+        user_tokens["user"]["id"],
+    )
+    run = await _reach_guardian(
+        client,
+        headers,
+        await _start(client, headers, plant_id),
+        "manual-defeat",
+    )
+    for turn in range(1, 7):
+        battle = run["current_event"]["battle"]
+        run = await _action(
+            client,
+            headers,
+            run,
+            "combat/turns",
+            {
+                "commands": [
+                    {"member_id": member["member_id"], "action": "guard"}
+                    for member in battle["party"]
+                    if member["hp"] > 0
+                ]
+            },
+            f"manual-defeat-turn-{turn:04d}",
+        )
+        if run["run"]["status"] != "active":
+            break
+
+    assert run["run"]["status"] == "safe_returned"
+    assert run["summary"]["reason"] == "guardian_defeat"
+    assert run["summary"]["reward"] is None
+    active = await client.get("/adventure/expeditions/active", headers=headers)
+    assert active.status_code == 200
+    assert active.json()["expedition"] is None

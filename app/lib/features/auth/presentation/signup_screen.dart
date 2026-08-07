@@ -68,6 +68,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final nickname = _nicknameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text;
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _submitting = true;
       _errorMessage = null;

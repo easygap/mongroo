@@ -7,6 +7,7 @@ from app.core.db import get_db
 from app.models.user import User
 from app.schemas.requests import (
     ExpeditionChoiceRequest,
+    ExpeditionCombatTurnRequest,
     ExpeditionFinishRequest,
     ExpeditionMoveRequest,
     ExpeditionSkillRequest,
@@ -139,6 +140,25 @@ async def use_expedition_skill(
         member_id=body.member_id,
         skill_type=body.skill_type,
         mode_code=body.mode_code,
+        expected_revision=body.expected_revision,
+        client_action_id=body.client_action_id,
+    )
+    await db.commit()
+    return result
+
+
+@router.post("/{run_id}/combat/turns")
+async def resolve_expedition_combat_turn(
+    run_id: int,
+    body: ExpeditionCombatTurnRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await expedition_service.resolve_combat_turn(
+        db,
+        user.id,
+        run_id,
+        commands=[command.model_dump() for command in body.commands],
         expected_revision=body.expected_revision,
         client_action_id=body.client_action_id,
     )

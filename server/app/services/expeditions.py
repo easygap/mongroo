@@ -17,6 +17,12 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import AppError
+from app.content.expeditions.combat import (
+    CombatRuleError,
+    guardian_battle_payload,
+    new_guardian_battle,
+    resolve_guardian_round,
+)
 from app.content.expeditions.skills import skill_definition
 from app.content.expeditions.validator import expand_map_templates, validate_content
 from app.core.config import get_settings
@@ -35,6 +41,7 @@ from app.models.expedition import (
     UserRegionProgress,
     UserActiveExpedition,
 )
+from app.models.game import FarmLayout, Item, UserItem
 from app.models.mood import MoodEntry
 from app.models.plant import Plant, PlantSpecies
 from app.models.reward import RewardEvent
@@ -112,7 +119,11 @@ def _bounded_stats(raw_stats: dict[str, int], stat_cap: int | None) -> dict[str,
 
 
 def _plant_snapshot(
-    plant: Plant, species: PlantSpecies, *, stat_cap: int | None = None
+    plant: Plant,
+    species: PlantSpecies,
+    *,
+    stat_cap: int | None = None,
+    outfit_key: str | None = None,
 ) -> dict:
     stage = stage_from_exp(plant.exp)
     form = _growth_form(plant)
@@ -129,6 +140,7 @@ def _plant_snapshot(
         "raw_stats": raw_stats,
         "effective_stats": effective_stats,
         "stat_cap": stat_cap,
+        "outfit_key": outfit_key,
         "asset_manifest": species.asset_manifest or {},
     }
 
@@ -146,8 +158,33 @@ def _guide_snapshot(position: int, *, stat_cap: int | None = None) -> dict:
         "raw_stats": raw_stats,
         "effective_stats": effective_stats,
         "stat_cap": stat_cap,
+        "outfit_key": None,
         "asset_manifest": {},
     }
+
+
+async def _equipped_outfit_key(db: AsyncSession, user_id: int) -> str | None:
+    layout = await db.scalar(
+        sa.select(FarmLayout.layout).where(FarmLayout.user_id == user_id)
+    )
+    if not isinstance(layout, dict):
+        return None
+    user_item_id = layout.get("wardrobe_user_item_id")
+    if not isinstance(user_item_id, int) or isinstance(user_item_id, bool):
+        return None
+    manifest = await db.scalar(
+        sa.select(Item.asset_manifest)
+        .join(UserItem, UserItem.item_id == Item.id)
+        .where(
+            UserItem.id == user_item_id,
+            UserItem.user_id == user_id,
+            Item.type == "wardrobe",
+        )
+    )
+    if not isinstance(manifest, dict):
+        return None
+    key = manifest.get("wardrobe_layer_key")
+    return key.strip() if isinstance(key, str) and key.strip() else None
 
 
 async def _diary_ready(db: AsyncSession, user_id: int, local_date) -> bool:
@@ -350,6 +387,44 @@ def _member_payload(
     }
 
 
+def _combat_profiles(
+    members: list[ExpeditionPartyMember],
+) -> list[dict[str, Any]]:
+    """ORM 객체를 순수 전투 엔진이 읽는 불변 입력 형태로 좁힌다."""
+
+    return [
+        {
+            "id": member.id,
+            "position": member.position,
+            "is_guide": member.is_guide,
+            "snapshot": member.snapshot,
+        }
+        for member in members
+    ]
+
+
+def _guardian_battle_state(
+    run: ExpeditionRun,
+    event_code: str,
+    event: dict[str, Any],
+    members: list[ExpeditionPartyMember],
+) -> dict[str, Any]:
+    effects = dict(run.runtime_effects_snapshot or {})
+    battle = effects.get("guardian_battle")
+    if not isinstance(battle, dict) or battle.get("event_code") != event_code:
+        battle = new_guardian_battle(
+            event_code,
+            event["encounter"],
+            _combat_profiles(members),
+        )
+        # 사건 선택을 보조하던 일회성 효과를 전투 뒤까지 흘려 보내지 않는다.
+        # 전투용 고유 스킬은 라운드 명령 안에서 별도 자원으로 계산한다.
+        effects.pop("pending_skill", None)
+        effects["guardian_battle"] = battle
+        run.runtime_effects_snapshot = effects
+    return battle
+
+
 def _choice_preview(choice: dict, member: ExpeditionPartyMember, effects: dict) -> dict:
     stat = choice.get("stat")
     if stat is None:
@@ -424,11 +499,38 @@ async def run_payload(db: AsyncSession, run: ExpeditionRun) -> dict:
         )
 
     current_state = states[run.current_node_code]
-    skill_pending = bool(
-        (run.runtime_effects_snapshot or {}).get("pending_skill")
+    last_resolution = (
+        current_state.story_snapshot
+        if current_state.event_code
+        and current_state.status == "resolved"
+        and isinstance(current_state.story_snapshot, dict)
+        else None
+    )
+    battle_snapshot = (run.runtime_effects_snapshot or {}).get("guardian_battle")
+    last_combat_exchange = (
+        battle_snapshot.get("last_exchange", [])
+        if isinstance(battle_snapshot, dict)
+        and battle_snapshot.get("event_code") == current_state.event_code
+        else []
     )
     current_event = None
     event = _event(run, current_state.event_code)
+    guardian_battle = None
+    if (
+        run.status == "active"
+        and run.phase == "awaiting_event"
+        and event
+        and isinstance(event.get("encounter"), dict)
+        and event["encounter"].get("kind") == "guardian"
+        and current_state.event_code
+    ):
+        guardian_battle = _guardian_battle_state(
+            run,
+            current_state.event_code,
+            event,
+            members,
+        )
+    skill_pending = bool((run.runtime_effects_snapshot or {}).get("pending_skill"))
     if run.status == "active" and run.phase == "awaiting_event" and event:
         pending_skill = (run.runtime_effects_snapshot or {}).get("pending_skill") or {}
         current_event = {
@@ -436,6 +538,16 @@ async def run_payload(db: AsyncSession, run: ExpeditionRun) -> dict:
             "node_code": current_state.node_code,
             "title": event["title"],
             "text": event["text"],
+            "encounter": event.get("encounter"),
+            "battle": (
+                guardian_battle_payload(
+                    guardian_battle,
+                    event["encounter"],
+                    _combat_profiles(members),
+                )
+                if guardian_battle is not None
+                else None
+            ),
             "skill_hint": pending_skill.get("story_hint"),
             "spotlight_member_id": next(
                 (
@@ -502,9 +614,12 @@ async def run_payload(db: AsyncSession, run: ExpeditionRun) -> dict:
             available.append({"type": "skill"})
         available.append({"type": "retreat"})
     elif run.status == "active" and run.phase == "awaiting_event":
-        available.append({"type": "choice"})
-        if not skill_pending:
-            available.append({"type": "skill"})
+        if guardian_battle is not None:
+            available.extend(({"type": "combat_turn"}, {"type": "retreat"}))
+        else:
+            available.append({"type": "choice"})
+            if not skill_pending:
+                available.append({"type": "skill"})
 
     loots = list(
         (
@@ -541,6 +656,8 @@ async def run_payload(db: AsyncSession, run: ExpeditionRun) -> dict:
             "edges": run.map_snapshot["edges"],
         },
         "current_event": current_event,
+        "last_resolution": last_resolution,
+        "last_combat_exchange": last_combat_exchange,
         "available_actions": available,
         "run_thread": run.run_thread_snapshot,
         "memory": run.run_memory_snapshot,
@@ -686,6 +803,14 @@ async def start_run(
     db.add(UserActiveExpedition(user_id=user_id, run_id=run.id))
 
     members: list[ExpeditionPartyMember] = []
+    active_plant_id = next(
+        (plant.id for plant, _ in rows if plant.status == PlantStatus.ACTIVE), None
+    )
+    equipped_outfit_key = (
+        await _equipped_outfit_key(db, user_id)
+        if active_plant_id in plant_ids
+        else None
+    )
     position = 0
     for plant_id in plant_ids:
         plant, species = by_id[plant_id]
@@ -698,6 +823,9 @@ async def start_run(
                 plant,
                 species,
                 stat_cap=int(content["region"].get("stat_cap", 7)),
+                outfit_key=(
+                    equipped_outfit_key if plant.id == active_plant_id else None
+                ),
             ),
         )
         db.add(member)
@@ -1001,6 +1129,14 @@ async def choose(
     )
     if state is None or event is None or choice is None:
         raise AppError(422, "EXPEDITION_CHOICE_INVALID", "선택지를 찾을 수 없습니다.")
+    if isinstance(event.get("encounter"), dict) and event["encounter"].get(
+        "kind"
+    ) == "guardian":
+        raise AppError(
+            409,
+            "EXPEDITION_COMBAT_COMMAND_REQUIRED",
+            "수호전에서는 탐험대 전원의 행동과 순서를 직접 정해 주세요.",
+        )
     member = await db.scalar(
         sa.select(ExpeditionPartyMember).where(
             ExpeditionPartyMember.id == acting_member_id,
@@ -1024,6 +1160,8 @@ async def choose(
         if applies and (not allowed_stats or effective_stat in allowed_stats)
         else 0
     )
+    resolve_before = run.resolve
+    resolve_loss = 0
     if choice.get("safe"):
         outcome = "safe"
         score = 0
@@ -1066,11 +1204,15 @@ async def choose(
     state.outcome_code = outcome
     state.acting_member_id = member.id
     state.story_snapshot = {
+        "event_code": state.event_code,
         "title": event["title"],
         "choice": choice["label"],
         "outcome": _OUTCOME_LABELS[outcome],
         "score": score,
         "stat": effective_stat,
+        "actor_name": member.snapshot.get("name", "탐험대원"),
+        "resolve_before": resolve_before,
+        "resolve_after": run.resolve,
         "skill_code": pending.get("skill_code") if applies else None,
     }
     memory = dict(run.run_memory_snapshot)
@@ -1098,6 +1240,138 @@ async def choose(
         db,
         run,
         action_type="choice",
+        client_action_id=client_action_id,
+        expected_revision=expected_revision,
+        request_payload=request_payload,
+    )
+
+
+async def resolve_combat_turn(
+    db: AsyncSession,
+    user_id: int,
+    run_id: int,
+    *,
+    commands: list[dict[str, Any]],
+    expected_revision: int,
+    client_action_id: str,
+) -> dict:
+    """플레이어가 예약한 한 라운드를 서버 권위로 해결한다."""
+
+    run = await _lock_run(db, user_id, run_id)
+    request_payload = {
+        "commands": commands,
+        "expected_revision": expected_revision,
+    }
+    replay = await _existing_action(
+        db,
+        run,
+        client_action_id,
+        "combat_turn",
+        request_payload,
+    )
+    if replay is not None:
+        return replay
+    _check_revision(run, expected_revision)
+    if run.phase != "awaiting_event":
+        raise AppError(409, "EXPEDITION_COMBAT_MISSING", "진행 중인 수호전이 없습니다.")
+
+    node_state = await db.scalar(
+        sa.select(ExpeditionNodeState).where(
+            ExpeditionNodeState.run_id == run.id,
+            ExpeditionNodeState.node_code == run.current_node_code,
+        )
+    )
+    event = _event(run, node_state.event_code if node_state else None)
+    encounter = (event or {}).get("encounter")
+    if (
+        node_state is None
+        or event is None
+        or not isinstance(encounter, dict)
+        or encounter.get("kind") != "guardian"
+        or not node_state.event_code
+    ):
+        raise AppError(409, "EXPEDITION_COMBAT_MISSING", "진행 중인 수호전이 없습니다.")
+
+    members = await _party_rows(db, run.id)
+    battle = _guardian_battle_state(run, node_state.event_code, event, members)
+    try:
+        resolved = resolve_guardian_round(
+            battle,
+            commands,
+            encounter,
+            _combat_profiles(members),
+        )
+    except CombatRuleError as error:
+        raise AppError(422, error.code, error.message) from error
+
+    effects = dict(run.runtime_effects_snapshot or {})
+    effects["guardian_battle"] = resolved
+    effects.pop("pending_skill", None)
+    run.runtime_effects_snapshot = effects
+
+    if resolved["status"] in {"victory", "defeat"}:
+        party_actions = [
+            item
+            for item in resolved.get("last_exchange", [])
+            if item.get("type") == "party_action"
+        ]
+        actor_names = list(
+            dict.fromkeys(
+                item.get("actor_name", "탐험대원") for item in party_actions
+            )
+        )
+        resolve_before = run.resolve
+        victory = resolved["status"] == "victory"
+        if not victory:
+            run.resolve = max(0, run.resolve - 2)
+        node_state.status = "resolved"
+        node_state.resolved_at = utcnow()
+        node_state.outcome_code = "clear" if victory else "detour"
+        node_state.acting_member_id = (
+            int(party_actions[0]["member_id"]) if party_actions else None
+        )
+        node_state.story_snapshot = {
+            "event_code": node_state.event_code,
+            "title": event["title"],
+            "choice": f"{resolved['round']}라운드 직접 지휘",
+            "outcome": (
+                "수호 장벽을 무너뜨렸어요"
+                if victory
+                else "봉인이 완성돼 긴급 귀환했어요"
+            ),
+            "score": int(resolved["enemy_max_guard"])
+            - int(resolved["enemy_guard"]),
+            "stat": resolved.get("weakness"),
+            "actor_name": ", ".join(actor_names) or "탐험대",
+            "resolve_before": resolve_before,
+            "resolve_after": run.resolve,
+            "skill_code": None,
+            "battle_status": resolved["status"],
+            "combat_rounds": int(resolved["round"]),
+        }
+        memory = dict(run.run_memory_snapshot)
+        memory["outcomes"] = [
+            *memory.get("outcomes", []),
+            {
+                "event_code": node_state.event_code,
+                "member_id": node_state.acting_member_id,
+                **node_state.story_snapshot,
+            },
+        ]
+        run.run_memory_snapshot = memory
+        if len(memory["outcomes"]) == 1:
+            thread = dict(run.run_thread_snapshot)
+            thread.update({"stage": "echo", "current_text": thread["echo"]})
+            run.run_thread_snapshot = thread
+        if victory:
+            run.phase = "exploring"
+        else:
+            await _safe_return(db, run, reason="guardian_defeat")
+
+    return await _finish_action(
+        db,
+        run,
+        action_type="combat_turn",
         client_action_id=client_action_id,
         expected_revision=expected_revision,
         request_payload=request_payload,
@@ -1157,6 +1431,15 @@ async def use_skill(
     if replay is not None:
         return replay
     _check_revision(run, expected_revision)
+    if (
+        run.phase == "awaiting_event"
+        and _node_defs(run)[run.current_node_code]["type"] == "guardian"
+    ):
+        raise AppError(
+            409,
+            "EXPEDITION_COMBAT_SKILL_COMMAND_REQUIRED",
+            "수호전 고유 스킬은 라운드 행동으로 예약해 주세요.",
+        )
     member = await db.scalar(
         sa.select(ExpeditionPartyMember).where(
             ExpeditionPartyMember.id == member_id,

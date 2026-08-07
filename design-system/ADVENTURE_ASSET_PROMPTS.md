@@ -191,6 +191,201 @@ Constraints: no people, creatures, path lines, nodes, icons, UI, letters, number
 Avoid: photorealism, glossy 3D, neon, magical runes, ornate gold, excessive flowers, perfect symmetry, dramatic fog, AI-overdecorated clutter.
 ```
 
+### 이끼 기억서고 통합 탐험 지형 v2 — 사용 중단
+
+- 생성 방식: 2026-08-06 내장 ImageGen `stylized-concept` 편집 생성
+- 스타일 참조: `app/assets/adventure/expedition-moss-archive-map.webp`
+- 프로젝트 출력: `app/assets/adventure/expedition-moss-archive-terrain-v2.webp`,
+  1600×900 RGB WebP, 품질 88
+- 좌표 계약: 입구 `(.08,.50)`, 침수 동굴 `(.28,.27)`, 뿌리 땅굴
+  `(.29,.72)`, 메아리 우물 `(.49,.19)`, 보물고 `(.50,.81)`, 장부지기
+  소굴 `(.69,.50)`, 등반 탑 `(.84,.34)`, 귀환 터널 `(.93,.67)`
+- 런타임 금지: 배경 pan·scale·parallax. 비콘과 캐릭터 좌표가 원화의 랜드마크에서
+  벗어나기 때문이다. 안개·광점처럼 위치 의미가 없는 overlay만 허용한다.
+
+```text
+Use case: stylized-concept
+Asset type: production-ready mobile game exploration environment map background
+Primary request: Rebuild the referenced Moss Archive into one continuous explorable terrain. Physically embed a vine-covered garden gate, flooded cave mouth and stream, root-burrow mine, moonlit ruined well, half-buried treasure vault, moss-stone guardian den, climbable tree archive tower, and return tunnel at the contracted normalized coordinates. Connect them with believable winding paths, stepping stones, root bridges, stream crossings, ledges, and shortcuts. The entrance forks into upper and lower routes, reconnects at the guardian, then continues to tower and exit.
+Style/medium: premium Korean mobile fantasy RPG environment painting, semi-realistic hand-painted storybook finish, grounded materials, teal-green shadow and restrained amber practical light; match the reference's visual language without copying its layout.
+Composition/framing: 16:9 high oblique three-quarter map view, almost top-down, one continuous terrain with readable elevation and landmark silhouettes.
+Constraints: environment only; no people, text, labels, UI, icons, map pins, circular node platforms, arrows, dotted route lines, isolated thumbnail landmarks, logos, watermark, gore, or modern objects.
+```
+
+v2는 반실사 질감과 개별 잎·돌의 미세 묘사가 346×195에서 모래처럼 뭉개져 더 이상
+런타임에서 사용하지 않는다. 원본은 비교와 회귀 검수용으로만 보존한다.
+
+### 이끼 기억서고 통합 탐험 지형·현장 원화 v3
+
+- 생성 방식: 2026-08-06 내장 ImageGen 신규 생성 후 같은 구도를 참조한 `image-to-image`
+  단순화 편집. 기존 v2는 스타일 참조에서 제외
+- 스타일 참조: `patrol-garden-path.webp`와 실제 홈 캡처는 팔레트·캐릭터 크기만 참조
+- 통합 지형 출력: `expedition-moss-archive-terrain-v3.webp`
+- 현장 출력: `expedition-{dungeon-gate|flooded-cave|root-tunnel|echo-well|
+  treasure-vault|monster-den|moon-tower}-v3.webp`
+- 원본 생성 이력: 아래 `exec-*` 식별자와 최종 프롬프트로 추적
+- 마감: `finalize_expedition_art.py`, 1600×900, median 3×3, 192색 no-dither,
+  WebP quality 92
+
+초안은 지형 구조는 통과했지만 작은 잎·돌·이끼가 390px 화면에서 고주파 얼룩으로
+합쳐졌다. 최종본은 랜드마크와 통로를 고정한 채 아래 편집 지시로 한 번 더 단순화했다.
+
+```text
+Preserve the exact camera, landmark positions, route topology, entrances and walkable paths.
+Restyle as a production-ready clean 2D cozy fantasy mobile-game environment with confident
+smooth outlines, broad flat color planes, grouped foliage masses, simple two-step cel shading
+and strong readable silhouettes. Replace tiny repeated leaves, pebble marks, moss flecks and
+painterly chatter with a few intentional clusters and large clean surfaces. Every route and
+landmark must read at 390 px phone width. Absolutely no grain, stippling, canvas texture,
+watercolor bloom, fuzzy edges, pseudo-text, UI, particles or random decorative micro-detail.
+```
+
+최종 편집 원본은 통합 지형 `exec-a7b2e9e5-db87-4395-934a-2279da02443f.png`, 석문
+`exec-7e4d9045-fce7-4cde-9ed7-e9144b950fce.png`, 침수 동굴
+`exec-79d5a4a4-0ccd-4dec-809c-2414d92bf769.png`, 뿌리 땅굴
+`exec-a448f8fe-f4b7-4a79-8f0f-a8ed480f139a.png`, 수호자 소굴
+`exec-ccc8e443-706e-46ff-8621-0e0cbb6103d9.png`, 보물고
+`exec-4007931f-b2fe-49f7-b4c5-84792e344c3e.png`, 등반 탑
+`exec-6bb72361-6678-45cf-9df9-6670003b6b92.png`, 메아리 우물
+`exec-a07d6a7e-6948-4e5f-aa7a-64fd194bd089.png`이다.
+
+통합 지형 최종 프롬프트는 다음과 같다.
+
+```text
+Use case: stylized-concept
+Asset type: production 16:9 mobile-game explorable region map background for a 390 px wide Flutter viewport
+Input images: Image 1 is a palette and broad-shape reference for the game's warm botanical environment; Image 2 is a UI and character-scale reference. Do not copy either composition, UI, text, or objects.
+Primary request: Create one coherent, navigable "Moss Memory Archive" region as a clean authored 2.5D isometric diorama. A stone garden gate enters from the far left center and the dirt path physically forks into two routes. The upper route passes a clearly open flooded cave mouth and turquoise stream, then a ruined circular echo well. The lower route passes a timber-supported root burrow and a half-buried stone treasure vault with one shut chest visible through its doorway. Both routes reconnect at a large moss-covered guardian nest in the center-right. A substantial climbable archive tower grown around a tree stands at upper-right, with exterior stairs and three readable landings. A return tunnel opens at lower-right. Every landmark must be built into the terrain with rock foundations, roots, stairs, bridges, water flow, and continuous walkable paths — never isolated symbols or icon platforms.
+Style/medium: clean hand-drawn mobile-game environment art, crisp dark-warm-brown ink contours, matte flat gouache shapes, restrained 2.5D cel shading, exactly three value bands per material, limited harmonious palette of sage green, moss, warm cream stone, muted teal water, charcoal shadow and amber lamps. Friendly storybook adventure tone compatible with a cute plant-character game.
+Composition/framing: 16:9 landscape, high three-quarter isometric view, full region visible at once, strong large silhouettes, landmarks positioned approximately at entrance (.08,.50), cave (.28,.27), root tunnel (.29,.72), well (.49,.19), treasure vault (.50,.81), guardian den (.69,.50), tower (.84,.34), return tunnel (.93,.67). Keep every landmark at least 10% of image height and every playable path at least 3% of image height so they remain readable when displayed at 346x195.
+Lighting/mood: clear moonlit garden evening with generous midtone visibility and small warm practical lights; mysterious but safe, inviting, and cute rather than grim.
+Constraints: environment only; no people, characters, creatures, UI, text, labels, letters, runes, icons, pins, circles under landmarks, arrows, dotted routes, logos, watermark. No fake micro-detail. Use grouped foliage masses, not thousands of individual leaves.
+Avoid: photorealism, cinematic concept art, generic fantasy wallpaper, glossy 3D, painterly brush noise, canvas grain, film grain, stippling, speckles, scratch texture, tiny repeated foliage, hyper-detailed rubble, ornate filigree, muddy values, crushed blacks, dramatic fog, bloom haze, neon, AI over-decoration, incoherent stairs or impossible architecture.
+```
+
+현장 일곱 장은 아래 공통 프롬프트와 장면별 `Primary request`를 결합한다.
+
+```text
+Use case: stylized-concept
+Asset type: production 16:9 mobile-game traversal or encounter background, displayed at about 346x195
+Input image: the approved v3 region map is an art-direction reference only. Match its limited sage/cream/teal/amber palette, crisp warm-brown contours, matte flat shapes and friendly 2.5D isometric world. Do not copy its layout.
+Style/medium: clean hand-drawn mobile-game environment art, crisp consistent ink contours, flat matte gouache blocks, restrained 2.5D cel shading with exactly three value bands per material, large authored shapes, limited palette, friendly all-ages storybook adventure.
+Constraints: environment only except the sleeping guardian in monster_den; no people, player characters, UI, text, labels, letters, runes, icons, arrows, logos or watermark. Group foliage, roots and stones into large simple masses.
+Avoid: photorealism, generic cinematic concept art, glossy 3D, brush noise, grain, speckles, stippling, scratch texture, tiny repeated foliage, hyper-detailed rubble, ornate clutter, muddy values, crushed blacks, opaque fog, bloom, AI over-decoration, impossible stairs or disconnected paths.
+```
+
+| 키 | 장면별 최종 `Primary request` |
+|---|---|
+| `dungeon_gate` | 넓은 정원길이 낮은 언덕의 이끼 석문으로 이어지고 철문은 열린다. 문 안의 넓은 계단이 지하로 내려가며 굵은 뿌리 뒤 측면 정비 통로와 두 실용 등불, 하단 3인 대기 바닥이 보여야 한다. |
+| `flooded_cave` | 상단 동굴 입구에서 터콰이즈 물길이 하단까지 흐른다. 큰 디딤돌 길과 오른쪽 뿌리·판자 다리 길, 왼쪽 마른 쉼터가 서로 실제로 연결되고 수정·버섯은 큰 묶음만 둔다. |
+| `root_tunnel` | 하단 진입로와 굵은 뿌리 천장, 목재 지주, 중앙 광차 레일이 상단 작업실로 이어진다. 레일은 왼쪽 낮은 굴과 오른쪽 판자 경사로로 갈라지고 빈 수레 한 대와 등불 세 개만 둔다. |
+| `echo_well` | 중앙 원형 우물과 좁은 수로, 우물을 도는 길이 왼쪽 디딤돌과 오른쪽 뿌리 다리로 갈라진다. 빈 청음 그릇 세 개와 등불이 있는 쉼터, 하단 대기 바닥을 둔다. |
+| `treasure_vault` | 하단 석재 통로와 압력판 세 개가 중앙의 닫힌 씨앗 상자로 이어진다. 뒤에는 열린 표본 벽감, 잠긴 철창 금고, 봉인 석문이 구분되고 오른쪽에 작은 선택 보관함 하나만 둔다. 의사 문자는 0이어야 한다. |
+| `monster_den` | 하단과 중앙은 전투 이펙트를 위한 넓은 빈 바닥이다. 상단 둥지에는 단순한 거북형 이끼 돌 수호자가 잠들고, 좌우 출구·발톱 흔적 하나·부서진 실용 목책만 둔다. 해부학적 묘사와 공포 요소는 금지한다. |
+| `moon_tower` | 거대한 나무 내부 절개도에 하나의 연속 나선 계단과 정확히 세 착륙장을 둔다. 1층 원형문, 2층 열린 발코니, 3층 달빛 관측대와 1층에 멈춘 로프 승강기가 물리적으로 연결돼야 한다. |
+
+보물고 초안의 왼쪽 의사 문자 액자는 `precise-object-edit`로 같은 돌벽과 넓은 잎 식물로
+교체했고 나머지 구도·상자·압력판·금고는 고정했다.
+
+### 장부지기 수호전 분리 레이어 v1
+
+- 빈 무대 출력: `app/assets/adventure/expedition-monster-den-battle-v1.webp`
+- 수호자 출력: `app/assets/adventure/ledger-keeper-{idle|attack|hit|defeated}-v1.webp`
+- 빈 무대 편집 원본: `exec-d14b975b-26bb-4b4c-811d-99479d04455c.png`
+- idle 원본: `exec-6491ce52-04df-45bc-b201-15ee7cc66b22.png`
+- attack 원본: `exec-ed4abd54-a1fc-4dae-996f-fc26dd8b8ccf.png`
+- hit 원본: `exec-b56f844e-c096-46a4-91ee-84e4bd4754af.png`
+- defeated 원본: `exec-07319eb4-f6f0-49a1-a64a-7d01ae8c1307.png`
+- 원본 생성 이력: 위 `exec-*` 식별자와 최종 프롬프트로 추적
+
+빈 무대는 승인된 `monster-den-v3`를 참조해 잠든 수호자만 제거했다. 둥지, 통로, 목책,
+팔레트, 카메라와 넓은 하단 전투 바닥은 고정했으며 새로운 장식을 생성하지 않았다.
+수호자는 같은 이끼 돌거북 개체를 깨어 있는 idle, 앞발을 들어 기록 파동을 준비하는
+attack, 왼쪽에서 충돌을 받아 오른쪽으로 반응하는 hit, 장벽이 풀려 안전하게 몸을 낮춘
+defeated 한 자세씩 생성했다. defeated는 죽거나 다친 모습이 아니라 길을 내주는 종료
+상태다. 네 자세 모두 그림자·이펙트·글자 없이 `#FF00FF` 단색 배경을 사용했다.
+
+```text
+Keep the exact same friendly moss-and-stone turtle guardian identity, shell silhouette,
+sage/cream/teal palette, warm-brown outline weight, three-value cel shading and front-left
+arena light in both poses. Draw one isolated full-body mobile-game cutout centered with every
+limb and shell edge visible. For idle, eyes are open and alert with a grounded readable stance.
+For attack, lift one foreleg and lean forward in a clear anticipation pose for a cyan record-wave
+counterattack; do not draw the wave itself. Flat solid #FF00FF background only. No ground shadow,
+particles, UI, letters, pseudo-text, extra limbs, grain, speckles, ornate micro-detail or watermark.
+```
+
+hit과 defeated는 승인된 idle/attack 두 장을 동시에 참조한 내장 ImageGen
+image-to-image로 만들었다. 사용 프롬프트는 다음과 같다.
+
+```text
+Keep the exact same friendly stone-scale ledger keeper from both reference images: same mossy
+shell silhouette, face, sage/cream/teal palette, warm-brown outline, three-value painted cel
+shading and front-left light. Create one strong HIT-REACTION pose, struck from screen-left and
+recoiling toward screen-right, eyes safely squeezed shut, with only 4-6 large readable stone
+chips. Keep the complete body and every limb inside the canvas. Flat solid #FF00FF background.
+No floor shadow, text, UI, blood, wound, weapon, extra limb, glossy 3D finish, noisy grain,
+micro-detail, fake letters or watermark.
+```
+
+```text
+Keep the exact same friendly stone-scale ledger keeper from both reference images: same mossy
+shell silhouette, face, sage/cream/teal palette, warm-brown outline, three-value painted cel
+shading and front-left light. Create one BARRIER-BROKEN resolution pose: safely yielded rather
+than injured or dead, crouched low with a readable dizzy spiral-eye expression, two or three
+cyan barrier cracks and only a few large stone chips. Keep the complete body inside the canvas.
+Flat solid #FF00FF background. No floor shadow, text, UI, blood, wound, weapon, extra limb,
+glossy 3D finish, noisy grain, micro-detail, fake letters or watermark.
+```
+
+수호자 원본은 `remove_chroma_key.py --auto-key border --soft-matte`로 알파 분리한 뒤
+동일한 3×3 median·192색 no-dither·WebP 마감을 적용했다. 최종 파일은 `VP8X` alpha
+플래그와 0 alpha 모서리를 검사하며, 346×195 앱 렌더에서 분홍 fringe와 자글거림이
+없어야 한다. 빈 배경과 네 수호자 자세는 각각 독립 프리로드하고 런타임에서 합성한다.
+
+### 직접 이동 장소용 2.5D 배경 v2 — 사용 중단
+
+- 생성 방식: 2026-08-05 내장 ImageGen `stylized-concept` 신규 생성
+- 스타일 참조: `app/assets/adventure/expedition-moss-archive-map.webp`
+  한 장을 스타일 참조로만 사용하고 구도와 오브젝트는 복제하지 않음
+- 프로젝트 출력: 1600×900 RGB WebP, 품질 84
+- 공통 구도: 16:9 가로, 중앙 안전 크롭, 하단 UI 영역과 모바일 세로 화면에서도
+  심도·통로·핵심 랜드마크가 읽히도록 중앙 60% 안에 배치
+- 공통 제약: 인물, 캐릭터, UI, 아이콘, 글자, 의사 문자, 로고,
+  워터마크 없음. 사진풍·글로시 3D·네온·장식 과밀·과도한 안개 금지
+- 아래 파일은 비교용으로 보존하며 런타임은 같은 이름의 `-v3.webp`를 사용한다.
+
+| `scene_key` | 프로젝트 출력 | 핵심 장면 |
+|---|---|---|
+| `dungeon_gate` | `app/assets/adventure/expedition-dungeon-gate.webp` | 버려진 유리온실 아래의 석문·우리문·횟불·깊은 계단 |
+| `flooded_cave` | `app/assets/adventure/expedition-flooded-cave.webp` | 터콰이즈 빛 침수 동굴·수정·발광 균류·디딘돌·두 통로 |
+| `root_tunnel` | `app/assets/adventure/expedition-root-tunnel.webp` | 목재 지주·굵은 뿌리·광차 레일·제한된 랜턴·측면 굴 |
+| `monster_den` | `app/assets/adventure/expedition-monster-den.webp` | 뿌리 둥지·발톱 흔적·임시 방어물·잠든 이끼 돌비늘 수호자 |
+| `treasure_vault` | `app/assets/adventure/expedition-treasure-vault.webp` | 중앙의 큰 발광 보물상자·잠긴 측면 금고·표본·씨앗 보석 |
+| `moon_tower` | `app/assets/adventure/expedition-moon-tower.webp` | 거대 나무 내부·중앙 나선 계단·3개 이상 착륙장·층별 문·달빛 |
+
+공통 최종 프롬프트 헤더는 다음과 같다.
+
+```text
+Use case: stylized-concept
+Asset type: production Flutter mobile game exploration environment background
+Input image: style reference only. Preserve the warm hand-painted botanical dark-fantasy language, matte 2.5D depth, restrained practical detail, and readable large shapes. Do not copy the reference layout or objects.
+Composition/framing: 16:9 landscape, center-safe mobile crop, readable traversal depth and landmark, lower UI-safe band, premium released-game environment quality.
+Constraints: environment only; no people, characters, UI, icons, readable text, pseudo-text, logos, or watermark.
+Avoid: photorealism, glossy generic 3D, neon, decorative clutter, excessive filigree, and opaque cinematic fog.
+```
+
+각 파일은 공통 헤더에 다음 장면 지시를 결합해 생성했다.
+
+```text
+dungeon_gate: An abandoned glasshouse ruin above a deep underground stone gate, a closed iron portcullis, descending stairs, two warm torches, moss and roots. The gate and stair depth are the unmistakable focal point.
+flooded_cave: A turquoise flooded cavern with shallow reflective water, crystalline formations, bioluminescent fungi, stepping stones, and two clearly readable passages. Safe enough for an all-ages adventure, not a horror cave.
+root_tunnel: A root-filled underground mine tunnel with practical timber supports, an old cart rail, restrained lanterns, and side burrows. Make the traversable tunnel depth and branching route obvious.
+monster_den: A tense root cavern nest with claw marks, broken practical barricades, and one large sleeping plant-and-stone guardian with mossy armor. No gore, exposed anatomy, or horror violence.
+treasure_vault: A sealed botanical vault with one large glowing ornate chest as the central objective, several locked side chests, old relics, coins, and seed gems. Keep the treasure readable without a cluttered loot explosion.
+moon_tower: The interior of a climbable tower grown around a giant tree, with one continuous central spiral staircase, at least three visible landings, distinct floor doors, high moonlight, and clear upward progression for a future tower-climb mode.
+```
+
 ## 메아리 우물정원
 
 - 프로젝트 출력: `app/assets/adventure/dungeon-echo-well.webp`
@@ -252,3 +447,14 @@ Materials/textures: rough living bark, worn matte wood, aged stone, brushed mute
 Constraints: no people, no characters, no creatures, no readable text, no letters, no numbers, no logos, no UI, no watermark; believable safe conservatory construction; large simple shapes; the living tree must look healthy and naturally integrated, not imprisoned or cut.
 Avoid: photorealism, fantasy throne room, boss arena, horror, skulls, weapons, treasure piles, neon, glowing tree, magical runes, floating particles, excessive flowers, excessive gold, ornate filigree, galaxy effects, glossy plastic, dramatic cinematic fog, perfect symmetry.
 ```
+## 탐험 전투 공격 VFX v1
+
+- 생성 방식: 내장 ImageGen, 참조 이미지 기반 2×4 접촉 시트
+- 소스·프롬프트·후처리 계약:
+  `design-system/concepts/adventure-combat-vfx-v1/README.md`
+- 런타임 출력: `app/assets/adventure/effects/{효과}/frame-00.webp` ~
+  `frame-07.webp`
+- 범위: 플레이어 7효과와 장부지기 `enemy_wave`, 총 64프레임
+
+전투 중 공격 모양은 위 래스터 프레임만 사용한다. 캔버스 코드는 바닥 명암과
+입력 전 예고 범위처럼 에셋 정체성을 갖지 않는 보조 UI에만 허용한다.

@@ -174,6 +174,25 @@ class ExpeditionSkillRequest(ExpeditionActionRequest):
     )
 
 
+class ExpeditionCombatCommand(BaseModel):
+    member_id: int = Field(ge=1)
+    action: str = Field(pattern="^(attack|skill|guard)$")
+
+
+class ExpeditionCombatTurnRequest(ExpeditionActionRequest):
+    commands: list[ExpeditionCombatCommand] = Field(min_length=1, max_length=3)
+
+    @field_validator("commands")
+    @classmethod
+    def validate_unique_members(
+        cls, commands: list[ExpeditionCombatCommand]
+    ) -> list[ExpeditionCombatCommand]:
+        member_ids = [command.member_id for command in commands]
+        if len(member_ids) != len(set(member_ids)):
+            raise ValueError("한 라운드에는 대원별 행동을 한 번만 정할 수 있습니다")
+        return commands
+
+
 class ExpeditionFinishRequest(ExpeditionActionRequest):
     pass
 

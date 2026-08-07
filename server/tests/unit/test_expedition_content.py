@@ -46,6 +46,19 @@ def test_moss_archive_has_three_valid_reachable_topologies():
     )
 
 
+def test_map_templates_keep_landmarks_locked_to_the_region_art():
+    templates = expand_map_templates(_content())
+    coordinates = [
+        {
+            node["code"]: (node["x"], node["y"])
+            for node in template["nodes"]
+        }
+        for template in templates
+    ]
+
+    assert all(items == coordinates[0] for items in coordinates[1:])
+
+
 def test_map_selection_is_deterministic_and_uses_all_templates_over_many_seeds():
     content = _content()
     selected: set[str] = set()
@@ -95,6 +108,80 @@ def test_validator_rejects_route_that_bypasses_the_objective():
         validate_content(content)
 
     assert "목표를 거치지 않고 출구" in str(error.value)
+
+
+def test_every_node_has_a_supported_environment_scene():
+    content = _content()
+
+    validate_content(content)
+
+    scenes = {node["scene_key"] for node in content["map"]["nodes"]}
+    assert scenes == {
+        "dungeon_gate",
+        "flooded_cave",
+        "root_tunnel",
+        "echo_well",
+        "treasure_vault",
+        "monster_den",
+        "moon_tower",
+    }
+
+
+def test_validator_rejects_unknown_environment_scene():
+    content = copy.deepcopy(_content())
+    content["map"]["nodes"][0]["scene_key"] = "temporary_icon"
+
+    with pytest.raises(ContentValidationError) as error:
+        validate_content(content)
+
+    assert "지원하지 않는 장면" in str(error.value)
+
+
+def test_guardian_encounter_requires_authoritative_vfx_contract():
+    content = copy.deepcopy(_content())
+    del content["events"]["ledger_keeper"]["choices"][0]["effect_key"]
+
+    with pytest.raises(ContentValidationError) as error:
+        validate_content(content)
+
+    assert "지원하지 않는 전투 이펙트" in str(error.value)
+
+
+def test_guardian_encounter_defines_manual_round_contract():
+    event = _content()["events"]["ledger_keeper"]
+    encounter = event["encounter"]
+
+    assert encounter["kind"] == "guardian"
+    assert encounter["enemy_name"] == "돌비늘 장부지기"
+    assert encounter["enemy_max_guard"] == 100
+    assert encounter["max_rounds"] == 6
+    assert encounter["starting_focus"] < encounter["max_focus"]
+    assert encounter["weakness_cycle"] == [
+        "insight",
+        "care",
+        "courage",
+        "focus",
+    ]
+    assert {intent["target"] for intent in encounter["intents"]} == {
+        "front",
+        "all",
+        "lowest",
+    }
+    assert {choice["effect_key"] for choice in event["choices"]} == {
+        "insight_arc",
+        "care_vines",
+        "safe_guard",
+    }
+
+
+def test_guardian_encounter_rejects_missing_manual_combat_rules():
+    content = copy.deepcopy(_content())
+    content["events"]["ledger_keeper"]["encounter"]["intents"] = []
+
+    with pytest.raises(ContentValidationError) as error:
+        validate_content(content)
+
+    assert "예고 공격이 2개 이상" in str(error.value)
 
 
 def test_all_species_and_growth_forms_have_distinct_non_reward_skills():

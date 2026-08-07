@@ -19,6 +19,7 @@ dependencies:
   fl_chart: ^0.69.0
   uuid: ^4.5.1
   url_launcher: ^6.3.0
+  audioplayers: ^6.8.1
 
 dev_dependencies:
   flutter_test:
@@ -40,6 +41,15 @@ flutter:
     - assets/wardrobe/previews/
     - assets/rooms/
     - assets/adventure/
+    - assets/adventure/effects/care-vines/
+    - assets/adventure/effects/safe-guard/
+    - assets/adventure/effects/ember-arc/
+    - assets/adventure/effects/prism-burst/
+    - assets/adventure/effects/mist-dash/
+    - assets/adventure/effects/insight-arc/
+    - assets/adventure/effects/echo-wave/
+    - assets/adventure/effects/enemy-wave/
+    - assets/adventure/sfx/
     - assets/species/
     - assets/fonts/LICENSE-GothicA1.txt
     - assets/fonts/LICENSE-Galmuri.txt

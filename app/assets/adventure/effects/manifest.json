@@ -1,0 +1,745 @@
+{
+  "version": 1,
+  "layout": {
+    "columns": 2,
+    "rows": 4
+  },
+  "effects": [
+    {
+      "effect_key": "care_vines",
+      "directory": "care-vines",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "removed_tiny_components": 109,
+      "frames": [
+        {
+          "index": 0,
+          "coverage": 0.0181,
+          "bbox": [
+            38,
+            196,
+            174,
+            295
+          ]
+        },
+        {
+          "index": 1,
+          "coverage": 0.0556,
+          "bbox": [
+            28,
+            177,
+            507,
+            296
+          ]
+        },
+        {
+          "index": 2,
+          "coverage": 0.0853,
+          "bbox": [
+            36,
+            112,
+            629,
+            282
+          ]
+        },
+        {
+          "index": 3,
+          "coverage": 0.0999,
+          "bbox": [
+            28,
+            135,
+            726,
+            287
+          ]
+        },
+        {
+          "index": 4,
+          "coverage": 0.1054,
+          "bbox": [
+            36,
+            102,
+            738,
+            258
+          ]
+        },
+        {
+          "index": 5,
+          "coverage": 0.1314,
+          "bbox": [
+            28,
+            79,
+            704,
+            284
+          ]
+        },
+        {
+          "index": 6,
+          "coverage": 0.1898,
+          "bbox": [
+            36,
+            52,
+            739,
+            294
+          ]
+        },
+        {
+          "index": 7,
+          "coverage": 0.062,
+          "bbox": [
+            28,
+            95,
+            722,
+            257
+          ]
+        }
+      ]
+    },
+    {
+      "effect_key": "safe_guard",
+      "directory": "safe-guard",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "removed_tiny_components": 76,
+      "frames": [
+        {
+          "index": 0,
+          "coverage": 0.0145,
+          "bbox": [
+            169,
+            222,
+            341,
+            324
+          ]
+        },
+        {
+          "index": 1,
+          "coverage": 0.0598,
+          "bbox": [
+            36,
+            90,
+            394,
+            326
+          ]
+        },
+        {
+          "index": 2,
+          "coverage": 0.0687,
+          "bbox": [
+            198,
+            110,
+            455,
+            339
+          ]
+        },
+        {
+          "index": 3,
+          "coverage": 0.1373,
+          "bbox": [
+            37,
+            109,
+            294,
+            340
+          ]
+        },
+        {
+          "index": 4,
+          "coverage": 0.1159,
+          "bbox": [
+            199,
+            109,
+            446,
+            317
+          ]
+        },
+        {
+          "index": 5,
+          "coverage": 0.1581,
+          "bbox": [
+            39,
+            97,
+            509,
+            318
+          ]
+        },
+        {
+          "index": 6,
+          "coverage": 0.0942,
+          "bbox": [
+            199,
+            87,
+            418,
+            282
+          ]
+        },
+        {
+          "index": 7,
+          "coverage": 0.0668,
+          "bbox": [
+            40,
+            92,
+            491,
+            282
+          ]
+        }
+      ]
+    },
+    {
+      "effect_key": "ember_arc",
+      "directory": "ember-arc",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "removed_tiny_components": 40,
+      "frames": [
+        {
+          "index": 0,
+          "coverage": 0.0238,
+          "bbox": [
+            112,
+            180,
+            268,
+            302
+          ]
+        },
+        {
+          "index": 1,
+          "coverage": 0.0609,
+          "bbox": [
+            55,
+            143,
+            444,
+            296
+          ]
+        },
+        {
+          "index": 2,
+          "coverage": 0.0861,
+          "bbox": [
+            86,
+            143,
+            635,
+            295
+          ]
+        },
+        {
+          "index": 3,
+          "coverage": 0.1044,
+          "bbox": [
+            47,
+            140,
+            665,
+            297
+          ]
+        },
+        {
+          "index": 4,
+          "coverage": 0.0854,
+          "bbox": [
+            83,
+            115,
+            727,
+            262
+          ]
+        },
+        {
+          "index": 5,
+          "coverage": 0.1479,
+          "bbox": [
+            37,
+            80,
+            676,
+            286
+          ]
+        },
+        {
+          "index": 6,
+          "coverage": 0.2173,
+          "bbox": [
+            66,
+            54,
+            744,
+            277
+          ]
+        },
+        {
+          "index": 7,
+          "coverage": 0.0495,
+          "bbox": [
+            52,
+            113,
+            703,
+            253
+          ]
+        }
+      ]
+    },
+    {
+      "effect_key": "prism_burst",
+      "directory": "prism-burst",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "removed_tiny_components": 157,
+      "frames": [
+        {
+          "index": 0,
+          "coverage": 0.021,
+          "bbox": [
+            54,
+            143,
+            192,
+            287
+          ]
+        },
+        {
+          "index": 1,
+          "coverage": 0.0286,
+          "bbox": [
+            44,
+            180,
+            327,
+            260
+          ]
+        },
+        {
+          "index": 2,
+          "coverage": 0.0438,
+          "bbox": [
+            146,
+            168,
+            624,
+            244
+          ]
+        },
+        {
+          "index": 3,
+          "coverage": 0.0795,
+          "bbox": [
+            133,
+            103,
+            698,
+            278
+          ]
+        },
+        {
+          "index": 4,
+          "coverage": 0.0475,
+          "bbox": [
+            212,
+            103,
+            655,
+            214
+          ]
+        },
+        {
+          "index": 5,
+          "coverage": 0.0796,
+          "bbox": [
+            98,
+            92,
+            626,
+            258
+          ]
+        },
+        {
+          "index": 6,
+          "coverage": 0.1511,
+          "bbox": [
+            91,
+            37,
+            670,
+            268
+          ]
+        },
+        {
+          "index": 7,
+          "coverage": 0.0554,
+          "bbox": [
+            72,
+            67,
+            676,
+            230
+          ]
+        }
+      ]
+    },
+    {
+      "effect_key": "mist_dash",
+      "directory": "mist-dash",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "removed_tiny_components": 50,
+      "frames": [
+        {
+          "index": 0,
+          "coverage": 0.0284,
+          "bbox": [
+            41,
+            194,
+            201,
+            296
+          ]
+        },
+        {
+          "index": 1,
+          "coverage": 0.037,
+          "bbox": [
+            95,
+            220,
+            422,
+            284
+          ]
+        },
+        {
+          "index": 2,
+          "coverage": 0.09,
+          "bbox": [
+            62,
+            172,
+            678,
+            274
+          ]
+        },
+        {
+          "index": 3,
+          "coverage": 0.111,
+          "bbox": [
+            34,
+            154,
+            709,
+            290
+          ]
+        },
+        {
+          "index": 4,
+          "coverage": 0.105,
+          "bbox": [
+            49,
+            123,
+            713,
+            258
+          ]
+        },
+        {
+          "index": 5,
+          "coverage": 0.1516,
+          "bbox": [
+            72,
+            68,
+            706,
+            303
+          ]
+        },
+        {
+          "index": 6,
+          "coverage": 0.2681,
+          "bbox": [
+            47,
+            30,
+            721,
+            292
+          ]
+        },
+        {
+          "index": 7,
+          "coverage": 0.0488,
+          "bbox": [
+            48,
+            120,
+            666,
+            255
+          ]
+        }
+      ]
+    },
+    {
+      "effect_key": "insight_arc",
+      "directory": "insight-arc",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "removed_tiny_components": 51,
+      "frames": [
+        {
+          "index": 0,
+          "coverage": 0.0218,
+          "bbox": [
+            51,
+            147,
+            136,
+            258
+          ]
+        },
+        {
+          "index": 1,
+          "coverage": 0.076,
+          "bbox": [
+            54,
+            137,
+            631,
+            257
+          ]
+        },
+        {
+          "index": 2,
+          "coverage": 0.0594,
+          "bbox": [
+            64,
+            122,
+            535,
+            242
+          ]
+        },
+        {
+          "index": 3,
+          "coverage": 0.0788,
+          "bbox": [
+            58,
+            134,
+            564,
+            247
+          ]
+        },
+        {
+          "index": 4,
+          "coverage": 0.0934,
+          "bbox": [
+            57,
+            90,
+            680,
+            256
+          ]
+        },
+        {
+          "index": 5,
+          "coverage": 0.1052,
+          "bbox": [
+            102,
+            67,
+            676,
+            257
+          ]
+        },
+        {
+          "index": 6,
+          "coverage": 0.2123,
+          "bbox": [
+            52,
+            55,
+            694,
+            270
+          ]
+        },
+        {
+          "index": 7,
+          "coverage": 0.0472,
+          "bbox": [
+            74,
+            65,
+            690,
+            264
+          ]
+        }
+      ]
+    },
+    {
+      "effect_key": "echo_wave",
+      "directory": "echo-wave",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "removed_tiny_components": 106,
+      "frames": [
+        {
+          "index": 0,
+          "coverage": 0.0124,
+          "bbox": [
+            46,
+            204,
+            169,
+            288
+          ]
+        },
+        {
+          "index": 1,
+          "coverage": 0.0185,
+          "bbox": [
+            42,
+            204,
+            234,
+            288
+          ]
+        },
+        {
+          "index": 2,
+          "coverage": 0.0468,
+          "bbox": [
+            46,
+            117,
+            618,
+            291
+          ]
+        },
+        {
+          "index": 3,
+          "coverage": 0.0417,
+          "bbox": [
+            42,
+            114,
+            622,
+            293
+          ]
+        },
+        {
+          "index": 4,
+          "coverage": 0.0451,
+          "bbox": [
+            46,
+            95,
+            678,
+            267
+          ]
+        },
+        {
+          "index": 5,
+          "coverage": 0.0606,
+          "bbox": [
+            42,
+            75,
+            629,
+            298
+          ]
+        },
+        {
+          "index": 6,
+          "coverage": 0.1014,
+          "bbox": [
+            46,
+            42,
+            699,
+            291
+          ]
+        },
+        {
+          "index": 7,
+          "coverage": 0.0386,
+          "bbox": [
+            42,
+            67,
+            629,
+            212
+          ]
+        }
+      ]
+    },
+    {
+      "effect_key": "enemy_wave",
+      "directory": "enemy-wave",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "removed_tiny_components": 59,
+      "frames": [
+        {
+          "index": 0,
+          "coverage": 0.0555,
+          "bbox": [
+            508,
+            132,
+            705,
+            302
+          ]
+        },
+        {
+          "index": 1,
+          "coverage": 0.0894,
+          "bbox": [
+            393,
+            92,
+            567,
+            341
+          ]
+        },
+        {
+          "index": 2,
+          "coverage": 0.0951,
+          "bbox": [
+            338,
+            110,
+            629,
+            309
+          ]
+        },
+        {
+          "index": 3,
+          "coverage": 0.1726,
+          "bbox": [
+            68,
+            108,
+            548,
+            309
+          ]
+        },
+        {
+          "index": 4,
+          "coverage": 0.1483,
+          "bbox": [
+            218,
+            81,
+            680,
+            286
+          ]
+        },
+        {
+          "index": 5,
+          "coverage": 0.1613,
+          "bbox": [
+            37,
+            92,
+            380,
+            301
+          ]
+        },
+        {
+          "index": 6,
+          "coverage": 0.2202,
+          "bbox": [
+            129,
+            61,
+            562,
+            300
+          ]
+        },
+        {
+          "index": 7,
+          "coverage": 0.0765,
+          "bbox": [
+            48,
+            89,
+            553,
+            266
+          ]
+        }
+      ]
+    }
+  ]
+}

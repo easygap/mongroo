@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/auth/presentation/auth_controller.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_scene.dart';
 import 'package:mongroo/features/expedition/presentation/moss_archive_scene.dart';
 import 'package:mongroo/features/trial/data/trial_progress_store.dart';
 import 'package:mongroo/features/trial/domain/trial_progress.dart';
@@ -79,7 +80,10 @@ void main() {
 
     expect(find.text('회원가입 없는 로컬 체험'), findsOneWidget);
     expect(find.text('이 기기에만 저장'), findsOneWidget);
-    expect(find.byType(MossArchiveScene), findsOneWidget);
+    expect(find.byKey(const Key('trial-diary-growth-hero')), findsOneWidget);
+    expect(find.byKey(const Key('trial-growth-character')), findsOneWidget);
+    expect(find.text('탐험은 보조 활동'), findsOneWidget);
+    expect(find.byType(MossArchiveScene), findsNothing);
 
     await _tapVisible(tester, find.byKey(const Key('trial-start')));
     expect(find.text('오늘 마음의 날씨는 어떤가요?'), findsOneWidget);
@@ -97,16 +101,21 @@ void main() {
     await _tapVisible(tester, find.byKey(const Key('trial-open-exploration')));
 
     expect(find.text('첫 갈림길'), findsOneWidget);
+    expect(find.byType(MossArchiveScene), findsOneWidget);
+    expect(find.byType(ExpeditionSceneBackdrop), findsOneWidget);
+    expect(find.text('침수 표찰 동굴'), findsOneWidget);
+    expect(find.text('기억 뿌리 땅굴'), findsOneWidget);
     final scrollable = tester.state<ScrollableState>(
       find.byType(Scrollable).first,
     );
     expect(scrollable.position.pixels, 0);
     await _tapVisible(tester, find.byKey(const Key('trial-path-labels')));
     expect(find.text('번진 이름표'), findsOneWidget);
+    expect(find.text('수정빛 물길 위로 젖은 이름표가 흘러가요.'), findsOneWidget);
     await _tapVisible(tester, find.byKey(const Key('trial-resolve-event')));
 
     expect(find.text('첫 마음 탐험을 마쳤어요'), findsOneWidget);
-    expect(find.textContaining('이끼 열쇠 조각'), findsOneWidget);
+    expect(find.text('체험 발견물 · 이끼 열쇠 조각'), findsOneWidget);
     final restored = TrialProgress.decode(storage.value!);
     expect(restored.stage, TrialStage.complete);
     expect(restored.selectedPath, 'labels');
@@ -146,7 +155,7 @@ void main() {
       textScale: 2,
     );
 
-    expect(find.text('가입하기 전에, 먼저 같이 걸어 봐요'), findsOneWidget);
+    expect(find.text('가입하기 전에, 마음 하나를 키워 봐요'), findsOneWidget);
     await tester.ensureVisible(find.byKey(const Key('trial-start')));
     await tester.pump();
     expect(tester.takeException(), isNull);
@@ -161,7 +170,7 @@ void main() {
       dark: true,
     );
 
-    expect(find.byType(MossArchiveScene), findsOneWidget);
+    expect(find.byKey(const Key('trial-diary-growth-hero')), findsOneWidget);
     final start = find.byKey(const Key('trial-start'));
     await tester.ensureVisible(start);
     await tester.pump();

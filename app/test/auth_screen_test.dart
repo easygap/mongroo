@@ -195,6 +195,12 @@ void main() {
     );
     expect(
       tester
+          .widgetList<EditableText>(find.byType(EditableText))
+          .every((field) => !field.focusNode.hasFocus),
+      isTrue,
+    );
+    expect(
+      tester
           .widget<FilledButton>(
             find.widgetWithText(FilledButton, '로그인 중…'),
           )
@@ -260,6 +266,12 @@ void main() {
     expect(repository.signupCalls, 1);
     expect(
       tester.widgetList<TextFormField>(fields).every((field) => !field.enabled),
+      isTrue,
+    );
+    expect(
+      tester
+          .widgetList<EditableText>(find.byType(EditableText))
+          .every((field) => !field.focusNode.hasFocus),
       isTrue,
     );
     expect(

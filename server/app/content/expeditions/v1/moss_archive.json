@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "content_version": "2026.08.1",
+  "content_version": "2026.08.4",
   "region": {
     "code": "moss_archive",
     "name": "이끼 기억서고",
@@ -14,14 +14,14 @@
     "name": "숨 쉬는 목록실",
     "entrance": "entrance",
     "nodes": [
-      {"code": "entrance", "name": "서고 입구", "type": "entrance", "x": 0.08, "y": 0.50, "cost": 0},
-      {"code": "wet_labels", "name": "젖은 표찰길", "type": "event", "x": 0.28, "y": 0.27, "cost": 1, "event_code": "wet_label_order"},
-      {"code": "root_catalogue", "name": "뿌리 목록실", "type": "event", "x": 0.29, "y": 0.72, "cost": 1, "event_code": "root_catalogue"},
-      {"code": "quiet_camp", "name": "숨 고르는 온실", "type": "camp", "x": 0.49, "y": 0.19, "cost": 1},
-      {"code": "pressed_gallery", "name": "압화 회랑", "type": "discovery", "x": 0.50, "y": 0.81, "cost": 1},
-      {"code": "ledger_keeper", "name": "장부지기의 문", "type": "guardian", "x": 0.69, "y": 0.50, "cost": 1, "event_code": "ledger_keeper"},
-      {"code": "memory_drawer", "name": "기억 서랍", "type": "objective", "x": 0.84, "y": 0.34, "cost": 1},
-      {"code": "exit", "name": "귀환 통로", "type": "exit", "x": 0.93, "y": 0.67, "cost": 0}
+      {"code": "entrance", "name": "기억 던전 입구", "type": "entrance", "x": 0.08, "y": 0.50, "cost": 0, "scene_key": "dungeon_gate", "scene_label": "폐허 던전", "scene_description": "버려진 온실 아래의 석문이 열렸어요. 횃불 사이 계단이 기억서고 깊은 곳으로 이어져요.", "depth_label": "지하 1층 · 관문", "threat_level": 1},
+      {"code": "wet_labels", "name": "침수 표찰 동굴", "type": "event", "x": 0.28, "y": 0.27, "cost": 1, "event_code": "wet_label_order", "scene_key": "flooded_cave", "scene_label": "침수 동굴", "scene_description": "수정빛 물길 위로 젖은 표찰이 흘러가요. 디딤돌 너머 두 갈래 동굴이 서로 다른 빛을 내요.", "depth_label": "지하 2층 · 수몰 구역", "threat_level": 2},
+      {"code": "root_catalogue", "name": "뿌리 목록 땅굴", "type": "event", "x": 0.29, "y": 0.72, "cost": 1, "event_code": "root_catalogue", "scene_key": "root_tunnel", "scene_label": "뿌리 땅굴", "scene_description": "굵은 뿌리가 오래된 갱도를 비틀고 있어요. 수레 자국을 따라가면 목록실의 뒤편으로 우회할 수 있어요.", "depth_label": "지하 2층 · 우회 갱도", "threat_level": 1},
+      {"code": "quiet_camp", "name": "메아리 우물 쉼터", "type": "camp", "x": 0.49, "y": 0.19, "cost": 1, "scene_key": "echo_well", "scene_label": "회복 쉼터", "scene_description": "달빛이 드는 우물가예요. 장부지기의 소굴에 들어가기 전 탐험대의 호흡과 결의를 가다듬을 수 있어요.", "depth_label": "지하 3층 · 안전 구역", "threat_level": 0},
+      {"code": "pressed_gallery", "name": "압화 보물고", "type": "discovery", "x": 0.50, "y": 0.81, "cost": 1, "scene_key": "treasure_vault", "scene_label": "보물고", "scene_description": "뿌리에 잠긴 금고 한가운데 오래된 보물상자가 빛나요. 주변 봉인을 살피면 숨은 표본도 찾을 수 있어요.", "depth_label": "지하 3층 · 봉인 보관실", "threat_level": 1},
+      {"code": "ledger_keeper", "name": "장부지기 소굴", "type": "guardian", "x": 0.69, "y": 0.50, "cost": 1, "event_code": "ledger_keeper", "scene_key": "monster_den", "scene_label": "몬스터 소굴", "scene_description": "돌비늘 장부지기가 뿌리 둥지에서 길을 막고 있어요. 흔적을 읽고 누구를 앞세울지 정해야 해요.", "depth_label": "지하 4층 · 수호 구역", "threat_level": 3},
+      {"code": "memory_drawer", "name": "기억탑 하층", "type": "objective", "x": 0.84, "y": 0.34, "cost": 1, "scene_key": "moon_tower", "scene_label": "등반 구역", "scene_description": "거대한 나무를 감싼 계단이 여러 층으로 솟아 있어요. 이번 탐험의 기억 서랍은 첫 번째 회랑에 잠들어 있어요.", "depth_label": "기억탑 1층 · 목표", "threat_level": 2},
+      {"code": "exit", "name": "귀환 땅굴", "type": "exit", "x": 0.93, "y": 0.67, "cost": 0, "scene_key": "root_tunnel", "scene_label": "귀환 통로", "scene_description": "희미한 바람과 정원 냄새가 돌아오는 좁은 땅굴이에요. 확보한 기억을 품고 출구까지 나아가요.", "depth_label": "지하 1층 · 출구", "threat_level": 0}
     ],
     "edges": [
       ["entrance", "wet_labels"],
@@ -50,13 +50,7 @@
         ["pressed_gallery", "ledger_keeper"],
         ["ledger_keeper", "memory_drawer"],
         ["memory_drawer", "exit"]
-      ],
-      "coordinate_overrides": {
-        "quiet_camp": {"x": 0.48, "y": 0.30},
-        "pressed_gallery": {"x": 0.48, "y": 0.70},
-        "memory_drawer": {"x": 0.84, "y": 0.50},
-        "exit": {"x": 0.95, "y": 0.50}
-      }
+      ]
     },
     {
       "code": "archive_ring_c",
@@ -71,14 +65,7 @@
         ["pressed_gallery", "ledger_keeper"],
         ["ledger_keeper", "memory_drawer"],
         ["memory_drawer", "exit"]
-      ],
-      "coordinate_overrides": {
-        "wet_labels": {"x": 0.27, "y": 0.20},
-        "root_catalogue": {"x": 0.27, "y": 0.80},
-        "quiet_camp": {"x": 0.50, "y": 0.22},
-        "pressed_gallery": {"x": 0.50, "y": 0.78},
-        "ledger_keeper": {"x": 0.68, "y": 0.50}
-      }
+      ]
     }
   ],
   "events": {
@@ -103,13 +90,48 @@
       ]
     },
     "ledger_keeper": {
-      "title": "장부지기의 질문",
-      "text": "문 위의 이끼가 속삭여요. ‘간직할 마음과 놓아줄 마음을 어떻게 구분할래?’",
+      "title": "돌비늘 장부지기",
+      "text": "뿌리 둥지가 갈라지며 장부지기가 길을 막아요. 앞발이 빛나기 전에 약점을 읽고 수호 장벽을 풀어야 해요.",
       "tags": ["guardian", "social"],
+      "encounter": {
+        "kind": "guardian",
+        "enemy_name": "돌비늘 장부지기",
+        "enemy_max_guard": 100,
+        "attack_name": "기록 파동",
+        "telegraph": "앞발의 푸른 문양이 차오르면 기록 파동이 밀려와요.",
+        "damage_target": "탐험대",
+        "max_rounds": 6,
+        "starting_focus": 3,
+        "max_focus": 5,
+        "weakness_cycle": ["insight", "care", "courage", "focus"],
+        "intents": [
+          {
+            "code": "ledger_claw",
+            "name": "장부 발톱",
+            "telegraph": "오른발이 들렸어요. 맨 앞 대원을 노려요.",
+            "target": "front",
+            "power": 1
+          },
+          {
+            "code": "record_wave",
+            "name": "기록 파동",
+            "telegraph": "푸른 문양이 둥글게 번져요. 탐험대 전체를 덮쳐요.",
+            "target": "all",
+            "power": 1
+          },
+          {
+            "code": "seal_crush",
+            "name": "봉인 압쇄",
+            "telegraph": "비늘 사이 붉은 글자가 가장 지친 대원을 가리켜요.",
+            "target": "lowest",
+            "power": 2
+          }
+        ]
+      },
       "choices": [
-        {"code": "read_spaces", "label": "문장 사이의 빈칸까지 읽는다", "stat": "insight", "difficulty": 10, "resolve_cost": 1},
-        {"code": "answer_together", "label": "서로의 답을 듣고 하나로 엮는다", "stat": "care", "difficulty": 10, "resolve_cost": 1},
-        {"code": "leave_question", "label": "오늘 답하지 않아도 된다고 말한다", "stat": null, "difficulty": 0, "resolve_cost": 0, "safe": true}
+        {"code": "read_spaces", "label": "문양의 빈틈을 읽고 공명탄을 보낸다", "stat": "insight", "difficulty": 10, "resolve_cost": 1, "effect_key": "insight_arc", "guard_damage": 68},
+        {"code": "answer_together", "label": "마음을 엮어 뿌리 장벽을 해제한다", "stat": "care", "difficulty": 10, "resolve_cost": 1, "effect_key": "care_vines", "guard_damage": 62},
+        {"code": "leave_question", "label": "무기를 내리고 천천히 물러난다", "stat": null, "difficulty": 0, "resolve_cost": 0, "safe": true, "effect_key": "safe_guard", "guard_damage": 0}
       ]
     }
   },

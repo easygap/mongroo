@@ -1,3 +1,6 @@
+import 'expedition_combat_models.dart';
+export 'expedition_combat_models.dart';
+
 int _asInt(Object? value, [int fallback = 0]) =>
     value is num ? value.toInt() : fallback;
 
@@ -127,6 +130,8 @@ class ExpeditionSnapshot {
     required this.nodes,
     required this.edges,
     required this.currentEvent,
+    required this.lastResolution,
+    this.lastCombatExchange = const [],
     required this.availableActions,
     required this.runThread,
     required this.memory,
@@ -140,6 +145,8 @@ class ExpeditionSnapshot {
   final List<ExpeditionNode> nodes;
   final List<List<String>> edges;
   final ExpeditionEvent? currentEvent;
+  final ExpeditionResolution? lastResolution;
+  final List<ExpeditionBattleEvent> lastCombatExchange;
   final List<Map<String, dynamic>> availableActions;
   final Map<String, dynamic> runThread;
   final Map<String, dynamic> memory;
@@ -189,6 +196,14 @@ class ExpeditionSnapshot {
               json['current_event'] as Map<String, dynamic>,
             )
           : null,
+      lastResolution: json['last_resolution'] is Map<String, dynamic>
+          ? ExpeditionResolution.fromJson(
+              json['last_resolution'] as Map<String, dynamic>,
+            )
+          : null,
+      lastCombatExchange: _maps(json['last_combat_exchange'])
+          .map(ExpeditionBattleEvent.fromJson)
+          .toList(growable: false),
       availableActions: _maps(json['available_actions']),
       runThread: _map(json['run_thread']),
       memory: _map(json['memory']),
@@ -246,8 +261,10 @@ class ExpeditionMember {
     required this.id,
     required this.name,
     required this.speciesName,
+    required this.speciesCode,
     required this.stage,
     required this.form,
+    this.outfitKey,
     required this.stats,
     required this.rawStats,
     required this.effectiveStats,
@@ -260,8 +277,10 @@ class ExpeditionMember {
   final int id;
   final String name;
   final String speciesName;
+  final String speciesCode;
   final int stage;
   final String form;
+  final String? outfitKey;
   final Map<String, int> stats;
   final Map<String, int> rawStats;
   final Map<String, int> effectiveStats;
@@ -291,8 +310,10 @@ class ExpeditionMember {
       id: _asInt(json['id']),
       name: json['name'] as String? ?? '',
       speciesName: _map(json['species'])['name'] as String? ?? '',
+      speciesCode: _map(json['species'])['code'] as String? ?? '',
       stage: _asInt(json['stage'], 1),
       form: json['form'] as String? ?? 'mosaic',
+      outfitKey: json['outfit_key'] as String?,
       stats: stats,
       rawStats: rawStats.isEmpty ? stats : rawStats,
       effectiveStats: effectiveStats.isEmpty ? stats : effectiveStats,
@@ -374,6 +395,11 @@ class ExpeditionNode {
     required this.x,
     required this.y,
     required this.cost,
+    required this.sceneKey,
+    required this.sceneLabel,
+    required this.sceneDescription,
+    required this.depthLabel,
+    required this.threatLevel,
   });
 
   final String code;
@@ -383,6 +409,11 @@ class ExpeditionNode {
   final double? x;
   final double? y;
   final int cost;
+  final String sceneKey;
+  final String sceneLabel;
+  final String sceneDescription;
+  final String depthLabel;
+  final int threatLevel;
 
   bool get isPositioned => x != null && y != null;
 
@@ -394,6 +425,12 @@ class ExpeditionNode {
         x: json['x'] is num ? (json['x'] as num).toDouble() : null,
         y: json['y'] is num ? (json['y'] as num).toDouble() : null,
         cost: _asInt(json['cost']),
+        sceneKey: json['scene_key'] as String? ?? 'dungeon_gate',
+        sceneLabel: json['scene_label'] as String? ?? '미확인 구역',
+        sceneDescription: json['scene_description'] as String? ??
+            '아직 이 장소의 모습을 자세히 확인하지 못했어요.',
+        depthLabel: json['depth_label'] as String? ?? '깊이 미확인',
+        threatLevel: _asInt(json['threat_level']).clamp(0, 3),
       );
 }
 
@@ -403,6 +440,8 @@ class ExpeditionEvent {
     required this.title,
     required this.text,
     required this.spotlightMemberId,
+    required this.encounter,
+    this.battle,
     required this.choices,
   });
 
@@ -410,6 +449,8 @@ class ExpeditionEvent {
   final String title;
   final String text;
   final int? spotlightMemberId;
+  final ExpeditionEncounter? encounter;
+  final ExpeditionBattle? battle;
   final List<ExpeditionChoice> choices;
 
   factory ExpeditionEvent.fromJson(Map<String, dynamic> json) =>
@@ -419,6 +460,16 @@ class ExpeditionEvent {
         text: json['text'] as String? ?? '',
         spotlightMemberId: json['spotlight_member_id'] is num
             ? (json['spotlight_member_id'] as num).toInt()
+            : null,
+        encounter: json['encounter'] is Map<String, dynamic>
+            ? ExpeditionEncounter.fromJson(
+                json['encounter'] as Map<String, dynamic>,
+              )
+            : null,
+        battle: json['battle'] is Map<String, dynamic>
+            ? ExpeditionBattle.fromJson(
+                json['battle'] as Map<String, dynamic>,
+              )
             : null,
         choices: _maps(json['choices'])
             .map(ExpeditionChoice.fromJson)
@@ -431,12 +482,16 @@ class ExpeditionChoice {
     required this.code,
     required this.label,
     required this.safe,
+    required this.effectKey,
+    required this.guardDamage,
     required this.previews,
   });
 
   final String code;
   final String label;
   final bool safe;
+  final String? effectKey;
+  final int guardDamage;
   final List<ExpeditionChoicePreview> previews;
 
   ExpeditionChoicePreview? previewFor(int memberId) {
@@ -451,9 +506,123 @@ class ExpeditionChoice {
         code: json['code'] as String? ?? '',
         label: json['label'] as String? ?? '',
         safe: json['safe'] == true,
+        effectKey: json['effect_key'] as String?,
+        guardDamage: _asInt(json['guard_damage']),
         previews: _maps(json['previews'])
             .map(ExpeditionChoicePreview.fromJson)
             .toList(growable: false),
+      );
+}
+
+class ExpeditionEncounter {
+  const ExpeditionEncounter({
+    required this.kind,
+    required this.enemyName,
+    required this.enemyMaxGuard,
+    required this.attackName,
+    required this.telegraph,
+    required this.damageTarget,
+  });
+
+  final String kind;
+  final String enemyName;
+  final int enemyMaxGuard;
+  final String attackName;
+  final String telegraph;
+  final String damageTarget;
+
+  factory ExpeditionEncounter.fromJson(Map<String, dynamic> json) =>
+      ExpeditionEncounter(
+        kind: json['kind'] as String? ?? '',
+        enemyName: json['enemy_name'] as String? ?? '수호자',
+        enemyMaxGuard: _asInt(json['enemy_max_guard'], 100),
+        attackName: json['attack_name'] as String? ?? '수호자의 공격',
+        telegraph: json['telegraph'] as String? ?? '',
+        damageTarget: json['damage_target'] as String? ?? '결의',
+      );
+}
+
+class ExpeditionResolution {
+  const ExpeditionResolution({
+    required this.eventCode,
+    required this.title,
+    required this.choice,
+    required this.outcome,
+    required this.score,
+    required this.actorName,
+    required this.skillCode,
+    required this.combat,
+  });
+
+  final String eventCode;
+  final String title;
+  final String choice;
+  final String outcome;
+  final int score;
+  final String actorName;
+  final String? skillCode;
+  final ExpeditionCombatFeedback? combat;
+
+  factory ExpeditionResolution.fromJson(Map<String, dynamic> json) =>
+      ExpeditionResolution(
+        eventCode: json['event_code'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        choice: json['choice'] as String? ?? '',
+        outcome: json['outcome'] as String? ?? '',
+        score: _asInt(json['score']),
+        actorName: json['actor_name'] as String? ?? '탐험대원',
+        skillCode: json['skill_code'] as String?,
+        combat: json['combat_feedback'] is Map<String, dynamic>
+            ? ExpeditionCombatFeedback.fromJson(
+                json['combat_feedback'] as Map<String, dynamic>,
+              )
+            : null,
+      );
+}
+
+class ExpeditionCombatFeedback {
+  const ExpeditionCombatFeedback({
+    required this.kind,
+    required this.enemyName,
+    required this.enemyMaxGuard,
+    required this.enemyGuardBefore,
+    required this.enemyGuardAfter,
+    required this.guardDamage,
+    required this.attackName,
+    required this.telegraph,
+    required this.damageTarget,
+    required this.counterDamage,
+    required this.counterResult,
+    required this.effectKey,
+  });
+
+  final String kind;
+  final String enemyName;
+  final int enemyMaxGuard;
+  final int enemyGuardBefore;
+  final int enemyGuardAfter;
+  final int guardDamage;
+  final String attackName;
+  final String telegraph;
+  final String damageTarget;
+  final int counterDamage;
+  final String counterResult;
+  final String effectKey;
+
+  factory ExpeditionCombatFeedback.fromJson(Map<String, dynamic> json) =>
+      ExpeditionCombatFeedback(
+        kind: json['kind'] as String? ?? '',
+        enemyName: json['enemy_name'] as String? ?? '수호자',
+        enemyMaxGuard: _asInt(json['enemy_max_guard'], 100),
+        enemyGuardBefore: _asInt(json['enemy_guard_before'], 100),
+        enemyGuardAfter: _asInt(json['enemy_guard_after']),
+        guardDamage: _asInt(json['guard_damage']),
+        attackName: json['attack_name'] as String? ?? '수호자의 공격',
+        telegraph: json['telegraph'] as String? ?? '',
+        damageTarget: json['damage_target'] as String? ?? '결의',
+        counterDamage: _asInt(json['counter_damage']),
+        counterResult: json['counter_result'] as String? ?? 'guarded',
+        effectKey: json['effect_key'] as String? ?? 'safe_guard',
       );
 }
 

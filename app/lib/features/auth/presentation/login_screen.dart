@@ -49,6 +49,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
     final email = _emailController.text.trim();
     final password = _passwordController.text;
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _submitting = true;
       _errorMessage = null;

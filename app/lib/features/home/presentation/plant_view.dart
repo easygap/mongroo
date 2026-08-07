@@ -442,8 +442,8 @@ class PlantGrowthAssetResolver {
     final serverPhase = _slug(visual?.phase ?? '');
     final phase = serverPhase.isEmpty ? _phases[clamped]! : serverPhase;
     final slugs = <String>{
-      _slug(speciesCode),
-      _namespaceSlug(visual?.assetNamespace),
+      _renderableSpeciesSlug(_slug(speciesCode)),
+      _renderableSpeciesSlug(_namespaceSlug(visual?.assetNamespace)),
     }..removeWhere((value) => value.isEmpty || value == 'generic');
     final paths = <String>[];
     for (final species in slugs) {
@@ -591,6 +591,12 @@ class PlantGrowthAssetResolver {
         value.startsWith('plants/') ? value.substring('plants/'.length) : value;
     return _slug(withoutPrefix);
   }
+
+  /// 튜토리얼 안내자는 서버에서만 존재하는 가상 대원이다. 전용 스프라이트를
+  /// 찾느라 매 프레임 404를 만들지 않고, 같은 성장 단계의 기본 몽그루 아트를
+  /// 사용한다. 이름과 판정 역할은 서버 스냅샷을 그대로 유지한다.
+  static String _renderableSpeciesSlug(String species) =>
+      species == 'archive-guide' ? 'basic-sprout' : species;
 
   static String _slug(String value) => value
       .trim()

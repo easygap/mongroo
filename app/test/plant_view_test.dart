@@ -309,6 +309,24 @@ void main() {
     ]);
   });
 
+  test('가상 탐험 안내자는 존재하는 기본 몽그루 에셋만 요청한다', () {
+    final candidates = PlantGrowthAssetResolver.candidates(
+      speciesCode: 'archive_guide',
+      stage: 2,
+      form: PlantGrowthForm.mosaic,
+    );
+
+    expect(candidates, [
+      'assets/plants/basic-sprout-25d-sprout-mosaic.webp',
+      'assets/plants/basic-sprout-25d-sprout.webp',
+      'assets/plants/basic-sprout-cute-sprout-mosaic.webp',
+      'assets/plants/basic-sprout-cute-sprout.webp',
+      'assets/plants/basic-sprout-sprout-mosaic.webp',
+      'assets/plants/basic-sprout-sprout.webp',
+    ]);
+    expect(candidates, everyElement(isNot(contains('archive-guide'))));
+  });
+
   test('사람형 성장 계보는 전용 2.5D 파일을 먼저 찾는다', () {
     final candidates = PlantGrowthAssetResolver.candidates(
       speciesCode: 'gumiho_pot',

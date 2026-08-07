@@ -1,8 +1,8 @@
 # 직접 탐험 에셋·이펙트·오디오 제작 실행서
 
-최종 갱신: 2026-08-04
+최종 갱신: 2026-08-06
 상태: 제작·구현 기준안
-대상 버전: `interactive-expedition-v1.2`
+대상 버전: `interactive-expedition-v1.3`
 
 이 문서는 `docs/interactive_adventure_design.md`의 그래픽·오디오 계약을 실제로
 제작할 수 있는 단위로 풀어 쓴다. 캐릭터 원형은 `MONGROO_GROWTH_ART.md`, 성체
@@ -37,7 +37,7 @@
 | 화면 | 캐릭터 | 배경·오브젝트 | 효과 |
 |---|---|---|---|
 | 파티 편성 | 기존 512×768 성장 원화 또는 wardrobe 합성 | 코드 UI | 선택 링, 스탯 변화만 코드 |
-| 탐험 지도 | 72~112px 토큰. stage 2~4 transform, stage 5 frame strip | 3단 parallax 지도 | 이동 먼지, 발견 잎, 길 공개 |
+| 탐험 이동 | 72~112px 토큰. stage 2~4 transform, stage 5 frame strip | 현재 장소 16:9 원화 + 보조 경로 지도 | 이동 먼지, 발견 잎, 장면 교차 전환 |
 | 사건 선택 | 144~220px 기존 원화/wardrobe pose | 사건 배경 1장 | 표정·blink, 선택 결과 accent |
 | 수호자 | 현재 행동자 토큰 | 수호자 4 action | 지역 고유 반응 효과 |
 | 목표 확보 | 파티 토큰 | 목표 아이템 cutout | 작은 부유·획득 궤적 |
@@ -64,7 +64,8 @@ design-system/concepts/expedition-v1/
     signatures/{species}/{back|front}/frame-00.png
     common/{effect-key}/frame-00.png
   regions/{region}/
-    map/{back|mid|front}.png
+    map/overview.png
+    scenes/{scene-key}.png
     events/{event-key}.png
     guardian/{action}/frame-00.png
     target.png
@@ -80,7 +81,8 @@ app/assets/expedition/
   characters/{species}/base/{form}/{action}.webp
   characters/{species}/outfits/{outfit-key}/{form}/{action}.webp
   effects/{category}/{key}/{back|front}.webp
-  regions/{region}/map-{back|mid|front}.webp
+  regions/{region}/map-overview.webp
+  regions/{region}/scenes/{scene-key}.webp
   regions/{region}/events/{event-key}.webp
   regions/{region}/guardian/{action}.webp
   regions/{region}/target.webp
@@ -91,6 +93,9 @@ app/assets/expedition/
 
 원본 PNG는 수정 이력과 검수를 위해 보존하고, 앱은 빌드된 WebP와 오디오 런타임
 파일만 읽는다. `app/assets/expedition` 파일을 손으로 수정하지 않는다.
+기억서고 M1은 기존 번들 경로와의 호환을 위해 임시로
+`app/assets/adventure/expedition-*.webp`를 읽는다. 지역 팩 분리 시 동일 `scene_key`를
+`app/assets/expedition/regions/moss_archive/scenes/`로 이관하고 콘텐츠 코드는 바꾸지 않는다.
 
 `species`는 다음 열 종으로 고정한다.
 
@@ -304,9 +309,8 @@ ImageGen이 key pose에서 안전 필터에 막히면 같은 프롬프트로 반
 ### 7.1 렌더 순서
 
 ```text
-region back → region mid → map links/nodes → effect back
-→ shadow → character base → outfit → blink/face → effect front
-→ region front → UI
+current scene → ambient mote → map links/nodes → effect back
+→ shadow → character base → outfit → blink/face → effect front → UI
 ```
 
 effect가 의상 뒤와 앞을 모두 지나가야 하면 `back`과 `front` 두 파일로 나눈다. 한
@@ -363,19 +367,20 @@ back을 추가한다. runtime raster effect 파일은 최대 46개다. 비어 �
 
 | 자산 | 지역당 | 규격 | 제작 방식 |
 |---|---:|---|---|
-| 지도 back/mid/front | 3 | 1920×1080 WebP | 한 원화를 세 depth로 수작업 분리 |
-| 사건 배경 | 6 | 1280×960 WebP | 정적 1장, 중앙·하단 UI 안전영역 |
+| 통합 탐험 지형 | 1 | 1600×900 WebP | 랜드마크와 실제 보행로를 그리되 노드·문자는 비움 |
+| 현재 장소 배경 | 6~8 | 1600×900 WebP | 정적 1장, 중앙·하단 UI 안전영역 |
 | 수호자 action | 4 | 256px 셀 8프레임 strip | idle/reveal/respond/resolve |
 | 목표 아이템 | 1 | 512×512 투명 WebP | 정적 cutout, hover는 코드 |
 | 전경 particle | 2 | 256px 셀 최대 8프레임 | 낮은 대비, 선택 사용 |
-| 노드 icon | 공용 8종 | 96×96 코드 벡터 | 지역별 색·작은 모티프만 manifest |
+| 발견 beacon | 공용 1세트 | 7~15px 코드 벡터, 44px 터치 영역 | 지형을 가리지 않는 상태·비용 보조 표식 |
 
-지역 raster는 총 64개다: 지도 12, 사건 24, 수호자 16, 목표 4, particle 8.
-현재 `app/assets/adventure`의 다섯 배경은 삭제하지 않고 스타일 기준과 프로토타입
-사건 배경으로 사용한다. 직접 탐험 지도용 parallax 원본은 별도 제작한다.
+지역 raster는 총 56~64개다: 통합 지형 4, 현재 장소 24~32, 수호자 16,
+목표 4, particle 8. 기억서고 M1은 통합 지형 1장과 같은 아트 디렉션의 장소 원화
+7장을 사용하고, 단일 지도에 노드 아이콘만 바꿔 다른 방으로 대체하지 않는다.
 
-사건 15종마다 배경을 새로 만들지 않는다. 지역별 여섯 배경 key를 콘텐츠 manifest가
-공유한다.
+사건 15종마다 배경을 새로 만들지 않는다. 지역별 6~8개 장소 key를 콘텐츠
+manifest가 공유한다. 같은 key를 쓰더라도 노드명·심도·사건 prop·수호자 오버레이로
+맥락을 구분하며, 실루엣이 다른 던전·동굴·탑을 하나의 원화로 재사용하지 않는다.
 
 | event background key | 쓰임 |
 |---|---|
@@ -409,8 +414,25 @@ back을 추가한다. runtime raster effect 파일은 최대 46개다. 비어 �
 | 별빛 씨앗 보관고 | 지붕 온실·발아대 | 구리 발아지기 | 새벽 보관병 | 씨앗 껍질, 유리 빛점 |
 | 마음나무 관측실 | 나무줄기·측정 원형대 | 나이테 기록자 | 마음나무 관측판 | 종이 섬유, 작은 잎맥 |
 
-수호자는 공격받거나 쓰러지는 프레임을 갖지 않는다. `respond`는 사용자의 방법을
-확인하고, `resolve`는 길을 열거나 몸을 비키는 동작이다.
+수호자 본체는 상처·죽음 프레임을 갖지 않는다. 대신 별도 `hit`은 장벽 충돌의 방향을
+몸동작으로 읽게 하고, `resolve`는 다치지 않은 채 몸을 낮추거나 길을 비키는 동작이다.
+`respond`에서 600ms 이상 읽을 수 있는 공격 예고 뒤 반격한다. 캐릭터와 수호자
+이펙트는 `back|front` pass로 분리하고 한 번의 충돌 섬광, 3.5px 이하 화면 흔들림,
+데미지 숫자와 막대 변화가 같은 서버 판정 값을 사용해야 한다.
+
+기억서고 세로 슬라이스는 배경과 수호자를 다음처럼 분리한다.
+
+- `expedition-monster-den-battle-v1.webp`: 수호자와 캐릭터가 없는 빈 16:9 전투 무대
+- `ledger-keeper-idle-v1.webp`: 투명 배경의 깨어 있는 대기 자세
+- `ledger-keeper-attack-v1.webp`: 같은 개체·같은 광원의 반격 준비 자세
+- `ledger-keeper-hit-v1.webp`: 왼쪽 충돌에 오른쪽으로 반응하는 장벽 피격 자세
+- `ledger-keeper-defeated-v1.webp`: 다치지 않고 몸을 낮춰 길을 여는 장벽 해제 자세
+
+배경에 잠든 수호자가 남아 있으면 별도 idle/attack과 이중으로 보이므로 금지한다. 수호자
+레이어는 WebP `VP8X` alpha 플래그를 가져야 하고 모서리 배경 픽셀은 완전 투명이어야 한다.
+앱은 idle 호흡을 코드 transform으로 만들고 attack/hit/defeated를 타임라인 구간마다
+교차 페이드한다. 피격 flash와 흔들림은 수호자·현장 레이어에만 적용하며 HUD와 선택
+UI는 고정한다. 네 파일은 화면 진입 시 미리 디코드해 첫 교체 프레임의 공백을 막는다.
 
 ## 9. UI 아이콘과 스킬트리
 
@@ -479,6 +501,56 @@ back을 추가한다. runtime raster effect 파일은 최대 46개다. 비어 �
 특정 현존 작가나 저작권 캐릭터의 스타일을 요구하지 않는다. 필터를 우회하거나 같은
 실패 프롬프트를 반복하지 않는다. `baby-pot`은 모든 pose와 의상에서 비성적
 마스코트이며 성인 노출 지시를 절대 공유하지 않는다.
+
+### 10.4 출시작에서 가져온 원칙과 이미지 마감
+
+2026-08-06 기준으로 작품의 고유 미술을 모사하지 않고 다음 구조 원칙만 참고한다.
+
+- [TUNIC 공식 Nintendo 페이지](https://www.nintendo.com/us/store/products/tunic-switch/):
+  작은 캐릭터가 있는 등각 지형에서도 숲·유적·지하 입구의 큰 실루엣과 숨은 길이 먼저
+  읽혀야 한다.
+- [Infinity Nikki Boneyard Exploration Journal](https://infinitynikki.infoldgames.com/en/news/480):
+  호수 입구, 동굴, 유적과 이동 수단을 같은 지역의 물길·고도·서사에 붙여 랜드마크가
+  메뉴 아이콘처럼 분리되지 않게 한다.
+- [Hades II 공식 페이지](https://www.supergiantgames.com/games/hades-ii/): 어두운
+  던전에서도 플레이 공간의 큰 값 덩어리와 스킬 궤적·피해 숫자의 색을 분리한다.
+- [Monster Hunter Wilds 공식 PlayStation 페이지](https://www.playstation.com/en-us/games/monster-hunter-wilds/):
+  서로 연결된 지역마다 물·식생·지형과 수호 생물의 관계를 보여 주고, 같은 장식 세트를
+  반복해 지역을 채우지 않는다.
+
+생성 원본은 그대로 출시하지 않는다. `finalize_expedition_art.py`가 16:9 중앙 크롭,
+1600×900 정규화, 3×3 median 잡티 제거, 디더링 없는 192색 팔레트, WebP 마감을 한다.
+346×195 축소본의 Gaussian residual을 기록하고 원본보다 고주파 노이즈가 늘어나면
+반려한다. 팔레트를 96색까지 줄여 넓은 면이 계단처럼 보이는 것도 반려한다.
+
+후처리는 잘못된 미술 방향을 구제하는 수단이 아니다. 축소본에서 개별 잎·자갈·이끼가
+점무늬로 합쳐지면 랜드마크와 통로를 고정한 image-to-image 편집으로 넓은 색면과 묶음
+식생부터 다시 만든다. 필터 수치를 키워 뭉개거나 선명도 보정으로 미세 질감을 강조하지
+않는다. 최종 승인 순서는 `구조 고정 편집 → 390px 실기 렌더 확인 → 제한 팔레트 마감`이다.
+
+```powershell
+python design-system/scripts/finalize_expedition_art.py `
+  <imagegen-source.png> `
+  app/assets/adventure/<asset>-v3.webp `
+  --preview output/asset-qa/<asset>-raw-vs-clean.png
+
+# 승인된 원본은 그대로 두고 모바일 런타임 파생본을 다시 만든다.
+python design-system/scripts/build_expedition_runtime_assets.py
+```
+
+런타임 파생본은 장소·통합 지형 960px, 투명 수호자 768px 너비다. 앱은 화면 물리
+픽셀에 15% 여유를 둔 목표 너비가 파생본 이하일 때만 `-mobile.webp`를 사용하고,
+고밀도 모바일·태블릿·데스크톱은 1600px 원본을 유지한다. 새 원화를 승인하거나 파일명을
+바꾸면 `build_expedition_runtime_assets.py`의 명시적 목록과 번들 테스트를 함께 갱신한다.
+
+배경과 장소 원화는 다음을 모두 만족해야 한다.
+
+- 일관된 짙은 갈색 외곽선, 재질당 3단 명암, sage/cream/teal/amber 중심 팔레트
+- 346×195에서 핵심 입구·다리·계단·상자가 각각 36px 이상으로 식별됨
+- film grain, stippling, scratch, 수천 개의 개별 잎, 의미 없는 잔해와 장식 0
+- 390px 화면에서 2px 이하로 뭉치는 무작위 잎·돌·이끼 무늬 0
+- 글자·의사 문자·UI·룬·워터마크 0
+- 맵 변형 사이 랜드마크 좌표 이동 0, 캐릭터·발자국 경로 좌표원 단일화
 
 ## 11. 오디오 제작 실행안
 

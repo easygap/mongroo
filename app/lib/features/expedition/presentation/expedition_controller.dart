@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -6,6 +8,7 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../home/presentation/home_controller.dart';
 import '../data/expedition_repository.dart';
 import '../domain/expedition_models.dart';
+import 'expedition_action_cue.dart';
 
 const _unset = Object();
 
@@ -20,6 +23,9 @@ class ExpeditionUiState {
     this.busyAction,
     this.error,
     this.tutorialCoachStep,
+    this.actionCue,
+    this.pendingExpedition,
+    this.settlingResult = false,
   });
 
   final bool loading;
@@ -31,6 +37,15 @@ class ExpeditionUiState {
   final String? busyAction;
   final String? error;
   final int? tutorialCoachStep;
+  final ExpeditionActionCue? actionCue;
+  final ExpeditionSnapshot? pendingExpedition;
+  final bool settlingResult;
+
+  bool get interactionLocked =>
+      busyAction != null ||
+      actionCue != null ||
+      pendingExpedition != null ||
+      settlingResult;
 
   ExpeditionUiState copyWith({
     bool? loading,
@@ -42,6 +57,9 @@ class ExpeditionUiState {
     Object? busyAction = _unset,
     Object? error = _unset,
     Object? tutorialCoachStep = _unset,
+    Object? actionCue = _unset,
+    Object? pendingExpedition = _unset,
+    bool? settlingResult,
   }) =>
       ExpeditionUiState(
         loading: loading ?? this.loading,
@@ -61,6 +79,13 @@ class ExpeditionUiState {
         tutorialCoachStep: tutorialCoachStep == _unset
             ? this.tutorialCoachStep
             : tutorialCoachStep as int?,
+        actionCue: actionCue == _unset
+            ? this.actionCue
+            : actionCue as ExpeditionActionCue?,
+        pendingExpedition: pendingExpedition == _unset
+            ? this.pendingExpedition
+            : pendingExpedition as ExpeditionSnapshot?,
+        settlingResult: settlingResult ?? this.settlingResult,
       );
 }
 
@@ -68,9 +93,13 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
   static const _uuid = Uuid();
   final Map<String, String> _actionKeys = {};
   final Set<int> _dismissedTutorialSteps = {};
+  final List<ExpeditionActionCue> _queuedCues = [];
+  int _cueSequence = 0;
+  Timer? _settlingTimer;
 
   @override
   ExpeditionUiState build() {
+    ref.onDispose(() => _settlingTimer?.cancel());
     Future.microtask(load);
     return const ExpeditionUiState();
   }
@@ -103,7 +132,11 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
         selectedPlantIds: selected,
         selectedMemberId: _defaultMember(expedition),
         tutorialCoachStep: _deriveTutorialStep(expedition),
+        actionCue: null,
+        pendingExpedition: null,
+        settlingResult: false,
       );
+      _queuedCues.clear();
     } on ApiException catch (error) {
       state = state.copyWith(loading: false, error: error.message);
     }
@@ -131,6 +164,9 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
     bool visible(int step) =>
         !respectDismissed || !_dismissedTutorialSteps.contains(step);
     if (expedition.run.objectiveSecured) return visible(6) ? 6 : null;
+    if (expedition.currentEvent?.battle?.isActive == true) {
+      return visible(7) ? 7 : null;
+    }
     final outcomes = expedition.memory['outcomes'];
     final outcomeCount = outcomes is List ? outcomes.length : 0;
     if (outcomeCount > 0) return visible(5) ? 5 : null;
@@ -264,6 +300,23 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
     );
   }
 
+  Future<bool> resolveCombatTurn(List<ExpeditionCombatCommand> commands) {
+    final expedition = state.expedition;
+    if (expedition == null || commands.isEmpty) return Future.value(false);
+    final signature = commands
+        .map((command) => '${command.memberId}-${command.action}')
+        .join(',');
+    return _perform(
+      'combat:${expedition.run.revision}:$signature',
+      (key) => ref.read(expeditionRepositoryProvider).resolveCombatTurn(
+            runId: expedition.run.id,
+            commands: commands,
+            expectedRevision: expedition.run.revision,
+            clientActionId: key,
+          ),
+    );
+  }
+
   Future<bool> extract() {
     final expedition = state.expedition;
     if (expedition == null) return Future.value(false);
@@ -294,7 +347,11 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
     String action,
     Future<ExpeditionSnapshot> Function(String key) request,
   ) async {
-    if (state.busyAction != null) return false;
+    if (state.interactionLocked) {
+      return false;
+    }
+    final previousExpedition = state.expedition;
+    final previousMemberId = state.selectedMemberId;
     state = state.copyWith(busyAction: action, error: null);
     try {
       final key = _actionKeys.putIfAbsent(action, _uuid.v4);
@@ -305,14 +362,39 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
         ref.read(authControllerProvider.notifier).updateSeedBalance(balance);
       }
       ref.invalidate(homeControllerProvider);
-      state = state.copyWith(
-        expedition: expedition,
-        selectedMemberId: _defaultMember(expedition),
-        busyAction: null,
-        tutorialCoachStep: _deriveTutorialStep(expedition),
+      final actionCues = _actionCuesFor(
+        action,
+        previousExpedition: previousExpedition,
+        previousMemberId: previousMemberId,
+        result: expedition,
       );
+      if (actionCues.isEmpty) {
+        _queuedCues.clear();
+        state = state.copyWith(
+          expedition: expedition,
+          selectedMemberId: _defaultMember(expedition),
+          busyAction: null,
+          tutorialCoachStep: _deriveTutorialStep(expedition),
+          actionCue: null,
+          pendingExpedition: null,
+          settlingResult: false,
+        );
+      } else {
+        // 서버 결과는 확정됐지만 전투 연출이 끝날 때까지 이전 장면을 유지한다.
+        // 다음 화면과 전투 첫 프레임을 한 번에 빌드하면 저사양 기기에서 긴 프레임이 생긴다.
+        _queuedCues
+          ..clear()
+          ..addAll(actionCues.skip(1));
+        state = state.copyWith(
+          busyAction: null,
+          actionCue: actionCues.first,
+          pendingExpedition: expedition,
+          settlingResult: false,
+        );
+      }
       return true;
     } on ApiException catch (error) {
+      _queuedCues.clear();
       if (error.code == 'EXPEDITION_REVISION_CONFLICT') {
         _actionKeys.remove(action);
         await _reloadActive(error.message);
@@ -321,6 +403,78 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
       }
       return false;
     }
+  }
+
+  List<ExpeditionActionCue> _actionCuesFor(
+    String action, {
+    required ExpeditionSnapshot? previousExpedition,
+    required int? previousMemberId,
+    required ExpeditionSnapshot result,
+  }) {
+    if (action.startsWith('combat:') && previousExpedition != null) {
+      final enemy = previousExpedition.currentEvent?.battle?.enemy;
+      if (enemy == null) return const [];
+      final cues = <ExpeditionActionCue>[];
+      final actionEvents = result.lastCombatExchange
+          .where((event) => event.isPartyAction || event.isEnemyAction)
+          .toList(growable: false);
+      final terminal = result.lastCombatExchange
+          .where((event) => event.type == 'outcome')
+          .lastOrNull;
+      for (final (index, event) in actionEvents.indexed) {
+        final memberId = event.memberId ?? event.targets.firstOrNull?.memberId;
+        final member = previousExpedition.party
+            .where((item) => item.id == memberId)
+            .firstOrNull;
+        if (member == null) continue;
+        cues.add(
+          ExpeditionActionCue.combatRound(
+            id: ++_cueSequence,
+            event: event,
+            member: member,
+            enemy: enemy,
+            terminalResult:
+                index == actionEvents.length - 1 ? terminal?.outcome : null,
+            terminalCaption:
+                index == actionEvents.length - 1 ? terminal?.caption : null,
+          ),
+        );
+      }
+      return cues;
+    }
+    if (action.startsWith('choice:')) {
+      final resolution = result.lastResolution;
+      final member = previousExpedition?.party
+          .where((item) => item.id == previousMemberId)
+          .firstOrNull;
+      if (resolution == null || member == null) return const [];
+      return [
+        ExpeditionActionCue.resolution(
+          id: ++_cueSequence,
+          resolution: resolution,
+          member: member,
+        ),
+      ];
+    }
+    if (!action.startsWith('skill:') ||
+        previousExpedition == null ||
+        previousMemberId == null) {
+      return const [];
+    }
+    final parts = action.split(':');
+    if (parts.length < 3) return const [];
+    final member = previousExpedition.party
+        .where((item) => item.id == previousMemberId)
+        .firstOrNull;
+    if (member == null) return const [];
+    final skill = parts[2] == 'form' ? member.formSkill : member.signatureSkill;
+    return [
+      ExpeditionActionCue.skill(
+        id: ++_cueSequence,
+        member: member,
+        skill: skill,
+      ),
+    ];
   }
 
   Future<void> _reloadActive(String message) async {
@@ -333,7 +487,11 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
         busyAction: null,
         error: message,
         tutorialCoachStep: _deriveTutorialStep(expedition),
+        actionCue: null,
+        pendingExpedition: null,
+        settlingResult: false,
       );
+      _queuedCues.clear();
     } on ApiException catch (error) {
       state = state.copyWith(busyAction: null, error: error.message);
     }
@@ -341,11 +499,50 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
 
   Future<void> leaveSummary() async {
     _dismissedTutorialSteps.clear();
-    state = state.copyWith(expedition: null, tutorialCoachStep: null);
+    _queuedCues.clear();
+    state = state.copyWith(
+      expedition: null,
+      tutorialCoachStep: null,
+      actionCue: null,
+      pendingExpedition: null,
+      settlingResult: false,
+    );
     await load();
   }
 
   void clearError() => state = state.copyWith(error: null);
+
+  void clearActionCue() {
+    if (_queuedCues.isNotEmpty) {
+      final next = _queuedCues.removeAt(0);
+      state = state.copyWith(
+        actionCue: next,
+        selectedMemberId: next.actorId,
+      );
+      return;
+    }
+    final pending = state.pendingExpedition;
+    if (pending == null) {
+      state = state.copyWith(actionCue: null);
+      return;
+    }
+    state = state.copyWith(
+      expedition: pending,
+      selectedMemberId: _defaultMember(pending),
+      tutorialCoachStep: _deriveTutorialStep(pending),
+      actionCue: null,
+      pendingExpedition: null,
+      settlingResult: true,
+    );
+    _settlingTimer?.cancel();
+    final revision = pending.run.revision;
+    _settlingTimer = Timer(const Duration(milliseconds: 32), () {
+      if (state.expedition?.run.revision != revision || !state.settlingResult) {
+        return;
+      }
+      state = state.copyWith(settlingResult: false);
+    });
+  }
 }
 
 final expeditionControllerProvider =
