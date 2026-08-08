@@ -181,6 +181,9 @@ class ExpeditionCombatCommand(BaseModel):
 
 class ExpeditionCombatTurnRequest(ExpeditionActionRequest):
     commands: list[ExpeditionCombatCommand] = Field(min_length=1, max_length=3)
+    # 스테이지 개편의 순차 명령. True면 commands는 대원 한 명의 행동 하나만 담고,
+    # 서버가 그 행동을 즉시 판정한다. False(기본)는 기존 일괄 라운드 계약 그대로다.
+    partial: bool = False
 
     @field_validator("commands")
     @classmethod
@@ -191,6 +194,12 @@ class ExpeditionCombatTurnRequest(ExpeditionActionRequest):
         if len(member_ids) != len(set(member_ids)):
             raise ValueError("한 라운드에는 대원별 행동을 한 번만 정할 수 있습니다")
         return commands
+
+    @model_validator(mode="after")
+    def validate_partial_shape(self) -> "ExpeditionCombatTurnRequest":
+        if self.partial and len(self.commands) != 1:
+            raise ValueError("순차 명령은 대원 한 명의 행동 하나만 보낼 수 있습니다")
+        return self
 
 
 class ExpeditionFinishRequest(ExpeditionActionRequest):

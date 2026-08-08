@@ -220,6 +220,8 @@ def new_guardian_battle(
             }
             for profile in profiles
         ],
+        "pending": None,
+        "round_exchange": [],
         "last_exchange": [],
         "battle_log": ["돌비늘 장부지기가 길을 막았어요."],
         "defeat_reason": None,
@@ -270,6 +272,18 @@ def guardian_battle_payload(
             }
         )
     intent = _intent(encounter, int(state.get("intent_index", 0)))
+    pending = state.get("pending")
+    acted = [
+        int(member_id)
+        for member_id in (
+            pending.get("acted", []) if isinstance(pending, dict) else []
+        )
+    ]
+    living_ids = [
+        int(member["member_id"])
+        for member in state.get("party", [])
+        if int(member["hp"]) > 0
+    ]
     return {
         **copy.deepcopy(state),
         "weakness_label": AFFINITY_LABELS.get(weakness, weakness),
@@ -280,6 +294,12 @@ def guardian_battle_payload(
             "weakness": weakness,
             "weakness_label": AFFINITY_LABELS.get(weakness, weakness),
             "intent": intent,
+        },
+        "pending_round": {
+            "acted": acted,
+            "awaiting": [
+                member_id for member_id in living_ids if member_id not in acted
+            ],
         },
         "party": party,
     }
@@ -301,6 +321,276 @@ def _target_members(
     return [living[0]]
 
 
+def _pending_round(state: dict[str, Any]) -> dict[str, Any] | None:
+    pending = state.get("pending")
+    return pending if isinstance(pending, dict) else None
+
+
+def _begin_round_if_needed(state: dict[str, Any]) -> dict[str, Any]:
+    """라운드의 첫 행동 직전에 방어를 정리하고 진행 중 상태를 만든다."""
+
+    pending = _pending_round(state)
+    if pending is not None:
+        return pending
+    # 방어는 라운드 단위다. 지난 적 행동 뒤 남은 수치를 다음 라운드에 이월하지 않는다.
+    for member in state.get("party", []):
+        member["guard"] = 0
+    pending = {"acted": [], "intent_power_delta": 0}
+    state["pending"] = pending
+    state["round_exchange"] = []
+    return pending
+
+
+def _push_event(state: dict[str, Any], event: dict[str, Any]) -> dict[str, Any]:
+    exchange = state.setdefault("round_exchange", [])
+    event = {"sequence": len(exchange), **event}
+    exchange.append(event)
+    return event
+
+
+def _extend_log(state: dict[str, Any], events: list[dict[str, Any]]) -> None:
+    log = list(state.get("battle_log", []))
+    log.extend(
+        event["caption"]
+        for event in events
+        if isinstance(event.get("caption"), str) and event["caption"]
+    )
+    state["battle_log"] = log[-8:]
+
+
+def _apply_member_command(
+    state: dict[str, Any],
+    command: dict[str, Any],
+    profile_by_id: dict[int, dict[str, Any]],
+) -> dict[str, Any]:
+    """대원 한 명의 행동을 해석해 상태를 바꾸고 이벤트 하나를 돌려준다.
+
+    일괄 라운드와 순차 명령이 같은 함수를 지나므로 두 입력 방식의 판정
+    결과는 정의상 동일하다.
+    """
+
+    pending = _begin_round_if_needed(state)
+    member_id = int(command.get("member_id", 0))
+    action = command.get("action")
+    if action not in {"attack", "skill", "guard"}:
+        raise CombatRuleError(
+            "EXPEDITION_COMBAT_ACTION_INVALID",
+            "공격, 고유 스킬, 마음 지키기 중 하나를 골라 주세요.",
+        )
+    profile = profile_by_id.get(member_id)
+    member_state = next(
+        (
+            member
+            for member in state.get("party", [])
+            if int(member["member_id"]) == member_id
+        ),
+        None,
+    )
+    if profile is None or member_state is None:
+        raise CombatRuleError(
+            "EXPEDITION_COMBAT_MEMBER_INVALID",
+            "이 전투에 없는 대원이에요.",
+        )
+    if int(member_state["hp"]) <= 0:
+        raise CombatRuleError(
+            "EXPEDITION_COMBAT_MEMBER_DOWN",
+            "지쳐서 물러난 대원은 이번 라운드에 행동할 수 없어요.",
+        )
+    if member_id in pending["acted"]:
+        raise CombatRuleError(
+            "EXPEDITION_COMBAT_DUPLICATE_MEMBER",
+            "한 라운드에는 대원별 행동을 한 번만 정할 수 있어요.",
+        )
+
+    # 행동 순서는 집중력 계산뿐 아니라 현재 전열이다. 첫 번째로 행동한 대원이
+    # front 의도의 대상이 되므로, 순서 선택이 방어 판단에도 실제로 영향을 준다.
+    party = state["party"]
+    index = next(
+        position
+        for position, member in enumerate(party)
+        if int(member["member_id"]) == member_id
+    )
+    party.insert(len(pending["acted"]), party.pop(index))
+    pending["acted"].append(member_id)
+
+    weakness = state.get("weakness", AFFINITIES[0])
+    focus = int(state.get("focus", 0))
+    max_focus = int(state.get("max_focus", 5))
+    kit = member_battle_kit(profile, current_weakness=weakness)
+    actor_name = profile.get("snapshot", {}).get("name", "탐험대원")
+    enemy_before = int(state["enemy_guard"])
+    damage = 0
+    weakness_hit = False
+    effect_key = "safe_guard"
+    caption = ""
+
+    if action == "guard":
+        focus = min(max_focus, focus + int(kit["guard"]["focus_delta"]))
+        member_state["guard"] = int(kit["guard"]["guard"])
+        action_name = kit["guard"]["name"]
+        caption = f"{actor_name}이(가) 마음을 다잡고 공격에 대비했어요."
+    else:
+        action_data = kit["skill"] if action == "skill" else kit["basic"]
+        action_name = action_data["name"]
+        if action == "skill":
+            cost = int(action_data["focus_cost"])
+            if focus < cost:
+                raise CombatRuleError(
+                    "EXPEDITION_COMBAT_FOCUS_SHORTAGE",
+                    f"{actor_name}의 고유 스킬에 필요한 집중력이 부족해요.",
+                )
+            focus -= cost
+        else:
+            focus = min(max_focus, focus + int(action_data["focus_delta"]))
+        affinity = action_data["affinity"]
+        effect_key = action_data["effect_key"]
+        damage = int(action_data["power"])
+        weakness_hit = affinity == weakness
+        if weakness_hit:
+            damage += 7
+        effect = action_data.get("effect")
+        if effect == "shield_all":
+            for target in _living_party(state):
+                target["guard"] = int(target["guard"]) + 1
+        elif effect == "focus_refund":
+            focus = min(max_focus, focus + 1)
+        elif effect == "heal_lowest":
+            target = min(
+                _living_party(state),
+                key=lambda item: (int(item["hp"]), item["member_id"]),
+            )
+            target["hp"] = min(int(target["max_hp"]), int(target["hp"]) + 1)
+        elif effect == "guard_self":
+            member_state["guard"] = int(member_state["guard"]) + 2
+        elif effect == "last_stand" and int(member_state["hp"]) == 1:
+            damage += 8
+        elif effect == "weaken_intent":
+            pending["intent_power_delta"] = (
+                int(pending.get("intent_power_delta", 0)) - 1
+            )
+        elif effect == "weakness_pierce" and weakness_hit:
+            damage += 6
+        elif effect == "steady_read" and not weakness_hit:
+            damage += 5
+        elif effect == "study_refund":
+            focus = min(max_focus, focus + 2)
+        state["enemy_guard"] = max(0, enemy_before - damage)
+        caption = (
+            f"{actor_name}의 {action_name}! 약점을 꿰뚫어 장벽 {damage} 피해."
+            if weakness_hit
+            else f"{actor_name}의 {action_name}! 장벽 {damage} 피해."
+        )
+
+    state["focus"] = focus
+    return _push_event(
+        state,
+        {
+            "type": "party_action",
+            "member_id": member_id,
+            "actor_name": actor_name,
+            "action": action,
+            "action_name": action_name,
+            "effect_key": effect_key,
+            "weakness_hit": weakness_hit,
+            "damage": damage,
+            "enemy_guard_before": enemy_before,
+            "enemy_guard_after": int(state["enemy_guard"]),
+            "focus_after": focus,
+            "caption": caption,
+        },
+    )
+
+
+def _finalize_round(
+    state: dict[str, Any],
+    encounter: dict[str, Any],
+    profile_by_id: dict[int, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """모든 대원이 행동한 뒤 적의 예고 공격과 라운드 전환을 해결한다."""
+
+    pending = _pending_round(state) or {}
+    intent_power_delta = int(pending.get("intent_power_delta", 0))
+    events: list[dict[str, Any]] = []
+    intent = _intent(encounter, int(state.get("intent_index", 0)))
+    power = max(0, int(intent.get("power", 1)) + intent_power_delta)
+    targets = _target_members(state, intent)
+    target_events = []
+    profile_names = {
+        member_id: profile.get("snapshot", {}).get("name", "탐험대원")
+        for member_id, profile in profile_by_id.items()
+    }
+    for target in targets:
+        guard_before = int(target.get("guard", 0))
+        blocked = min(guard_before, power)
+        damage = max(0, power - blocked)
+        target["guard"] = max(0, guard_before - power)
+        target["hp"] = max(0, int(target["hp"]) - damage)
+        target_events.append(
+            {
+                "member_id": int(target["member_id"]),
+                "name": profile_names[int(target["member_id"])],
+                "damage": damage,
+                "blocked": blocked,
+                "hp_after": int(target["hp"]),
+            }
+        )
+    events.append(
+        _push_event(
+            state,
+            {
+                "type": "enemy_action",
+                "action_name": intent.get("name", "수호자의 공격"),
+                "effect_key": "enemy_wave",
+                "enemy_guard_before": int(state["enemy_guard"]),
+                "enemy_guard_after": int(state["enemy_guard"]),
+                "targets": target_events,
+                "caption": intent.get("telegraph", "수호자의 공격이 밀려왔어요."),
+            },
+        )
+    )
+    if not _living_party(state):
+        state["status"] = "defeat"
+        state["defeat_reason"] = "party_down"
+    elif int(state["round"]) >= int(state["max_rounds"]):
+        state["status"] = "defeat"
+        state["defeat_reason"] = "seal_completed"
+    else:
+        weakness_cycle = list(encounter.get("weakness_cycle") or AFFINITIES)
+        state["round"] = int(state["round"]) + 1
+        state["intent_index"] = int(state.get("intent_index", 0)) + 1
+        state["weakness"] = weakness_cycle[
+            (int(state["round"]) - 1) % len(weakness_cycle)
+        ]
+    if state["status"] == "defeat":
+        events.append(
+            _push_event(
+                state,
+                {
+                    "type": "outcome",
+                    "outcome": "defeat",
+                    "caption": "수호자의 봉인이 완성돼 탐험대가 긴급 귀환해요.",
+                },
+            )
+        )
+    state["pending"] = None
+    return events
+
+
+def _victory_events(state: dict[str, Any]) -> list[dict[str, Any]]:
+    state["status"] = "victory"
+    state["pending"] = None
+    return [
+        _push_event(
+            state,
+            {
+                "type": "outcome",
+                "outcome": "victory",
+                "caption": "수호 장벽이 부서지고 장부지기가 길을 열었어요!",
+            },
+        )
+    ]
+
+
 def resolve_guardian_round(
     battle: dict[str, Any],
     commands: list[dict[str, Any]],
@@ -312,8 +602,13 @@ def resolve_guardian_round(
     state = copy.deepcopy(battle)
     if state.get("status") != "active":
         raise CombatRuleError("EXPEDITION_COMBAT_FINISHED", "이미 끝난 전투예요.")
-    living = _living_party(state)
-    living_ids = [int(member["member_id"]) for member in living]
+    pending = _pending_round(state)
+    if pending is not None and pending.get("acted"):
+        raise CombatRuleError(
+            "EXPEDITION_COMBAT_ROUND_IN_PROGRESS",
+            "이미 시작한 라운드는 대원별 명령으로 이어서 진행해 주세요.",
+        )
+    living_ids = [int(member["member_id"]) for member in _living_party(state)]
     command_ids = [int(command.get("member_id", 0)) for command in commands]
     if len(command_ids) != len(set(command_ids)):
         raise CombatRuleError(
@@ -327,192 +622,48 @@ def resolve_guardian_round(
         )
 
     profile_by_id = {int(profile["id"]): profile for profile in profiles}
-    state_by_id = {
-        int(member["member_id"]): member for member in state.get("party", [])
-    }
-    # 명령 순서는 집중력 계산뿐 아니라 현재 전열이다. 첫 대원이
-    # front 의도의 대상이 되므로, 순서 조정이 방어 판단에도 실제로 영향을 준다.
-    dead = [member for member in state.get("party", []) if int(member["hp"]) <= 0]
-    state["party"] = [state_by_id[member_id] for member_id in command_ids] + dead
-    weakness = state.get("weakness", AFFINITIES[0])
-    exchange: list[dict[str, Any]] = []
-    focus = int(state.get("focus", 0))
-    max_focus = int(state.get("max_focus", 5))
-    intent_power_delta = 0
-
-    # 방어는 라운드 단위다. 지난 적 행동 뒤 남은 수치를 다음 라운드에 이월하지 않는다.
-    for member in state.get("party", []):
-        member["guard"] = 0
-
-    for sequence, command in enumerate(commands):
-        member_id = int(command["member_id"])
-        action = command.get("action")
-        if action not in {"attack", "skill", "guard"}:
-            raise CombatRuleError(
-                "EXPEDITION_COMBAT_ACTION_INVALID",
-                "공격, 고유 스킬, 마음 지키기 중 하나를 골라 주세요.",
-            )
-        profile = profile_by_id[member_id]
-        member_state = state_by_id[member_id]
-        kit = member_battle_kit(profile, current_weakness=weakness)
-        actor_name = profile.get("snapshot", {}).get("name", "탐험대원")
-        enemy_before = int(state["enemy_guard"])
-        damage = 0
-        weakness_hit = False
-        effect_key = "safe_guard"
-        caption = ""
-
-        if action == "guard":
-            focus = min(max_focus, focus + int(kit["guard"]["focus_delta"]))
-            member_state["guard"] = int(kit["guard"]["guard"])
-            action_name = kit["guard"]["name"]
-            caption = f"{actor_name}이(가) 마음을 다잡고 공격에 대비했어요."
-        else:
-            action_data = kit["skill"] if action == "skill" else kit["basic"]
-            action_name = action_data["name"]
-            if action == "skill":
-                cost = int(action_data["focus_cost"])
-                if focus < cost:
-                    raise CombatRuleError(
-                        "EXPEDITION_COMBAT_FOCUS_SHORTAGE",
-                        f"{actor_name}의 고유 스킬에 필요한 집중력이 부족해요.",
-                    )
-                focus -= cost
-            else:
-                focus = min(max_focus, focus + int(action_data["focus_delta"]))
-            affinity = action_data["affinity"]
-            effect_key = action_data["effect_key"]
-            damage = int(action_data["power"])
-            weakness_hit = affinity == weakness
-            if weakness_hit:
-                damage += 7
-            effect = action_data.get("effect")
-            if effect == "shield_all":
-                for target in _living_party(state):
-                    target["guard"] = int(target["guard"]) + 1
-            elif effect == "focus_refund":
-                focus = min(max_focus, focus + 1)
-            elif effect == "heal_lowest":
-                target = min(
-                    _living_party(state),
-                    key=lambda item: (int(item["hp"]), item["member_id"]),
-                )
-                target["hp"] = min(int(target["max_hp"]), int(target["hp"]) + 1)
-            elif effect == "guard_self":
-                member_state["guard"] = int(member_state["guard"]) + 2
-            elif effect == "last_stand" and int(member_state["hp"]) == 1:
-                damage += 8
-            elif effect == "weaken_intent":
-                intent_power_delta -= 1
-            elif effect == "weakness_pierce" and weakness_hit:
-                damage += 6
-            elif effect == "steady_read" and not weakness_hit:
-                damage += 5
-            elif effect == "study_refund":
-                focus = min(max_focus, focus + 2)
-            state["enemy_guard"] = max(0, enemy_before - damage)
-            caption = (
-                f"{actor_name}의 {action_name}! 약점을 꿰뚫어 장벽 {damage} 피해."
-                if weakness_hit
-                else f"{actor_name}의 {action_name}! 장벽 {damage} 피해."
-            )
-
-        exchange.append(
-            {
-                "sequence": sequence,
-                "type": "party_action",
-                "member_id": member_id,
-                "actor_name": actor_name,
-                "action": action,
-                "action_name": action_name,
-                "effect_key": effect_key,
-                "weakness_hit": weakness_hit,
-                "damage": damage,
-                "enemy_guard_before": enemy_before,
-                "enemy_guard_after": int(state["enemy_guard"]),
-                "focus_after": focus,
-                "caption": caption,
-            }
-        )
+    state["pending"] = None
+    events: list[dict[str, Any]] = []
+    for command in commands:
+        events.append(_apply_member_command(state, command, profile_by_id))
         if int(state["enemy_guard"]) <= 0:
-            state["status"] = "victory"
+            events.extend(_victory_events(state))
             break
+    if state["status"] != "victory":
+        events.extend(_finalize_round(state, encounter, profile_by_id))
+    state["last_exchange"] = events
+    _extend_log(state, events)
+    return state
 
-    state["focus"] = focus
-    if state["status"] == "victory":
-        exchange.append(
-            {
-                "sequence": len(exchange),
-                "type": "outcome",
-                "outcome": "victory",
-                "caption": "수호 장벽이 부서지고 장부지기가 길을 열었어요!",
-            }
-        )
+
+def submit_guardian_action(
+    battle: dict[str, Any],
+    command: dict[str, Any],
+    encounter: dict[str, Any],
+    profiles: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """순차 명령 한 건을 즉시 해결한다.
+
+    스테이지 개편(stage-battle-v2.0)의 전투 문법이다. 대원 한 명의 행동을
+    바로 판정해 돌려주고, 살아 있는 모든 대원이 행동하면 같은 응답에서 적의
+    예고 공격과 라운드 전환까지 해결한다. `last_exchange`에는 이번 호출에서
+    새로 일어난 이벤트만 담기고, 라운드 전체 기록은 `round_exchange`에 남는다.
+    """
+
+    state = copy.deepcopy(battle)
+    if state.get("status") != "active":
+        raise CombatRuleError("EXPEDITION_COMBAT_FINISHED", "이미 끝난 전투예요.")
+    profile_by_id = {int(profile["id"]): profile for profile in profiles}
+    events = [_apply_member_command(state, command, profile_by_id)]
+    if int(state["enemy_guard"]) <= 0:
+        events.extend(_victory_events(state))
     else:
-        intent = _intent(encounter, int(state.get("intent_index", 0)))
-        power = max(0, int(intent.get("power", 1)) + intent_power_delta)
-        targets = _target_members(state, intent)
-        target_events = []
-        profile_names = {
-            member_id: profile.get("snapshot", {}).get("name", "탐험대원")
-            for member_id, profile in profile_by_id.items()
+        pending = _pending_round(state) or {"acted": []}
+        living_ids = {
+            int(member["member_id"]) for member in _living_party(state)
         }
-        for target in targets:
-            guard_before = int(target.get("guard", 0))
-            blocked = min(guard_before, power)
-            damage = max(0, power - blocked)
-            target["guard"] = max(0, guard_before - power)
-            target["hp"] = max(0, int(target["hp"]) - damage)
-            target_events.append(
-                {
-                    "member_id": int(target["member_id"]),
-                    "name": profile_names[int(target["member_id"])],
-                    "damage": damage,
-                    "blocked": blocked,
-                    "hp_after": int(target["hp"]),
-                }
-            )
-        exchange.append(
-            {
-                "sequence": len(exchange),
-                "type": "enemy_action",
-                "action_name": intent.get("name", "수호자의 공격"),
-                "effect_key": "enemy_wave",
-                "enemy_guard_before": int(state["enemy_guard"]),
-                "enemy_guard_after": int(state["enemy_guard"]),
-                "targets": target_events,
-                "caption": intent.get("telegraph", "수호자의 공격이 밀려왔어요."),
-            }
-        )
-        if not _living_party(state):
-            state["status"] = "defeat"
-            state["defeat_reason"] = "party_down"
-        elif int(state["round"]) >= int(state["max_rounds"]):
-            state["status"] = "defeat"
-            state["defeat_reason"] = "seal_completed"
-        else:
-            weakness_cycle = list(encounter.get("weakness_cycle") or AFFINITIES)
-            state["round"] = int(state["round"]) + 1
-            state["intent_index"] = int(state.get("intent_index", 0)) + 1
-            state["weakness"] = weakness_cycle[
-                (int(state["round"]) - 1) % len(weakness_cycle)
-            ]
-
-    if state["status"] == "defeat":
-        exchange.append(
-            {
-                "sequence": len(exchange),
-                "type": "outcome",
-                "outcome": "defeat",
-                "caption": "수호자의 봉인이 완성돼 탐험대가 긴급 귀환해요.",
-            }
-        )
-    state["last_exchange"] = exchange
-    log = list(state.get("battle_log", []))
-    log.extend(
-        event["caption"]
-        for event in exchange
-        if isinstance(event.get("caption"), str) and event["caption"]
-    )
-    state["battle_log"] = log[-8:]
+        if living_ids <= set(int(item) for item in pending.get("acted", [])):
+            events.extend(_finalize_round(state, encounter, profile_by_id))
+    state["last_exchange"] = events
+    _extend_log(state, events)
     return state

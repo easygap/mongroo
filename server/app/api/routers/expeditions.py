@@ -159,6 +159,7 @@ async def resolve_expedition_combat_turn(
         user.id,
         run_id,
         commands=[command.model_dump() for command in body.commands],
+        partial=body.partial,
         expected_revision=body.expected_revision,
         client_action_id=body.client_action_id,
     )

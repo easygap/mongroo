@@ -1,3 +1,5 @@
+import itertools
+
 import pytest
 
 from app.content.expeditions.combat import (
@@ -6,6 +8,7 @@ from app.content.expeditions.combat import (
     guardian_battle_payload,
     new_guardian_battle,
     resolve_guardian_round,
+    submit_guardian_action,
 )
 
 
@@ -220,3 +223,205 @@ def test_payload_exposes_every_species_unique_manual_skill(profiles):
     )
     assert payload["enemy"]["intent"]["target"] == "front"
     assert payload["party"][0]["kit"]["skill"]["name"] == "그림자 틈베기"
+
+
+def _submit_round(battle, commands, encounter, profiles):
+    """순차 명령으로 한 라운드를 진행하고 최종 상태와 이벤트 흐름을 돌려준다."""
+
+    state = battle
+    events = []
+    for command in commands:
+        state = submit_guardian_action(state, command, encounter, profiles)
+        events.extend(state["last_exchange"])
+    return state, events
+
+
+def _strip_runtime_fields(state):
+    stripped = {
+        key: value
+        for key, value in state.items()
+        if key not in {"pending", "round_exchange", "last_exchange"}
+    }
+    return stripped
+
+
+def test_sequential_round_matches_batch_round_exactly(profiles):
+    encounter = _encounter()
+    actions = ["attack", "skill", "guard"]
+    for first, second in itertools.product(actions, actions):
+        commands = [
+            {"member_id": 1, "action": first},
+            {"member_id": 2, "action": second},
+        ]
+        batch_error = sequential_error = None
+        batch = sequential = events = None
+        try:
+            batch = resolve_guardian_round(
+                new_guardian_battle("keeper", encounter, profiles),
+                commands,
+                encounter,
+                profiles,
+            )
+        except CombatRuleError as error:
+            batch_error = error.code
+        try:
+            sequential, events = _submit_round(
+                new_guardian_battle("keeper", encounter, profiles),
+                commands,
+                encounter,
+                profiles,
+            )
+        except CombatRuleError as error:
+            sequential_error = error.code
+
+        # 규칙 오류(예: 집중력 부족)도 두 경로에서 같은 코드로 일어나야 한다.
+        assert batch_error == sequential_error, (first, second)
+        if batch_error is not None:
+            continue
+        assert _strip_runtime_fields(sequential) == _strip_runtime_fields(batch)
+        assert events == batch["last_exchange"]
+        assert sequential["round_exchange"] == batch["round_exchange"]
+
+
+def test_sequential_round_matches_batch_across_multiple_rounds(profiles):
+    encounter = _encounter(enemy_max_guard=200)
+    rounds = [
+        [
+            {"member_id": 2, "action": "attack"},
+            {"member_id": 1, "action": "skill"},
+        ],
+        [
+            {"member_id": 1, "action": "guard"},
+            {"member_id": 2, "action": "attack"},
+        ],
+        [
+            {"member_id": 1, "action": "attack"},
+            {"member_id": 2, "action": "guard"},
+        ],
+    ]
+    batch = new_guardian_battle("keeper", encounter, profiles)
+    sequential = new_guardian_battle("keeper", encounter, profiles)
+    for commands in rounds:
+        batch = resolve_guardian_round(batch, commands, encounter, profiles)
+        sequential, _ = _submit_round(sequential, commands, encounter, profiles)
+        assert _strip_runtime_fields(sequential) == _strip_runtime_fields(batch)
+
+
+def test_partial_action_returns_only_new_events(profiles):
+    encounter = _encounter()
+    battle = new_guardian_battle("keeper", encounter, profiles)
+
+    after_first = submit_guardian_action(
+        battle, {"member_id": 2, "action": "attack"}, encounter, profiles
+    )
+    assert [event["type"] for event in after_first["last_exchange"]] == [
+        "party_action"
+    ]
+    assert after_first["status"] == "active"
+    assert after_first["round"] == 1
+    assert after_first["pending"]["acted"] == [2]
+
+    payload = guardian_battle_payload(after_first, encounter, profiles)
+    assert payload["pending_round"] == {"acted": [2], "awaiting": [1]}
+
+    after_second = submit_guardian_action(
+        after_first, {"member_id": 1, "action": "attack"}, encounter, profiles
+    )
+    types = [event["type"] for event in after_second["last_exchange"]]
+    assert types[0] == "party_action"
+    assert "enemy_action" in types
+    assert after_second["round"] == 2
+    assert after_second["pending"] is None
+
+
+def test_partial_rejects_duplicate_and_down_members(profiles):
+    encounter = _encounter()
+    battle = new_guardian_battle("keeper", encounter, profiles)
+    after_first = submit_guardian_action(
+        battle, {"member_id": 1, "action": "guard"}, encounter, profiles
+    )
+
+    with pytest.raises(CombatRuleError) as duplicate:
+        submit_guardian_action(
+            after_first, {"member_id": 1, "action": "attack"}, encounter, profiles
+        )
+    assert duplicate.value.code == "EXPEDITION_COMBAT_DUPLICATE_MEMBER"
+
+    with pytest.raises(CombatRuleError) as unknown:
+        submit_guardian_action(
+            after_first, {"member_id": 9, "action": "attack"}, encounter, profiles
+        )
+    assert unknown.value.code == "EXPEDITION_COMBAT_MEMBER_INVALID"
+
+
+def test_partial_focus_shortage_keeps_round_state_untouched(profiles):
+    encounter = _encounter(starting_focus=1)
+    battle = new_guardian_battle("keeper", encounter, profiles)
+
+    with pytest.raises(CombatRuleError) as error:
+        submit_guardian_action(
+            battle, {"member_id": 1, "action": "skill"}, encounter, profiles
+        )
+    assert error.value.code == "EXPEDITION_COMBAT_FOCUS_SHORTAGE"
+    # 원본 상태는 그대로여서 다른 카드를 다시 고를 수 있다.
+    assert battle["pending"] is None
+    assert battle["focus"] == 1
+
+    recovered = submit_guardian_action(
+        battle, {"member_id": 2, "action": "attack"}, encounter, profiles
+    )
+    assert recovered["pending"]["acted"] == [2]
+    follow_up = submit_guardian_action(
+        recovered, {"member_id": 1, "action": "skill"}, encounter, profiles
+    )
+    assert follow_up["round"] == 2
+
+
+def test_partial_victory_ends_round_without_enemy_action(profiles):
+    encounter = _encounter(enemy_max_guard=10)
+    battle = new_guardian_battle("keeper", encounter, profiles)
+    resolved = submit_guardian_action(
+        battle, {"member_id": 1, "action": "attack"}, encounter, profiles
+    )
+    assert resolved["status"] == "victory"
+    assert all(
+        event["type"] != "enemy_action" for event in resolved["last_exchange"]
+    )
+    assert resolved["pending"] is None
+
+
+def test_partial_front_target_follows_action_order(profiles):
+    encounter = _encounter()
+    battle = new_guardian_battle("keeper", encounter, profiles)
+    state = submit_guardian_action(
+        battle, {"member_id": 2, "action": "guard"}, encounter, profiles
+    )
+    state = submit_guardian_action(
+        state, {"member_id": 1, "action": "attack"}, encounter, profiles
+    )
+    counter = next(
+        event
+        for event in state["last_exchange"]
+        if event["type"] == "enemy_action"
+    )
+    assert counter["targets"][0]["member_id"] == 2
+    assert [member["member_id"] for member in state["party"]] == [2, 1]
+
+
+def test_batch_round_rejects_mixing_into_a_started_sequential_round(profiles):
+    encounter = _encounter()
+    battle = new_guardian_battle("keeper", encounter, profiles)
+    started = submit_guardian_action(
+        battle, {"member_id": 1, "action": "attack"}, encounter, profiles
+    )
+    with pytest.raises(CombatRuleError) as error:
+        resolve_guardian_round(
+            started,
+            [
+                {"member_id": 1, "action": "attack"},
+                {"member_id": 2, "action": "attack"},
+            ],
+            encounter,
+            profiles,
+        )
+    assert error.value.code == "EXPEDITION_COMBAT_ROUND_IN_PROGRESS"

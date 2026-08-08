@@ -22,6 +22,7 @@ from app.content.expeditions.combat import (
     guardian_battle_payload,
     new_guardian_battle,
     resolve_guardian_round,
+    submit_guardian_action,
 )
 from app.content.expeditions.skills import skill_definition
 from app.content.expeditions.validator import expand_map_templates, validate_content
@@ -1252,14 +1253,20 @@ async def resolve_combat_turn(
     run_id: int,
     *,
     commands: list[dict[str, Any]],
+    partial: bool = False,
     expected_revision: int,
     client_action_id: str,
 ) -> dict:
-    """플레이어가 예약한 한 라운드를 서버 권위로 해결한다."""
+    """플레이어의 전투 명령을 서버 권위로 해결한다.
+
+    partial=False는 기존 일괄 라운드, partial=True는 스테이지 개편의 순차
+    명령이다. 두 경로는 같은 판정 함수를 지나므로 결과가 동일하다.
+    """
 
     run = await _lock_run(db, user_id, run_id)
     request_payload = {
         "commands": commands,
+        "partial": partial,
         "expected_revision": expected_revision,
     }
     replay = await _existing_action(
@@ -1295,12 +1302,20 @@ async def resolve_combat_turn(
     members = await _party_rows(db, run.id)
     battle = _guardian_battle_state(run, node_state.event_code, event, members)
     try:
-        resolved = resolve_guardian_round(
-            battle,
-            commands,
-            encounter,
-            _combat_profiles(members),
-        )
+        if partial:
+            resolved = submit_guardian_action(
+                battle,
+                commands[0],
+                encounter,
+                _combat_profiles(members),
+            )
+        else:
+            resolved = resolve_guardian_round(
+                battle,
+                commands,
+                encounter,
+                _combat_profiles(members),
+            )
     except CombatRuleError as error:
         raise AppError(422, error.code, error.message) from error
 
@@ -1310,9 +1325,14 @@ async def resolve_combat_turn(
     run.runtime_effects_snapshot = effects
 
     if resolved["status"] in {"victory", "defeat"}:
+        # 순차 명령에서 last_exchange는 이번 호출의 변화만 담는다. 이야기 기록은
+        # 라운드 전체(round_exchange)를 읽어 일괄 라운드와 같은 결과를 남긴다.
+        round_events = resolved.get("round_exchange") or resolved.get(
+            "last_exchange", []
+        )
         party_actions = [
             item
-            for item in resolved.get("last_exchange", [])
+            for item in round_events
             if item.get("type") == "party_action"
         ]
         actor_names = list(

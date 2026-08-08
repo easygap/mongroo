@@ -637,6 +637,79 @@ async def test_guardian_requires_manual_commands_and_replays_each_round(
     )
 
 
+async def test_guardian_accepts_sequential_partial_commands(
+    client, user_tokens, session_factory
+):
+    """스테이지 개편의 순차 명령: 대원 한 명씩 제출해도 같은 라운드 계약을 지킨다."""
+
+    headers = auth_headers(user_tokens)
+    plant_id = await _prepare_stage_two(
+        session_factory,
+        user_tokens["user"]["id"],
+    )
+    run = await _reach_guardian(
+        client,
+        headers,
+        await _start(client, headers, plant_id),
+        "manual-partial",
+    )
+    battle = run["current_event"]["battle"]
+    living = [member for member in battle["party"] if member["hp"] > 0]
+    assert len(living) >= 2
+
+    first = await client.post(
+        f"/adventure/expeditions/{run['run']['id']}/combat/turns",
+        headers=headers,
+        json={
+            "commands": [
+                {"member_id": living[0]["member_id"], "action": "attack"}
+            ],
+            "partial": True,
+            "expected_revision": run["run"]["revision"],
+            "client_action_id": "manual-partial-0001",
+        },
+    )
+    assert first.status_code == 200
+    payload = first.json()
+    mid_battle = payload["current_event"]["battle"]
+    # 첫 대원만 행동했으므로 라운드는 그대로이고 적은 아직 움직이지 않는다.
+    assert mid_battle["round"] == 1
+    assert mid_battle["pending_round"]["acted"] == [living[0]["member_id"]]
+    assert mid_battle["pending_round"]["awaiting"] == [
+        member["member_id"] for member in living[1:]
+    ]
+    assert [event["type"] for event in payload["last_combat_exchange"]] == [
+        "party_action"
+    ]
+
+    revision = payload["run"]["revision"]
+    for index, member in enumerate(living[1:], start=2):
+        response = await client.post(
+            f"/adventure/expeditions/{run['run']['id']}/combat/turns",
+            headers=headers,
+            json={
+                "commands": [
+                    {"member_id": member["member_id"], "action": "attack"}
+                ],
+                "partial": True,
+                "expected_revision": revision,
+                "client_action_id": f"manual-partial-{index:04d}",
+            },
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        revision = payload["run"]["revision"]
+
+    final_battle = payload["current_event"]["battle"]
+    # 마지막 대원의 제출과 같은 응답에서 적 행동과 라운드 전환까지 해결된다.
+    assert final_battle["round"] == 2
+    assert final_battle["pending_round"]["acted"] == []
+    assert any(
+        event["type"] == "enemy_action"
+        for event in payload["last_combat_exchange"]
+    )
+
+
 async def test_guardian_defeat_forces_safe_return_and_loses_carried_rewards(
     client, user_tokens, session_factory
 ):
