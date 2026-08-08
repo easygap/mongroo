@@ -1,9 +1,15 @@
 # 탐험 수호전 수동 지휘 계약
 
-최종 갱신: 2026-08-07
+최종 갱신: 2026-08-08
 상태: 첫 지역 구현 기준
 관련 코드: `server/app/content/expeditions/combat.py`,
 `app/lib/features/expedition/presentation/expedition_battle_panel.dart`
+확장 콘텐츠: 6인 합동 수호전은 `docs/guardian_raid_design.md`가 정의하며 이 문서의
+루프·판정·연출 계약을 그대로 승계한다.
+
+> **2026-08-08 구조 개편 공지** — 명령 입력 방식(순차 명령·카드 독)과 화면
+> 레이아웃(세로 3존)은 `docs/expedition_stage_redesign.md` 4~5장이 우선한다.
+> 판정 규칙·자원·서버 계약·검증 기준은 계속 이 문서를 따른다.
 
 ## 1. 문제 정의
 
@@ -137,6 +143,19 @@
 - 요청: 살아 있는 대원 전원의 `{member_id, action}`를 실행 순서대로 전송한다.
 - `action`: `attack|skill|guard`
 - 살아 있는 대원 누락, 중복, 알 수 없는 행동, 순서상 집중력 부족은 422다.
+- **순차 명령(stage-battle-v2.0)**: `partial: true`와 함께 `commands`에 대원 한
+  명의 행동 하나만 보내면 서버가 그 행동을 즉시 판정한다. 살아 있는 모든 대원이
+  행동한 마지막 제출에서 같은 응답으로 적의 예고 공격과 라운드 전환까지 해결한다.
+  일괄 제출과 순차 제출은 같은 판정 함수를 지나므로 결과가 동일하며, 이는 단위
+  테스트가 전 조합으로 강제한다.
+- 순차 진행 상태는 상태 응답의 `pending_round: {acted, awaiting}`으로 내려가고,
+  `last_exchange`에는 그 호출에서 새로 일어난 이벤트만 담긴다. 라운드 전체 기록은
+  `round_exchange`가 보존한다.
+- 시작한 순차 라운드에 일괄 제출이 끼어들면
+  `EXPEDITION_COMBAT_ROUND_IN_PROGRESS`(422)로 거절한다. 이미 행동한 대원의 재제출은
+  `EXPEDITION_COMBAT_DUPLICATE_MEMBER`, 물러난 대원은
+  `EXPEDITION_COMBAT_MEMBER_DOWN`, 파티에 없는 대원은
+  `EXPEDITION_COMBAT_MEMBER_INVALID`다.
 - 기존 guardian `choice`와 단독 `skill` API는 409로 거절한다. 구버전 결과형 우회로가 없어야 한다.
 - `expected_revision` 충돌 검사와 `client_action_id` 멱등 재생을 기존 탐험 행동과 같이 쓴다.
 - 런타임 전투 상태는 `runtime_effects_snapshot.guardian_battle`에 저장해 앱 종료·기기 변경 후에도 이어서 플레이한다.
