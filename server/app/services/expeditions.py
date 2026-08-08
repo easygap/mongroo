@@ -25,6 +25,7 @@ from app.content.expeditions.combat import (
     submit_guardian_action,
 )
 from app.content.expeditions.skills import skill_definition
+from app.content.expeditions.tangles import tangle_definition
 from app.content.expeditions.validator import (
     STAGE_COUNT,
     expand_map_templates,
@@ -95,6 +96,72 @@ def select_map_template(
     if mode == "tutorial":
         return templates[0]
     return templates[int(map_seed[:8], 16) % len(templates)]
+
+
+def _stage_arena(
+    content: dict[str, Any], stage: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any], str]:
+    """전투·보스 스테이지의 아레나 지도와 사건을 합성한다.
+
+    스테이지 세션은 노드 그래프를 걷지 않고 바로 전투로 들어간다(개편 설계서
+    4.1). 보스 스테이지는 pack의 수호전 사건을 그대로 쓰고, 전투 스테이지는
+    엉킴 웨이브 사건을 여기서 만든다. run의 map_snapshot에 저장되므로 진행 중
+    세션은 이후 콘텐츠 패치의 영향을 받지 않는다.
+    """
+
+    stage_no = int(stage["no"])
+    region = content["region"]
+    if stage["kind"] == "boss":
+        event_code = stage["event_code"]
+        events = content["events"]
+    else:
+        event_code = f"stage_wave_{stage_no}"
+        wave_codes = list(stage.get("tangles") or [])
+        events = {
+            **content["events"],
+            event_code: {
+                "title": stage["title"],
+                "text": stage["summary"],
+                "choices": [],
+                "encounter": {
+                    "kind": "guardian",
+                    "enemy_kind": "tangle",
+                    "enemy_name": tangle_definition(wave_codes[0])["name"],
+                    "waves": wave_codes,
+                    # 웨이브당 4라운드의 총 예산. 일찍 푼 웨이브의 남은
+                    # 라운드는 다음 웨이브가 이어받는다.
+                    "max_rounds": 4 * len(wave_codes),
+                    "starting_focus": 3,
+                    "max_focus": 5,
+                },
+            },
+        }
+    map_data = {
+        "code": f"stage_arena_{stage_no}",
+        "name": stage["title"],
+        "entrance": "stage_den",
+        "initial_revealed": ["stage_den"],
+        "nodes": [
+            {
+                "code": "stage_den",
+                "name": stage["title"],
+                "type": "guardian",
+                "x": 0.5,
+                "y": 0.55,
+                "cost": 0,
+                "scene_key": "monster_den",
+                "scene_label": "스테이지 전투",
+                "scene_description": stage["summary"],
+                "depth_label": (
+                    f"{region.get('short_name') or region['name']} {stage_no}"
+                ),
+                "threat_level": 3,
+                "event_code": event_code,
+            }
+        ],
+        "edges": [],
+    }
+    return map_data, events, event_code
 
 
 def _node_defs(run: ExpeditionRun) -> dict[str, dict]:
@@ -608,10 +675,10 @@ async def run_payload(db: AsyncSession, run: ExpeditionRun) -> dict:
                         "cost": int(defs[code].get("cost", 0)),
                     }
                 )
-        if run.objective_secured and defs[run.current_node_code]["type"] in (
-            "exit",
-            "camp",
-            "entrance",
+        if run.objective_secured and (
+            # 아레나 스테이지에는 출구가 없다. 전투가 끝난 자리가 곧 귀환 지점이다.
+            run.stage_no is not None
+            or defs[run.current_node_code]["type"] in ("exit", "camp", "entrance")
         ):
             available.append({"type": "extract"})
         if not skill_pending and any(
@@ -729,6 +796,7 @@ async def start_run(
     stage_no: int | None = None,
 ) -> dict:
     content = _content()
+    stage_data: dict[str, Any] | None = None
     if stage_no is not None:
         stages = content.get("stages") or []
         if not 1 <= stage_no <= len(stages):
@@ -743,6 +811,7 @@ async def start_run(
                 "EXPEDITION_STAGE_LOCKED",
                 "앞 스테이지를 먼저 완주하면 이 길이 열려요.",
             )
+        stage_data = stages[stage_no - 1]
     if (
         not plant_ids
         or len(plant_ids) != len(set(plant_ids))
@@ -812,14 +881,19 @@ async def start_run(
     map_seed = hmac.new(
         get_settings().jwt_secret.encode(), seed_source.encode(), hashlib.sha256
     ).hexdigest()
-    map_data = select_map_template(content, map_seed, mode)
+    arena_event_code: str | None = None
+    if stage_data is not None and stage_data["kind"] in ("battle", "boss"):
+        map_data, map_events, arena_event_code = _stage_arena(content, stage_data)
+    else:
+        map_data = select_map_template(content, map_seed, mode)
+        map_events = content["events"]
     map_snapshot = {
         "code": map_data["code"],
         "name": map_data["name"],
         "entrance": map_data["entrance"],
         "nodes": map_data["nodes"],
         "edges": map_data["edges"],
-        "events": content["events"],
+        "events": map_events,
         "discoveries": content["discoveries"],
         "region": content["region"],
     }
@@ -829,6 +903,8 @@ async def start_run(
         region_code=region_code,
         mode=mode,
         stage_no=stage_no,
+        # 아레나 스테이지는 이동 없이 바로 전투를 마주한다.
+        phase="awaiting_event" if arena_event_code is not None else "exploring",
         local_date=today,
         content_version=content["content_version"],
         map_seed=map_seed,
@@ -892,18 +968,27 @@ async def start_run(
     await db.flush()
 
     real_members = [member for member in members if not member.is_guide] or members
-    run.spotlight_snapshot = [
-        {
-            "event_code": "wet_label_order",
-            "member_id": real_members[0].id,
-            "consumed": False,
-        },
-        {
-            "event_code": "ledger_keeper",
-            "member_id": real_members[-1].id,
-            "consumed": False,
-        },
-    ]
+    if arena_event_code is not None:
+        run.spotlight_snapshot = [
+            {
+                "event_code": arena_event_code,
+                "member_id": real_members[0].id,
+                "consumed": False,
+            },
+        ]
+    else:
+        run.spotlight_snapshot = [
+            {
+                "event_code": "wet_label_order",
+                "member_id": real_members[0].id,
+                "consumed": False,
+            },
+            {
+                "event_code": "ledger_keeper",
+                "member_id": real_members[-1].id,
+                "consumed": False,
+            },
+        ]
     for node in map_data["nodes"]:
         status = (
             "revealed"
@@ -1428,6 +1513,29 @@ async def resolve_combat_turn(
             run.run_thread_snapshot = thread
         if victory:
             run.phase = "exploring"
+            if run.stage_no is not None and not run.objective_secured:
+                # 스테이지 세션은 전투가 곧 목표다. 승리가 목표 확보이며
+                # 보상 후보와 이야기 payoff를 목표 노드와 같은 규칙으로 남긴다.
+                run.objective_secured = True
+                thread = dict(run.run_thread_snapshot)
+                thread.update(
+                    {"stage": "payoff", "current_text": thread["payoff"]}
+                )
+                run.run_thread_snapshot = thread
+                reward = run.map_snapshot["region"]["reward"]
+                db.add(
+                    ExpeditionLoot(
+                        run_id=run.id,
+                        node_code=run.current_node_code,
+                        item_code=reward["item_code"],
+                        quantity=1,
+                        value_units=1,
+                        loot_kind="objective",
+                        disposition=(
+                            "candidate" if run.reward_eligible else "recorded"
+                        ),
+                    )
+                )
         else:
             await _safe_return(db, run, reason="guardian_defeat")
 
@@ -1945,11 +2053,14 @@ async def extract(
             "EXPEDITION_OBJECTIVE_REQUIRED",
             "탐험 목표를 확보한 뒤 귀환할 수 있습니다.",
         )
-    if _node_defs(run)[run.current_node_code]["type"] not in (
+    if run.stage_no is None and _node_defs(run)[run.current_node_code][
+        "type"
+    ] not in (
         "exit",
         "camp",
         "entrance",
     ):
+        # 아레나 스테이지는 출구 노드가 없으므로 전투가 끝난 자리에서 귀환한다.
         raise AppError(
             409, "EXPEDITION_EXIT_REQUIRED", "안전한 귀환 지점으로 이동해 주세요."
         )

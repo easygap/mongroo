@@ -425,3 +425,156 @@ def test_batch_round_rejects_mixing_into_a_started_sequential_round(profiles):
             profiles,
         )
     assert error.value.code == "EXPEDITION_COMBAT_ROUND_IN_PROGRESS"
+
+
+def _wave_encounter(codes: list[str], **overrides) -> dict:
+    return {
+        "kind": "guardian",
+        "enemy_kind": "tangle",
+        "waves": codes,
+        "max_rounds": 4 * len(codes),
+        "starting_focus": 3,
+        "max_focus": 5,
+        **overrides,
+    }
+
+
+def test_wave_battle_starts_from_the_first_tangle(profiles):
+    encounter = _wave_encounter(["tangled_ledger", "drifting_pressings"])
+    battle = new_guardian_battle("stage_wave_3", encounter, profiles)
+
+    assert battle["enemy_kind"] == "tangle"
+    assert battle["enemy_guard"] == 34
+    assert battle["max_rounds"] == 8
+    # 첫 웨이브의 약점 순환과 등장 문구를 그대로 쓴다.
+    assert battle["weakness"] == "insight"
+    assert battle["battle_log"] == ["엉킨 장부 뭉치가 길을 반쯤 막고 웅크렸어요."]
+
+    payload = guardian_battle_payload(battle, encounter, profiles)
+    assert payload["enemy"]["name"] == "엉킨 장부 뭉치"
+    assert payload["enemy"]["kind"] == "tangle"
+    assert payload["wave"] == {"index": 1, "count": 2, "name": "엉킨 장부 뭉치"}
+
+
+def test_clearing_a_wave_ends_the_round_and_brings_the_next_tangle(profiles):
+    encounter = _wave_encounter(["tangled_ledger", "drifting_pressings"])
+    battle = new_guardian_battle("stage_wave_3", encounter, profiles)
+
+    # 그림자 틈베기: 18 + 관찰 7 = 25, 약점 +7, 약점 관통 +6 = 38 ≥ 34.
+    resolved = resolve_guardian_round(
+        battle,
+        [
+            {"member_id": 1, "action": "skill"},
+            {"member_id": 2, "action": "attack"},
+        ],
+        encounter,
+        profiles,
+    )
+
+    types = [event["type"] for event in resolved["last_exchange"]]
+    assert types == ["party_action", "wave_cleared", "wave_intro"]
+    # 웨이브가 풀리면 그 라운드는 끝난다 — 남은 대원 차례도, 적 예고 공격도 없다.
+    assert resolved["status"] == "active"
+    assert resolved["wave_index"] == 1
+    assert resolved["enemy_guard"] == 36
+    assert resolved["round"] == 2
+    assert resolved["weakness"] == "care"
+    assert resolved["pending"] is None
+    # 집중력은 웨이브를 넘어 이어진다. 3 - 스킬 2 = 1.
+    assert resolved["focus"] == 1
+    cleared = resolved["last_exchange"][1]
+    assert cleared["caption"] == "엉킨 장부가 스르르 풀려 제자리 서가로 돌아갔어요."
+    intro = resolved["last_exchange"][2]
+    assert intro["enemy_name"] == "표류 압화 떼"
+
+    payload = guardian_battle_payload(resolved, encounter, profiles)
+    assert payload["wave"] == {"index": 2, "count": 2, "name": "표류 압화 떼"}
+
+
+def test_final_wave_release_becomes_the_victory_caption(profiles):
+    encounter = _wave_encounter(["tangled_ledger"])
+    battle = new_guardian_battle("stage_wave_1", encounter, profiles)
+
+    resolved = resolve_guardian_round(
+        battle,
+        [
+            {"member_id": 1, "action": "skill"},
+            {"member_id": 2, "action": "attack"},
+        ],
+        encounter,
+        profiles,
+    )
+
+    assert resolved["status"] == "victory"
+    outcome = resolved["last_exchange"][-1]
+    assert outcome["type"] == "outcome"
+    assert outcome["caption"] == "엉킨 장부가 스르르 풀려 제자리 서가로 돌아갔어요."
+    assert all(
+        event["type"] != "enemy_action" for event in resolved["last_exchange"]
+    )
+
+
+def test_sequential_wave_battle_matches_batch_exactly(profiles):
+    encounter = _wave_encounter(["tangled_ledger", "drifting_pressings"])
+    rounds = [
+        [
+            {"member_id": 1, "action": "skill"},
+            {"member_id": 2, "action": "attack"},
+        ],
+        [
+            {"member_id": 1, "action": "attack"},
+            {"member_id": 2, "action": "attack"},
+        ],
+        [
+            {"member_id": 1, "action": "attack"},
+            {"member_id": 2, "action": "attack"},
+        ],
+    ]
+    batch = new_guardian_battle("stage_wave_3", encounter, profiles)
+    sequential = new_guardian_battle("stage_wave_3", encounter, profiles)
+    for commands in rounds:
+        if batch["status"] != "active":
+            break
+        remaining = [
+            command
+            for command in commands
+            if any(
+                member["member_id"] == command["member_id"]
+                and member["hp"] > 0
+                for member in batch["party"]
+            )
+        ]
+        batch = resolve_guardian_round(batch, remaining, encounter, profiles)
+        # 순차 제출은 웨이브가 풀리는 순간 라운드가 끝났다는 응답을 받으므로,
+        # 남은 명령을 다음 라운드로 흘려보내지 않고 거기서 멈춘다.
+        for command in remaining:
+            sequential = submit_guardian_action(
+                sequential, command, encounter, profiles
+            )
+            if any(
+                event["type"] in {"wave_cleared", "outcome"}
+                for event in sequential["last_exchange"]
+            ):
+                break
+        assert _strip_runtime_fields(sequential) == _strip_runtime_fields(batch)
+
+    # 웨이브 전환을 포함한 전 라운드에서 두 입력 방식의 결과가 같다.
+    assert batch["wave_index"] == sequential["wave_index"]
+
+
+def test_wave_round_budget_is_shared_across_waves(profiles):
+    encounter = _wave_encounter(["tangled_ledger"], max_rounds=1)
+    battle = new_guardian_battle("stage_wave_1", encounter, profiles)
+
+    resolved = resolve_guardian_round(
+        battle,
+        [
+            {"member_id": 1, "action": "guard"},
+            {"member_id": 2, "action": "guard"},
+        ],
+        encounter,
+        profiles,
+    )
+
+    assert resolved["status"] == "defeat"
+    assert resolved["defeat_reason"] == "seal_completed"

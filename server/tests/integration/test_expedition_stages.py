@@ -1,14 +1,74 @@
 """스테이지 지도와 모험 허브가 읽는 진행 계약.
 
-개편 설계서 3.1(8스테이지 구성), 5.2(지도 표시), 7장(진행 저장)을 검증한다.
+개편 설계서 3.1(8스테이지 구성), 3.3(엉킴 웨이브), 5.2(지도 표시),
+7장(진행 저장)을 검증한다.
 """
+
+import sqlalchemy as sa
+
+from app.core.timeutil import utcnow
+from app.models.expedition import UserStageProgress
 
 from tests.conftest import auth_headers
 from tests.integration.test_interactive_expeditions import (
-    _complete_run,
+    _action,
     _prepare_stage_two,
     _start,
 )
+
+
+async def _seed_cleared_stages(session_factory, user_id: int, upto: int) -> None:
+    """앞 스테이지들을 완주한 상태를 만들어 뒤 스테이지를 연다."""
+
+    now = utcnow()
+    async with session_factory() as db:
+        for stage_no in range(1, upto + 1):
+            db.add(
+                UserStageProgress(
+                    user_id=user_id,
+                    region_code="moss_archive",
+                    stage_no=stage_no,
+                    cleared_at=now,
+                    clear_count=1,
+                    updated_at=now,
+                )
+            )
+        await db.commit()
+
+
+async def _run_stage_to_completion(client, headers: dict, run: dict, key_prefix: str):
+    """아레나 스테이지를 전투 승리부터 현장 귀환까지 끝낸다."""
+
+    run, _ = await _fight_stage_battle(client, headers, run, f"{key_prefix}-fight")
+    return await _action(
+        client, headers, run, "extract", {}, f"{key_prefix}-extract"
+    )
+
+
+async def _fight_stage_battle(client, headers: dict, run: dict, key_prefix: str):
+    """전 대원 공격만으로 웨이브 전투를 끝까지 진행한다. gentle 밴드 검증을 겸한다."""
+
+    turn = 1
+    exchanges: list[dict] = []
+    while (run.get("current_event") or {}).get("battle", {}).get("status") == "active":
+        battle = run["current_event"]["battle"]
+        commands = [
+            {"member_id": member["member_id"], "action": "attack"}
+            for member in battle["party"]
+            if member["hp"] > 0
+        ]
+        run = await _action(
+            client,
+            headers,
+            run,
+            "combat/turns",
+            {"commands": commands},
+            f"{key_prefix}-{turn:04d}",
+        )
+        exchanges.extend(run["last_combat_exchange"])
+        turn += 1
+        assert turn <= 20
+    return run, exchanges
 
 
 async def _stage_map(client, headers: dict) -> dict:
@@ -93,7 +153,7 @@ async def test_clearing_a_stage_opens_the_next_point(
     during = await _stage_map(client, headers)
     assert during["active_run"] == {"run_id": run["run"]["id"], "stage_no": 1}
 
-    completed = await _complete_run(client, headers, run)
+    completed = await _run_stage_to_completion(client, headers, run, "stage-run")
     assert completed["summary"]["progress"]["stage"] == {
         "stage_no": 1,
         "first_clear": True,
@@ -134,7 +194,7 @@ async def test_story_seen_is_recorded_only_for_cleared_stages(
         stage_no=1,
         key="stage-story-0001",
     )
-    await _complete_run(client, headers, run)
+    await _run_stage_to_completion(client, headers, run, "stage-story")
 
     seen = await client.post(
         "/adventure/stages/moss_archive/1/story-seen", headers=headers
@@ -151,6 +211,127 @@ async def test_story_seen_is_recorded_only_for_cleared_stages(
     assert missing.status_code == 404
 
 
+async def test_battle_stage_run_starts_directly_in_a_tangle_fight(
+    client, user_tokens, session_factory
+):
+    headers = auth_headers(user_tokens)
+    plant_id = await _prepare_stage_two(session_factory, user_tokens["user"]["id"])
+
+    run = await _start(
+        client,
+        headers,
+        plant_id,
+        mode="free_explore",
+        stage_no=1,
+        key="stage-arena-0001",
+    )
+    # 아레나 스테이지는 이동 없이 바로 전투를 마주한다.
+    assert run["run"]["phase"] == "awaiting_event"
+    battle = run["current_event"]["battle"]
+    assert battle["enemy_kind"] == "tangle"
+    assert battle["enemy"]["name"] == "엉킨 장부 뭉치"
+    assert battle["wave"] == {"index": 1, "count": 1, "name": "엉킨 장부 뭉치"}
+    assert battle["max_rounds"] == 4
+    assert {action["type"] for action in run["available_actions"]} == {
+        "combat_turn",
+        "retreat",
+    }
+
+    run, _ = await _fight_stage_battle(client, headers, run, "stage-arena-fight")
+    # 승리가 곧 목표 확보이고, 출구 없이 그 자리에서 귀환한다.
+    assert run["run"]["objective_secured"] is True
+    assert {action["type"] for action in run["available_actions"]} >= {"extract"}
+    outcome = next(
+        event
+        for event in run["last_combat_exchange"]
+        if event["type"] == "outcome"
+    )
+    assert outcome["caption"] == "엉킨 장부가 스르르 풀려 제자리 서가로 돌아갔어요."
+
+    completed = await _action(
+        client, headers, run, "extract", {}, "stage-arena-extract"
+    )
+    assert completed["run"]["status"] == "completed"
+    assert completed["summary"]["progress"]["stage"] == {
+        "stage_no": 1,
+        "first_clear": True,
+        "cleared_count": 1,
+        "total": 8,
+        "region_cleared": False,
+    }
+
+
+async def test_wave_stage_swaps_tangles_without_extra_rounds(
+    client, user_tokens, session_factory
+):
+    headers = auth_headers(user_tokens)
+    user_id = user_tokens["user"]["id"]
+    plant_id = await _prepare_stage_two(session_factory, user_id)
+    await _seed_cleared_stages(session_factory, user_id, upto=2)
+
+    run = await _start(
+        client,
+        headers,
+        plant_id,
+        mode="free_explore",
+        stage_no=3,
+        key="stage-wave-0001",
+    )
+    battle = run["current_event"]["battle"]
+    assert battle["wave"] == {"index": 1, "count": 2, "name": "엉킨 장부 뭉치"}
+    assert battle["max_rounds"] == 8
+
+    run, exchanges = await _fight_stage_battle(client, headers, run, "stage-wave-fight")
+    types = [event["type"] for event in exchanges]
+    # 첫 엉킴이 풀린 라운드는 거기서 끝나고 다음 웨이브가 등장한다.
+    assert "wave_cleared" in types
+    intro = next(event for event in exchanges if event["type"] == "wave_intro")
+    assert intro["enemy_name"] == "표류 압화 떼"
+    assert run["run"]["objective_secured"] is True
+
+    completed = await _action(
+        client, headers, run, "extract", {}, "stage-wave-extract"
+    )
+    assert completed["summary"]["progress"]["stage"]["stage_no"] == 3
+
+
+async def test_boss_stage_runs_the_guardian_in_the_arena(
+    client, user_tokens, session_factory
+):
+    headers = auth_headers(user_tokens)
+    user_id = user_tokens["user"]["id"]
+    plant_id = await _prepare_stage_two(session_factory, user_id)
+    await _seed_cleared_stages(session_factory, user_id, upto=7)
+
+    run = await _start(
+        client,
+        headers,
+        plant_id,
+        mode="free_explore",
+        stage_no=8,
+        key="stage-boss-0001",
+    )
+    battle = run["current_event"]["battle"]
+    # 보스 스테이지는 기존 수호전 사건을 그대로 아레나에서 치른다.
+    assert battle["enemy_kind"] == "guardian"
+    assert battle["enemy"]["name"] == "돌비늘 장부지기"
+    assert battle["wave"] is None
+
+    run, _ = await _fight_stage_battle(client, headers, run, "stage-boss-fight")
+    assert run["run"]["objective_secured"] is True
+    completed = await _action(
+        client, headers, run, "extract", {}, "stage-boss-extract"
+    )
+    stage_result = completed["summary"]["progress"]["stage"]
+    assert stage_result["stage_no"] == 8
+    assert stage_result["region_cleared"] is True
+
+    map_response = await client.get("/adventure/stages", headers=headers)
+    payload = map_response.json()
+    assert payload["progress"]["region_cleared"] is True
+    assert payload["progress"]["next_stage_no"] is None
+
+
 async def test_replaying_a_cleared_stage_counts_without_new_rewards(
     client, user_tokens, session_factory
 ):
@@ -165,7 +346,7 @@ async def test_replaying_a_cleared_stage_counts_without_new_rewards(
         stage_no=1,
         key="stage-replay-0001",
     )
-    completed = await _complete_run(client, headers, first)
+    completed = await _run_stage_to_completion(client, headers, first, "stage-replay-a")
     # 자유 탐험은 원래 경제 보상이 없다. 재도전이 보상을 만들지 않는지 함께 본다.
     assert completed["summary"]["reward"] is None
 
@@ -177,7 +358,9 @@ async def test_replaying_a_cleared_stage_counts_without_new_rewards(
         stage_no=1,
         key="stage-replay-0002",
     )
-    replayed = await _complete_run(client, headers, second)
+    replayed = await _run_stage_to_completion(
+        client, headers, second, "stage-replay-b"
+    )
     assert replayed["summary"]["progress"]["stage"] == {
         "stage_no": 1,
         "first_clear": False,

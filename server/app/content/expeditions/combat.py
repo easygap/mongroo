@@ -10,6 +10,8 @@ from __future__ import annotations
 import copy
 from typing import Any
 
+from app.content.expeditions.tangles import tangle_definition
+
 
 AFFINITIES = ("care", "focus", "courage", "insight")
 AFFINITY_LABELS = {
@@ -193,12 +195,52 @@ def member_battle_kit(
     }
 
 
+def _resolve_waves(encounter: dict[str, Any]) -> list[dict[str, Any]]:
+    """웨이브 엉킴 code를 전투 스냅샷용 정의로 펼친다.
+
+    battle 상태에 펼친 값을 저장하므로 진행 중 run은 이후 카탈로그 패치의
+    영향을 받지 않는다(시작 snapshot 유지 계약).
+    """
+
+    waves: list[dict[str, Any]] = []
+    for code in encounter.get("waves") or []:
+        tangle = tangle_definition(code)
+        waves.append(
+            {
+                "code": code,
+                "name": tangle["name"],
+                "elite": bool(tangle["elite"]),
+                "barrier": int(tangle["barrier"]),
+                "weakness_cycle": list(tangle["weakness_cycle"]),
+                "intents": [dict(intent) for intent in tangle["intents"]],
+                "appear_caption": tangle["appear_caption"],
+                "release_caption": tangle["release_caption"],
+            }
+        )
+    return waves
+
+
+def _current_wave(state: dict[str, Any]) -> dict[str, Any] | None:
+    waves = state.get("waves") or []
+    index = int(state.get("wave_index", 0))
+    return waves[index] if 0 <= index < len(waves) else None
+
+
 def new_guardian_battle(
     event_code: str,
     encounter: dict[str, Any],
     profiles: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    weakness_cycle = list(encounter.get("weakness_cycle") or AFFINITIES)
+    waves = _resolve_waves(encounter)
+    if waves:
+        first = waves[0]
+        weakness_cycle = list(first["weakness_cycle"])
+        barrier = int(first["barrier"])
+        opening_caption = first["appear_caption"]
+    else:
+        weakness_cycle = list(encounter.get("weakness_cycle") or AFFINITIES)
+        barrier = int(encounter.get("enemy_max_guard", 100))
+        opening_caption = "돌비늘 장부지기가 길을 막았어요."
     return {
         "version": 1,
         "event_code": event_code,
@@ -207,8 +249,11 @@ def new_guardian_battle(
         "max_rounds": int(encounter.get("max_rounds", 6)),
         "focus": int(encounter.get("starting_focus", 3)),
         "max_focus": int(encounter.get("max_focus", 5)),
-        "enemy_guard": int(encounter.get("enemy_max_guard", 100)),
-        "enemy_max_guard": int(encounter.get("enemy_max_guard", 100)),
+        "enemy_kind": "tangle" if waves else "guardian",
+        "waves": waves,
+        "wave_index": 0,
+        "enemy_guard": barrier,
+        "enemy_max_guard": barrier,
         "weakness": weakness_cycle[0],
         "intent_index": 0,
         "party": [
@@ -223,13 +268,17 @@ def new_guardian_battle(
         "pending": None,
         "round_exchange": [],
         "last_exchange": [],
-        "battle_log": ["돌비늘 장부지기가 길을 막았어요."],
+        "battle_log": [opening_caption],
         "defeat_reason": None,
     }
 
 
-def _intent(encounter: dict[str, Any], index: int) -> dict[str, Any]:
-    intents = encounter.get("intents") or []
+def _intent(
+    encounter: dict[str, Any],
+    index: int,
+    wave: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    intents = (wave or {}).get("intents") or encounter.get("intents") or []
     if not intents:
         return {
             "code": "guardian_strike",
@@ -271,7 +320,8 @@ def guardian_battle_payload(
                 ),
             }
         )
-    intent = _intent(encounter, int(state.get("intent_index", 0)))
+    wave = _current_wave(state)
+    intent = _intent(encounter, int(state.get("intent_index", 0)), wave=wave)
     pending = state.get("pending")
     acted = [
         int(member_id)
@@ -287,14 +337,28 @@ def guardian_battle_payload(
     return {
         **copy.deepcopy(state),
         "weakness_label": AFFINITY_LABELS.get(weakness, weakness),
+        "enemy_kind": state.get("enemy_kind", "guardian"),
         "enemy": {
-            "name": encounter.get("enemy_name", "수호자"),
+            "name": (
+                wave["name"] if wave else encounter.get("enemy_name", "수호자")
+            ),
+            "kind": state.get("enemy_kind", "guardian"),
+            "elite": bool(wave["elite"]) if wave else False,
             "guard": int(state.get("enemy_guard", 0)),
             "max_guard": int(state.get("enemy_max_guard", 100)),
             "weakness": weakness,
             "weakness_label": AFFINITY_LABELS.get(weakness, weakness),
             "intent": intent,
         },
+        "wave": (
+            {
+                "index": int(state.get("wave_index", 0)) + 1,
+                "count": len(state.get("waves") or []),
+                "name": wave["name"],
+            }
+            if wave
+            else None
+        ),
         "pending_round": {
             "acted": acted,
             "awaiting": [
@@ -511,7 +575,8 @@ def _finalize_round(
     pending = _pending_round(state) or {}
     intent_power_delta = int(pending.get("intent_power_delta", 0))
     events: list[dict[str, Any]] = []
-    intent = _intent(encounter, int(state.get("intent_index", 0)))
+    wave = _current_wave(state)
+    intent = _intent(encounter, int(state.get("intent_index", 0)), wave=wave)
     power = max(0, int(intent.get("power", 1)) + intent_power_delta)
     targets = _target_members(state, intent)
     target_events = []
@@ -555,7 +620,11 @@ def _finalize_round(
         state["status"] = "defeat"
         state["defeat_reason"] = "seal_completed"
     else:
-        weakness_cycle = list(encounter.get("weakness_cycle") or AFFINITIES)
+        weakness_cycle = list(
+            (wave or {}).get("weakness_cycle")
+            or encounter.get("weakness_cycle")
+            or AFFINITIES
+        )
         state["round"] = int(state["round"]) + 1
         state["intent_index"] = int(state.get("intent_index", 0)) + 1
         state["weakness"] = weakness_cycle[
@@ -576,16 +645,62 @@ def _finalize_round(
     return events
 
 
-def _victory_events(state: dict[str, Any]) -> list[dict[str, Any]]:
+def _enemy_cleared_events(state: dict[str, Any]) -> list[dict[str, Any]]:
+    """장벽이 0이 된 순간의 처리 — 다음 웨이브 등장 또는 승리.
+
+    웨이브가 남아 있으면 그 라운드는 거기서 끝난다. 아직 행동하지 않은 대원의
+    차례와 적의 예고 공격은 실행되지 않고, 다음 라운드가 새 엉킴을 상대로
+    시작된다. 승리 판정과 같은 문법이라 일괄·순차 어느 입력에서도 동일하다.
+    """
+
+    wave = _current_wave(state)
+    waves = state.get("waves") or []
+    if wave is not None and int(state.get("wave_index", 0)) < len(waves) - 1:
+        events = [
+            _push_event(
+                state,
+                {
+                    "type": "wave_cleared",
+                    "wave_index": int(state["wave_index"]),
+                    "caption": wave["release_caption"],
+                },
+            )
+        ]
+        state["wave_index"] = int(state["wave_index"]) + 1
+        next_wave = waves[int(state["wave_index"])]
+        state["enemy_guard"] = int(next_wave["barrier"])
+        state["enemy_max_guard"] = int(next_wave["barrier"])
+        state["round"] = int(state["round"]) + 1
+        state["intent_index"] = 0
+        state["weakness"] = next_wave["weakness_cycle"][0]
+        state["pending"] = None
+        events.append(
+            _push_event(
+                state,
+                {
+                    "type": "wave_intro",
+                    "wave_index": int(state["wave_index"]),
+                    "enemy_name": next_wave["name"],
+                    "caption": next_wave["appear_caption"],
+                },
+            )
+        )
+        return events
+
     state["status"] = "victory"
     state["pending"] = None
+    caption = (
+        wave["release_caption"]
+        if wave is not None
+        else "수호 장벽이 부서지고 장부지기가 길을 열었어요!"
+    )
     return [
         _push_event(
             state,
             {
                 "type": "outcome",
                 "outcome": "victory",
-                "caption": "수호 장벽이 부서지고 장부지기가 길을 열었어요!",
+                "caption": caption,
             },
         )
     ]
@@ -624,12 +739,14 @@ def resolve_guardian_round(
     profile_by_id = {int(profile["id"]): profile for profile in profiles}
     state["pending"] = None
     events: list[dict[str, Any]] = []
+    round_over = False
     for command in commands:
         events.append(_apply_member_command(state, command, profile_by_id))
         if int(state["enemy_guard"]) <= 0:
-            events.extend(_victory_events(state))
+            events.extend(_enemy_cleared_events(state))
+            round_over = True
             break
-    if state["status"] != "victory":
+    if not round_over:
         events.extend(_finalize_round(state, encounter, profile_by_id))
     state["last_exchange"] = events
     _extend_log(state, events)
@@ -656,7 +773,7 @@ def submit_guardian_action(
     profile_by_id = {int(profile["id"]): profile for profile in profiles}
     events = [_apply_member_command(state, command, profile_by_id)]
     if int(state["enemy_guard"]) <= 0:
-        events.extend(_victory_events(state))
+        events.extend(_enemy_cleared_events(state))
     else:
         pending = _pending_round(state) or {"acted": []}
         living_ids = {

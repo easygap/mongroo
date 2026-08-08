@@ -9,6 +9,11 @@ import json
 from pathlib import Path
 from typing import Any
 
+from app.content.expeditions.tangles import (
+    TANGLE_CATALOG,
+    validate_tangle_catalog,
+)
+
 
 ALLOWED_STATS = {"care", "focus", "courage", "insight"}
 ALLOWED_SCENE_KEYS = {
@@ -129,19 +134,18 @@ def _validate_stages(
     """지역당 8스테이지 구성을 강제한다.
 
     개편 설계서 3.1의 전투 4 · 이벤트 2 · 쉼터 1 · 보스 1 구성을 콘텐츠에서
-    깨뜨리면 지도 화면이 진행도를 셀 수 없으므로 배포 전에 막는다.
+    깨뜨리면 지도 화면이 진행도를 셀 수 없으므로 배포 전에 막는다. 엉킴의
+    단일 원본은 tangles 카탈로그이며 pack은 code로만 참조한다.
     """
+
+    errors.extend(validate_tangle_catalog())
 
     stages = content.get("stages")
     if not isinstance(stages, list) or len(stages) != STAGE_COUNT:
         errors.append(f"stages: 지역당 정확히 {STAGE_COUNT}개가 필요합니다")
         return
 
-    tangles = content.get("tangles")
-    if not isinstance(tangles, dict):
-        errors.append("tangles: 엉킴 정의 객체가 필요합니다")
-        tangles = {}
-
+    region_code = (content.get("region") or {}).get("code")
     kind_counts: dict[str, int] = {}
     for index, stage in enumerate(stages):
         prefix = f"stages[{index}]"
@@ -166,11 +170,22 @@ def _validate_stages(
             errors.append(f"{prefix}.event_code: 알 수 없는 사건 {event_code}")
         if kind in {"event", "boss"} and not event_code:
             errors.append(f"{prefix}.event_code: {kind} 스테이지에는 사건이 필요합니다")
-        for code in stage.get("tangles") or []:
-            if code not in tangles:
+        wave_codes = stage.get("tangles") or []
+        for code in wave_codes:
+            if code not in TANGLE_CATALOG:
                 errors.append(f"{prefix}.tangles: 알 수 없는 엉킴 {code}")
-        if kind == "battle" and not stage.get("tangles"):
-            errors.append(f"{prefix}.tangles: 전투 스테이지에는 엉킴이 필요합니다")
+            elif TANGLE_CATALOG[code]["region_code"] != region_code:
+                errors.append(f"{prefix}.tangles: {code}는 다른 지역의 엉킴입니다")
+        if kind == "battle" and not 1 <= len(wave_codes) <= 3:
+            errors.append(f"{prefix}.tangles: 전투 스테이지는 웨이브 1~3개가 필요합니다")
+        if kind == "battle" and wave_codes:
+            first = TANGLE_CATALOG.get(wave_codes[0]) or {}
+            expected = (first.get("weakness_cycle") or [None])[0]
+            # 지도 시트의 약점 힌트는 첫 웨이브의 첫 약점과 같아야 사기가 아니다.
+            if stage.get("weakness") != expected:
+                errors.append(
+                    f"{prefix}.weakness: 첫 웨이브의 첫 약점({expected})과 일치해야 합니다"
+                )
         weakness = stage.get("weakness")
         if weakness is not None and weakness not in ALLOWED_STATS:
             errors.append(f"{prefix}.weakness: {sorted(ALLOWED_STATS)} 중 하나여야 합니다")
@@ -183,14 +198,6 @@ def _validate_stages(
             )
     if stages and stages[-1].get("kind") != "boss":
         errors.append("stages: 마지막 스테이지는 수호짐승 보스여야 합니다")
-
-    for code, tangle in tangles.items():
-        if not isinstance(tangle, dict):
-            errors.append(f"tangles.{code}: 객체가 필요합니다")
-            continue
-        for key in ("name", "description"):
-            if not isinstance(tangle.get(key), str) or not tangle[key].strip():
-                errors.append(f"tangles.{code}.{key}: 비어 있지 않은 문장이 필요합니다")
 
 
 def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:

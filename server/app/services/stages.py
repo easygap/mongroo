@@ -11,6 +11,7 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import AppError
+from app.content.expeditions.tangles import tangle_definition
 from app.content.expeditions.validator import STAGE_COUNT
 from app.core.timeutil import to_utc_iso, utcnow
 from app.models.expedition import ExpeditionRun, UserStageProgress
@@ -54,7 +55,6 @@ async def _progress_rows(
 async def stage_map_payload(db: AsyncSession, user_id: int) -> dict[str, Any]:
     content = load_content()
     region = _region_of(content)
-    tangles = content.get("tangles") or {}
     progress = await _progress_rows(db, user_id, region["code"])
     active = await db.scalar(
         sa.select(ExpeditionRun).where(
@@ -85,11 +85,11 @@ async def stage_map_payload(db: AsyncSession, user_id: int) -> dict[str, Any]:
                 "tangles": [
                     {
                         "code": code,
-                        "name": tangles[code]["name"],
-                        "description": tangles[code]["description"],
+                        "name": tangle_definition(code)["name"],
+                        "description": tangle_definition(code)["description"],
+                        "elite": bool(tangle_definition(code)["elite"]),
                     }
                     for code in stage.get("tangles") or []
-                    if code in tangles
                 ],
                 "cleared": cleared,
                 "clear_count": record.clear_count if record else 0,
