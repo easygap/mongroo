@@ -15,9 +15,35 @@ from app.schemas.requests import (
 )
 from app.services import expeditions as expedition_service
 from app.services import game as game_service
+from app.services import stages as stage_service
 
 
 router = APIRouter(prefix="/adventure/expeditions", tags=["expeditions"])
+
+# 스테이지 지도와 모험 허브. 개편 설계서 5.1·5.2의 화면이 읽는 단일 진입점이다.
+stage_router = APIRouter(prefix="/adventure/stages", tags=["expeditions"])
+
+
+@stage_router.get("")
+async def stage_map(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await stage_service.stage_map_payload(db, user.id)
+
+
+@stage_router.post("/{region_code}/{stage_no}/story-seen")
+async def mark_stage_story_seen(
+    region_code: str,
+    stage_no: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await stage_service.mark_story_seen(
+        db, user.id, region_code=region_code, stage_no=stage_no
+    )
+    await db.commit()
+    return result
 
 
 @router.get("/catalog")
@@ -72,6 +98,7 @@ async def start_expedition(
             mode=body.mode,
             plant_ids=body.plant_ids,
             guide_count=body.guide_count,
+            stage_no=body.stage_no,
         )
         await db.flush()
         return 201, result

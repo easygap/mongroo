@@ -60,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(game.router, prefix=prefix)
     app.include_router(adventure.router, prefix=prefix)
     app.include_router(expeditions.router, prefix=prefix)
+    app.include_router(expeditions.stage_router, prefix=prefix)
     app.include_router(health.router, prefix=prefix)
     return app
 

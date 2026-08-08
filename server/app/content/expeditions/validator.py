@@ -22,6 +22,11 @@ ALLOWED_SCENE_KEYS = {
 }
 ALLOWED_COMBAT_EFFECT_KEYS = {"insight_arc", "care_vines", "safe_guard"}
 
+# 개편 설계서 3.1 — 지역당 8스테이지, 전투 4 · 이벤트 2 · 쉼터 1 · 보스 1.
+STAGE_COUNT = 8
+ALLOWED_STAGE_KINDS = {"battle", "event", "camp", "boss"}
+STAGE_KIND_COUNTS = {"battle": 4, "event": 2, "camp": 1, "boss": 1}
+
 
 class ContentValidationError(ValueError):
     def __init__(self, errors: list[str]):
@@ -92,6 +97,8 @@ def validate_content(content: dict[str, Any]) -> None:
     for map_data in maps:
         _validate_map(map_data, events, discoveries, errors)
 
+    _validate_stages(content, events, errors)
+
     threads = content.get("run_threads")
     if not isinstance(threads, list) or not threads:
         errors.append("run_threads: 한 개 이상의 seed/echo/payoff가 필요합니다")
@@ -114,6 +121,76 @@ def validate_content(content: dict[str, Any]) -> None:
 
     if errors:
         raise ContentValidationError(errors)
+
+
+def _validate_stages(
+    content: dict[str, Any], events: dict[str, Any], errors: list[str]
+) -> None:
+    """지역당 8스테이지 구성을 강제한다.
+
+    개편 설계서 3.1의 전투 4 · 이벤트 2 · 쉼터 1 · 보스 1 구성을 콘텐츠에서
+    깨뜨리면 지도 화면이 진행도를 셀 수 없으므로 배포 전에 막는다.
+    """
+
+    stages = content.get("stages")
+    if not isinstance(stages, list) or len(stages) != STAGE_COUNT:
+        errors.append(f"stages: 지역당 정확히 {STAGE_COUNT}개가 필요합니다")
+        return
+
+    tangles = content.get("tangles")
+    if not isinstance(tangles, dict):
+        errors.append("tangles: 엉킴 정의 객체가 필요합니다")
+        tangles = {}
+
+    kind_counts: dict[str, int] = {}
+    for index, stage in enumerate(stages):
+        prefix = f"stages[{index}]"
+        if not isinstance(stage, dict):
+            errors.append(f"{prefix}: 객체가 필요합니다")
+            continue
+        if stage.get("no") != index + 1:
+            errors.append(f"{prefix}.no: {index + 1}이어야 합니다")
+        kind = stage.get("kind")
+        if kind not in ALLOWED_STAGE_KINDS:
+            errors.append(f"{prefix}.kind: {sorted(ALLOWED_STAGE_KINDS)} 중 하나여야 합니다")
+        else:
+            kind_counts[kind] = kind_counts.get(kind, 0) + 1
+        for key in ("title", "summary"):
+            if not isinstance(stage.get(key), str) or not stage[key].strip():
+                errors.append(f"{prefix}.{key}: 비어 있지 않은 문장이 필요합니다")
+        seconds = stage.get("estimated_seconds")
+        if not isinstance(seconds, int) or not 20 <= seconds <= 180:
+            errors.append(f"{prefix}.estimated_seconds: 20~180 사이 정수가 필요합니다")
+        event_code = stage.get("event_code")
+        if event_code is not None and event_code not in events:
+            errors.append(f"{prefix}.event_code: 알 수 없는 사건 {event_code}")
+        if kind in {"event", "boss"} and not event_code:
+            errors.append(f"{prefix}.event_code: {kind} 스테이지에는 사건이 필요합니다")
+        for code in stage.get("tangles") or []:
+            if code not in tangles:
+                errors.append(f"{prefix}.tangles: 알 수 없는 엉킴 {code}")
+        if kind == "battle" and not stage.get("tangles"):
+            errors.append(f"{prefix}.tangles: 전투 스테이지에는 엉킴이 필요합니다")
+        weakness = stage.get("weakness")
+        if weakness is not None and weakness not in ALLOWED_STATS:
+            errors.append(f"{prefix}.weakness: {sorted(ALLOWED_STATS)} 중 하나여야 합니다")
+
+    for kind, expected in STAGE_KIND_COUNTS.items():
+        if kind_counts.get(kind, 0) != expected:
+            errors.append(
+                f"stages.kind: {kind}가 {expected}개여야 합니다 "
+                f"(현재 {kind_counts.get(kind, 0)})"
+            )
+    if stages and stages[-1].get("kind") != "boss":
+        errors.append("stages: 마지막 스테이지는 수호짐승 보스여야 합니다")
+
+    for code, tangle in tangles.items():
+        if not isinstance(tangle, dict):
+            errors.append(f"tangles.{code}: 객체가 필요합니다")
+            continue
+        for key in ("name", "description"):
+            if not isinstance(tangle.get(key), str) or not tangle[key].strip():
+                errors.append(f"tangles.{code}.{key}: 비어 있지 않은 문장이 필요합니다")
 
 
 def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:

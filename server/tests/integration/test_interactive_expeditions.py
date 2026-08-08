@@ -22,15 +22,23 @@ async def _prepare_stage_two(session_factory, user_id: int) -> int:
         return plant.id
 
 
-async def _start(client, headers: dict, plant_id: int, mode: str = "tutorial") -> dict:
+async def _start(
+    client,
+    headers: dict,
+    plant_id: int,
+    mode: str = "tutorial",
+    stage_no: int | None = None,
+    key: str | None = None,
+) -> dict:
     response = await client.post(
         "/adventure/expeditions",
-        headers={**headers, "Idempotency-Key": f"start-{mode}-0001"},
+        headers={**headers, "Idempotency-Key": key or f"start-{mode}-0001"},
         json={
             "region_code": "moss_archive",
             "mode": mode,
             "plant_ids": [plant_id],
             "guide_count": 1,
+            **({"stage_no": stage_no} if stage_no is not None else {}),
         },
     )
     assert response.status_code == 201, response.text
@@ -504,6 +512,8 @@ async def test_heart_resonance_rewards_only_after_objective_and_return(
                 "familiarity_points": 1,
             }
         ],
+        # 스테이지 지도를 거치지 않은 run은 스테이지 진행을 남기지 않는다.
+        "stage": None,
     }
     assert completed["summary"]["return_scene"]["title"] == "함께 돌아온 탐험대"
     returned = completed["summary"]["return_scene"]["members"]

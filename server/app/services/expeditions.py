@@ -25,7 +25,11 @@ from app.content.expeditions.combat import (
     submit_guardian_action,
 )
 from app.content.expeditions.skills import skill_definition
-from app.content.expeditions.validator import expand_map_templates, validate_content
+from app.content.expeditions.validator import (
+    STAGE_COUNT,
+    expand_map_templates,
+    validate_content,
+)
 from app.core.config import get_settings
 from app.core.timeutil import local_date_of, to_utc_iso, utcnow
 from app.models.adventure import UserAdventureItem
@@ -41,6 +45,7 @@ from app.models.expedition import (
     PlantRegionFamiliarity,
     UserRegionProgress,
     UserActiveExpedition,
+    UserStageProgress,
 )
 from app.models.game import FarmLayout, Item, UserItem
 from app.models.mood import MoodEntry
@@ -68,11 +73,17 @@ _OUTCOME_LABELS = {
 }
 
 
-def _content() -> dict[str, Any]:
+def load_content() -> dict[str, Any]:
+    """검증을 통과한 지역 콘텐츠 팩. 스테이지 서비스와 함께 쓴다."""
+
     with _CONTENT_PATH.open(encoding="utf-8") as file:
         content = json.load(file)
     validate_content(content)
     return content
+
+
+def _content() -> dict[str, Any]:
+    return load_content()
 
 
 def select_map_template(
@@ -209,6 +220,21 @@ async def _reward_used(db: AsyncSession, user_id: int, local_date) -> bool:
             sa.select(RewardEvent.id).where(RewardEvent.dedupe_key == key).limit(1)
         )
         is not None
+    )
+
+
+async def _cleared_stage_numbers(
+    db: AsyncSession, user_id: int, region_code: str
+) -> set[int]:
+    return set(
+        (
+            await db.execute(
+                sa.select(UserStageProgress.stage_no).where(
+                    UserStageProgress.user_id == user_id,
+                    UserStageProgress.region_code == region_code,
+                )
+            )
+        ).scalars()
     )
 
 
@@ -634,6 +660,7 @@ async def run_payload(db: AsyncSession, run: ExpeditionRun) -> dict:
             "id": run.id,
             "region_code": run.region_code,
             "mode": run.mode,
+            "stage_no": run.stage_no,
             "status": run.status,
             "phase": run.phase,
             "revision": run.revision,
@@ -699,8 +726,23 @@ async def start_run(
     mode: str,
     plant_ids: list[int],
     guide_count: int,
+    stage_no: int | None = None,
 ) -> dict:
     content = _content()
+    if stage_no is not None:
+        stages = content.get("stages") or []
+        if not 1 <= stage_no <= len(stages):
+            raise AppError(
+                404, "EXPEDITION_STAGE_NOT_FOUND", "스테이지를 찾을 수 없습니다."
+            )
+        cleared = await _cleared_stage_numbers(db, user_id, region_code)
+        # 앞 스테이지를 지나야 다음 점이 열린다. 클리어한 스테이지는 언제든 재도전한다.
+        if stage_no > 1 and stage_no - 1 not in cleared:
+            raise AppError(
+                409,
+                "EXPEDITION_STAGE_LOCKED",
+                "앞 스테이지를 먼저 완주하면 이 길이 열려요.",
+            )
     if (
         not plant_ids
         or len(plant_ids) != len(set(plant_ids))
@@ -786,6 +828,7 @@ async def start_run(
         user_id=user_id,
         region_code=region_code,
         mode=mode,
+        stage_no=stage_no,
         local_date=today,
         content_version=content["content_version"],
         map_seed=map_seed,
@@ -1699,6 +1742,59 @@ async def _safe_return(db: AsyncSession, run: ExpeditionRun, reason: str) -> Non
     )
 
 
+async def _record_stage_clear(db: AsyncSession, run: ExpeditionRun) -> dict | None:
+    """스테이지 지도에서 시작한 run이 완주하면 그 스테이지를 클리어로 남긴다.
+
+    보상은 기존 일일 원장이 그대로 담당한다. 이 기록은 지도 진행 표시 전용이라
+    재도전해도 clear_count만 오르고 경제에는 영향을 주지 않는다.
+    """
+
+    if run.stage_no is None:
+        return None
+    now = utcnow()
+    progress = await db.scalar(
+        sa.select(UserStageProgress)
+        .where(
+            UserStageProgress.user_id == run.user_id,
+            UserStageProgress.region_code == run.region_code,
+            UserStageProgress.stage_no == run.stage_no,
+        )
+        .with_for_update()
+    )
+    first_clear = progress is None
+    if progress is None:
+        progress = UserStageProgress(
+            user_id=run.user_id,
+            region_code=run.region_code,
+            stage_no=run.stage_no,
+            cleared_at=now,
+            clear_count=1,
+            updated_at=now,
+        )
+        db.add(progress)
+    else:
+        progress.clear_count += 1
+        progress.updated_at = now
+    await db.flush()
+    cleared = set(
+        (
+            await db.execute(
+                sa.select(UserStageProgress.stage_no).where(
+                    UserStageProgress.user_id == run.user_id,
+                    UserStageProgress.region_code == run.region_code,
+                )
+            )
+        ).scalars()
+    )
+    return {
+        "stage_no": run.stage_no,
+        "first_clear": first_clear,
+        "cleared_count": len(cleared),
+        "total": STAGE_COUNT,
+        "region_cleared": len(cleared) >= STAGE_COUNT,
+    }
+
+
 async def _record_completion_progress(
     db: AsyncSession, run: ExpeditionRun
 ) -> dict[str, Any]:
@@ -1823,6 +1919,7 @@ async def _record_completion_progress(
         "clear_count": progress.clear_count,
         "knowledge_code": progress.knowledge_code,
         "bonds": bond_results,
+        "stage": await _record_stage_clear(db, run),
     }
 
 

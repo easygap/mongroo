@@ -133,6 +133,8 @@ class ExpeditionStartRequest(BaseModel):
     mode: str = Field(pattern="^(tutorial|heart_resonance|free_explore)$")
     plant_ids: list[int] = Field(min_length=1, max_length=3)
     guide_count: int = Field(default=0, ge=0, le=2)
+    # 스테이지 지도에서 출발했을 때만 채운다. 없으면 기존 노드 지도 흐름 그대로다.
+    stage_no: int | None = Field(default=None, ge=1, le=8)
 
     @field_validator("plant_ids")
     @classmethod

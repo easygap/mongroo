@@ -31,6 +31,8 @@ class ExpeditionRun(Base):
     )
     region_code: Mapped[str] = mapped_column(sa.String(40), nullable=False)
     mode: Mapped[str] = mapped_column(sa.String(24), nullable=False)
+    # 스테이지 지도에서 시작한 run만 값을 가진다. 완료 시 그 스테이지를 클리어로 남긴다.
+    stage_no: Mapped[int | None] = mapped_column(sa.SmallInteger, nullable=True)
     status: Mapped[str] = mapped_column(sa.String(24), nullable=False, default="active")
     phase: Mapped[str] = mapped_column(
         sa.String(24), nullable=False, default="exploring"
@@ -270,6 +272,36 @@ class UserRegionProgress(Base):
     templates_seen: Mapped[list] = mapped_column(sa.JSON, nullable=False, default=list)
     events_seen: Mapped[list] = mapped_column(sa.JSON, nullable=False, default=list)
     knowledge_code: Mapped[str | None] = mapped_column(sa.String(40), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        PreciseDateTime, nullable=False, default=utcnow, onupdate=utcnow
+    )
+
+
+class UserStageProgress(Base):
+    """지역 스테이지(1~8)별 진행 기록.
+
+    스테이지 하나가 독립 세션이므로 run이 아니라 사용자·지역·번호로 남긴다.
+    보상은 기존 일일 원장이 담당하고 이 표는 진행 표시와 이야기 확인 여부만 센다.
+    """
+
+    __tablename__ = "user_stage_progress"
+    __table_args__ = (
+        sa.CheckConstraint("stage_no BETWEEN 1 AND 8", name="ck_user_stage_no"),
+        sa.CheckConstraint("clear_count >= 1", name="ck_user_stage_clear_count"),
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        sa.ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    region_code: Mapped[str] = mapped_column(sa.String(40), primary_key=True)
+    stage_no: Mapped[int] = mapped_column(sa.SmallInteger, primary_key=True)
+    cleared_at: Mapped[datetime] = mapped_column(
+        PreciseDateTime, nullable=False, default=utcnow
+    )
+    clear_count: Mapped[int] = mapped_column(sa.Integer, nullable=False, default=1)
+    story_seen: Mapped[bool] = mapped_column(
+        sa.Boolean, nullable=False, default=False, server_default=sa.false()
+    )
     updated_at: Mapped[datetime] = mapped_column(
         PreciseDateTime, nullable=False, default=utcnow, onupdate=utcnow
     )
