@@ -134,6 +134,7 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
       ExpeditionAutoMode.assist => 'AUTO·보조',
       ExpeditionAutoMode.continuous => 'AUTO·연속',
     };
+    final wave = battle.wave;
     return SizedBox(
       height: 48,
       child: Row(
@@ -143,6 +144,18 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
             icon: Icons.sports_martial_arts_rounded,
             backgroundColor: scheme.errorContainer.withAlpha(130),
           ),
+          if (wave != null && wave.count > 1) ...[
+            const SizedBox(width: 6),
+            Semantics(
+              label: '${wave.count}번의 엉킴 중 ${wave.index}번째',
+              child: MongrooTag(
+                key: const ValueKey('seq-dock-wave'),
+                label: '웨이브 ${wave.index}/${wave.count}',
+                icon: Icons.blur_on_rounded,
+                backgroundColor: scheme.tertiaryContainer.withAlpha(130),
+              ),
+            ),
+          ],
           const SizedBox(width: 6),
           Expanded(
             child: SingleChildScrollView(

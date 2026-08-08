@@ -35,6 +35,8 @@ class ExpeditionBattle {
     required this.lastExchange,
     required this.battleLog,
     this.pendingRound,
+    this.enemyKind = 'guardian',
+    this.wave,
   });
 
   final String status;
@@ -49,6 +51,14 @@ class ExpeditionBattle {
 
   /// 순차 명령 진행 상태. 구버전 서버 응답에는 없을 수 있다.
   final ExpeditionBattlePendingRound? pendingRound;
+
+  /// 상대의 종류. 스테이지 전투의 엉킴은 'tangle', 수호짐승은 'guardian'.
+  final String enemyKind;
+
+  /// 웨이브 진행. 엉킴 웨이브 전투에만 있다.
+  final ExpeditionBattleWave? wave;
+
+  bool get isTangle => enemyKind == 'tangle';
 
   bool get isActive => status == 'active';
   List<ExpeditionBattleMember> get livingParty =>
@@ -91,6 +101,31 @@ class ExpeditionBattle {
                 json['pending_round'] as Map<String, dynamic>,
               )
             : null,
+        enemyKind: json['enemy_kind'] as String? ?? 'guardian',
+        wave: json['wave'] is Map<String, dynamic>
+            ? ExpeditionBattleWave.fromJson(
+                json['wave'] as Map<String, dynamic>,
+              )
+            : null,
+      );
+}
+
+class ExpeditionBattleWave {
+  const ExpeditionBattleWave({
+    required this.index,
+    required this.count,
+    required this.name,
+  });
+
+  final int index;
+  final int count;
+  final String name;
+
+  factory ExpeditionBattleWave.fromJson(Map<String, dynamic> json) =>
+      ExpeditionBattleWave(
+        index: _combatInt(json['index'], 1),
+        count: _combatInt(json['count'], 1),
+        name: json['name'] as String? ?? '',
       );
 }
 
@@ -128,6 +163,7 @@ class ExpeditionBattleEnemy {
     required this.weakness,
     required this.weaknessLabel,
     required this.intent,
+    this.elite = false,
   });
 
   final String name;
@@ -137,6 +173,9 @@ class ExpeditionBattleEnemy {
   final String weaknessLabel;
   final ExpeditionBattleIntent intent;
 
+  /// 큰 엉킴(중간 보스) 표식. 수호짐승에는 쓰지 않는다.
+  final bool elite;
+
   factory ExpeditionBattleEnemy.fromJson(Map<String, dynamic> json) =>
       ExpeditionBattleEnemy(
         name: json['name'] as String? ?? '수호자',
@@ -145,6 +184,7 @@ class ExpeditionBattleEnemy {
         weakness: json['weakness'] as String? ?? 'insight',
         weaknessLabel: json['weakness_label'] as String? ?? '관찰',
         intent: ExpeditionBattleIntent.fromJson(_combatMap(json['intent'])),
+        elite: json['elite'] == true,
       );
 }
 

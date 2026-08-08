@@ -8,6 +8,7 @@ import '../../home/domain/plant.dart';
 import '../../home/presentation/plant_view.dart';
 import '../domain/expedition_models.dart';
 import 'expedition_action_cue.dart';
+import 'expedition_tangle_body.dart';
 import 'expedition_combat_audio.dart';
 import 'expedition_combat_effects.dart';
 import 'expedition_combat_hud.dart';
@@ -386,6 +387,9 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                         combat: combat,
                         reduceMotion: reduceMotion,
                         imageCacheWidth: _guardianCacheWidth(context),
+                        enemyKind: battle?.enemyKind ?? 'guardian',
+                        enemyName: battle?.enemy.name ?? '',
+                        enemyElite: battle?.enemy.elite ?? false,
                       ),
                     ),
                   if (cue != null || widget.actor != null)
@@ -473,6 +477,9 @@ class _AnimatedGuardian extends StatelessWidget {
     required this.combat,
     required this.reduceMotion,
     required this.imageCacheWidth,
+    this.enemyKind = 'guardian',
+    this.enemyName = '',
+    this.enemyElite = false,
   });
 
   final Animation<double> action;
@@ -481,6 +488,11 @@ class _AnimatedGuardian extends StatelessWidget {
   final ExpeditionCombatFeedback? combat;
   final bool reduceMotion;
   final int imageCacheWidth;
+
+  /// 'tangle'이면 원화 대신 절차적 엉킴 몸체를 그린다.
+  final String enemyKind;
+  final String enemyName;
+  final bool enemyElite;
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
@@ -543,6 +555,47 @@ class _AnimatedGuardian extends StatelessWidget {
                 ) +
                 shake;
 
+            if (enemyKind == 'tangle') {
+              // 엉킴은 원화 대신 절차적 몸체를 쓴다. 같은 타임라인의
+              // 피격·공격·풀려남 값을 그대로 넘겨 연출 문법을 공유한다.
+              return Transform.translate(
+                offset: offset,
+                child: Transform.scale(
+                  scale: 1 + idle * .01 + attack * .045,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Align(
+                        alignment: const Alignment(0, .83),
+                        child: FractionallySizedBox(
+                          widthFactor: .58,
+                          child: Container(
+                            height: 16,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(999),
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.black.withAlpha(90),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      ExpeditionTangleBody(
+                        seedText: enemyName,
+                        elite: enemyElite,
+                        hit: hitBlend,
+                        attack: attackBlend,
+                        released: defeatedBlend,
+                        flash: guardianFlash,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
             return Transform.translate(
               offset: offset,
               child: Transform.scale(

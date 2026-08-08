@@ -767,6 +767,55 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('엉킴 웨이브 전투는 웨이브 표기와 절차적 몸체를 보여 준다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final raw = _battleSnapshotJson();
+    final event = raw['current_event'] as Map<String, dynamic>;
+    final battleJson = event['battle'] as Map<String, dynamic>;
+    battleJson['enemy_kind'] = 'tangle';
+    battleJson['wave'] = {'index': 1, 'count': 2, 'name': '엉킨 장부 뭉치'};
+    final enemyJson = battleJson['enemy'] as Map<String, dynamic>;
+    enemyJson['name'] = '엉킨 장부 뭉치';
+    enemyJson['elite'] = false;
+    final snapshot = ExpeditionSnapshot.fromJson(raw);
+
+    final battle = snapshot.currentEvent!.battle!;
+    expect(battle.isTangle, isTrue);
+    expect(battle.wave!.index, 1);
+    expect(battle.wave!.count, 2);
+    expect(battle.enemy.name, '엉킨 장부 뭉치');
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          expeditionControllerProvider.overrideWith(
+            () => _FakeExpeditionController(
+              ExpeditionUiState(
+                loading: false,
+                expedition: snapshot,
+                selectedMemberId: 11,
+              ),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const ExpeditionScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('seq-dock-wave')), findsOneWidget);
+    expect(find.text('웨이브 1/2'), findsOneWidget);
+    // 엉킴은 절차적 몸체를 그리고 수호짐승 원화는 쓰지 않는다.
+    expect(find.byKey(const ValueKey('tangle-body')), findsOneWidget);
+    expect(find.byKey(const ValueKey('ledger-keeper-idle')), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('전투 무대와 명령 덱을 같은 화면에 고정한다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
