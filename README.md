@@ -105,30 +105,79 @@
 
 ![방 테마와 캐릭터, 소품을 배치한 정원 실제 화면](docs/screenshots/web/04-garden-wide.webp)
 
-## 키운 캐릭터와 직접 탐험해요
+## 키운 캐릭터와 함께, 오늘의 모험
 
-탐험은 일기를 대신하는 방치형 메인 콘텐츠가 아니라, 정성껏 키운 캐릭터와 더
-오래 함께하기 위한 RPG 보조 콘텐츠입니다.
-
-<p align="center">
-  <strong>캐릭터 편성</strong> → <strong>지도 이동</strong> → <strong>갈림길 선택</strong> →
-  <strong>수동 전투</strong> → <strong>아이템 획득</strong> → <strong>귀환</strong>
-</p>
-
-![한 화면에서 전장과 행동 순서, 스킬 선택을 함께 확인하는 탐험 전투](docs/screenshots/web/09-expedition-battle-wide.webp)
-
-전투에서는 적의 예고 행동과 약점, 아군의 행동 순서를 보고 스킬 대상을 직접
-정합니다. 자동 전투는 선택 사항이며, 중요한 전투는 상성과 스킬 순서에 따라
-결과가 달라집니다.
+모험은 일기를 대신하는 콘텐츠가 아니라, 정성껏 키운 캐릭터와 더 오래 함께하기
+위한 RPG 콘텐츠입니다. 오늘 갈 곳은 언제나 하나 — `이어서 모험하기`를 누르면
+기억서고의 스테이지 지도가 열리고, 전투·사건·쉼터·수호전이 여덟 걸음으로
+이어집니다.
 
 <table>
   <tr>
-    <td width="52%"><img src="docs/screenshots/mobile/10-expedition-combat.gif" alt="덩굴 공격과 몬스터 반격이 이어지는 실제 전투 애니메이션"></td>
-    <td width="48%"><img src="docs/screenshots/mobile/09-expedition-skill-detail.webp" alt="스킬을 길게 눌러 확인하는 상세 정보"></td>
+    <td width="33%"><img src="docs/screenshots/mobile/11-adventure-hub.webp" alt="이어서 모험하기 카드가 놓인 모험 허브 화면"></td>
+    <td width="33%"><img src="docs/screenshots/mobile/12-stage-map.webp" alt="기억서고 1부터 8까지 이어지는 스테이지 지도"></td>
+    <td width="33%"><img src="docs/screenshots/mobile/13-stage-preview.webp" alt="등장 엉킴과 약점, 예상 시간을 미리 보여 주는 스테이지 시트"></td>
   </tr>
   <tr>
-    <td align="center"><strong>행동이 보이는 전투</strong><br><sub>캐릭터 공격과 몬스터 반격을 한 장면에서 확인</sub></td>
-    <td align="center"><strong>필요할 때만 상세 확인</strong><br><sub>스킬을 길게 눌러 효과와 상성을 확인</sub></td>
+    <td align="center"><strong>오늘 갈 곳 하나</strong><br><sub>허브는 다음 스테이지만 크게 보여 줘요</sub></td>
+    <td align="center"><strong>여덟 걸음의 지도</strong><br><sub>전투·사건·쉼터·수호전이 한 길로</sub></td>
+    <td align="center"><strong>떠나기 전에 미리</strong><br><sub>누굴 만나고 얼마나 걸리는지 먼저 확인</sub></td>
+  </tr>
+</table>
+
+### 카드 한 장이 곧 행동이에요
+
+전투가 시작되면 `새싹이는 무엇을 할까요?` 하고 물어 옵니다. 캐릭터를 고르고
+카드를 누르면 그 자리에서 바로 움직입니다. 적의 다음 공격과 약점은 언제나
+먼저 공개되니, 누가 먼저 움직여 집중력을 모으고 누가 결정타를 넣을지만
+정하면 됩니다.
+
+<table>
+  <tr>
+    <td width="52%"><img src="docs/screenshots/mobile/17-sequential-combat.gif" alt="카드를 누르면 바로 공격하고 다음 캐릭터에게 차례가 넘어가는 전투 흐름"></td>
+    <td width="48%"><img src="docs/screenshots/mobile/14-wave-battle.webp" alt="적의 예고와 약점, 집중력, 행동 카드가 한 화면에 담긴 전투"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>탭 두 번이면 한 행동</strong><br><sub>캐릭터를 고르고 카드를 누르면 즉시 실행</sub></td>
+    <td align="center"><strong>읽고 정하는 전투</strong><br><sub>예고·약점·집중력이 확정 전에 전부 보여요</sub></td>
+  </tr>
+</table>
+
+자동 지휘와 2배속, 짧은 연출 모드는 화면 위에 항상 있습니다. 바쁜 날에는
+맡기고, 중요한 전투만 직접 지휘해도 됩니다.
+
+### 무찌르는 게 아니라, 풀어 주는 거예요
+
+길을 막는 상대는 괴물이 아니라 돌보는 손이 모자라 엉켜 버린 서고의 물건들 —
+**엉킴**입니다. 장벽을 다 두드리면 엉킨 장부와 압화는 스르르 풀려 제자리로
+돌아가고, 다음 엉킴이 이어서 나타납니다. 선반 세 칸이 통째로 엉킨 **큰 엉킴**
+스테이지도 있습니다.
+
+<table>
+  <tr>
+    <td width="33%"><img src="docs/screenshots/mobile/18-wave-clear.gif" alt="첫 엉킴이 풀리고 다음 웨이브의 압화 떼가 나타나는 장면"></td>
+    <td width="33%"><img src="docs/screenshots/mobile/15-elite-battle.webp" alt="큰 엉킴 서가 뒤엉킴과 마주한 전투 화면"></td>
+    <td width="33%"><img src="docs/screenshots/mobile/19-tangle-release.gif" alt="마지막 타격에 큰 엉킴이 풀려나는 승리 장면"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>이어지는 웨이브</strong><br><sub>하나를 풀면 다음 엉킴이 나타나요</sub></td>
+    <td align="center"><strong>큰 엉킴</strong><br><sub>더 단단한 매듭은 예고 위력도 달라요</sub></td>
+    <td align="center"><strong>풀려나는 순간</strong><br><sub>사라지는 게 아니라 제자리로 돌아가요</sub></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="38%"><img src="docs/screenshots/mobile/16-expedition-return.webp" alt="함께 돌아온 탐험대와 성장, 씨앗 보상을 정리한 귀환 화면"></td>
+    <td valign="top">
+      <h3>함께 돌아온 기록</h3>
+      <p>스테이지를 마치면 누가 어떤 활약을 했는지, 무엇을 주워 왔는지가 한 장으로 남습니다. 오늘 일기를 썼다면 성장과 씨앗도 함께 돌아옵니다.</p>
+      <ul>
+        <li>져도 잃는 것은 없어요. 캐릭터는 다치거나 사라지지 않아요.</li>
+        <li>클리어한 스테이지는 언제든 다시 걸을 수 있어요.</li>
+        <li>보상의 중심은 언제나 마음 일기 — 모험이 일기를 앞지르지 않아요.</li>
+      </ul>
+    </td>
   </tr>
 </table>
 
@@ -148,7 +197,7 @@
 | 마음 기록 | 일기 작성·수정·삭제, 감정 성장 반영, 달력, 주간·월간 회고 |
 | 캐릭터 | 10종 성장 계보, 감정별 성장, 표정·부분 모션, 의상 교체 |
 | 생활 콘텐츠 | 일일 미션, 씨앗 재화, 상점, 방·정원 꾸미기, 박물관 |
-| 탐험 | 1~3명 편성, 지도 이동, 갈림길·사건, 수동 전투, 획득·귀환 |
+| 모험 | 스테이지 지도(전투·사건·쉼터·수호전), 1~3명 편성, 카드 한 장으로 즉시 행동하는 전투, 엉킴 웨이브, 자동 지휘·배속 |
 | 시작 방식 | 이메일 계정 또는 서버 전송 없는 비회원 체험 |
 
 <details>
