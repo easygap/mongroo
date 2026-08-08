@@ -12,12 +12,20 @@ import 'expedition_action_cue.dart';
 
 const _unset = Object();
 
+/// 진행 중인 탐험이 없을 때 보여 줄 화면.
+///
+/// 개편 설계서 5.1·5.2의 `허브 → 스테이지 지도 → 편성` 순서를 그대로 따른다.
+enum ExpeditionShellView { hub, stageMap, preparation }
+
 class ExpeditionUiState {
   const ExpeditionUiState({
     this.loading = true,
     this.catalog,
     this.roster = const [],
     this.expedition,
+    this.stageMap,
+    this.shellView = ExpeditionShellView.hub,
+    this.selectedStageNo,
     this.selectedPlantIds = const {},
     this.selectedMemberId,
     this.busyAction,
@@ -32,6 +40,11 @@ class ExpeditionUiState {
   final ExpeditionCatalog? catalog;
   final List<ExpeditionRosterItem> roster;
   final ExpeditionSnapshot? expedition;
+  final ExpeditionStageMap? stageMap;
+  final ExpeditionShellView shellView;
+
+  /// 지도에서 고른 스테이지. 편성 화면과 출발 요청이 함께 읽는다.
+  final int? selectedStageNo;
   final Set<int> selectedPlantIds;
   final int? selectedMemberId;
   final String? busyAction;
@@ -40,6 +53,8 @@ class ExpeditionUiState {
   final ExpeditionActionCue? actionCue;
   final ExpeditionSnapshot? pendingExpedition;
   final bool settlingResult;
+
+  ExpeditionStage? get selectedStage => stageMap?.stageOf(selectedStageNo);
 
   bool get interactionLocked =>
       busyAction != null ||
@@ -52,6 +67,9 @@ class ExpeditionUiState {
     Object? catalog = _unset,
     List<ExpeditionRosterItem>? roster,
     Object? expedition = _unset,
+    Object? stageMap = _unset,
+    ExpeditionShellView? shellView,
+    Object? selectedStageNo = _unset,
     Set<int>? selectedPlantIds,
     Object? selectedMemberId = _unset,
     Object? busyAction = _unset,
@@ -69,6 +87,13 @@ class ExpeditionUiState {
         expedition: expedition == _unset
             ? this.expedition
             : expedition as ExpeditionSnapshot?,
+        stageMap: stageMap == _unset
+            ? this.stageMap
+            : stageMap as ExpeditionStageMap?,
+        shellView: shellView ?? this.shellView,
+        selectedStageNo: selectedStageNo == _unset
+            ? this.selectedStageNo
+            : selectedStageNo as int?,
         selectedPlantIds: selectedPlantIds ?? this.selectedPlantIds,
         selectedMemberId: selectedMemberId == _unset
             ? this.selectedMemberId
@@ -112,10 +137,12 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
         repository.getCatalog(),
         repository.getRoster(),
         repository.getActive(),
+        repository.getStageMap(),
       ]);
       final catalog = results[0] as ExpeditionCatalog;
       final roster = results[1] as List<ExpeditionRosterItem>;
       final expedition = results[2] as ExpeditionSnapshot?;
+      final stageMap = results[3] as ExpeditionStageMap;
       final selected = state.selectedPlantIds
           .where(
               (id) => roster.any((item) => item.plantId == id && item.eligible))
@@ -129,6 +156,11 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
         catalog: catalog,
         roster: roster,
         expedition: expedition,
+        stageMap: stageMap,
+        // 지도를 새로 받으면 허브부터 다시 보여 준다. 진행 중 화면이 남아
+        // 이전 스테이지 선택으로 출발하는 일을 막는다.
+        shellView: ExpeditionShellView.hub,
+        selectedStageNo: null,
         selectedPlantIds: selected,
         selectedMemberId: _defaultMember(expedition),
         tutorialCoachStep: _deriveTutorialStep(expedition),
@@ -219,6 +251,60 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
     state = state.copyWith(selectedMemberId: memberId);
   }
 
+  /// 허브에서 스테이지 지도를 연다.
+  void openStageMap() =>
+      state = state.copyWith(shellView: ExpeditionShellView.stageMap);
+
+  /// 지도에서 스테이지를 고르고 편성 화면으로 넘어간다.
+  /// 잠긴 스테이지는 사유만 알리고 이동하지 않는다.
+  void openStagePreparation(int stageNo) {
+    final stage = state.stageMap?.stageOf(stageNo);
+    if (stage == null) return;
+    if (!stage.unlocked) {
+      state = state.copyWith(error: stage.lockReason);
+      return;
+    }
+    state = state.copyWith(
+      shellView: ExpeditionShellView.preparation,
+      selectedStageNo: stageNo,
+      error: null,
+    );
+  }
+
+  /// 한 단계 뒤로. 편성 → 지도 → 허브 순서로 돌아간다.
+  bool goBackInShell() {
+    switch (state.shellView) {
+      case ExpeditionShellView.preparation:
+        state = state.copyWith(
+          shellView: ExpeditionShellView.stageMap,
+          selectedStageNo: null,
+        );
+        return true;
+      case ExpeditionShellView.stageMap:
+        state = state.copyWith(shellView: ExpeditionShellView.hub);
+        return true;
+      case ExpeditionShellView.hub:
+        return false;
+    }
+  }
+
+  /// 스테이지 이야기 컷을 읽었다고 서버에 남긴다. 실패해도 진행을 막지 않는다.
+  Future<void> markStageStorySeen(int stageNo) async {
+    final stageMap = state.stageMap;
+    if (stageMap == null) return;
+    try {
+      await ref.read(expeditionRepositoryProvider).markStageStorySeen(
+            regionCode: stageMap.region.code,
+            stageNo: stageNo,
+          );
+      state = state.copyWith(
+        stageMap: await ref.read(expeditionRepositoryProvider).getStageMap(),
+      );
+    } on ApiException {
+      // 이야기 확인 표시는 보조 정보다. 실패를 사용자에게 알리지 않는다.
+    }
+  }
+
   Future<bool> start(String mode) async {
     final catalog = state.catalog;
     if (state.selectedPlantIds.isEmpty || catalog == null) {
@@ -241,7 +327,8 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
                 .plantId,
           ]
         : state.selectedPlantIds.toList(growable: false);
-    final action = 'start:$mode:${plantIds.join(',')}';
+    final stageNo = mode == 'tutorial' ? null : state.selectedStageNo;
+    final action = 'start:$mode:${plantIds.join(',')}:${stageNo ?? '-'}';
     return _perform(
       action,
       (key) => ref.read(expeditionRepositoryProvider).start(
@@ -249,6 +336,7 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
             plantIds: plantIds,
             guideCount: mode == 'tutorial' ? 1 : 0,
             idempotencyKey: key,
+            stageNo: stageNo,
           ),
     );
   }

@@ -39,11 +39,30 @@ class ExpeditionRepository {
             : null;
       });
 
+  Future<ExpeditionStageMap> getStageMap() => guardApi(() async {
+        final response = await _dio.get<Map<String, dynamic>>(
+          '/adventure/stages',
+        );
+        return ExpeditionStageMap.fromJson(response.data ?? const {});
+      });
+
+  Future<bool> markStageStorySeen({
+    required String regionCode,
+    required int stageNo,
+  }) =>
+      guardApi(() async {
+        final response = await _dio.post<Map<String, dynamic>>(
+          '/adventure/stages/$regionCode/$stageNo/story-seen',
+        );
+        return response.data?['story_seen'] == true;
+      });
+
   Future<ExpeditionSnapshot> start({
     required String mode,
     required List<int> plantIds,
     required int guideCount,
     required String idempotencyKey,
+    int? stageNo,
   }) =>
       guardApi(() async {
         final response = await _dio.post<Map<String, dynamic>>(
@@ -53,6 +72,7 @@ class ExpeditionRepository {
             'mode': mode,
             'plant_ids': plantIds,
             'guide_count': guideCount,
+            if (stageNo != null) 'stage_no': stageNo,
           },
           options: Options(headers: {'Idempotency-Key': idempotencyKey}),
         );

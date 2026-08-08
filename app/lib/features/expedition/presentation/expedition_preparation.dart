@@ -43,14 +43,19 @@ class _ExpeditionPreparation extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _PreparationHero(catalog: catalog),
-                    const SizedBox(height: 24),
-                    Text('1. 목적지',
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 10),
-                    if (region != null) _RegionCard(region: region),
-                    const SizedBox(height: 24),
-                    Text('2. 탐험대 편성',
+                    if (state.selectedStage case final stage?) ...[
+                      _StagePreparationHeader(stage: stage),
+                      const SizedBox(height: 14),
+                    ] else ...[
+                      _PreparationHero(catalog: catalog),
+                      const SizedBox(height: 24),
+                      Text('1. 목적지',
+                          style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 10),
+                      if (region != null) _RegionCard(region: region),
+                      const SizedBox(height: 24),
+                    ],
+                    Text('탐험대 편성',
                         style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 6),
                     Text(
@@ -83,7 +88,7 @@ class _ExpeditionPreparation extends ConsumerWidget {
                         ),
                       ),
                     const SizedBox(height: 18),
-                    Text('3. 출발 방식',
+                    Text('출발 방식',
                         style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 10),
                     if (!catalog.tutorialCompleted) ...[
@@ -100,6 +105,65 @@ class _ExpeditionPreparation extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// 스테이지 지도에서 넘어왔을 때의 편성 화면 머리말.
+/// 어느 스테이지로 떠나는지와 돌아가는 길을 함께 보여 준다.
+class _StagePreparationHeader extends ConsumerWidget {
+  const _StagePreparationHeader({required this.stage});
+
+  final ExpeditionStage stage;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    return MongrooPanel(
+      key: const ValueKey('stage-preparation-header'),
+      padding: const EdgeInsets.fromLTRB(6, 6, 14, 12),
+      borderColor: scheme.primary.withAlpha(85),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          IconButton(
+            key: const ValueKey('stage-preparation-back'),
+            onPressed:
+                ref.read(expeditionControllerProvider.notifier).goBackInShell,
+            tooltip: '스테이지 지도로',
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${stage.label} · ${stage.kindLabel}',
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    stage.title,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    stage.summary,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

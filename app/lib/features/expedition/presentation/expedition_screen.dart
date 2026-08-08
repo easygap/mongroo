@@ -23,6 +23,7 @@ part 'expedition_decision.dart';
 part 'expedition_event_decision.dart';
 part 'expedition_map.dart';
 part 'expedition_preparation.dart';
+part 'expedition_stage_map.dart';
 part 'expedition_summary.dart';
 
 class ExpeditionScreen extends ConsumerWidget {
@@ -42,35 +43,53 @@ class ExpeditionScreen extends ConsumerWidget {
     );
     final shell = ref.watch(
       expeditionControllerProvider.select(
-        (state) => (loading: state.loading, expedition: state.expedition),
+        (state) => (
+          loading: state.loading,
+          expedition: state.expedition,
+          shellView: state.shellView,
+        ),
       ),
     );
     final expedition = shell.expedition;
-    final title = expedition?.region.name ?? '함께 떠나는 탐험';
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        actions: [
-          if (expedition?.run.mode == 'tutorial' &&
-              expedition?.run.isActive == true)
-            IconButton(
-              onPressed: ref
-                  .read(expeditionControllerProvider.notifier)
-                  .replayTutorialHelp,
-              tooltip: '현재 조작 도움말 다시 보기',
-              icon: const Icon(Icons.help_outline_rounded),
-            ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: shell.loading
-            ? const Center(child: CircularProgressIndicator())
-            : expedition != null
-                ? expedition.run.isActive
-                    ? _ActiveExpedition(expedition: expedition)
-                    : _ExpeditionSummary(expedition: expedition)
-                : const _ExpeditionPreparation(),
+    final notifier = ref.read(expeditionControllerProvider.notifier);
+    final title = expedition?.region.name ?? '함께 떠나는 모험';
+    // 허브 안쪽 화면에서는 시스템 뒤로가기가 화면을 닫지 않고 한 단계만 돌아간다.
+    final canPopShell =
+        expedition != null || shell.shellView == ExpeditionShellView.hub;
+    return PopScope(
+      canPop: canPopShell,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) notifier.goBackInShell();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+          actions: [
+            if (expedition?.run.mode == 'tutorial' &&
+                expedition?.run.isActive == true)
+              IconButton(
+                onPressed: notifier.replayTutorialHelp,
+                tooltip: '현재 조작 도움말 다시 보기',
+                icon: const Icon(Icons.help_outline_rounded),
+              ),
+          ],
+        ),
+        body: SafeArea(
+          top: false,
+          child: shell.loading
+              ? const Center(child: CircularProgressIndicator())
+              : expedition != null
+                  ? expedition.run.isActive
+                      ? _ActiveExpedition(expedition: expedition)
+                      : _ExpeditionSummary(expedition: expedition)
+                  : switch (shell.shellView) {
+                      ExpeditionShellView.hub => const _ExpeditionHub(),
+                      ExpeditionShellView.stageMap =>
+                        const _ExpeditionStageMapView(),
+                      ExpeditionShellView.preparation =>
+                        const _ExpeditionPreparation(),
+                    },
+        ),
       ),
     );
   }

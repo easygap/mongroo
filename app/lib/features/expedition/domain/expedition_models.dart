@@ -1,5 +1,6 @@
 import 'expedition_combat_models.dart';
 export 'expedition_combat_models.dart';
+export 'expedition_stage_models.dart';
 
 int _asInt(Object? value, [int fallback = 0]) =>
     value is num ? value.toInt() : fallback;
@@ -86,9 +87,11 @@ class ExpeditionRosterItem {
     required this.plantId,
     required this.name,
     required this.speciesName,
+    required this.speciesCode,
     required this.isActive,
     required this.stage,
     required this.form,
+    required this.outfitKey,
     required this.stats,
     required this.eligible,
     required this.ineligibleReason,
@@ -97,9 +100,11 @@ class ExpeditionRosterItem {
   final int plantId;
   final String name;
   final String speciesName;
+  final String speciesCode;
   final bool isActive;
   final int stage;
   final String form;
+  final String? outfitKey;
   final Map<String, int> stats;
   final bool eligible;
   final String? ineligibleReason;
@@ -110,9 +115,11 @@ class ExpeditionRosterItem {
       plantId: _asInt(json['plant_id']),
       name: json['name'] as String? ?? '',
       speciesName: _map(json['species'])['name'] as String? ?? '',
+      speciesCode: _map(json['species'])['code'] as String? ?? '',
       isActive: json['status'] == 'active',
       stage: _asInt(json['stage'], 1),
       form: json['form'] as String? ?? 'mosaic',
+      outfitKey: json['outfit_key'] as String?,
       stats: stats.map(
         (key, value) => MapEntry(key, _asInt(value)),
       ),
@@ -219,6 +226,7 @@ class ExpeditionRun {
   const ExpeditionRun({
     required this.id,
     required this.mode,
+    required this.stageNo,
     required this.status,
     required this.phase,
     required this.revision,
@@ -231,6 +239,9 @@ class ExpeditionRun {
 
   final int id;
   final String mode;
+
+  /// 스테이지 지도에서 출발한 run만 값을 가진다.
+  final int? stageNo;
   final String status;
   final String phase;
   final int revision;
@@ -245,6 +256,8 @@ class ExpeditionRun {
   factory ExpeditionRun.fromJson(Map<String, dynamic> json) => ExpeditionRun(
         id: _asInt(json['id']),
         mode: json['mode'] as String? ?? '',
+        stageNo:
+            json['stage_no'] is num ? (json['stage_no'] as num).toInt() : null,
         status: json['status'] as String? ?? '',
         phase: json['phase'] as String? ?? '',
         revision: _asInt(json['revision']),

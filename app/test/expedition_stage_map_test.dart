@@ -1,0 +1,325 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mongroo/core/theme/app_theme.dart';
+import 'package:mongroo/features/expedition/domain/expedition_models.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_controller.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_screen.dart';
+
+Map<String, dynamic> _stage({
+  required int no,
+  required String kind,
+  bool cleared = false,
+  bool unlocked = false,
+  bool storySeen = false,
+  bool elite = false,
+}) =>
+    {
+      'no': no,
+      'kind': kind,
+      'kind_label': switch (kind) {
+        'event' => '사건',
+        'camp' => '쉼터',
+        'boss' => '수호전',
+        _ => '전투',
+      },
+      'elite': elite,
+      'label': '기억서고 $no',
+      'title': '$no번째 자리',
+      'summary': '$no번째 자리에서 벌어지는 일이에요.',
+      'estimated_seconds': 75,
+      'weakness': 'insight',
+      'weakness_label': '관찰',
+      'tangles': kind == 'battle'
+          ? [
+              {
+                'code': 'tangled_ledger',
+                'name': '엉킨 장부 뭉치',
+                'description': '분류하다 만 장부들이 실처럼 서로 얽혔어요.',
+              },
+            ]
+          : <Map<String, dynamic>>[],
+      'cleared': cleared,
+      'clear_count': cleared ? 1 : 0,
+      'cleared_at': cleared ? '2026-08-08T00:00:00Z' : null,
+      'story_seen': storySeen,
+      'unlocked': unlocked,
+      'lock_reason': unlocked ? null : '기억서고 ${no - 1}을 먼저 완주하면 열려요.',
+    };
+
+ExpeditionStageMap _stageMap({int clearedCount = 1}) =>
+    ExpeditionStageMap.fromJson({
+      'content_version': '2026.08.4',
+      'region': {
+        'code': 'moss_archive',
+        'name': '이끼 기억서고',
+        'short_name': '기억서고',
+        'description': '첫 탐험지',
+        'recommended_stage': 2,
+      },
+      'progress': {
+        'cleared_count': clearedCount,
+        'total': 8,
+        'next_stage_no': clearedCount + 1,
+        'region_cleared': false,
+      },
+      'active_run': null,
+      'stages': [
+        for (var no = 1; no <= 8; no++)
+          _stage(
+            no: no,
+            kind: switch (no) {
+              2 || 6 => 'event',
+              5 => 'camp',
+              8 => 'boss',
+              _ => 'battle',
+            },
+            elite: no == 4,
+            cleared: no <= clearedCount,
+            unlocked: no <= clearedCount + 1,
+            storySeen: false,
+          ),
+      ],
+    });
+
+ExpeditionCatalog _catalog({bool heartResonance = true}) =>
+    ExpeditionCatalog.fromJson({
+      'content_version': '2026.08.4',
+      'active_run_id': null,
+      'entry': {
+        'diary_ready': heartResonance,
+        'heart_resonance_available': heartResonance,
+        'free_explore_available': true,
+        'suspended': false,
+        'tutorial_completed': true,
+      },
+      'regions': [
+        {
+          'code': 'moss_archive',
+          'name': '이끼 기억서고',
+          'description': '첫 탐험지',
+          'recommended_stage': 2,
+          'reward': {'exp': 6, 'seeds': 2},
+        },
+      ],
+    });
+
+List<ExpeditionRosterItem> _roster() => [
+      ExpeditionRosterItem.fromJson({
+        'plant_id': 11,
+        'name': '새싹몬',
+        'species': {'code': 'baby-pot', 'name': '아기 화분'},
+        'status': 'active',
+        'stage': 3,
+        'form': 'sunny',
+        'outfit_key': null,
+        'stats': {'care': 7, 'focus': 6, 'courage': 6, 'insight': 5},
+        'eligible': true,
+        'ineligible_reason': null,
+      }),
+    ];
+
+class _FakeStageController extends ExpeditionController {
+  _FakeStageController(this.initial);
+
+  final ExpeditionUiState initial;
+  int loadCalls = 0;
+
+  @override
+  ExpeditionUiState build() => initial;
+
+  @override
+  Future<void> load() async {
+    loadCalls += 1;
+  }
+}
+
+Future<_FakeStageController> _pumpShell(
+  WidgetTester tester, {
+  int clearedCount = 1,
+  bool heartResonance = true,
+}) async {
+  late _FakeStageController controller;
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        expeditionControllerProvider.overrideWith(() {
+          controller = _FakeStageController(
+            ExpeditionUiState(
+              loading: false,
+              catalog: _catalog(heartResonance: heartResonance),
+              roster: _roster(),
+              stageMap: _stageMap(clearedCount: clearedCount),
+              selectedPlantIds: const {11},
+            ),
+          );
+          return controller;
+        }),
+      ],
+      child: MaterialApp(
+        theme: AppTheme.light(),
+        home: const ExpeditionScreen(),
+      ),
+    ),
+  );
+  await tester.pump();
+  return controller;
+}
+
+void main() {
+  testWidgets('허브는 이어서 모험할 스테이지 하나를 크게 보여 준다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpShell(tester, clearedCount: 2);
+
+    expect(find.byKey(const ValueKey('hub-continue-card')), findsOneWidget);
+    expect(find.text('이어서 모험하기'), findsOneWidget);
+    expect(find.text('기억서고 3'), findsOneWidget);
+    expect(find.text('오늘 일기를 써서 마음 공명이 준비됐어요.'), findsOneWidget);
+    // 잠긴 하위 진입점은 숨기지 않고 조건을 그대로 읽어 준다.
+    expect(find.text('깊은 조사'), findsOneWidget);
+    expect(find.text('기억서고 8까지 완주하면 열려요.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('일기 전에는 자유 모험 안내로 바뀌고 재촉하지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpShell(tester, heartResonance: false);
+
+    expect(
+      find.text('마음 일기를 쓰면 오늘의 보상 모험이 열려요. 그전에도 자유롭게 다녀올 수 있어요.'),
+      findsOneWidget,
+    );
+    expect(find.byType(Badge), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('지도는 8개 점과 진행도를 보여 주고 잠긴 곳은 사유를 읽어 준다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpShell(tester, clearedCount: 2);
+    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.pump();
+
+    for (var no = 1; no <= 8; no++) {
+      expect(
+        find.byKey(ValueKey('stage-point-$no')),
+        findsOneWidget,
+        reason: '$no번 스테이지 점',
+      );
+    }
+    expect(find.text('2/8'), findsOneWidget);
+    expect(find.text('기억서고 4을 먼저 완주하면 열려요.'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('스테이지를 누르면 미리보기 시트가 열리고 출발까지 이어진다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = await _pumpShell(tester, clearedCount: 2);
+    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('stage-point-3')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('기억서고 3 · 3번째 자리'), findsOneWidget);
+    expect(find.text('약 1분 15초'), findsOneWidget);
+    expect(find.text('약점 관찰'), findsOneWidget);
+    expect(find.text('엉킨 장부 뭉치'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('stage-sheet-start')));
+    await tester.pumpAndSettle();
+
+    expect(controller.state.shellView, ExpeditionShellView.preparation);
+    expect(controller.state.selectedStageNo, 3);
+    expect(
+      find.byKey(const ValueKey('stage-preparation-header')),
+      findsOneWidget,
+    );
+    expect(find.text('기억서고 3 · 전투'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('잠긴 스테이지는 시트에서 출발 버튼 대신 사유만 보여 준다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpShell(tester, clearedCount: 1);
+    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('stage-point-5')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('stage-sheet-start')), findsNothing);
+    expect(find.text('기억서고 4을 먼저 완주하면 열려요.'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('지도와 편성 화면에서 뒤로 가면 한 단계씩 돌아온다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = await _pumpShell(tester, clearedCount: 2);
+    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.pump();
+    expect(controller.state.shellView, ExpeditionShellView.stageMap);
+
+    await tester.tap(find.byKey(const ValueKey('stage-map-back')));
+    await tester.pump();
+    expect(controller.state.shellView, ExpeditionShellView.hub);
+    expect(find.byKey(const ValueKey('hub-continue-card')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('320px과 200% 글자에서도 허브와 지도가 넘치지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    late _FakeStageController controller;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          expeditionControllerProvider.overrideWith(() {
+            controller = _FakeStageController(
+              ExpeditionUiState(
+                loading: false,
+                catalog: _catalog(),
+                roster: _roster(),
+                stageMap: _stageMap(clearedCount: 2),
+                selectedPlantIds: const {11},
+              ),
+            );
+            return controller;
+          }),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: const TextScaler.linear(2),
+            ),
+            child: child!,
+          ),
+          home: const ExpeditionScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('hub-continue-card')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    controller.openStageMap();
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('stage-point-1')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+}
