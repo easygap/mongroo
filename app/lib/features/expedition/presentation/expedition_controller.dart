@@ -317,6 +317,25 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
     );
   }
 
+  /// 순차 명령 — 대원 한 명의 행동을 즉시 서버 판정으로 보낸다.
+  ///
+  /// 응답의 `last_combat_exchange`에는 이번 행동으로 새로 일어난 이벤트만
+  /// 담기므로 기존 큐 연출 파이프라인이 그대로 그 변화를 재생한다.
+  Future<bool> resolveCombatAction(ExpeditionCombatCommand command) {
+    final expedition = state.expedition;
+    if (expedition == null) return Future.value(false);
+    return _perform(
+      'combat:${expedition.run.revision}:seq:${command.memberId}-${command.action}',
+      (key) => ref.read(expeditionRepositoryProvider).resolveCombatTurn(
+            runId: expedition.run.id,
+            commands: [command],
+            partial: true,
+            expectedRevision: expedition.run.revision,
+            clientActionId: key,
+          ),
+    );
+  }
+
   Future<bool> extract() {
     final expedition = state.expedition;
     if (expedition == null) return Future.value(false);

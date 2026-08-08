@@ -1,7 +1,8 @@
 part of 'expedition_screen.dart';
 
 /// 전투 중에는 지도·장소 설명·지휘 패널을 세로로 나열하지 않는다.
-/// 전장과 명령 덱을 한 화면에 고정해 현재 행동과 다음 입력을 함께 읽게 한다.
+/// 스테이지 개편(stage-battle-v2.0)의 세로 3존 — 상단 정보 바, 대치 무대,
+/// 순차 명령 카드 독 — 을 한 화면에 고정해 현재 행동과 다음 입력을 함께 읽는다.
 class _ImmersiveExpeditionBattle extends ConsumerWidget {
   const _ImmersiveExpeditionBattle({required this.expedition});
 
@@ -10,7 +11,9 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(expeditionControllerProvider);
+    final settings = ref.watch(expeditionBattleSettingsProvider);
     final event = expedition.currentEvent!;
+    final battle = event.battle!;
     final node = expedition.nodes.firstWhere(
       (item) => item.code == expedition.run.currentNodeCode,
     );
@@ -28,33 +31,54 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
       expedition: expedition,
       actor: actor,
       cue: state.actionCue,
+      paceScale: settings.pace.toDouble(),
+      shortEffects: settings.shortEffects,
       onCueCompleted:
           ref.read(expeditionControllerProvider.notifier).clearActionCue,
     );
-    final commandDock = ExpeditionBattlePanel(
-      expedition: expedition,
-      event: event,
-      state: state,
-      compact: true,
-      onTurnStarted: () async {},
+    final Widget commandDock = kSequentialCommandDock
+        ? ExpeditionSequentialCommandDock(
+            expedition: expedition,
+            event: event,
+            state: state,
+          )
+        : ExpeditionBattlePanel(
+            expedition: expedition,
+            event: event,
+            state: state,
+            compact: true,
+            onTurnStarted: () async {},
+          );
+    final topBar = ExpeditionBattleTopBar(
+      battle: battle,
+      locked: state.interactionLocked,
     );
 
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth >= 820) {
           return Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1180),
-                child: Row(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(flex: 7, child: stage),
-                    const SizedBox(width: 14),
-                    SizedBox(
-                      width: 410,
-                      child: SingleChildScrollView(child: commandDock),
+                    topBar,
+                    const SizedBox(height: 6),
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(flex: 7, child: stage),
+                          const SizedBox(width: 14),
+                          SizedBox(
+                            width: 410,
+                            child: SingleChildScrollView(child: commandDock),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -64,13 +88,15 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
         }
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+          padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
           child: Column(
             children: [
-              Expanded(flex: 54, child: stage),
+              topBar,
+              const SizedBox(height: 4),
+              Expanded(flex: 56, child: stage),
               const SizedBox(height: 7),
               Flexible(
-                flex: 46,
+                flex: 44,
                 child: SingleChildScrollView(
                   key: const ValueKey('immersive-combat-command-scroll'),
                   child: commandDock,
@@ -90,6 +116,8 @@ class _ImmersiveBattleStage extends StatelessWidget {
     required this.expedition,
     required this.actor,
     required this.cue,
+    required this.paceScale,
+    required this.shortEffects,
     required this.onCueCompleted,
   });
 
@@ -97,6 +125,8 @@ class _ImmersiveBattleStage extends StatelessWidget {
   final ExpeditionSnapshot expedition;
   final ExpeditionMember? actor;
   final ExpeditionActionCue? cue;
+  final double paceScale;
+  final bool shortEffects;
   final VoidCallback onCueCompleted;
 
   @override
@@ -112,26 +142,15 @@ class _ImmersiveBattleStage extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         semanticLabel:
             '${node.sceneLabel} 수호전. ${battle.enemy.name} 장벽 ${battle.enemy.guard}/${battle.enemy.maxGuard}.',
-        child: Stack(
-          children: [
-            ExpeditionEncounterStage(
-              encounter: expedition.currentEvent?.encounter,
-              battle: battle,
-              actor: actor,
-              party: expedition.party,
-              cue: cue,
-              onCueCompleted: onCueCompleted,
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: _SceneHudTag(
-                icon: Icons.sports_martial_arts_rounded,
-                label: '${battle.round}/${battle.maxRounds} R',
-                color: expeditionGuardianBattleScene.accent,
-              ),
-            ),
-          ],
+        child: ExpeditionEncounterStage(
+          encounter: expedition.currentEvent?.encounter,
+          battle: battle,
+          actor: actor,
+          party: expedition.party,
+          cue: cue,
+          paceScale: paceScale,
+          shortEffects: shortEffects,
+          onCueCompleted: onCueCompleted,
         ),
       ),
     );

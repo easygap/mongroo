@@ -29,6 +29,8 @@ class ExpeditionEncounterStage extends StatefulWidget {
     this.party = const [],
     required this.cue,
     required this.onCueCompleted,
+    this.paceScale = 1.0,
+    this.shortEffects = false,
   });
 
   final ExpeditionEncounter? encounter;
@@ -37,6 +39,14 @@ class ExpeditionEncounterStage extends StatefulWidget {
   final List<ExpeditionMember> party;
   final ExpeditionActionCue? cue;
   final VoidCallback onCueCompleted;
+
+  /// 연출 배속. 2.0이면 같은 타임라인을 절반 시간에 재생한다.
+  /// 프레임을 건너뛰지 않고 판정 결과도 바꾸지 않는다.
+  final double paceScale;
+
+  /// 짧은 연출 모드. 시동·여운 구간을 약 40% 줄이되 판정 정보(행동·피해·
+  /// 승패)는 전부 유지한다. `disableAnimations` 접근성 설정과는 독립이다.
+  final bool shortEffects;
 
   @override
   State<ExpeditionEncounterStage> createState() =>
@@ -67,6 +77,15 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     _audio = ExpeditionCombatAudio();
   }
 
+  /// 배속·짧은 연출을 하나의 시간 배율로 합친다. 승리·패배 프레임은
+  /// 배속에서도 읽을 시간을 지키도록 호출부에서 하한을 둔다.
+  Duration _scaled(Duration duration, {int floorMs = 1}) {
+    final multiplier =
+        (widget.shortEffects ? .6 : 1.0) / widget.paceScale.clamp(1.0, 3.0);
+    final scaled = (duration.inMilliseconds * multiplier).round();
+    return Duration(milliseconds: scaled < floorMs ? floorMs : scaled);
+  }
+
   void _handleActionStatus(AnimationStatus status) {
     if (status != AnimationStatus.completed || widget.cue == null) return;
     _holdTimer?.cancel();
@@ -78,11 +97,14 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
             : ExpeditionCombatTimeline.reducedMotionResultHoldDuration
         : cue.isCombatRound
             ? cue.isTerminalCombatOutcome
-                ? ExpeditionCombatTimeline.terminalOutcomeHoldDuration
+                ? _scaled(
+                    ExpeditionCombatTimeline.terminalOutcomeHoldDuration,
+                    floorMs: 700,
+                  )
                 : cue.playsEnemyAttack
-                    ? ExpeditionCombatTimeline.enemyHoldDuration
-                    : ExpeditionCombatTimeline.commandHoldDuration
-            : ExpeditionCombatTimeline.resultHoldDuration;
+                    ? _scaled(ExpeditionCombatTimeline.enemyHoldDuration)
+                    : _scaled(ExpeditionCombatTimeline.commandHoldDuration)
+            : _scaled(ExpeditionCombatTimeline.resultHoldDuration);
     _holdTimer = Timer(
       holdDuration,
       () {
@@ -189,11 +211,11 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
         ? const Duration(milliseconds: 1)
         : cue.isCombatRound
             ? cue.playsEnemyAttack
-                ? ExpeditionCombatTimeline.enemyCommandDuration
-                : ExpeditionCombatTimeline.partyCommandDuration
+                ? _scaled(ExpeditionCombatTimeline.enemyCommandDuration)
+                : _scaled(ExpeditionCombatTimeline.partyCommandDuration)
             : cue.isGuardianExchange
-                ? ExpeditionCombatTimeline.guardianDuration
-                : ExpeditionCombatTimeline.skillDuration;
+                ? _scaled(ExpeditionCombatTimeline.guardianDuration)
+                : _scaled(ExpeditionCombatTimeline.skillDuration);
     _actionController.forward(from: 0);
     if (cue.isCombatRound) {
       unawaited(

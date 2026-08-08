@@ -8,4 +8,11 @@ void main() {
     expect(koreanSubject('뽀또'), '뽀또가');
     expect(koreanSubject('새싹몬'), '새싹몬이');
   });
+
+  test('전투 프롬프트가 쓰는 보조사(은/는)를 붙인다', () {
+    expect(koreanTopic('뽀또'), '뽀또는');
+    expect(koreanTopic('새싹몬'), '새싹몬은');
+    expect(koreanTopic('해답이'), '해답이는');
+    expect(koreanTopic('별솔'), '별솔은');
+  });
 }

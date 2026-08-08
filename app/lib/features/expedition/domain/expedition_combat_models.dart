@@ -34,6 +34,7 @@ class ExpeditionBattle {
     required this.party,
     required this.lastExchange,
     required this.battleLog,
+    this.pendingRound,
   });
 
   final String status;
@@ -46,9 +47,25 @@ class ExpeditionBattle {
   final List<ExpeditionBattleEvent> lastExchange;
   final List<String> battleLog;
 
+  /// 순차 명령 진행 상태. 구버전 서버 응답에는 없을 수 있다.
+  final ExpeditionBattlePendingRound? pendingRound;
+
   bool get isActive => status == 'active';
   List<ExpeditionBattleMember> get livingParty =>
       party.where((member) => member.isAlive).toList(growable: false);
+
+  /// 이번 라운드에 아직 행동하지 않은 대원. 서버가 진행 상태를 주지 않으면
+  /// 라운드 시작으로 간주해 살아 있는 전원을 돌려준다.
+  List<ExpeditionBattleMember> get awaitingParty {
+    final pending = pendingRound;
+    if (pending == null) return livingParty;
+    return party
+        .where((member) => pending.awaiting.contains(member.memberId))
+        .toList(growable: false);
+  }
+
+  bool hasActed(int memberId) =>
+      pendingRound?.acted.contains(memberId) ?? false;
 
   factory ExpeditionBattle.fromJson(Map<String, dynamic> json) =>
       ExpeditionBattle(
@@ -67,6 +84,37 @@ class ExpeditionBattle {
         battleLog: json['battle_log'] is List
             ? (json['battle_log'] as List)
                 .whereType<String>()
+                .toList(growable: false)
+            : const [],
+        pendingRound: json['pending_round'] is Map<String, dynamic>
+            ? ExpeditionBattlePendingRound.fromJson(
+                json['pending_round'] as Map<String, dynamic>,
+              )
+            : null,
+      );
+}
+
+class ExpeditionBattlePendingRound {
+  const ExpeditionBattlePendingRound({
+    required this.acted,
+    required this.awaiting,
+  });
+
+  final List<int> acted;
+  final List<int> awaiting;
+
+  factory ExpeditionBattlePendingRound.fromJson(Map<String, dynamic> json) =>
+      ExpeditionBattlePendingRound(
+        acted: json['acted'] is List
+            ? (json['acted'] as List)
+                .whereType<num>()
+                .map((value) => value.toInt())
+                .toList(growable: false)
+            : const [],
+        awaiting: json['awaiting'] is List
+            ? (json['awaiting'] as List)
+                .whereType<num>()
+                .map((value) => value.toInt())
                 .toList(growable: false)
             : const [],
       );

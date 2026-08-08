@@ -376,6 +376,8 @@ class _FakeExpeditionController extends ExpeditionController {
   final ExpeditionUiState initial;
   int combatRequests = 0;
   List<ExpeditionCombatCommand> lastCombatCommands = const [];
+  int combatActionRequests = 0;
+  List<ExpeditionCombatCommand> combatActionLog = const [];
 
   @override
   ExpeditionUiState build() => initial;
@@ -386,6 +388,13 @@ class _FakeExpeditionController extends ExpeditionController {
   Future<bool> resolveCombatTurn(List<ExpeditionCombatCommand> commands) async {
     combatRequests += 1;
     lastCombatCommands = List.unmodifiable(commands);
+    return true;
+  }
+
+  @override
+  Future<bool> resolveCombatAction(ExpeditionCombatCommand command) async {
+    combatActionRequests += 1;
+    combatActionLog = List.unmodifiable([...combatActionLog, command]);
     return true;
   }
 }
@@ -636,7 +645,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('수호전은 수동 명령이 기본이고 행동 순서가 집중력 판정을 바꾼다', (tester) async {
+  testWidgets('수호전은 순차 명령이 기본이고 카드 독이 집중력·약점을 읽어 준다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 1100));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final snapshot = ExpeditionSnapshot.fromJson(_battleSnapshotJson());
@@ -667,29 +676,39 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byKey(const ValueKey('combat-battle-panel')), findsOneWidget);
+    // 세로 3존 — 상단 정보 바, 대치 무대, 순차 명령 카드 독.
+    expect(find.byKey(const ValueKey('seq-command-dock')), findsOneWidget);
     expect(
         find.byKey(const ValueKey('immersive-combat-stage')), findsOneWidget);
     expect(find.text('R 1/6'), findsOneWidget);
     expect(find.textContaining('장부 발톱'), findsWidgets);
     expect(find.text('약점 돌봄'), findsOneWidget);
-    expect(find.text('돌비늘 장부지기가 출구를 막고 있어요.'), findsNothing);
+    // 첫 대기 대원의 이름으로 프롬프트가 열린다.
+    expect(find.text('새싹몬은 무엇을 할까요?'), findsOneWidget);
     final auto = tester.widget<FilterChip>(
-      find.byKey(const ValueKey('combat-auto-toggle')),
+      find.byKey(const ValueKey('seq-dock-auto')),
     );
     expect(auto.selected, isFalse);
 
-    final skill = find.byKey(const ValueKey('combat-action-skill-11'));
-    await tester.ensureVisible(skill);
+    // 집중력 1로는 스킬(집중 2)을 쓸 수 없다 — 카드가 사유와 함께 잠긴다.
+    final skillCard = find.byKey(const ValueKey('seq-dock-card-skill'));
+    await tester.ensureVisible(skillCard);
     await tester.pump();
-    await tester.longPress(skill);
+    expect(find.text('집중 부족'), findsOneWidget);
+    await tester.tap(skillCard, warnIfMissed: false);
+    await tester.pump();
+    expect(controller.combatActionRequests, 0);
+
+    // 길게 누르면 잠긴 카드도 설명을 읽을 수 있다.
+    await tester.longPress(skillCard);
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('캐릭터의 개성을 살린 고유 행동이에요.'), findsOneWidget);
     tester.state<NavigatorState>(find.byType(Navigator)).pop();
     await tester.pump(const Duration(milliseconds: 300));
 
-    final discovery = find.byKey(const ValueKey('combat-discovery-info'));
-    await tester.tap(discovery);
+    // 의도 줄을 누르면 발견 정보 시트가 열린다.
+    final intentLine = find.byKey(const ValueKey('seq-dock-intent'));
+    await tester.tap(intentLine);
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('상세 생태 기록'), findsOneWidget);
     expect(find.text('??? · 전투 후 도감에서 공개'), findsOneWidget);
@@ -697,46 +716,25 @@ void main() {
     tester.state<NavigatorState>(find.byType(Navigator)).pop();
     await tester.pump(const Duration(milliseconds: 300));
 
-    await tester.tap(skill);
+    // 공격 카드 탭 한 번이 곧 행동 제출이다.
+    final attackCard = find.byKey(const ValueKey('seq-dock-card-attack'));
+    await tester.tap(attackCard);
     await tester.pump();
-    expect(find.textContaining('새싹몬 순서에서 집중력 2'), findsOneWidget);
-    expect(
-      tester
-          .widget<FilledButton>(
-            find.byKey(const ValueKey('combat-submit')),
-          )
-          .onPressed,
-      isNull,
-    );
+    expect(controller.combatActionRequests, 1);
+    expect(controller.combatActionLog.single.memberId, 11);
+    expect(controller.combatActionLog.single.action, 'attack');
 
-    final moveBack = find.byTooltip('새싹몬 순서를 뒤로');
-    await tester.ensureVisible(moveBack);
-    await tester.pump();
-    await tester.tap(moveBack);
-    await tester.pump();
-    expect(find.byKey(const ValueKey('combat-forecast-ok')), findsOneWidget);
-    expect(
-      tester
-          .widget<FilledButton>(
-            find.byKey(const ValueKey('combat-submit')),
-          )
-          .onPressed,
-      isNotNull,
-    );
-
-    final autoToggle = find.byKey(const ValueKey('combat-auto-toggle'));
-    await tester.ensureVisible(autoToggle);
-    await tester.pump();
-    await tester.tap(autoToggle);
-    await tester.pump();
-    expect(tester.widget<FilterChip>(autoToggle).selected, isTrue);
-
+    // 서버가 첫 행동을 판정한 뒤 — 다음 대기 대원에게 차례가 넘어간다.
     final nextRaw = _battleSnapshotJson();
     (nextRaw['run'] as Map<String, dynamic>)['revision'] = 2;
     final nextEvent = nextRaw['current_event'] as Map<String, dynamic>;
     final nextBattle = nextEvent['battle'] as Map<String, dynamic>;
-    nextBattle['round'] = 2;
-    (nextBattle['enemy'] as Map<String, dynamic>)['guard'] = 74;
+    nextBattle['focus'] = 2;
+    (nextBattle['enemy'] as Map<String, dynamic>)['guard'] = 80;
+    nextBattle['pending_round'] = {
+      'acted': [11],
+      'awaiting': [12],
+    };
     final nextSnapshot = ExpeditionSnapshot.fromJson(nextRaw);
     controller.replace(
       ExpeditionUiState(
@@ -744,13 +742,27 @@ void main() {
         expedition: nextSnapshot,
         selectedMemberId: 11,
         tutorialCoachStep: 7,
-        settlingResult: true,
       ),
     );
     await tester.pump();
 
-    expect(find.byKey(const ValueKey('combat-battle-panel')), findsOneWidget);
+    expect(find.text('해답이는 무엇을 할까요?'), findsOneWidget);
+    // 집중력이 모였으니 이번 대원의 스킬 카드는 열려 있다.
+    expect(find.text('집중 부족'), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('seq-dock-card-skill')));
+    await tester.pump();
+    expect(controller.combatActionRequests, 2);
+    expect(controller.combatActionLog.last.memberId, 12);
+    expect(controller.combatActionLog.last.action, 'skill');
+
+    // AUTO는 끔 → 보조 → 연속 순서로 돈다.
+    final autoToggle = find.byKey(const ValueKey('seq-dock-auto'));
+    await tester.ensureVisible(autoToggle);
+    await tester.pump();
+    await tester.tap(autoToggle);
+    await tester.pump();
     expect(tester.widget<FilterChip>(autoToggle).selected, isTrue);
+    expect(find.text('AUTO·보조'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -783,17 +795,18 @@ void main() {
     );
     await tester.pump();
 
-    final submit = find.byKey(const ValueKey('combat-submit'));
-    await tester.ensureVisible(submit);
+    final attackCard = find.byKey(const ValueKey('seq-dock-card-attack'));
+    await tester.ensureVisible(attackCard);
     await tester.pump();
     final stage = find.byType(ExpeditionEncounterStage);
     final stageTopBefore = tester.getTopLeft(stage).dy;
     expect(stageTopBefore, greaterThanOrEqualTo(0));
     expect(stageTopBefore, lessThan(260));
 
-    await tester.tap(submit);
+    // 대원 탭 → 카드 탭. 카드 한 번으로 행동 하나가 즉시 제출된다.
+    await tester.tap(attackCard);
     await tester.pump();
-    expect(controller.combatRequests, 1);
+    expect(controller.combatActionRequests, 1);
     for (var frame = 0; frame < 4; frame++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
@@ -802,8 +815,8 @@ void main() {
     expect(stageTop, greaterThanOrEqualTo(0));
     expect(stageTop, lessThan(260));
     expect(stageTop, stageTopBefore);
-    expect(controller.combatRequests, 1);
-    expect(controller.lastCombatCommands, hasLength(2));
+    expect(controller.combatActionRequests, 1);
+    expect(controller.combatActionLog.single.action, 'attack');
     expect(tester.takeException(), isNull);
   });
 
@@ -850,7 +863,10 @@ void main() {
 
     await tester.drag(commandScroll, const Offset(0, -520));
     await tester.pump();
-    expect(find.byKey(const ValueKey('combat-submit')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('seq-dock-card-attack')),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 

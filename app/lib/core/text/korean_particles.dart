@@ -10,6 +10,10 @@ String koreanSubject(String word) =>
 String koreanWith(String word) =>
     '$word${_hasFinalConsonant(word) ? '과' : '와'}';
 
+/// 이름 끝 글자의 받침 유무에 맞는 보조사(은/는)를 붙입니다.
+String koreanTopic(String word) =>
+    '$word${_hasFinalConsonant(word) ? '은' : '는'}';
+
 bool _hasFinalConsonant(String word) {
   final trimmed = word.trimRight();
   if (trimmed.isEmpty) return false;

@@ -114,6 +114,7 @@ class ExpeditionRepository {
   Future<ExpeditionSnapshot> resolveCombatTurn({
     required int runId,
     required List<ExpeditionCombatCommand> commands,
+    bool partial = false,
     required int expectedRevision,
     required String clientActionId,
   }) =>
@@ -124,6 +125,8 @@ class ExpeditionRepository {
           'commands': commands
               .map((command) => command.toJson())
               .toList(growable: false),
+          // 스테이지 개편의 순차 명령. 대원 한 명의 행동을 즉시 판정한다.
+          if (partial) 'partial': true,
         },
         expectedRevision: expectedRevision,
         clientActionId: clientActionId,

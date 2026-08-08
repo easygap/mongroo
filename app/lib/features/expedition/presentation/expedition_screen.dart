@@ -9,6 +9,7 @@ import '../../home/presentation/plant_view.dart';
 import '../domain/expedition_models.dart';
 import 'expedition_action_cue.dart';
 import 'expedition_controller.dart';
+import 'expedition_battle_dock.dart';
 import 'expedition_battle_panel.dart';
 import 'expedition_combat_overlay.dart';
 import 'expedition_scene.dart';
