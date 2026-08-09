@@ -98,25 +98,55 @@ def select_map_template(
     return templates[int(map_seed[:8], 16) % len(templates)]
 
 
+def _base_map_node(
+    content: dict[str, Any], *, event_code: str | None = None, node_type: str | None = None
+) -> dict[str, Any] | None:
+    """기본 지도에서 장면 정보를 빌려 올 노드를 찾는다."""
+
+    for node in content["map"]["nodes"]:
+        if event_code is not None and node.get("event_code") == event_code:
+            return node
+        if node_type is not None and node.get("type") == node_type:
+            return node
+    return None
+
+
 def _stage_arena(
     content: dict[str, Any], stage: dict[str, Any]
-) -> tuple[dict[str, Any], dict[str, Any], str]:
-    """전투·보스 스테이지의 아레나 지도와 사건을 합성한다.
+) -> tuple[dict[str, Any], dict[str, Any], str | None]:
+    """스테이지 세션의 아레나 지도와 사건을 합성한다.
 
-    스테이지 세션은 노드 그래프를 걷지 않고 바로 전투로 들어간다(개편 설계서
-    4.1). 보스 스테이지는 pack의 수호전 사건을 그대로 쓰고, 전투 스테이지는
-    엉킴 웨이브 사건을 여기서 만든다. run의 map_snapshot에 저장되므로 진행 중
-    세션은 이후 콘텐츠 패치의 영향을 받지 않는다.
+    스테이지 세션은 노드 그래프를 걷지 않고 그 스테이지의 한 장면으로 바로
+    들어간다(개편 설계서 4.1·5.4). 전투는 엉킴 웨이브, 보스는 pack의 수호전,
+    사건은 pack의 해당 사건, 쉼터는 회복 장면 하나다. run의 map_snapshot에
+    저장되므로 진행 중 세션은 이후 콘텐츠 패치의 영향을 받지 않는다.
     """
 
     stage_no = int(stage["no"])
     region = content["region"]
-    if stage["kind"] == "boss":
+    kind = stage["kind"]
+    events = content["events"]
+    if kind == "boss":
         event_code = stage["event_code"]
-        events = content["events"]
+        scene = _base_map_node(content, event_code=event_code) or {}
+        node_type = "guardian"
+        threat_level = 3
+    elif kind == "event":
+        event_code = stage["event_code"]
+        scene = _base_map_node(content, event_code=event_code) or {}
+        node_type = "event"
+        threat_level = 1
+    elif kind == "camp":
+        event_code = None
+        scene = _base_map_node(content, node_type="camp") or {}
+        node_type = "camp"
+        threat_level = 0
     else:
         event_code = f"stage_wave_{stage_no}"
         wave_codes = list(stage.get("tangles") or [])
+        scene = {"scene_key": "monster_den", "scene_label": "스테이지 전투"}
+        node_type = "guardian"
+        threat_level = 3
         events = {
             **content["events"],
             event_code: {
@@ -145,18 +175,18 @@ def _stage_arena(
             {
                 "code": "stage_den",
                 "name": stage["title"],
-                "type": "guardian",
+                "type": node_type,
                 "x": 0.5,
                 "y": 0.55,
                 "cost": 0,
-                "scene_key": "monster_den",
-                "scene_label": "스테이지 전투",
+                "scene_key": scene.get("scene_key", "dungeon_gate"),
+                "scene_label": scene.get("scene_label", "스테이지 현장"),
                 "scene_description": stage["summary"],
                 "depth_label": (
                     f"{region.get('short_name') or region['name']} {stage_no}"
                 ),
-                "threat_level": 3,
-                "event_code": event_code,
+                "threat_level": threat_level,
+                **({"event_code": event_code} if event_code else {}),
             }
         ],
         "edges": [],
@@ -882,7 +912,8 @@ async def start_run(
         get_settings().jwt_secret.encode(), seed_source.encode(), hashlib.sha256
     ).hexdigest()
     arena_event_code: str | None = None
-    if stage_data is not None and stage_data["kind"] in ("battle", "boss"):
+    is_arena = stage_data is not None
+    if is_arena:
         map_data, map_events, arena_event_code = _stage_arena(content, stage_data)
     else:
         map_data = select_map_template(content, map_seed, mode)
@@ -903,7 +934,8 @@ async def start_run(
         region_code=region_code,
         mode=mode,
         stage_no=stage_no,
-        # 아레나 스테이지는 이동 없이 바로 전투를 마주한다.
+        # 아레나 스테이지는 이동 없이 바로 그 장면을 마주한다. 쉼터만
+        # 사건이 없어 탐색 상태로 시작한다.
         phase="awaiting_event" if arena_event_code is not None else "exploring",
         local_date=today,
         content_version=content["content_version"],
@@ -968,14 +1000,18 @@ async def start_run(
     await db.flush()
 
     real_members = [member for member in members if not member.is_guide] or members
-    if arena_event_code is not None:
-        run.spotlight_snapshot = [
-            {
-                "event_code": arena_event_code,
-                "member_id": real_members[0].id,
-                "consumed": False,
-            },
-        ]
+    if is_arena:
+        run.spotlight_snapshot = (
+            [
+                {
+                    "event_code": arena_event_code,
+                    "member_id": real_members[0].id,
+                    "consumed": False,
+                },
+            ]
+            if arena_event_code is not None
+            else []
+        )
     else:
         run.spotlight_snapshot = [
             {
@@ -1027,7 +1063,52 @@ async def start_run(
         )
     )
     await db.flush()
+
+    if is_arena and stage_data is not None and stage_data["kind"] == "camp":
+        # 쉼터 스테이지는 도착이 곧 휴식이다. 숨을 고른 것으로 걸음이
+        # 완성되고, 이야기와 함께 그 자리에서 귀환할 수 있다.
+        den_state = await db.scalar(
+            sa.select(ExpeditionNodeState).where(
+                ExpeditionNodeState.run_id == run.id,
+                ExpeditionNodeState.node_code == run.current_node_code,
+            )
+        )
+        if den_state is not None:
+            den_state.status = "resolved"
+            den_state.resolved_at = utcnow()
+            den_state.outcome_code = "rested"
+        run.trail_light = min(12, run.trail_light + 2)
+        run.resolve = min(6, run.resolve + 1)
+        _secure_stage_objective(db, run)
+        await db.flush()
     return await run_payload(db, run)
+
+
+def _secure_stage_objective(db: AsyncSession, run: ExpeditionRun) -> None:
+    """스테이지 세션의 목표 확보 — 그 장면을 끝낸 것이 곧 목표다.
+
+    전투 승리·사건 해결·쉼터 휴식이 모두 같은 규칙으로 목표 노드와 동일한
+    이야기 payoff와 보상 후보를 남기고, 출구 없이 그 자리에서 귀환을 연다.
+    """
+
+    if run.stage_no is None or run.objective_secured:
+        return
+    run.objective_secured = True
+    thread = dict(run.run_thread_snapshot)
+    thread.update({"stage": "payoff", "current_text": thread["payoff"]})
+    run.run_thread_snapshot = thread
+    reward = run.map_snapshot["region"]["reward"]
+    db.add(
+        ExpeditionLoot(
+            run_id=run.id,
+            node_code=run.current_node_code,
+            item_code=reward["item_code"],
+            quantity=1,
+            value_units=1,
+            loot_kind="objective",
+            disposition="candidate" if run.reward_eligible else "recorded",
+        )
+    )
 
 
 async def _lock_run(db: AsyncSession, user_id: int, run_id: int) -> ExpeditionRun:
@@ -1363,6 +1444,9 @@ async def choose(
         thread = dict(run.run_thread_snapshot)
         thread.update({"stage": "echo", "current_text": thread["echo"]})
         run.run_thread_snapshot = thread
+    # 사건 스테이지는 사건 하나를 매듭지은 것이 곧 목표다. 우회로 끝났어도
+    # 걸음은 완성이며, 준비도 소진만 안전 귀환으로 이어진다.
+    _secure_stage_objective(db, run)
     if run.resolve == 0:
         await _safe_return(db, run, reason="resolve_depleted")
     return await _finish_action(
@@ -1513,29 +1597,7 @@ async def resolve_combat_turn(
             run.run_thread_snapshot = thread
         if victory:
             run.phase = "exploring"
-            if run.stage_no is not None and not run.objective_secured:
-                # 스테이지 세션은 전투가 곧 목표다. 승리가 목표 확보이며
-                # 보상 후보와 이야기 payoff를 목표 노드와 같은 규칙으로 남긴다.
-                run.objective_secured = True
-                thread = dict(run.run_thread_snapshot)
-                thread.update(
-                    {"stage": "payoff", "current_text": thread["payoff"]}
-                )
-                run.run_thread_snapshot = thread
-                reward = run.map_snapshot["region"]["reward"]
-                db.add(
-                    ExpeditionLoot(
-                        run_id=run.id,
-                        node_code=run.current_node_code,
-                        item_code=reward["item_code"],
-                        quantity=1,
-                        value_units=1,
-                        loot_kind="objective",
-                        disposition=(
-                            "candidate" if run.reward_eligible else "recorded"
-                        ),
-                    )
-                )
+            _secure_stage_objective(db, run)
         else:
             await _safe_return(db, run, reason="guardian_defeat")
 

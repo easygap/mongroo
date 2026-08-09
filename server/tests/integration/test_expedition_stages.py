@@ -332,6 +332,90 @@ async def test_boss_stage_runs_the_guardian_in_the_arena(
     assert payload["progress"]["next_stage_no"] is None
 
 
+async def test_event_stage_runs_the_pack_event_in_an_arena(
+    client, user_tokens, session_factory
+):
+    headers = auth_headers(user_tokens)
+    user_id = user_tokens["user"]["id"]
+    plant_id = await _prepare_stage_two(session_factory, user_id)
+    await _seed_cleared_stages(session_factory, user_id, upto=1)
+
+    run = await _start(
+        client,
+        headers,
+        plant_id,
+        mode="free_explore",
+        stage_no=2,
+        key="stage-event-0001",
+    )
+    # 사건 스테이지는 이동 없이 pack의 사건 장면으로 바로 들어간다.
+    assert run["run"]["phase"] == "awaiting_event"
+    event = run["current_event"]
+    assert event["code"] == "wet_label_order"
+    assert len(event["choices"]) == 3
+    den = next(
+        node for node in run["map"]["nodes"] if node["code"] == "stage_den"
+    )
+    assert den["scene_key"] == "flooded_cave"
+    assert {action["type"] for action in run["available_actions"]} >= {"choice"}
+
+    # 판정 선택으로 사건을 매듭짓는다. 어떤 결과여도 걸음은 완성된다.
+    actor = run["party"][0]["id"]
+    resolved = await _action(
+        client,
+        headers,
+        run,
+        "choices",
+        {"choice_code": "trace_ink", "acting_member_id": actor},
+        "stage-event-choice",
+    )
+    assert resolved["run"]["objective_secured"] is True
+    assert resolved["last_resolution"]["event_code"] == "wet_label_order"
+    assert {action["type"] for action in resolved["available_actions"]} >= {
+        "extract"
+    }
+
+    completed = await _action(
+        client, headers, resolved, "extract", {}, "stage-event-extract"
+    )
+    assert completed["summary"]["progress"]["stage"]["stage_no"] == 2
+
+
+async def test_camp_stage_rests_and_returns_on_the_spot(
+    client, user_tokens, session_factory
+):
+    headers = auth_headers(user_tokens)
+    user_id = user_tokens["user"]["id"]
+    plant_id = await _prepare_stage_two(session_factory, user_id)
+    await _seed_cleared_stages(session_factory, user_id, upto=4)
+
+    run = await _start(
+        client,
+        headers,
+        plant_id,
+        mode="free_explore",
+        stage_no=5,
+        key="stage-camp-0001",
+    )
+    # 쉼터는 도착이 곧 휴식이다. 사건 없이 걸음이 완성되어 있다.
+    assert run["run"]["phase"] == "exploring"
+    assert run["run"]["objective_secured"] is True
+    assert run["current_event"] is None
+    den = next(
+        node for node in run["map"]["nodes"] if node["code"] == "stage_den"
+    )
+    assert den["type"] == "camp"
+    assert den["status"] == "resolved"
+    assert {action["type"] for action in run["available_actions"]} >= {"extract"}
+
+    completed = await _action(
+        client, headers, run, "extract", {}, "stage-camp-extract"
+    )
+    stage_result = completed["summary"]["progress"]["stage"]
+    assert stage_result["stage_no"] == 5
+    assert stage_result["first_clear"] is True
+
+
 async def test_replaying_a_cleared_stage_counts_without_new_rewards(
     client, user_tokens, session_factory
 ):
