@@ -41,7 +41,7 @@ RUN test -n "$SERVICE_OPERATOR_NAME" \
         --dart-define="SENSITIVE_CONSENT_VERSION=$SENSITIVE_CONSENT_VERSION"; \
     fi
 
-FROM nginxinc/nginx-unprivileged:1.28.0-alpine
+FROM nginxinc/nginx-unprivileged:1.31.3-alpine
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 COPY deploy/security-headers.conf /etc/nginx/snippets/mongroo-security.conf
 COPY --from=build /workspace/build/web /usr/share/nginx/html
