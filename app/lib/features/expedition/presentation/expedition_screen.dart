@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/text/korean_particles.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
 import '../../home/domain/plant.dart';
@@ -24,6 +25,7 @@ part 'expedition_event_decision.dart';
 part 'expedition_map.dart';
 part 'expedition_preparation.dart';
 part 'expedition_stage_map.dart';
+part 'expedition_stage_scene.dart';
 part 'expedition_summary.dart';
 
 class ExpeditionScreen extends ConsumerWidget {
@@ -131,6 +133,11 @@ class _ActiveExpeditionState extends ConsumerState<_ActiveExpedition> {
     final expedition = widget.expedition;
     if (expedition.currentEvent?.battle != null) {
       return _ImmersiveExpeditionBattle(expedition: expedition);
+    }
+    if (expedition.run.stageNo != null) {
+      // 스테이지 세션은 노드 지도를 걷지 않는다. 사건·쉼터·귀환을
+      // 한 장면으로 보여 주는 필드 연출 화면을 쓴다.
+      return _ImmersiveStageScene(expedition: expedition);
     }
     final width = MediaQuery.sizeOf(context).width;
     final content = [

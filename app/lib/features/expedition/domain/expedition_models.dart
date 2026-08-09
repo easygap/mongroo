@@ -495,6 +495,8 @@ class ExpeditionChoice {
     required this.code,
     required this.label,
     required this.safe,
+    required this.stat,
+    required this.resolveCost,
     required this.effectKey,
     required this.guardDamage,
     required this.previews,
@@ -503,6 +505,10 @@ class ExpeditionChoice {
   final String code;
   final String label;
   final bool safe;
+
+  /// 판정에 어울리는 힘(공명). 안전 선택은 null이다.
+  final String? stat;
+  final int resolveCost;
   final String? effectKey;
   final int guardDamage;
   final List<ExpeditionChoicePreview> previews;
@@ -519,6 +525,8 @@ class ExpeditionChoice {
         code: json['code'] as String? ?? '',
         label: json['label'] as String? ?? '',
         safe: json['safe'] == true,
+        stat: json['stat'] as String?,
+        resolveCost: _asInt(json['resolve_cost']),
         effectKey: json['effect_key'] as String?,
         guardDamage: _asInt(json['guard_damage']),
         previews: _maps(json['previews'])
@@ -645,12 +653,27 @@ class ExpeditionChoicePreview {
     required this.label,
     required this.forecast,
     required this.safe,
+    required this.statLabel,
+    required this.value,
+    required this.difficulty,
   });
 
   final int memberId;
   final String label;
   final String? forecast;
   final bool safe;
+  final String? statLabel;
+  final int value;
+  final int difficulty;
+
+  /// 성공 예상 3단 표현. 정확한 수치는 길게 누르기 상세에서 보여 준다.
+  String get outlook {
+    if (safe) return '안전하게 진행돼요';
+    final margin = value - difficulty;
+    if (margin >= 0) return '확실해요';
+    if (margin >= -2) return '해 볼 만해요';
+    return '어려워 보여요';
+  }
 
   factory ExpeditionChoicePreview.fromJson(Map<String, dynamic> json) =>
       ExpeditionChoicePreview(
@@ -658,6 +681,9 @@ class ExpeditionChoicePreview {
         label: json['label'] as String? ?? '',
         forecast: json['forecast'] as String?,
         safe: json['safe'] == true,
+        statLabel: json['stat_label'] as String?,
+        value: _asInt(json['value']),
+        difficulty: _asInt(json['difficulty']),
       );
 }
 
