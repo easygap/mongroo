@@ -56,6 +56,12 @@ async def stage_map_payload(db: AsyncSession, user_id: int) -> dict[str, Any]:
     content = load_content()
     region = _region_of(content)
     progress = await _progress_rows(db, user_id, region["code"])
+    catalogued_tangles = {
+        code
+        for stage in content["stages"]
+        if int(stage["no"]) in progress
+        for code in stage.get("tangles") or []
+    }
     active = await db.scalar(
         sa.select(ExpeditionRun).where(
             ExpeditionRun.user_id == user_id, ExpeditionRun.status == "active"
@@ -86,8 +92,23 @@ async def stage_map_payload(db: AsyncSession, user_id: int) -> dict[str, Any]:
                     {
                         "code": code,
                         "name": tangle_definition(code)["name"],
-                        "description": tangle_definition(code)["description"],
+                        "description": (
+                            tangle_definition(code)["description"]
+                            if code in catalogued_tangles
+                            else "첫 조우 뒤 도서관에서 생태 기록과 공격 목록이 열려요."
+                        ),
                         "elite": bool(tangle_definition(code)["elite"]),
+                        "knowledge_level": (
+                            "catalogued" if code in catalogued_tangles else "silhouette"
+                        ),
+                        "skills": (
+                            [
+                                intent["name"]
+                                for intent in tangle_definition(code)["intents"]
+                            ]
+                            if code in catalogued_tangles
+                            else []
+                        ),
                     }
                     for code in stage.get("tangles") or []
                 ],
@@ -95,6 +116,9 @@ async def stage_map_payload(db: AsyncSession, user_id: int) -> dict[str, Any]:
                 "clear_count": record.clear_count if record else 0,
                 "cleared_at": to_utc_iso(record.cleared_at) if record else None,
                 "story_seen": bool(record.story_seen) if record else False,
+                # 전문은 최초 클리어 뒤에만 지도/도서관 UI로 보낸다. 전투 전에는
+                # 약점과 예상 시간만 공개해 이야기 스포일러와 텍스트 과밀을 막는다.
+                "story": dict(stage["story"]) if cleared else None,
                 "unlocked": unlocked,
                 "lock_reason": None
                 if unlocked

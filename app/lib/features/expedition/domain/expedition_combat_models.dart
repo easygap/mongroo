@@ -164,6 +164,14 @@ class ExpeditionBattleEnemy {
     required this.weaknessLabel,
     required this.intent,
     this.elite = false,
+    this.weakElement,
+    this.weakElementLabel,
+    this.resistElement,
+    this.resistElementLabel,
+    this.weakKel,
+    this.weakKelLabel,
+    this.resistKel,
+    this.resistKelLabel,
   });
 
   final String name;
@@ -172,6 +180,14 @@ class ExpeditionBattleEnemy {
   final String weakness;
   final String weaknessLabel;
   final ExpeditionBattleIntent intent;
+  final String? weakElement;
+  final String? weakElementLabel;
+  final String? resistElement;
+  final String? resistElementLabel;
+  final String? weakKel;
+  final String? weakKelLabel;
+  final String? resistKel;
+  final String? resistKelLabel;
 
   /// 큰 엉킴(중간 보스) 표식. 수호짐승에는 쓰지 않는다.
   final bool elite;
@@ -185,6 +201,14 @@ class ExpeditionBattleEnemy {
         weaknessLabel: json['weakness_label'] as String? ?? '관찰',
         intent: ExpeditionBattleIntent.fromJson(_combatMap(json['intent'])),
         elite: json['elite'] == true,
+        weakElement: json['weak_element'] as String?,
+        weakElementLabel: json['weak_element_label'] as String?,
+        resistElement: json['resist_element'] as String?,
+        resistElementLabel: json['resist_element_label'] as String?,
+        weakKel: json['weak_kel'] as String?,
+        weakKelLabel: json['weak_kel_label'] as String?,
+        resistKel: json['resist_kel'] as String?,
+        resistKelLabel: json['resist_kel_label'] as String?,
       );
 }
 
@@ -263,31 +287,127 @@ class ExpeditionBattleMember {
 
 class ExpeditionBattleKit {
   const ExpeditionBattleKit({
+    required this.version,
     required this.affinity,
     required this.affinityLabel,
     required this.basic,
-    required this.skill,
+    required this.uniqueSkills,
+    required this.selectedSkills,
     required this.guard,
+    this.level = 1,
+    this.rarity = 1,
+    this.signatureTier = 1,
+    this.signatureScaleBp = 10000,
+    this.basicScaleBp = 10000,
+    this.emotionDiscipline = '',
+    this.primaryElement,
+    this.primaryElementLabel,
+    this.secondaryElement,
+    this.secondaryElementLabel,
   });
 
+  final int version;
   final String affinity;
   final String affinityLabel;
   final ExpeditionBattleAction basic;
-  final ExpeditionBattleAction skill;
+  final List<ExpeditionBattleAction> uniqueSkills;
+  final List<ExpeditionBattleAction> selectedSkills;
   final ExpeditionBattleAction guard;
+  final int level;
+  final int rarity;
+  final int signatureTier;
+  final int signatureScaleBp;
+  final int basicScaleBp;
+  final String emotionDiscipline;
+  final String? primaryElement;
+  final String? primaryElementLabel;
+  final String? secondaryElement;
+  final String? secondaryElementLabel;
 
-  factory ExpeditionBattleKit.fromJson(Map<String, dynamic> json) =>
-      ExpeditionBattleKit(
-        affinity: json['affinity'] as String? ?? 'insight',
-        affinityLabel: json['affinity_label'] as String? ?? '관찰',
-        basic: ExpeditionBattleAction.fromJson(_combatMap(json['basic'])),
-        skill: ExpeditionBattleAction.fromJson(_combatMap(json['skill'])),
-        guard: ExpeditionBattleAction.fromJson(_combatMap(json['guard'])),
+  /// 구버전 호출부가 읽던 단일 고유 스킬. 전송 action은 unique_1을 쓴다.
+  ExpeditionBattleAction get skill => uniqueSkills.first;
+
+  List<ExpeditionBattleAction> get combatSkills => [
+        ...uniqueSkills,
+        ...selectedSkills,
+      ];
+
+  ExpeditionBattleAction actionFor(String actionCode) => switch (actionCode) {
+        'unique_1' => uniqueSkills[0],
+        'unique_2' => uniqueSkills[1],
+        'selected_1' => selectedSkills[0],
+        'selected_2' => selectedSkills[1],
+        'guard' => guard,
+        _ => basic,
+      };
+
+  factory ExpeditionBattleKit.fromJson(Map<String, dynamic> json) {
+    final uniqueSkills = _combatMaps(json['unique_skills'])
+        .map(ExpeditionBattleAction.fromJson)
+        .toList(growable: true);
+    final legacySkill = _combatMap(json['skill']);
+    if (uniqueSkills.isEmpty && legacySkill.isNotEmpty) {
+      uniqueSkills.add(
+        ExpeditionBattleAction.fromJson(
+          legacySkill,
+          fallbackSlot: 'unique_1',
+        ),
       );
+    }
+    while (uniqueSkills.length < 2) {
+      uniqueSkills.add(
+        ExpeditionBattleAction.unavailable(
+          slot: 'unique_${uniqueSkills.length + 1}',
+          name: '고유 스킬 ${uniqueSkills.length + 1}',
+        ),
+      );
+    }
+
+    final selectedSkills = _combatMaps(json['selected_skills'])
+        .map(ExpeditionBattleAction.fromJson)
+        .toList(growable: true);
+    while (selectedSkills.length < 2) {
+      selectedSkills.add(
+        ExpeditionBattleAction.unavailable(
+          slot: 'selected_${selectedSkills.length + 1}',
+          name: '선택 스킬 ${selectedSkills.length + 1}',
+        ),
+      );
+    }
+
+    return ExpeditionBattleKit(
+      version: _combatInt(json['version'], legacySkill.isEmpty ? 4 : 1),
+      affinity: json['affinity'] as String? ?? 'insight',
+      affinityLabel: json['affinity_label'] as String? ?? '관찰',
+      basic: ExpeditionBattleAction.fromJson(
+        _combatMap(json['basic']),
+        fallbackSlot: 'attack',
+      ),
+      uniqueSkills: List.unmodifiable(uniqueSkills.take(2)),
+      selectedSkills: List.unmodifiable(selectedSkills.take(2)),
+      guard: ExpeditionBattleAction.fromJson(
+        _combatMap(json['guard']),
+        fallbackSlot: 'guard',
+      ),
+      level: _combatInt(json['level'], 1),
+      rarity: _combatInt(json['rarity'], 1),
+      signatureTier: _combatInt(json['signature_tier'], 1),
+      signatureScaleBp: _combatInt(json['signature_scale_bp'], 10000),
+      basicScaleBp: _combatInt(json['basic_scale_bp'], 10000),
+      emotionDiscipline: json['emotion_discipline'] as String? ?? '',
+      primaryElement: json['primary_element'] as String?,
+      primaryElementLabel: json['primary_element_label'] as String?,
+      secondaryElement: json['secondary_element'] as String?,
+      secondaryElementLabel: json['secondary_element_label'] as String?,
+    );
+  }
 }
 
 class ExpeditionBattleAction {
   const ExpeditionBattleAction({
+    required this.slot,
+    required this.source,
+    required this.available,
     required this.code,
     required this.name,
     required this.description,
@@ -299,8 +419,38 @@ class ExpeditionBattleAction {
     required this.effectKey,
     required this.effect,
     required this.guard,
+    this.unlockLevel = 1,
+    this.tier = 1,
+    this.tierLabel = '',
+    this.level = 1,
+    this.rarity = 1,
+    this.rawPower = 0,
+    this.powerScaleBp = 10000,
+    this.tierPowerBp = 10000,
+    this.powerNeutral = 0,
+    this.matchup = 'neutral',
+    this.matchupBp = 10000,
+    this.effectPowerBp = 10000,
+    this.cooldownTurns = 0,
+    this.cooldownRemaining = 0,
+    this.element,
+    this.elementLabel,
+    this.elements = const [],
+    this.damageType,
+    this.damageTypeLabel,
+    this.motionProfile,
+    this.vfxFamily,
+    this.kel,
+    this.kelLabel,
+    this.kels = const [],
+    this.readyRound = 0,
+    this.fusionVariant,
+    this.fusionVfxFamily,
   });
 
+  final String slot;
+  final String? source;
+  final bool available;
   final String code;
   final String name;
   final String description;
@@ -312,9 +462,42 @@ class ExpeditionBattleAction {
   final String? effectKey;
   final String? effect;
   final int guard;
+  final int unlockLevel;
+  final int tier;
+  final String tierLabel;
+  final int level;
+  final int rarity;
+  final int rawPower;
+  final int powerScaleBp;
+  final int tierPowerBp;
+  final int powerNeutral;
+  final String matchup;
+  final int matchupBp;
+  final int effectPowerBp;
+  final int cooldownTurns;
+  final int cooldownRemaining;
+  final String? element;
+  final String? elementLabel;
+  final List<String> elements;
+  final String? damageType;
+  final String? damageTypeLabel;
+  final String? motionProfile;
+  final String? vfxFamily;
+  final String? kel;
+  final String? kelLabel;
+  final List<String> kels;
+  final int readyRound;
+  final String? fusionVariant;
+  final String? fusionVfxFamily;
 
-  factory ExpeditionBattleAction.fromJson(Map<String, dynamic> json) =>
+  factory ExpeditionBattleAction.fromJson(
+    Map<String, dynamic> json, {
+    String? fallbackSlot,
+  }) =>
       ExpeditionBattleAction(
+        slot: json['slot'] as String? ?? fallbackSlot ?? '',
+        source: json['source'] as String?,
+        available: json.isNotEmpty && json['available'] != false,
         code: json['code'] as String? ?? '',
         name: json['name'] as String? ?? '',
         description: json['description'] as String? ?? '',
@@ -326,6 +509,67 @@ class ExpeditionBattleAction {
         effectKey: json['effect_key'] as String?,
         effect: json['effect'] as String?,
         guard: _combatInt(json['guard']),
+        unlockLevel: _combatInt(json['unlock_level'], 1),
+        tier: _combatInt(json['tier'], 1),
+        tierLabel: json['tier_label'] as String? ?? '',
+        level: _combatInt(json['level'], 1),
+        rarity: _combatInt(json['rarity'], 1),
+        rawPower: _combatInt(json['raw_power'], _combatInt(json['power'])),
+        powerScaleBp: _combatInt(json['power_scale_bp'], 10000),
+        tierPowerBp: _combatInt(json['tier_power_bp'], 10000),
+        powerNeutral: _combatInt(
+          json['power_neutral'],
+          _combatInt(json['power']),
+        ),
+        matchup: json['matchup'] as String? ?? 'neutral',
+        matchupBp: _combatInt(json['matchup_bp'], 10000),
+        effectPowerBp: _combatInt(json['effect_power_bp'], 10000),
+        cooldownTurns: _combatInt(json['cooldown_turns']),
+        cooldownRemaining: _combatInt(json['cooldown_remaining']),
+        element: json['element'] as String?,
+        elementLabel: json['element_label'] as String?,
+        elements: json['elements'] is List
+            ? (json['elements'] as List)
+                .whereType<String>()
+                .toList(growable: false)
+            : const [],
+        damageType: json['damage_type'] as String?,
+        damageTypeLabel: json['damage_type_label'] as String?,
+        motionProfile: json['motion_profile'] as String?,
+        vfxFamily: json['vfx_family'] as String?,
+        kel: json['kel'] as String?,
+        kelLabel: json['kel_label'] as String?,
+        kels: json['kels'] is List
+            ? (json['kels'] as List).whereType<String>().toList(growable: false)
+            : const [],
+        readyRound: _combatInt(
+          json['ready_round'],
+          _combatInt(json['cooldown_until_round']),
+        ),
+        fusionVariant: json['fusion_variant'] as String?,
+        fusionVfxFamily: json['fusion_vfx_family'] as String?,
+      );
+
+  factory ExpeditionBattleAction.unavailable({
+    required String slot,
+    required String name,
+  }) =>
+      ExpeditionBattleAction(
+        slot: slot,
+        source: null,
+        available: false,
+        code: '',
+        name: name,
+        description: '새 전투 스킬 구성이 필요한 슬롯이에요.',
+        power: 0,
+        focusCost: 0,
+        focusDelta: 0,
+        affinity: null,
+        affinityLabel: null,
+        effectKey: null,
+        effect: null,
+        guard: 0,
+        unlockLevel: 1,
       );
 }
 
@@ -346,6 +590,20 @@ class ExpeditionBattleEvent {
     required this.caption,
     required this.outcome,
     required this.targets,
+    this.resistanceHit = false,
+    this.matchup = 'neutral',
+    this.element,
+    this.elements = const [],
+    this.motionProfile,
+    this.kel,
+    this.kels = const [],
+    this.powerNeutral = 0,
+    this.matchupBp = 10000,
+    this.cooldownTurns = 0,
+    this.cooldownUntilRound = 0,
+    this.readyRound = 0,
+    this.fusionVariant,
+    this.fusionVfxFamily,
   });
 
   final int sequence;
@@ -363,6 +621,20 @@ class ExpeditionBattleEvent {
   final String caption;
   final String? outcome;
   final List<ExpeditionBattleTarget> targets;
+  final bool resistanceHit;
+  final String matchup;
+  final String? element;
+  final List<String> elements;
+  final String? motionProfile;
+  final String? kel;
+  final List<String> kels;
+  final int powerNeutral;
+  final int matchupBp;
+  final int cooldownTurns;
+  final int cooldownUntilRound;
+  final int readyRound;
+  final String? fusionVariant;
+  final String? fusionVfxFamily;
 
   bool get isPartyAction => type == 'party_action';
   bool get isEnemyAction => type == 'enemy_action';
@@ -389,6 +661,29 @@ class ExpeditionBattleEvent {
         focusAfter: _combatInt(json['focus_after']),
         caption: json['caption'] as String? ?? '',
         outcome: json['outcome'] as String?,
+        resistanceHit: json['resistance_hit'] == true,
+        matchup: json['matchup'] as String? ?? 'neutral',
+        element: json['element'] as String?,
+        elements: json['elements'] is List
+            ? (json['elements'] as List)
+                .whereType<String>()
+                .toList(growable: false)
+            : const [],
+        motionProfile: json['motion_profile'] as String?,
+        kel: json['kel'] as String?,
+        kels: json['kels'] is List
+            ? (json['kels'] as List).whereType<String>().toList(growable: false)
+            : const [],
+        powerNeutral: _combatInt(json['power_neutral']),
+        matchupBp: _combatInt(json['matchup_bp'], 10000),
+        cooldownTurns: _combatInt(json['cooldown_turns']),
+        cooldownUntilRound: _combatInt(json['cooldown_until_round']),
+        readyRound: _combatInt(
+          json['ready_round'],
+          _combatInt(json['cooldown_until_round']),
+        ),
+        fusionVariant: json['fusion_variant'] as String?,
+        fusionVfxFamily: json['fusion_vfx_family'] as String?,
         targets: _combatMaps(json['targets'])
             .map(ExpeditionBattleTarget.fromJson)
             .toList(growable: false),

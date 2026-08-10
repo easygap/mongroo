@@ -4,8 +4,6 @@
 7장(진행 저장)을 검증한다.
 """
 
-import sqlalchemy as sa
-
 from app.core.timeutil import utcnow
 from app.models.expedition import UserStageProgress
 
@@ -40,23 +38,51 @@ async def _run_stage_to_completion(client, headers: dict, run: dict, key_prefix:
     """아레나 스테이지를 전투 승리부터 현장 귀환까지 끝낸다."""
 
     run, _ = await _fight_stage_battle(client, headers, run, f"{key_prefix}-fight")
-    return await _action(
-        client, headers, run, "extract", {}, f"{key_prefix}-extract"
-    )
+    return await _action(client, headers, run, "extract", {}, f"{key_prefix}-extract")
 
 
 async def _fight_stage_battle(client, headers: dict, run: dict, key_prefix: str):
-    """전 대원 공격만으로 웨이브 전투를 끝까지 진행한다. gentle 밴드 검증을 겸한다."""
+    """일반 웨이브는 기본 공격, 수호전은 공개된 최적 합법 스킬로 진행한다."""
 
     turn = 1
     exchanges: list[dict] = []
     while (run.get("current_event") or {}).get("battle", {}).get("status") == "active":
         battle = run["current_event"]["battle"]
-        commands = [
-            {"member_id": member["member_id"], "action": "attack"}
-            for member in battle["party"]
-            if member["hp"] > 0
-        ]
+        focus = battle["focus"]
+        commands = []
+        for member in battle["party"]:
+            if member["hp"] <= 0:
+                continue
+            action = "attack"
+            if battle["enemy_kind"] == "guardian":
+                skills = [
+                    *member["kit"].get("unique_skills", []),
+                    *member["kit"].get("selected_skills", []),
+                ]
+                usable = [
+                    skill
+                    for skill in skills
+                    if skill.get("available", True)
+                    and int(skill.get("cooldown_remaining", 0)) == 0
+                    and int(skill.get("focus_cost", 0)) <= focus
+                ]
+                if usable:
+                    chosen = max(
+                        usable,
+                        key=lambda skill: (
+                            skill.get("matchup") == "weak",
+                            int(skill.get("power", 0)),
+                            -int(skill.get("focus_cost", 0)),
+                        ),
+                    )
+                    action = chosen["slot"]
+                    focus -= int(chosen.get("focus_cost", 0))
+            if action == "attack":
+                focus = min(
+                    battle["max_focus"],
+                    focus + int(member["kit"]["basic"].get("focus_delta", 1)),
+                )
+            commands.append({"member_id": member["member_id"], "action": action})
         run = await _action(
             client,
             headers,
@@ -242,9 +268,7 @@ async def test_battle_stage_run_starts_directly_in_a_tangle_fight(
     assert run["run"]["objective_secured"] is True
     assert {action["type"] for action in run["available_actions"]} >= {"extract"}
     outcome = next(
-        event
-        for event in run["last_combat_exchange"]
-        if event["type"] == "outcome"
+        event for event in run["last_combat_exchange"] if event["type"] == "outcome"
     )
     assert outcome["caption"] == "엉킨 장부가 스르르 풀려 제자리 서가로 돌아갔어요."
 
@@ -289,9 +313,7 @@ async def test_wave_stage_swaps_tangles_without_extra_rounds(
     assert intro["enemy_name"] == "표류 압화 떼"
     assert run["run"]["objective_secured"] is True
 
-    completed = await _action(
-        client, headers, run, "extract", {}, "stage-wave-extract"
-    )
+    completed = await _action(client, headers, run, "extract", {}, "stage-wave-extract")
     assert completed["summary"]["progress"]["stage"]["stage_no"] == 3
 
 
@@ -317,11 +339,10 @@ async def test_boss_stage_runs_the_guardian_in_the_arena(
     assert battle["enemy"]["name"] == "돌비늘 장부지기"
     assert battle["wave"] is None
 
-    run, _ = await _fight_stage_battle(client, headers, run, "stage-boss-fight")
+    run, exchanges = await _fight_stage_battle(client, headers, run, "stage-boss-fight")
+    assert any(event.get("action") in {"unique_1", "unique_2"} for event in exchanges)
     assert run["run"]["objective_secured"] is True
-    completed = await _action(
-        client, headers, run, "extract", {}, "stage-boss-extract"
-    )
+    completed = await _action(client, headers, run, "extract", {}, "stage-boss-extract")
     stage_result = completed["summary"]["progress"]["stage"]
     assert stage_result["stage_no"] == 8
     assert stage_result["region_cleared"] is True
@@ -353,9 +374,7 @@ async def test_event_stage_runs_the_pack_event_in_an_arena(
     event = run["current_event"]
     assert event["code"] == "wet_label_order"
     assert len(event["choices"]) == 3
-    den = next(
-        node for node in run["map"]["nodes"] if node["code"] == "stage_den"
-    )
+    den = next(node for node in run["map"]["nodes"] if node["code"] == "stage_den")
     assert den["scene_key"] == "flooded_cave"
     assert {action["type"] for action in run["available_actions"]} >= {"choice"}
 
@@ -371,9 +390,7 @@ async def test_event_stage_runs_the_pack_event_in_an_arena(
     )
     assert resolved["run"]["objective_secured"] is True
     assert resolved["last_resolution"]["event_code"] == "wet_label_order"
-    assert {action["type"] for action in resolved["available_actions"]} >= {
-        "extract"
-    }
+    assert {action["type"] for action in resolved["available_actions"]} >= {"extract"}
 
     completed = await _action(
         client, headers, resolved, "extract", {}, "stage-event-extract"
@@ -401,16 +418,12 @@ async def test_camp_stage_rests_and_returns_on_the_spot(
     assert run["run"]["phase"] == "exploring"
     assert run["run"]["objective_secured"] is True
     assert run["current_event"] is None
-    den = next(
-        node for node in run["map"]["nodes"] if node["code"] == "stage_den"
-    )
+    den = next(node for node in run["map"]["nodes"] if node["code"] == "stage_den")
     assert den["type"] == "camp"
     assert den["status"] == "resolved"
     assert {action["type"] for action in run["available_actions"]} >= {"extract"}
 
-    completed = await _action(
-        client, headers, run, "extract", {}, "stage-camp-extract"
-    )
+    completed = await _action(client, headers, run, "extract", {}, "stage-camp-extract")
     stage_result = completed["summary"]["progress"]["stage"]
     assert stage_result["stage_no"] == 5
     assert stage_result["first_clear"] is True
@@ -442,9 +455,7 @@ async def test_replaying_a_cleared_stage_counts_without_new_rewards(
         stage_no=1,
         key="stage-replay-0002",
     )
-    replayed = await _run_stage_to_completion(
-        client, headers, second, "stage-replay-b"
-    )
+    replayed = await _run_stage_to_completion(client, headers, second, "stage-replay-b")
     assert replayed["summary"]["progress"]["stage"] == {
         "stage_no": 1,
         "first_clear": False,

@@ -7,26 +7,68 @@ import 'expedition_combat_timeline.dart';
 
 const int expeditionCombatEffectFrameCount = 8;
 
+const Map<String, int> _expeditionCombatEffectFrameCounts = {
+  'care_vines': 10,
+  'ledger_claw': 10,
+  'venom_seam': 7,
+};
+
+const Map<String, List<int>> _expeditionCombatEffectFrameDurationsMs = {
+  'care_vines': [90, 70, 70, 65, 65, 70, 75, 105, 80, 110],
+  'ledger_claw': [100, 75, 65, 65, 70, 95, 75, 70, 80, 105],
+  'venom_seam': [90, 70, 65, 65, 85, 105, 125],
+};
+
 const Map<String, String> _expeditionCombatEffectDirectories = {
-  'care_vines': 'care-vines',
+  'care_vines': 'care-vines-v2',
+  'ledger_claw': 'ledger-claw-v2',
   'safe_guard': 'safe-guard',
   'ember_arc': 'ember-arc',
   'prism_burst': 'prism-burst',
   'mist_dash': 'mist-dash',
+  'venom_seam': 'venom-seam-v1',
   'insight_arc': 'insight-arc',
   'echo_wave': 'echo-wave',
   'enemy_wave': 'enemy-wave',
 };
 
+int expeditionCombatEffectFrameCountFor(String effectKey) =>
+    _expeditionCombatEffectFrameCounts[effectKey] ??
+    expeditionCombatEffectFrameCount;
+
+int expeditionCombatEffectFrameForProgress(
+  String effectKey,
+  double progress,
+) {
+  final safeProgress = progress.clamp(0.0, 1.0);
+  final durations = _expeditionCombatEffectFrameDurationsMs[effectKey];
+  if (durations == null) {
+    return math.min(
+      expeditionCombatEffectFrameCountFor(effectKey) - 1,
+      (safeProgress * expeditionCombatEffectFrameCountFor(effectKey)).floor(),
+    );
+  }
+  if (safeProgress >= 1) return durations.length - 1;
+  final totalMs = durations.fold<int>(0, (total, value) => total + value);
+  final elapsedMs = safeProgress * totalMs;
+  var frameEndMs = 0;
+  for (var frame = 0; frame < durations.length; frame++) {
+    frameEndMs += durations[frame];
+    if (elapsedMs < frameEndMs) return frame;
+  }
+  return durations.length - 1;
+}
+
 String expeditionCombatEffectAsset(String effectKey, int frame) {
   final directory =
       _expeditionCombatEffectDirectories[effectKey] ?? 'echo-wave';
-  final safeFrame = frame.clamp(0, expeditionCombatEffectFrameCount - 1);
+  final frameCount = expeditionCombatEffectFrameCountFor(effectKey);
+  final safeFrame = frame.clamp(0, frameCount - 1);
   return 'assets/adventure/effects/$directory/frame-${safeFrame.toString().padLeft(2, '0')}.webp';
 }
 
 List<String> expeditionCombatEffectAssets(String effectKey) => List.generate(
-      expeditionCombatEffectFrameCount,
+      expeditionCombatEffectFrameCountFor(effectKey),
       (frame) => expeditionCombatEffectAsset(effectKey, frame),
       growable: false,
     );
@@ -75,10 +117,10 @@ class ExpeditionCombatSpriteLayer extends StatelessWidget {
               children.add(
                 _EffectSequence(
                   key: const ValueKey('combat-enemy-effect-sequence'),
-                  effectKey: 'enemy_wave',
+                  effectKey: cue.enemyEffectKey,
                   progress: progress,
-                  start: cue.playsPartyAttack ? .52 : .12,
-                  end: cue.playsPartyAttack ? .91 : .84,
+                  start: ExpeditionCombatTimeline.enemyEffectStart(cue),
+                  end: ExpeditionCombatTimeline.enemyEffectEnd(cue),
                   reduceMotion: reduceMotion,
                 ),
               );
@@ -113,10 +155,7 @@ class _EffectSequence extends StatelessWidget {
     final normalized = reduceMotion
         ? .82
         : ExpeditionCombatTimeline.segment(progress, start, end);
-    final frame = math.min(
-      expeditionCombatEffectFrameCount - 1,
-      (normalized * expeditionCombatEffectFrameCount).floor(),
-    );
+    final frame = expeditionCombatEffectFrameForProgress(effectKey, normalized);
     final edgeOpacity = reduceMotion
         ? 1.0
         : math.min(

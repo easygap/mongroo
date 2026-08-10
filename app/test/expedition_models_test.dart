@@ -8,8 +8,10 @@ import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/expedition/domain/expedition_models.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_controller.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_action_cue.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_battle_dock.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_overlay.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_sprites.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_combat_timeline.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_scene.dart';
 import 'package:mongroo/features/expedition/presentation/moss_archive_scene.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_screen.dart';
@@ -239,39 +241,177 @@ Map<String, dynamic> _battleSnapshotJson() {
     required String affinityLabel,
     required String skillName,
     required String effect,
-  }) =>
-      {
+  }) {
+    final isBabyPot = affinity == 'care' && skillName == '새싹 응원';
+    Map<String, dynamic> skill({
+      required String slot,
+      required String code,
+      required String name,
+      required String source,
+      required String skillEffect,
+      int power = 20,
+      int focusCost = 2,
+      String? element,
+      String? elementLabel,
+      int cooldownTurns = 1,
+      int cooldownRemaining = 0,
+    }) =>
+        {
+          'slot': slot,
+          'code': code,
+          'name': name,
+          'description': slot == 'unique_1'
+              ? '캐릭터의 개성을 살린 고유 행동이에요.'
+              : '$name의 전투 효과를 발휘해요.',
+          'power': power,
+          'raw_power': power,
+          'power_scale_bp': source == 'signature' ? 11600 : 10000,
+          'tier_power_bp': 12200,
+          'power_neutral': power,
+          'matchup':
+              (element ?? (affinity == 'care' ? 'nature' : 'ink')) == 'ink'
+                  ? 'resist'
+                  : 'weak',
+          'matchup_bp':
+              (element ?? (affinity == 'care' ? 'nature' : 'ink')) == 'ink'
+                  ? 6000
+                  : 15000,
+          'effect_power_bp': 10000,
+          'focus_cost': focusCost,
+          'affinity': affinity,
+          'affinity_label': affinityLabel,
+          'effect_key': affinity == 'care' ? 'care_vines' : 'insight_arc',
+          'effect': skillEffect,
+          'source': source,
+          'available': true,
+          'unlock_level': source == 'skillbook' ? 23 : 3,
+          'tier': 3,
+          'tier_label': source == 'signature' ? '마음 만개' : '완전 공명',
+          'level': 25,
+          'rarity': 1,
+          'element': element ?? (affinity == 'care' ? 'nature' : 'ink'),
+          'element_label': elementLabel ?? (affinity == 'care' ? '생명' : '먹빛'),
+          'elements': [element ?? (affinity == 'care' ? 'nature' : 'ink')],
+          'kel': (element ?? (affinity == 'care' ? 'nature' : 'ink')) == 'ink'
+              ? 'mosaic'
+              : 'sunny',
+          'kel_label':
+              (element ?? (affinity == 'care' ? 'nature' : 'ink')) == 'ink'
+                  ? '모아결'
+                  : '햇살결',
+          'kels': [
+            (element ?? (affinity == 'care' ? 'nature' : 'ink')) == 'ink'
+                ? 'mosaic'
+                : 'sunny',
+          ],
+          'damage_type': 'projectile',
+          'damage_type_label': '투사체',
+          'motion_profile': '$code.motion',
+          'vfx_family': '$code.vfx',
+          if (source == 'signature') 'fusion_variant': '$code.sunny.$slot.t3',
+          if (source == 'signature')
+            'fusion_vfx_family': 'emotion-fusion.sunny-radiance',
+          'cooldown_turns': cooldownTurns,
+          'cooldown_remaining': cooldownRemaining,
+          'ready_round': cooldownRemaining > 0 ? 3 : 0,
+        };
+
+    final unique1 = skill(
+      slot: 'unique_1',
+      code: isBabyPot ? 'sprout_cheer' : effect,
+      name: skillName,
+      source: 'signature',
+      skillEffect: effect,
+    );
+    return {
+      'version': 6,
+      'level': 25,
+      'rarity': 1,
+      'signature_tier': 3,
+      'signature_scale_bp': 11600,
+      'basic_scale_bp': 10800,
+      'emotion_discipline': affinity == 'care' ? '햇살 심광' : '달그늘 폭풍',
+      'primary_element': affinity == 'care' ? 'light' : 'wind',
+      'primary_element_label': affinity == 'care' ? '빛' : '바람',
+      'secondary_element': affinity == 'care' ? 'heart' : 'moon',
+      'secondary_element_label': affinity == 'care' ? '하트' : '달',
+      'affinity': affinity,
+      'affinity_label': affinityLabel,
+      'basic': {
+        'code': 'attack',
+        'name': '공명 공격',
+        'description': '집중력 1을 얻고 장벽을 공격해요.',
+        'power': 13,
+        'raw_power': 12,
+        'power_scale_bp': 10800,
+        'tier_power_bp': 12200,
+        'power_neutral': 13,
+        'matchup': affinity == 'care' ? 'weak' : 'neutral',
+        'matchup_bp': affinity == 'care' ? 15000 : 10000,
+        'effect_power_bp': 10000,
+        'focus_delta': 1,
         'affinity': affinity,
         'affinity_label': affinityLabel,
-        'basic': {
-          'code': 'attack',
-          'name': '공명 공격',
-          'description': '집중력 1을 얻고 장벽을 공격해요.',
-          'power': 13,
-          'focus_delta': 1,
-          'affinity': affinity,
-          'affinity_label': affinityLabel,
-          'effect_key': affinity == 'care' ? 'care_vines' : 'insight_arc',
-        },
-        'skill': {
-          'code': effect,
-          'name': skillName,
-          'description': '캐릭터의 개성을 살린 고유 행동이에요.',
-          'power': 20,
-          'focus_cost': 2,
-          'affinity': affinity,
-          'affinity_label': affinityLabel,
-          'effect_key': affinity == 'care' ? 'care_vines' : 'insight_arc',
-          'effect': effect,
-        },
-        'guard': {
-          'code': 'guard',
-          'name': '마음 지키기',
-          'description': '피해를 두 칸 막고 집중력을 얻어요.',
-          'guard': 2,
-          'focus_delta': 1,
-        },
-      };
+        'effect_key': affinity == 'care' ? 'care_vines' : 'insight_arc',
+        'element': affinity == 'care' ? 'light' : 'wind',
+        'element_label': affinity == 'care' ? '빛' : '바람',
+        'elements': [affinity == 'care' ? 'light' : 'wind'],
+        'kel': affinity == 'care' ? 'sunny' : 'moonlit',
+        'kel_label': affinity == 'care' ? '햇살결' : '달빛결',
+        'kels': [affinity == 'care' ? 'sunny' : 'moonlit'],
+        'damage_type': 'projectile',
+        'damage_type_label': '투사체',
+        'motion_profile': 'emotion.basic',
+        'vfx_family': 'emotion.basic.vfx',
+      },
+      'skill': unique1,
+      'unique_skills': [
+        unique1,
+        skill(
+          slot: 'unique_2',
+          code: isBabyPot ? 'root_embrace' : '${effect}_second',
+          name: '$skillName II',
+          source: 'signature',
+          skillEffect: 'heal_lowest',
+          power: 17,
+          cooldownTurns: 3,
+          cooldownRemaining: 2,
+        ),
+      ],
+      'selected_skills': [
+        skill(
+          slot: 'selected_1',
+          code: isBabyPot ? 'sunny_warmth_share' : '${affinity}_emotion',
+          name: '$affinityLabel 성장결',
+          source: 'emotion',
+          skillEffect: 'focus_refund',
+          power: 15,
+          element: affinity == 'care' ? 'light' : 'wind',
+          elementLabel: affinity == 'care' ? '빛' : '바람',
+          cooldownTurns: 2,
+        ),
+        skill(
+          slot: 'selected_2',
+          code: 'field_note_echo',
+          name: '현장 기록: 되울림',
+          source: 'skillbook',
+          skillEffect: 'study_refund',
+          power: 13,
+          element: 'ink',
+          elementLabel: '먹빛',
+          cooldownTurns: 3,
+        ),
+      ],
+      'guard': {
+        'code': 'guard',
+        'name': '마음 지키기',
+        'description': '피해를 두 칸 막고 집중력을 얻어요.',
+        'guard': 2,
+        'focus_delta': 1,
+      },
+    };
+  }
+
   raw['current_event'] = {
     'code': 'ledger_keeper_guardian',
     'title': '돌비늘 장부지기',
@@ -297,6 +437,14 @@ Map<String, dynamic> _battleSnapshotJson() {
         'max_guard': 100,
         'weakness': 'care',
         'weakness_label': '돌봄',
+        'weak_element': 'light',
+        'weak_element_label': '빛',
+        'resist_element': 'steel',
+        'resist_element_label': '강철',
+        'weak_kel': 'sunny',
+        'weak_kel_label': '햇살결',
+        'resist_kel': 'mosaic',
+        'resist_kel_label': '모아결',
         'intent': {
           'code': 'ledger_claw',
           'name': '장부 발톱',
@@ -355,6 +503,9 @@ Map<String, dynamic> _battleSnapshotJson() {
       'action': 'skill',
       'action_name': '새싹 응원',
       'effect_key': 'care_vines',
+      'motion_profile': 'baby-pot.vine-cast',
+      'fusion_variant': 'baby-pot.sunny.unique_1.t3',
+      'fusion_vfx_family': 'emotion-fusion.sunny-radiance',
       'weakness_hit': true,
       'damage': 100,
       'enemy_guard_before': 100,
@@ -466,13 +617,30 @@ void main() {
     }
   });
 
-  testWidgets('플레이어와 몬스터 공격을 8프레임 투명 스프라이트로 읽는다', (tester) async {
+  testWidgets('구미호와 닌자의 비식물 고유 스킬 아이콘을 번들에서 읽는다', (tester) async {
+    const assets = <String>[
+      'assets/adventure/skill-icons/gumiho-pot/heart-moon-charm-v1.webp',
+      'assets/adventure/skill-icons/gumiho-pot/nine-tail-eclipse-v1.webp',
+      'assets/adventure/skill-icons/ninja-pot/venom-seam-v1.webp',
+      'assets/adventure/skill-icons/ninja-pot/shadow-execution-v1.webp',
+    ];
+
+    for (final asset in assets) {
+      final data = await rootBundle.load(asset);
+      expect(data.lengthInBytes, greaterThan(1800), reason: asset);
+      expect(_webpCanvasSize(data), (width: 128, height: 128), reason: asset);
+    }
+  });
+
+  testWidgets('플레이어와 몬스터 공격을 효과별 투명 스프라이트로 읽는다', (tester) async {
     const effectKeys = [
       'care_vines',
+      'ledger_claw',
       'safe_guard',
       'ember_arc',
       'prism_burst',
       'mist_dash',
+      'venom_seam',
       'insight_arc',
       'echo_wave',
       'enemy_wave',
@@ -480,7 +648,10 @@ void main() {
 
     for (final effectKey in effectKeys) {
       final assets = expeditionCombatEffectAssets(effectKey);
-      expect(assets, hasLength(expeditionCombatEffectFrameCount));
+      expect(
+        assets,
+        hasLength(expeditionCombatEffectFrameCountFor(effectKey)),
+      );
       for (final asset in assets) {
         final data = await rootBundle.load(asset);
         final size = _webpCanvasSize(data);
@@ -488,6 +659,112 @@ void main() {
         expect(data.getUint8(20) & 0x10, 0x10, reason: '$asset 알파 채널');
       }
     }
+
+    expect(expeditionCombatEffectFrameForProgress('care_vines', .5), 5);
+    expect(expeditionCombatEffectFrameForProgress('ledger_claw', .5), 5);
+    expect(expeditionCombatEffectFrameForProgress('ledger_claw', 1), 9);
+    expect(expeditionCombatEffectFrameCountFor('venom_seam'), 7);
+    expect(expeditionCombatEffectFrameForProgress('venom_seam', .5), 4);
+    expect(expeditionCombatEffectFrameForProgress('enemy_wave', .5), 4);
+  });
+
+  test('고유 motion profile은 투척·돌진·채널링 동선을 구분한다', () {
+    const throwCue = ExpeditionActionCue(
+      id: 1,
+      kind: ExpeditionActionCueKind.combatParty,
+      actorName: '그림싹',
+      actorId: 11,
+      speciesCode: 'ninja-pot',
+      speciesName: '그림싹',
+      stage: 5,
+      form: 'rainy',
+      title: '맹독 틈베기',
+      effectKey: 'venom_seam',
+      outcome: null,
+      combat: null,
+      motionProfile: 'ninja-pot.venom-draw',
+    );
+    const dashCue = ExpeditionActionCue(
+      id: 2,
+      kind: ExpeditionActionCueKind.combatParty,
+      actorName: '그림싹',
+      actorId: 11,
+      speciesCode: 'ninja-pot',
+      speciesName: '그림싹',
+      stage: 5,
+      form: 'rainy',
+      title: '무영 처형',
+      effectKey: 'mist_dash',
+      outcome: null,
+      combat: null,
+      motionProfile: 'ninja-pot.shadow-cross',
+    );
+    const channelCue = ExpeditionActionCue(
+      id: 3,
+      kind: ExpeditionActionCueKind.combatParty,
+      actorName: '여우비',
+      actorId: 12,
+      speciesCode: 'gumiho-pot',
+      speciesName: '여우비',
+      stage: 5,
+      form: 'moonlit',
+      title: '구미 월식',
+      effectKey: 'prism_burst',
+      outcome: null,
+      combat: null,
+      motionProfile: 'gumiho-pot.nine-tail-eclipse',
+    );
+
+    final throwOffset = ExpeditionCombatTimeline.actorOffset(.25, throwCue);
+    final dashOffset = ExpeditionCombatTimeline.actorOffset(.25, dashCue);
+    final channelOffset = ExpeditionCombatTimeline.actorOffset(.25, channelCue);
+    expect(dashOffset.dx, greaterThan(throwOffset.dx));
+    expect(channelOffset.dy, lessThan(0));
+    expect({throwOffset, dashOffset, channelOffset}, hasLength(3));
+  });
+
+  test('장부 발톱 적 이벤트는 전용 contact sprite와 같은 판정 시점을 쓴다', () {
+    const cue = ExpeditionActionCue(
+      id: 31,
+      kind: ExpeditionActionCueKind.combatEnemy,
+      actorName: '돌비늘 장부지기',
+      actorId: 11,
+      speciesCode: 'baby-pot',
+      speciesName: '새싹몬',
+      stage: 2,
+      form: 'sunny',
+      title: '장부 발톱',
+      effectKey: 'ledger_claw',
+      outcome: '오른발이 내려왔어요.',
+      combat: ExpeditionCombatFeedback(
+        kind: 'guardian',
+        enemyName: '돌비늘 장부지기',
+        enemyMaxGuard: 100,
+        enemyGuardBefore: 100,
+        enemyGuardAfter: 100,
+        guardDamage: 0,
+        attackName: '장부 발톱',
+        telegraph: '오른발이 들렸어요.',
+        damageTarget: '새싹몬',
+        counterDamage: 1,
+        counterResult: 'hit',
+        effectKey: 'ledger_claw',
+      ),
+    );
+
+    final contactProgress = ExpeditionCombatTimeline.enemyContactProgress(cue);
+    final effectProgress = ExpeditionCombatTimeline.segment(
+      contactProgress,
+      ExpeditionCombatTimeline.enemyEffectStart(cue),
+      ExpeditionCombatTimeline.enemyEffectEnd(cue),
+    );
+
+    expect(cue.enemyEffectKey, 'ledger_claw');
+    expect(
+      expeditionCombatEffectFrameForProgress(
+          cue.enemyEffectKey, effectProgress),
+      5,
+    );
   });
 
   testWidgets('작은 물리 화면에서 모바일 탐험 원화를 선택한다', (tester) async {
@@ -578,17 +855,45 @@ void main() {
     );
   });
 
-  test('수호전 응답에서 의도·약점·고유 스킬·제로 장벽을 보존한다', () {
+  test('수호전 응답에서 속성 상성·성장 계수·쿨타임·제로 장벽을 보존한다', () {
     final snapshot = ExpeditionSnapshot.fromJson(_battleSnapshotJson());
     final battle = snapshot.currentEvent!.battle!;
 
     expect(battle.round, 1);
     expect(battle.enemy.intent.target, 'front');
     expect(battle.enemy.weaknessLabel, '돌봄');
+    expect(battle.enemy.weakElementLabel, '빛');
+    expect(battle.enemy.resistElementLabel, '강철');
+    expect(battle.enemy.weakKelLabel, '햇살결');
+    expect(battle.enemy.resistKelLabel, '모아결');
+    expect(battle.party.first.kit.level, 25);
+    expect(battle.party.first.kit.signatureTier, 3);
     expect(battle.party.first.kit.skill.effect, 'shield_all');
+    expect(battle.party.first.kit.skill.elementLabel, '생명');
+    expect(battle.party.first.kit.skill.powerScaleBp, 11600);
+    expect(battle.party.first.kit.skill.tierPowerBp, 12200);
+    expect(battle.party.first.kit.skill.matchupBp, 15000);
+    expect(battle.party.first.kit.skill.kelLabel, '햇살결');
+    expect(
+      battle.party.first.kit.skill.fusionVariant,
+      'sprout_cheer.sunny.unique_1.t3',
+    );
+    expect(
+      battle.party.first.kit.skill.fusionVfxFamily,
+      'emotion-fusion.sunny-radiance',
+    );
+    expect(battle.party.first.kit.uniqueSkills.last.cooldownRemaining, 2);
     expect(battle.party.last.kit.skill.effect, 'study_refund');
     expect(snapshot.lastCombatExchange.single.enemyGuardAfter, 0);
     expect(snapshot.lastCombatExchange.single.weaknessHit, isTrue);
+    expect(
+      snapshot.lastCombatExchange.single.motionProfile,
+      'baby-pot.vine-cast',
+    );
+    expect(
+      snapshot.lastCombatExchange.single.fusionVariant,
+      'baby-pot.sunny.unique_1.t3',
+    );
     expect(snapshot.availableActions.map((action) => action['type']), [
       'combat_turn',
       'retreat',
@@ -676,13 +981,42 @@ void main() {
     );
     await tester.pump();
 
-    // 세로 3존 — 상단 정보 바, 대치 무대, 순차 명령 카드 독.
+    // 한 카메라 전장 위 가장자리 HUD와 여섯 행동 아이콘 벨트.
     expect(find.byKey(const ValueKey('seq-command-dock')), findsOneWidget);
     expect(
         find.byKey(const ValueKey('immersive-combat-stage')), findsOneWidget);
     expect(find.text('R 1/6'), findsOneWidget);
     expect(find.textContaining('장부 발톱'), findsWidgets);
-    expect(find.text('약점 돌봄'), findsOneWidget);
+    expect(find.text('↑ 햇살결  ↓ 모아결'), findsOneWidget);
+    expect(find.byKey(const ValueKey('seq-dock-action-row')), findsOneWidget);
+    for (final action in expeditionCombatActionOrder) {
+      final slot = find.byKey(ValueKey('seq-dock-card-$action'));
+      expect(slot, findsOneWidget);
+      expect(tester.getSize(slot).width, greaterThanOrEqualTo(48));
+      expect(tester.getSize(slot).height, greaterThanOrEqualTo(48));
+    }
+    final actionIconAssets = tester
+        .widgetList<Image>(
+          find.descendant(
+            of: find.byKey(const ValueKey('seq-dock-action-row')),
+            matching: find.byType(Image),
+          ),
+        )
+        .map((image) => _assetNameOf(image.image))
+        .whereType<String>()
+        .toSet();
+    expect(
+      actionIconAssets,
+      containsAll(<String>{
+        'assets/adventure/skill-icons/baby-pot/sprout-cheer-v1.webp',
+        'assets/adventure/skill-icons/baby-pot/root-embrace-v1.webp',
+        'assets/adventure/skill-icons/baby-pot/sunny-warmth-share-v1.webp',
+        'assets/adventure/skill-icons/baby-pot/field-note-echo-v1.webp',
+      }),
+    );
+    // 이름·효과 전문은 평상시 화면에 두지 않고 상세 시트에서만 연다.
+    expect(find.text('새싹 응원'), findsNothing);
+    expect(find.text('캐릭터의 개성을 살린 고유 행동이에요.'), findsNothing);
     // 첫 대기 대원의 이름으로 프롬프트가 열린다.
     expect(find.text('새싹몬은 무엇을 할까요?'), findsOneWidget);
     final auto = tester.widget<FilterChip>(
@@ -691,18 +1025,39 @@ void main() {
     expect(auto.selected, isFalse);
 
     // 집중력 1로는 스킬(집중 2)을 쓸 수 없다 — 카드가 사유와 함께 잠긴다.
-    final skillCard = find.byKey(const ValueKey('seq-dock-card-skill'));
+    final skillCard = find.byKey(const ValueKey('seq-dock-card-unique_1'));
     await tester.ensureVisible(skillCard);
     await tester.pump();
-    expect(find.text('집중 부족'), findsOneWidget);
+    expect(find.text('집중 부족'), findsWidgets);
+    expect(find.text('재사용 2'), findsWidgets);
     await tester.tap(skillCard, warnIfMissed: false);
     await tester.pump();
     expect(controller.combatActionRequests, 0);
 
-    // 길게 누르면 잠긴 카드도 설명을 읽을 수 있다.
-    await tester.longPress(skillCard);
-    await tester.pump(const Duration(milliseconds: 300));
+    // 349ms에는 열리지 않고 350ms 경계를 넘겨야 상세가 열린다.
+    // 잠긴 카드도 상세를 읽을 수 있지만 hold가 행동 제출로 이어지면 안 된다.
+    final detailGesture = await tester.startGesture(
+      tester.getCenter(skillCard),
+    );
+    await tester.pump(const Duration(milliseconds: 349));
+    expect(find.text('캐릭터의 개성을 살린 고유 행동이에요.'), findsNothing);
+    expect(controller.combatActionRequests, 0);
+    await tester.pump(const Duration(milliseconds: 2));
+    await tester.pump();
     expect(find.text('캐릭터의 개성을 살린 고유 행동이에요.'), findsOneWidget);
+    expect(find.text('T3 · 마음 만개'), findsOneWidget);
+    expect(find.text('↑ 생명 · 약점 ×1.50'), findsOneWidget);
+    expect(find.text('계수 116%'), findsOneWidget);
+    expect(find.text('단계 122% · 상성 150%'), findsOneWidget);
+    expect(find.text('햇살결'), findsWidgets);
+    expect(find.text('T3 감정 융합'), findsOneWidget);
+    expect(
+      find.text('연출 · 캐릭터 고유 VFX 위에 성장결 융합 레이어 적용'),
+      findsOneWidget,
+    );
+    await detailGesture.up();
+    await tester.pump();
+    expect(controller.combatActionRequests, 0);
     tester.state<NavigatorState>(find.byType(Navigator)).pop();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -711,6 +1066,7 @@ void main() {
     await tester.tap(intentLine);
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('상세 생태 기록'), findsOneWidget);
+    expect(find.text('확인한 내성'), findsOneWidget);
     expect(find.text('??? · 전투 후 도감에서 공개'), findsOneWidget);
     expect(find.text('??? · 실제 발견 후 공개'), findsOneWidget);
     tester.state<NavigatorState>(find.byType(Navigator)).pop();
@@ -749,11 +1105,11 @@ void main() {
     expect(find.text('해답이는 무엇을 할까요?'), findsOneWidget);
     // 집중력이 모였으니 이번 대원의 스킬 카드는 열려 있다.
     expect(find.text('집중 부족'), findsNothing);
-    await tester.tap(find.byKey(const ValueKey('seq-dock-card-skill')));
+    await tester.tap(find.byKey(const ValueKey('seq-dock-card-unique_1')));
     await tester.pump();
     expect(controller.combatActionRequests, 2);
     expect(controller.combatActionLog.last.memberId, 12);
-    expect(controller.combatActionLog.last.action, 'skill');
+    expect(controller.combatActionLog.last.action, 'unique_1');
 
     // AUTO는 끔 → 보조 → 연속 순서로 돈다.
     final autoToggle = find.byKey(const ValueKey('seq-dock-auto'));
@@ -848,7 +1204,18 @@ void main() {
     await tester.ensureVisible(attackCard);
     await tester.pump();
     final stage = find.byType(ExpeditionEncounterStage);
+    expect(
+      tester.getSize(stage).height,
+      greaterThanOrEqualTo(844 * .72),
+    );
     final stageTopBefore = tester.getTopLeft(stage).dy;
+    final commandDockTop =
+        tester.getTopLeft(find.byKey(const ValueKey('seq-command-dock'))).dy;
+    expect(
+      commandDockTop - stageTopBefore,
+      greaterThanOrEqualTo(844 * .72),
+      reason: '불투명 명령 덱 위로 화면 높이의 72% 이상 전장이 보여야 해요.',
+    );
     expect(stageTopBefore, greaterThanOrEqualTo(0));
     expect(stageTopBefore, lessThan(260));
 
@@ -908,6 +1275,7 @@ void main() {
     final commandScroll =
         find.byKey(const ValueKey('immersive-combat-command-scroll'));
     expect(commandScroll, findsOneWidget);
+    expect(find.byKey(const ValueKey('seq-dock-action-grid')), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.drag(commandScroll, const Offset(0, -520));

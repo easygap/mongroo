@@ -132,6 +132,7 @@ class ExpeditionStage {
     required this.cleared,
     required this.clearCount,
     required this.storySeen,
+    required this.story,
     required this.unlocked,
     required this.lockReason,
   });
@@ -152,6 +153,7 @@ class ExpeditionStage {
   final bool cleared;
   final int clearCount;
   final bool storySeen;
+  final ExpeditionStageStory? story;
   final bool unlocked;
   final String? lockReason;
 
@@ -166,7 +168,8 @@ class ExpeditionStage {
     return '약 $minutes분 $seconds초';
   }
 
-  factory ExpeditionStage.fromJson(Map<String, dynamic> json) => ExpeditionStage(
+  factory ExpeditionStage.fromJson(Map<String, dynamic> json) =>
+      ExpeditionStage(
         no: _stageInt(json['no'], 1),
         kind: ExpeditionStageKind.fromCode(json['kind'] as String?),
         kindLabel: json['kind_label'] as String? ?? '',
@@ -183,6 +186,9 @@ class ExpeditionStage {
         cleared: json['cleared'] == true,
         clearCount: _stageInt(json['clear_count']),
         storySeen: json['story_seen'] == true,
+        story: json['story'] is Map<String, dynamic>
+            ? ExpeditionStageStory.fromJson(_stageMap(json['story']))
+            : null,
         unlocked: json['unlocked'] == true,
         lockReason: json['lock_reason'] as String?,
       );
@@ -193,16 +199,67 @@ class ExpeditionTangle {
     required this.code,
     required this.name,
     required this.description,
+    required this.knowledgeLevel,
+    required this.skills,
   });
 
   final String code;
   final String name;
   final String description;
+  final String knowledgeLevel;
+  final List<String> skills;
+
+  bool get catalogued => knowledgeLevel == 'catalogued';
 
   factory ExpeditionTangle.fromJson(Map<String, dynamic> json) =>
       ExpeditionTangle(
         code: json['code'] as String? ?? '',
         name: json['name'] as String? ?? '',
         description: json['description'] as String? ?? '',
+        knowledgeLevel: json['knowledge_level'] as String? ?? 'silhouette',
+        skills: (json['skills'] as List? ?? const [])
+            .whereType<String>()
+            .toList(growable: false),
+      );
+}
+
+/// 최초 클리어 뒤에만 공개되는 짧은 캠페인 장면.
+///
+/// 전투 중에는 전달하지 않고 귀환 결과와 도서관 다시보기에서만 사용한다.
+/// 일기 텍스트나 감정 점수를 입력값으로 받지 않는 사전 제작 콘텐츠다.
+class ExpeditionStageStory {
+  const ExpeditionStageStory({
+    required this.code,
+    required this.chapter,
+    required this.phase,
+    required this.title,
+    required this.caption,
+    required this.sceneKey,
+    required this.visualAsset,
+    required this.audioCue,
+    required this.codexEntry,
+  });
+
+  final String code;
+  final int chapter;
+  final String phase;
+  final String title;
+  final String caption;
+  final String sceneKey;
+  final String? visualAsset;
+  final String? audioCue;
+  final String codexEntry;
+
+  factory ExpeditionStageStory.fromJson(Map<String, dynamic> json) =>
+      ExpeditionStageStory(
+        code: json['code'] as String? ?? '',
+        chapter: _stageInt(json['chapter']),
+        phase: json['phase'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        caption: json['caption'] as String? ?? '',
+        sceneKey: json['scene_key'] as String? ?? 'dungeon_gate',
+        visualAsset: json['visual_asset'] as String?,
+        audioCue: json['audio_cue'] as String?,
+        codexEntry: json['codex_entry'] as String? ?? '',
       );
 }

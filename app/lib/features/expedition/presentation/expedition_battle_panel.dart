@@ -112,6 +112,14 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
         _ => member.kit.basic,
       };
 
+  bool _matchesWeakness(
+    ExpeditionBattleMember member,
+    ExpeditionBattleAction action,
+  ) =>
+      member.kit.version >= 6
+          ? action.matchup == 'weak' || action.matchup == 'prism_weak'
+          : action.affinity == _battle.enemy.weakness;
+
   ({
     bool valid,
     int focusAfter,
@@ -144,14 +152,16 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
       }
       if (actionCode != 'guard') {
         var actionDamage = action.power;
-        final weaknessHit = action.affinity == _battle.enemy.weakness;
-        if (weaknessHit) actionDamage += 7;
-        if (action.effect == 'weakness_pierce' && weaknessHit) {
-          actionDamage += 6;
-        } else if (action.effect == 'last_stand' && member.hp == 1) {
-          actionDamage += 8;
-        } else if (action.effect == 'steady_read' && !weaknessHit) {
-          actionDamage += 5;
+        if (member.kit.version < 6) {
+          final weaknessHit = _matchesWeakness(member, action);
+          if (weaknessHit) actionDamage += 7;
+          if (action.effect == 'weakness_pierce' && weaknessHit) {
+            actionDamage += 6;
+          } else if (action.effect == 'last_stand' && member.hp == 1) {
+            actionDamage += 8;
+          } else if (action.effect == 'steady_read' && !weaknessHit) {
+            actionDamage += 5;
+          }
         }
         damage += actionDamage;
       }
@@ -213,7 +223,7 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
           _commands[memberId] = 'guard';
           focus =
               (focus + member.kit.guard.focusDelta).clamp(0, _battle.maxFocus);
-        } else if (skill.affinity == _battle.enemy.weakness &&
+        } else if (_matchesWeakness(member, skill) &&
             focus >= skill.focusCost) {
           _commands[memberId] = 'skill';
           focus -= skill.focusCost;
@@ -382,7 +392,7 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
                 const SizedBox(height: 12),
                 MongrooTag(
                   label: weakness
-                      ? '${action.affinityLabel} · 약점 일치 +7'
+                      ? '${action.affinityLabel} · 약점 ${action.matchup == 'prism_weak' ? '×1.30' : '×1.50'}'
                       : action.affinityLabel!,
                   icon: _affinityIcon(action.affinity ?? ''),
                   backgroundColor:
@@ -630,16 +640,20 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
                       ),
                       selected: _commands[selected.memberId] == actionCode,
                       weakness: actionCode != 'guard' &&
-                          _actionFor(selected, actionCode).affinity ==
-                              battle.enemy.weakness,
+                          _matchesWeakness(
+                            selected,
+                            _actionFor(selected, actionCode),
+                          ),
                       enabled: !busy,
                       onPressed: () => _chooseAction(actionCode),
                       onLongPress: () => _showActionDetails(
                         _actionFor(selected, actionCode),
                         actionCode,
                         actionCode != 'guard' &&
-                            _actionFor(selected, actionCode).affinity ==
-                                battle.enemy.weakness,
+                            _matchesWeakness(
+                              selected,
+                              _actionFor(selected, actionCode),
+                            ),
                       ),
                     ),
                   ),
@@ -815,7 +829,7 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
               action: selected.kit.basic,
               actionCode: 'attack',
               selected: _commands[selected.memberId] == 'attack',
-              weakness: selected.kit.basic.affinity == battle.enemy.weakness,
+              weakness: _matchesWeakness(selected, selected.kit.basic),
               enabled: !busy,
               onPressed: () => _chooseAction('attack'),
             ),
@@ -825,7 +839,7 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
               action: selected.kit.skill,
               actionCode: 'skill',
               selected: _commands[selected.memberId] == 'skill',
-              weakness: selected.kit.skill.affinity == battle.enemy.weakness,
+              weakness: _matchesWeakness(selected, selected.kit.skill),
               enabled: !busy,
               onPressed: () => _chooseAction('skill'),
             ),
@@ -1640,7 +1654,7 @@ class _BattleActionChoice extends StatelessWidget {
                             ),
                             if (weakness)
                               MongrooTag(
-                                label: '약점 일치 +7',
+                                label: '약점 일치',
                                 icon: Icons.adjust_rounded,
                                 backgroundColor: color.withAlpha(45),
                                 foregroundColor: color,

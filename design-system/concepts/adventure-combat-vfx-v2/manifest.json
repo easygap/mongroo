@@ -1,0 +1,598 @@
+{
+  "version": 3,
+  "source_policy": "one reviewed ImageGen source per visible pose",
+  "code_generated_attack_pixels": false,
+  "effects": {
+    "care_vines": {
+      "effect_key": "care_vines",
+      "runtime_directory": "care-vines-v2",
+      "frame_count": 10,
+      "frame_size": [
+        576,
+        288
+      ],
+      "origin": "hand_r",
+      "target": "guardian_center",
+      "release_frame": 2,
+      "travel_frames": [
+        3,
+        4
+      ],
+      "contact_frames": [
+        5,
+        6
+      ],
+      "reaction_frame": 7,
+      "recovery_frames": [
+        8,
+        9
+      ],
+      "production_candidate": true,
+      "production_ready": false,
+      "source_sha256": {
+        "pose-00-anticipation-chroma.png": "939B2D1B5DB8ABCF61CD3226C8944270F04731685B58C445295B276A4738279D",
+        "pose-00a-uncoil-chroma.png": "0C3A30289431D47D12D6A1082F38426334FE5DD4E4429B3787D46B1032F22161",
+        "pose-01-release-chroma.png": "F7317F4573BC22A932089ADB5B4930CA08D42F39D0E23CF2179DF399590D3D65",
+        "pose-01a-extension-chroma.png": "C4670B3D64EE6D9C3094A52EBA29CE76D8CC0C8FBE613FA108DF82442EAFE427",
+        "pose-02-travel-chroma.png": "5523AA9AF7889BCE1236B83E5F57DB16BDA43B11C03B7595AF93504435BA8181",
+        "pose-03-contact-chroma.png": "A70AB1EFDFEEBBE820DF206675124BC698338949E73BB48D49CC68142405EC31",
+        "pose-03a-entangle-chroma.png": "FA362DDEA991E9DDC496B96BAB44D1D1EE7ED8EC7D10315C4D45924CC53B029D",
+        "pose-04-impact-chroma.png": "9A35EFC1BD2A80FF8BDE35B22E8A35F615AF70B573E4DA2728D21521D7D01491",
+        "pose-04a-recoil-chroma.png": "ED50E212A3A08F9138FF8A9888AF799DABFAFD647333DC057E82366320D061AA",
+        "pose-05-recovery-chroma.png": "3B84F7D64395B24007E3B4B72C7F7F8A2FC1881616732D2F96DB1E95500C5A33"
+      },
+      "alpha_sha256": {
+        "pose-00-anticipation.png": "428F5DAA643FB15559A53114FF64D570D3A57372D16F6F9674B7EDDDC94E7F8E",
+        "pose-00a-uncoil.png": "CCF8DA821F6212E8BAD20961BC807FBF5C876C0A75D35B018E6BECA9C02C15D1",
+        "pose-01-release.png": "D933ED3D1AF3B519C9C64AEFAB895B5CA333E69CCEC31B021D0AF17C217BB3C2",
+        "pose-01a-extension.png": "C1E553CE82AEE715DEEBFBAB6995F35FF96ED622456B1470FA0174F6C2AEC4C4",
+        "pose-02-travel.png": "120F5A18382136D1661E53B3894E890CA69AC1EE39DD7C893110E5F3BDE282B3",
+        "pose-03-contact.png": "C402D1BB839C93A3F28410E14F7349BF5AFD0242ADCC70246E0FDC8873226B9E",
+        "pose-03a-entangle.png": "B22E4ED571EC71557B782B224B0F900CCF4132159CB5EDAFE53F8BD9ACB53E94",
+        "pose-04-impact.png": "A744BC3EEAB965E5C79DF5643EC8E1221F2EEC37949475274D1030A9450D104F",
+        "pose-04a-recoil.png": "05EFC2632C4F50295741E08FEEEBA877B93B3AD4D118B3C5DE34EBFE7173D6E3",
+        "pose-05-recovery.png": "27A49CAA13FE1B1EC944DE3C60F17C261E39E6A238E981867C11C07661559994"
+      },
+      "runtime_sha256": {
+        "frame-00.webp": "4CD0B43E68199BDFC64059DBA10A4B29CB813159114DA2A008E5793F7A5A9B2E",
+        "frame-01.webp": "C5ACB0AC3A5FBF14304DC344A22C9D7082D4CAE7CD7B8DA510A789AAA7049E48",
+        "frame-02.webp": "2B2FAC776B509856BEB7D014AD54EAAB1EEFC7BE3820DF24B87C1FF79CF8F75D",
+        "frame-03.webp": "048B41E9A018ACEC6DB88F04FA93C1D4A755FC7A51E895CAF2C4C4789DB2CAF5",
+        "frame-04.webp": "0935B3B54341C30C0B8CADBD3D81AE3815F9CE9005DB097FDF6B59FB992A93D2",
+        "frame-05.webp": "0DF63C0DA786CA5D80AD88B80BC98CD316039AC88DA0D6233BDCB97F1D120B19",
+        "frame-06.webp": "5D1712C64F34D504678A364E389ABDF72416E7D00448E77EAFBC1FF3C0017109",
+        "frame-07.webp": "90DD2B3936D51E0421DB893E640E54DB4DC7F6211F5BD970B3CA1E57ECC78E57",
+        "frame-08.webp": "5BF56552729978197842028D774B3A2B74807263A6564663670751CB892DC124",
+        "frame-09.webp": "02A111684935C5B1E1B836498FF40CDDD082151C563A659504FA8D82D2C7459A"
+      },
+      "frames": [
+        {
+          "index": 0,
+          "phase": "anticipation",
+          "duration_ms": 90,
+          "source_size": [
+            1536,
+            1024
+          ],
+          "source_crop": [
+            0,
+            128,
+            1536,
+            896
+          ],
+          "bbox": [
+            16,
+            93,
+            206,
+            219
+          ],
+          "coverage": 0.0883,
+          "magenta_residue": 0
+        },
+        {
+          "index": 1,
+          "phase": "anticipation",
+          "duration_ms": 70,
+          "source_size": [
+            1536,
+            1024
+          ],
+          "source_crop": [
+            0,
+            128,
+            1536,
+            896
+          ],
+          "bbox": [
+            16,
+            79,
+            275,
+            219
+          ],
+          "coverage": 0.0864,
+          "magenta_residue": 0
+        },
+        {
+          "index": 2,
+          "phase": "release",
+          "duration_ms": 70,
+          "source_size": [
+            1536,
+            1024
+          ],
+          "source_crop": [
+            0,
+            128,
+            1536,
+            896
+          ],
+          "bbox": [
+            16,
+            83,
+            274,
+            219
+          ],
+          "coverage": 0.0844,
+          "magenta_residue": 0
+        },
+        {
+          "index": 3,
+          "phase": "travel",
+          "duration_ms": 65,
+          "source_size": [
+            1536,
+            1024
+          ],
+          "source_crop": [
+            0,
+            128,
+            1536,
+            896
+          ],
+          "bbox": [
+            17,
+            98,
+            374,
+            219
+          ],
+          "coverage": 0.095,
+          "magenta_residue": 0
+        },
+        {
+          "index": 4,
+          "phase": "travel",
+          "duration_ms": 65,
+          "source_size": [
+            1536,
+            1024
+          ],
+          "source_crop": [
+            0,
+            128,
+            1536,
+            896
+          ],
+          "bbox": [
+            17,
+            91,
+            413,
+            218
+          ],
+          "coverage": 0.1005,
+          "magenta_residue": 0
+        },
+        {
+          "index": 5,
+          "phase": "contact",
+          "duration_ms": 70,
+          "source_size": [
+            1536,
+            1024
+          ],
+          "source_crop": [
+            0,
+            128,
+            1536,
+            896
+          ],
+          "bbox": [
+            10,
+            22,
+            544,
+            218
+          ],
+          "coverage": 0.1113,
+          "magenta_residue": 0
+        },
+        {
+          "index": 6,
+          "phase": "contact",
+          "duration_ms": 75,
+          "source_size": [
+            1536,
+            1024
+          ],
+          "source_crop": [
+            0,
+            128,
+            1536,
+            896
+          ],
+          "bbox": [
+            10,
+            25,
+            546,
+            218
+          ],
+          "coverage": 0.1322,
+          "magenta_residue": 0
+        },
+        {
+          "index": 7,
+          "phase": "reaction",
+          "duration_ms": 105,
+          "source_size": [
+            1536,
+            1024
+          ],
+          "source_crop": [
+            0,
+            128,
+            1536,
+            896
+          ],
+          "bbox": [
+            10,
+            23,
+            541,
+            218
+          ],
+          "coverage": 0.1447,
+          "magenta_residue": 0
+        },
+        {
+          "index": 8,
+          "phase": "recovery",
+          "duration_ms": 80,
+          "source_size": [
+            1536,
+            1024
+          ],
+          "source_crop": [
+            0,
+            128,
+            1536,
+            896
+          ],
+          "bbox": [
+            10,
+            81,
+            460,
+            218
+          ],
+          "coverage": 0.1042,
+          "magenta_residue": 0
+        },
+        {
+          "index": 9,
+          "phase": "recovery",
+          "duration_ms": 110,
+          "source_size": [
+            1536,
+            1024
+          ],
+          "source_crop": [
+            0,
+            128,
+            1536,
+            896
+          ],
+          "bbox": [
+            10,
+            107,
+            311,
+            221
+          ],
+          "coverage": 0.0786,
+          "magenta_residue": 0
+        }
+      ]
+    },
+    "ledger_claw": {
+      "effect_key": "ledger_claw",
+      "runtime_directory": "ledger-claw-v2",
+      "frame_count": 10,
+      "frame_size": [
+        576,
+        288
+      ],
+      "origin": "guardian_foreleg_r",
+      "target": "front_actor",
+      "release_frame": 1,
+      "travel_frames": [
+        2,
+        3
+      ],
+      "contact_frames": [
+        4,
+        5
+      ],
+      "reaction_frame": 6,
+      "recovery_frames": [
+        7,
+        8,
+        9
+      ],
+      "production_candidate": true,
+      "production_ready": false,
+      "source_sha256": {
+        "pose-00-anticipation-chroma.png": "DEB8069DA23CE16F0DF9E72B3F63E44CB4BD29F3C99F3F93CEE6F83BD9D2CB1E",
+        "pose-01-release-chroma.png": "584FBF93EF1B81C3355F0BB737F7E85BD284584374D6266F7B99EB9D73468B64",
+        "pose-02-uncoil-chroma.png": "61F40FCBFAAE480B34643CE703DD3D0FBBA8DF22114F41074A0E11D09A7CBE87",
+        "pose-03-travel-chroma.png": "4D61FE7959FE099AA2B4E2C010481FA7E387CD6D3F9CE961FA0CCB4B97540DD2",
+        "pose-04-contact-chroma.png": "9C8D1A6F167D673C6C7E448C330CD945AC658E4EF02DC890ADC12D34CDEFD5B2",
+        "pose-05-impact-chroma.png": "7D47D51A1606468F539DE10C018F94DB8E46562B54116FE0B7EE5414E36FFA1A",
+        "pose-06-recoil-chroma.png": "CF3BC5281A1090E442DA1ADF692DC448798C67BE0FF96E5EEF2338B2C88CBB84",
+        "pose-07-retract-chroma.png": "95B2BC3266D943A3E0112E57D52086CBF1BCB095F858C0B4B55155852ED281F7",
+        "pose-08-fold-chroma.png": "F7CC66C2C58DB74ED8D483710F0814C7F3A194769411B6CCDBBC3928CFAD4F15",
+        "pose-09-recovery-chroma.png": "7A222D3B6FD76BCEF27CEF25852133EF629BE5DA8D3789484ED21DAE3974CA69"
+      },
+      "alpha_sha256": {
+        "pose-00-anticipation.png": "B5C419D0E3D75145DEC4FF79FEFAA0AC62063D67A812FCE0DF26E6B02F2E7DBA",
+        "pose-01-release.png": "D50AD76B5ED79FF8E73F64E7E06689CAD01725B14442F5EEDD7EC11567EA2AA8",
+        "pose-02-uncoil.png": "CB015BC8B907DFF000CE901C259C2C95012F90D45C72AD1595C0BD1414886208",
+        "pose-03-travel.png": "CE2A3903E2F1004643D57CF192F9E7F1497447D00AAAB1C7CA6121F6AEDA5508",
+        "pose-04-contact.png": "3ED7A1FDB0DBF454F3696D903C1ADF9604615C2BF473C20634A6517A991B7342",
+        "pose-05-impact.png": "08E8DC880EEBA4D5692E6ABFD2A28CC158C29A51DA9A31DF3703FB9115CD1ECF",
+        "pose-06-recoil.png": "7409DE134A6ECD917D766855A8D6BF1E6C9F1B1ADD61052A06F72154AFD119A4",
+        "pose-07-retract.png": "069C94C1A54B5EAF1D9B3C6ED8F7C06F9FDDAB8C3DF2F845DFC71DF25E9CC5FA",
+        "pose-08-fold.png": "35BA9CB58E0C2B6F2C2867FCDB5076268C3F2DCEFD22250464CACB07AADE6C9A",
+        "pose-09-recovery.png": "AA43AD3084BA895BBA7BD4EED5066736BB2063A964DB470DB8D55FA91C949015"
+      },
+      "runtime_sha256": {
+        "frame-00.webp": "58C3079090F4E94567616E4679CA5084F7B7516E4A7C0AAB4318596EDF5797DC",
+        "frame-01.webp": "1C329A03DD8260BC52E6B94621AE1AA44D5ADAA8C8704630ABDB9187947A1D06",
+        "frame-02.webp": "FFCD8A03E54852E0CAC890F290C8F01F97178EE2294DE3EE18E27EF4F6235CCC",
+        "frame-03.webp": "D4A3C041795A9491D4DD0F5BF0CDD7776EFA641206FFC43B2E7F60703923EEF2",
+        "frame-04.webp": "7476EB34FE9F873EE79BDE389826C9349F25C09F185D49D864FEAE7D87085969",
+        "frame-05.webp": "4654B2123D767E7A5B6DFB6F8AEC623FC47C24FBE0A96B7D4CEF53934273A1CB",
+        "frame-06.webp": "4CACC937D516776D86CD9F5370316D68BC0787F9B62725C4DE411B4C6C7EBBA1",
+        "frame-07.webp": "E02813D3363C3343910D13680CDDD0B93AA7E80A216093052AD929F06B3B884F",
+        "frame-08.webp": "0FAB4926EC988AF5C0DD7C095D78FBA0F1647B887DD537560B4D31F65DD29F8F",
+        "frame-09.webp": "6D0A1634E6CEE0A1E28702C1CE36A4C8464B30D84F553123758C45DB4DB371DA"
+      },
+      "frames": [
+        {
+          "index": 0,
+          "phase": "anticipation",
+          "duration_ms": 100,
+          "source_size": [
+            1402,
+            1122
+          ],
+          "source_crop": [
+            0,
+            210,
+            1402,
+            911
+          ],
+          "bbox": [
+            313,
+            70,
+            556,
+            230
+          ],
+          "coverage": 0.1644,
+          "magenta_residue": 0
+        },
+        {
+          "index": 1,
+          "phase": "release",
+          "duration_ms": 75,
+          "source_size": [
+            1402,
+            1122
+          ],
+          "source_crop": [
+            0,
+            210,
+            1402,
+            911
+          ],
+          "bbox": [
+            183,
+            20,
+            556,
+            250
+          ],
+          "coverage": 0.3086,
+          "magenta_residue": 0
+        },
+        {
+          "index": 2,
+          "phase": "travel",
+          "duration_ms": 65,
+          "source_size": [
+            1401,
+            1123
+          ],
+          "source_crop": [
+            0,
+            212,
+            1401,
+            912
+          ],
+          "bbox": [
+            163,
+            37,
+            556,
+            246
+          ],
+          "coverage": 0.2957,
+          "magenta_residue": 0
+        },
+        {
+          "index": 3,
+          "phase": "travel",
+          "duration_ms": 65,
+          "source_size": [
+            1402,
+            1122
+          ],
+          "source_crop": [
+            0,
+            210,
+            1402,
+            911
+          ],
+          "bbox": [
+            21,
+            33,
+            556,
+            258
+          ],
+          "coverage": 0.392,
+          "magenta_residue": 0
+        },
+        {
+          "index": 4,
+          "phase": "contact",
+          "duration_ms": 70,
+          "source_size": [
+            1403,
+            1121
+          ],
+          "source_crop": [
+            0,
+            210,
+            1403,
+            912
+          ],
+          "bbox": [
+            25,
+            32,
+            556,
+            263
+          ],
+          "coverage": 0.3937,
+          "magenta_residue": 0
+        },
+        {
+          "index": 5,
+          "phase": "reaction",
+          "duration_ms": 95,
+          "source_size": [
+            1402,
+            1122
+          ],
+          "source_crop": [
+            0,
+            210,
+            1402,
+            911
+          ],
+          "bbox": [
+            21,
+            36,
+            556,
+            264
+          ],
+          "coverage": 0.3915,
+          "magenta_residue": 0
+        },
+        {
+          "index": 6,
+          "phase": "reaction",
+          "duration_ms": 75,
+          "source_size": [
+            1402,
+            1122
+          ],
+          "source_crop": [
+            0,
+            210,
+            1402,
+            911
+          ],
+          "bbox": [
+            6,
+            40,
+            556,
+            264
+          ],
+          "coverage": 0.3143,
+          "magenta_residue": 0
+        },
+        {
+          "index": 7,
+          "phase": "recovery",
+          "duration_ms": 70,
+          "source_size": [
+            1402,
+            1122
+          ],
+          "source_crop": [
+            0,
+            210,
+            1402,
+            911
+          ],
+          "bbox": [
+            257,
+            54,
+            556,
+            248
+          ],
+          "coverage": 0.2044,
+          "magenta_residue": 0
+        },
+        {
+          "index": 8,
+          "phase": "recovery",
+          "duration_ms": 80,
+          "source_size": [
+            1402,
+            1122
+          ],
+          "source_crop": [
+            0,
+            210,
+            1402,
+            911
+          ],
+          "bbox": [
+            305,
+            70,
+            556,
+            230
+          ],
+          "coverage": 0.171,
+          "magenta_residue": 0
+        },
+        {
+          "index": 9,
+          "phase": "recovery",
+          "duration_ms": 105,
+          "source_size": [
+            1402,
+            1122
+          ],
+          "source_crop": [
+            0,
+            210,
+            1402,
+            911
+          ],
+          "bbox": [
+            401,
+            94,
+            556,
+            221
+          ],
+          "coverage": 0.0868,
+          "magenta_residue": 0
+        }
+      ]
+    }
+  }
+}

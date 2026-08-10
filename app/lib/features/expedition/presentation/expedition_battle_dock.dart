@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -22,6 +24,17 @@ import 'expedition_controller.dart';
 /// false로 내리면 기존 예약형 패널로 되돌아간다(개편 문서 7장의 기능 플래그).
 const bool kSequentialCommandDock = true;
 
+const expeditionCombatActionOrder = <String>[
+  'attack',
+  'unique_1',
+  'unique_2',
+  'selected_1',
+  'selected_2',
+  'guard',
+];
+
+const expeditionSkillDetailHoldDuration = Duration(milliseconds: 350);
+
 /// AUTO의 두 단계. `보조`는 다음 한 행동만 맡기고 꺼지며, `연속`은 전투가
 /// 끝날 때까지 유지된다. 수동 지휘 계약의 보조/연속 구분을 그대로 옮겼다.
 enum ExpeditionAutoMode { off, assist, continuous }
@@ -31,6 +44,7 @@ class ExpeditionBattleSettings {
     this.autoMode = ExpeditionAutoMode.off,
     this.pace = 1,
     this.shortEffects = false,
+    this.audioEnabled = true,
   });
 
   final ExpeditionAutoMode autoMode;
@@ -41,15 +55,20 @@ class ExpeditionBattleSettings {
   /// 짧은 연출 모드. 시동·여운을 줄이되 판정 정보는 유지한다.
   final bool shortEffects;
 
+  /// 전투 BGM과 효과음을 함께 끈다. 판정 정보는 시각·촉각으로 그대로 남는다.
+  final bool audioEnabled;
+
   ExpeditionBattleSettings copyWith({
     ExpeditionAutoMode? autoMode,
     int? pace,
     bool? shortEffects,
+    bool? audioEnabled,
   }) =>
       ExpeditionBattleSettings(
         autoMode: autoMode ?? this.autoMode,
         pace: pace ?? this.pace,
         shortEffects: shortEffects ?? this.shortEffects,
+        audioEnabled: audioEnabled ?? this.audioEnabled,
       );
 }
 
@@ -74,11 +93,13 @@ class ExpeditionBattleSettingsNotifier
     }
   }
 
-  void togglePace() =>
-      state = state.copyWith(pace: state.pace == 1 ? 2 : 1);
+  void togglePace() => state = state.copyWith(pace: state.pace == 1 ? 2 : 1);
 
   void toggleShortEffects() =>
       state = state.copyWith(shortEffects: !state.shortEffects);
+
+  void toggleAudio() =>
+      state = state.copyWith(audioEnabled: !state.audioEnabled);
 }
 
 /// 전투 표준 장비(AUTO·배속·짧은 연출) 상태. 앱 세션 동안 유지된다.
@@ -170,8 +191,7 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
                       height: 44,
                       child: FilterChip(
                         key: const ValueKey('seq-dock-auto'),
-                        selected:
-                            settings.autoMode != ExpeditionAutoMode.off,
+                        selected: settings.autoMode != ExpeditionAutoMode.off,
                         onSelected: (_) => notifier.cycleAutoMode(),
                         avatar: Icon(
                           settings.autoMode == ExpeditionAutoMode.off
@@ -193,8 +213,7 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
                         key: const ValueKey('seq-dock-pace'),
                         selected: settings.pace == 2,
                         onSelected: (_) => notifier.togglePace(),
-                        avatar:
-                            const Icon(Icons.speed_rounded, size: 16),
+                        avatar: const Icon(Icons.speed_rounded, size: 16),
                         visualDensity: VisualDensity.compact,
                         label: Text('${settings.pace}×'),
                       ),
@@ -209,10 +228,29 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
                         key: const ValueKey('seq-dock-short'),
                         selected: settings.shortEffects,
                         onSelected: (_) => notifier.toggleShortEffects(),
-                        avatar:
-                            const Icon(Icons.bolt_outlined, size: 16),
+                        avatar: const Icon(Icons.bolt_outlined, size: 16),
                         visualDensity: VisualDensity.compact,
                         label: const Text('짧은 연출'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Semantics(
+                    label: '전투 소리 ${settings.audioEnabled ? '켜짐' : '꺼짐'}',
+                    child: SizedBox(
+                      height: 44,
+                      child: FilterChip(
+                        key: const ValueKey('seq-dock-audio'),
+                        selected: settings.audioEnabled,
+                        onSelected: (_) => notifier.toggleAudio(),
+                        avatar: Icon(
+                          settings.audioEnabled
+                              ? Icons.volume_up_outlined
+                              : Icons.volume_off_outlined,
+                          size: 16,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        label: const Text('소리'),
                       ),
                     ),
                   ),
@@ -224,8 +262,7 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
             key: const ValueKey('seq-dock-retreat'),
             onPressed: locked ? null : () => _confirmRetreat(context, ref),
             tooltip: '긴급 귀환',
-            constraints:
-                const BoxConstraints.tightFor(width: 48, height: 48),
+            constraints: const BoxConstraints.tightFor(width: 48, height: 48),
             icon: const Icon(Icons.directions_run_rounded),
           ),
         ],
@@ -258,17 +295,32 @@ class _ExpeditionSequentialCommandDockState
   int? _selectedMemberId;
   String? _fingerprint;
   bool _submitting = false;
+  bool _detailsOpen = false;
+  bool _skillIconsPrecached = false;
 
   ExpeditionBattle get _battle => widget.event.battle!;
 
   bool get _locked =>
-      widget.state.interactionLocked || _submitting || !_battle.isActive;
+      widget.state.interactionLocked ||
+      _submitting ||
+      _detailsOpen ||
+      !_battle.isActive;
 
   @override
   void initState() {
     super.initState();
     _fingerprint = _battleFingerprint();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleAuto());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_skillIconsPrecached) return;
+    _skillIconsPrecached = true;
+    for (final asset in _dockSkillIconAssets.values) {
+      unawaited(precacheImage(AssetImage(asset), context));
+    }
   }
 
   @override
@@ -281,8 +333,7 @@ class _ExpeditionSequentialCommandDockState
       _scheduleAuto();
       return;
     }
-    if (oldWidget.state.interactionLocked &&
-        !widget.state.interactionLocked) {
+    if (oldWidget.state.interactionLocked && !widget.state.interactionLocked) {
       _scheduleAuto();
     }
   }
@@ -337,31 +388,47 @@ class _ExpeditionSequentialCommandDockState
     ExpeditionBattleMember member,
     String actionCode,
   ) =>
-      switch (actionCode) {
-        'skill' => member.kit.skill,
-        'guard' => member.kit.guard,
-        _ => member.kit.basic,
-      };
+      member.kit.actionFor(actionCode);
+
+  bool _isWeak(ExpeditionBattleAction action) {
+    if (_battle.enemy.weakKel case final weakKel?) {
+      return action.matchup == 'weak' || action.kels.contains(weakKel);
+    }
+    if (action.matchup == 'weak') return true;
+    final weakElement = _battle.enemy.weakElement;
+    if (weakElement != null) {
+      return action.elements.contains(weakElement) ||
+          action.element == weakElement;
+    }
+    return action.affinity == _battle.enemy.weakness;
+  }
+
+  bool _isResisted(ExpeditionBattleAction action) {
+    if (_battle.enemy.resistKel case final resistKel?) {
+      return action.matchup == 'resist' || action.kels.contains(resistKel);
+    }
+    if (action.matchup == 'resist') return true;
+    final resistElement = _battle.enemy.resistElement;
+    if (resistElement == null || _isWeak(action)) return false;
+    return action.elements.contains(resistElement) ||
+        action.element == resistElement;
+  }
 
   int _expectedDamage(ExpeditionBattleMember member, String actionCode) {
     if (actionCode == 'guard') return 0;
     final action = _actionFor(member, actionCode);
-    var damage = action.power;
-    final weaknessHit = action.affinity == _battle.enemy.weakness;
-    if (weaknessHit) damage += 7;
-    if (action.effect == 'weakness_pierce' && weaknessHit) {
-      damage += 6;
-    } else if (action.effect == 'last_stand' && member.hp == 1) {
-      damage += 8;
-    } else if (action.effect == 'steady_read' && !weaknessHit) {
-      damage += 5;
-    }
-    return damage;
+    if (!action.available) return 0;
+    return action.power;
   }
 
   String? _lockReason(ExpeditionBattleMember member, String actionCode) {
-    if (actionCode != 'skill') return null;
-    final cost = member.kit.skill.focusCost;
+    final action = _actionFor(member, actionCode);
+    if (!action.available) return 'Lv.${action.unlockLevel} 해금';
+    if (actionCode == 'attack' || actionCode == 'guard') return null;
+    if (action.cooldownRemaining > 0) {
+      return '재사용 ${action.cooldownRemaining}';
+    }
+    final cost = action.focusCost;
     return _battle.focus < cost ? '집중 부족' : null;
   }
 
@@ -416,10 +483,18 @@ class _ExpeditionSequentialCommandDockState
     final danger = targeted.contains(member.memberId) &&
         (_battle.enemy.intent.power >= member.hp || member.hp <= 1);
     if (danger) return 'guard';
-    final skill = member.kit.skill;
-    if (skill.affinity == _battle.enemy.weakness &&
-        _battle.focus >= skill.focusCost) {
-      return 'skill';
+    final matchingSkills = member.kit.combatSkills
+        .where(
+          (skill) =>
+              skill.available &&
+              skill.cooldownRemaining == 0 &&
+              _isWeak(skill) &&
+              _battle.focus >= skill.focusCost,
+        )
+        .toList(growable: false)
+      ..sort((a, b) => b.power.compareTo(a.power));
+    if (matchingSkills.isNotEmpty) {
+      return matchingSkills.first.slot;
     }
     return 'attack';
   }
@@ -444,69 +519,167 @@ class _ExpeditionSequentialCommandDockState
     ExpeditionBattleMember member,
     String actionCode,
   ) async {
+    _autoTimer?.cancel();
+    if (mounted) setState(() => _detailsOpen = true);
     final action = _actionFor(member, actionCode);
-    final weaknessHit = actionCode != 'guard' &&
-        action.affinity == _battle.enemy.weakness;
+    final weaknessHit = actionCode != 'guard' && _isWeak(action);
+    final resistanceHit = actionCode != 'guard' && _isResisted(action);
+    final coefficient = action.powerScaleBp / 100;
+    final coefficientLabel = coefficient == coefficient.roundToDouble()
+        ? coefficient.toStringAsFixed(0)
+        : coefficient.toStringAsFixed(1);
+    final tierCoefficient = action.tierPowerBp / 100;
+    final matchupCoefficient = action.matchupBp / 100;
     final metadata = switch (actionCode) {
-      'skill' => '위력 ${action.power} · 집중 -${action.focusCost}',
       'guard' => '방어 +${action.guard} · 집중 +${action.focusDelta}',
-      _ => '위력 ${action.power} · 집중 +${action.focusDelta}',
+      'attack' => '위력 ${action.power} · 집중 +${action.focusDelta}',
+      _ => action.available
+          ? '위력 ${action.power} · 집중 -${action.focusCost} · '
+              '재사용 ${action.cooldownTurns}턴'
+          : '현재 서버에서는 사용할 수 없어요',
     };
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _DockEffectThumbnail(
-                    effectKey: _effectKeyFor(member, actionCode),
-                    size: 64,
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          action.name,
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          metadata,
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                      ],
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * .4,
+        ),
+        builder: (context) => SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _DockActionVisual(
+                      action: action,
+                      actionCode: actionCode,
+                      effectKey: _effectKeyFor(member, actionCode),
+                      color: _dockActionColor(context, actionCode),
+                      size: 64,
                     ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            action.name,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            metadata,
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Text(action.description),
+                if (actionCode != 'guard') ...[
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      if (action.tierLabel.isNotEmpty)
+                        MongrooTag(
+                          label: 'T${action.tier} · ${action.tierLabel}',
+                          icon: Icons.auto_awesome_rounded,
+                        ),
+                      if (action.elementLabel case final label?)
+                        MongrooTag(
+                          label: resistanceHit
+                              ? '↓ $label · 내성 ×0.60'
+                              : weaknessHit
+                                  ? '↑ $label · 약점 ×1.50'
+                                  : label,
+                          icon: _dockElementIcon(action.element ?? ''),
+                          backgroundColor:
+                              _dockElementColor(context, action.element ?? '')
+                                  .withAlpha(42),
+                        ),
+                      if (action.damageTypeLabel case final label?)
+                        MongrooTag(
+                          label: label,
+                          icon: Icons.sports_martial_arts_rounded,
+                        ),
+                      if (action.rawPower > 0)
+                        MongrooTag(
+                          label: '계수 $coefficientLabel%',
+                          icon: Icons.trending_up_rounded,
+                        ),
+                      if (action.rawPower > 0)
+                        MongrooTag(
+                          label:
+                              '단계 ${tierCoefficient.toStringAsFixed(0)}% · 상성 ${matchupCoefficient.toStringAsFixed(0)}%',
+                          icon: Icons.calculate_outlined,
+                        ),
+                      if (action.kelLabel case final label?)
+                        MongrooTag(
+                          label: label,
+                          icon: Icons.hub_outlined,
+                        ),
+                      if (action.fusionVariant != null)
+                        const MongrooTag(
+                          label: 'T3 감정 융합',
+                          icon: Icons.layers_rounded,
+                        ),
+                    ],
+                  ),
+                  if (action.vfxFamily != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      action.fusionVfxFamily == null
+                          ? '연출 · 전용 모션과 스프라이트 VFX 계열 적용'
+                          : '연출 · 캐릭터 고유 VFX 위에 성장결 융합 레이어 적용',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ],
+                ],
+                if (action.source case final source?) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    switch (source) {
+                      'signature' => '출처 · 캐릭터 고유',
+                      'emotion' => '출처 · 현재 성장결',
+                      'skillbook' => '출처 · 스킬북',
+                      _ => '출처 · $source',
+                    },
+                    style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ],
-              ),
-              const SizedBox(height: 14),
-              Text(action.description),
-              if (action.affinityLabel != null) ...[
-                const SizedBox(height: 12),
-                MongrooTag(
-                  label: weaknessHit
-                      ? '${action.affinityLabel} · 약점 일치 +7'
-                      : action.affinityLabel!,
-                  icon: _dockAffinityIcon(action.affinity ?? ''),
-                  backgroundColor:
-                      _dockAffinityColor(context, action.affinity ?? '')
-                          .withAlpha(42),
-                ),
+                if (action.affinityLabel != null &&
+                    action.elementLabel == null) ...[
+                  const SizedBox(height: 12),
+                  MongrooTag(
+                    label: weaknessHit
+                        ? '${action.affinityLabel} · 약점 일치 ×1.50'
+                        : action.affinityLabel!,
+                    icon: _dockAffinityIcon(action.affinity ?? ''),
+                    backgroundColor:
+                        _dockAffinityColor(context, action.affinity ?? '')
+                            .withAlpha(42),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _detailsOpen = false);
+        _scheduleAuto();
+      }
+    }
   }
 
   Future<void> _showBattleDiscovery() async {
@@ -524,10 +697,21 @@ class _ExpeditionSequentialCommandDockState
               Text(enemy.name, style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
               _DiscoverySheetLine(
-                icon: _dockAffinityIcon(enemy.weakness),
+                icon: enemy.weakElement != null
+                    ? _dockElementIcon(enemy.weakElement!)
+                    : _dockAffinityIcon(enemy.weakness),
                 title: '확인한 약점',
-                value: enemy.weaknessLabel,
+                value: enemy.weakKelLabel ??
+                    enemy.weakElementLabel ??
+                    enemy.weaknessLabel,
               ),
+              if (enemy.resistKelLabel ?? enemy.resistElementLabel
+                  case final resistance?)
+                _DiscoverySheetLine(
+                  icon: _dockElementIcon(enemy.resistElement ?? ''),
+                  title: '확인한 내성',
+                  value: resistance,
+                ),
               _DiscoverySheetLine(
                 icon: Icons.visibility_outlined,
                 title: '다음 행동',
@@ -564,12 +748,27 @@ class _ExpeditionSequentialCommandDockState
     final prompt = locked || actor == null
         ? '수호전이 진행되고 있어요…'
         : '${koreanTopic(actor.name)} 무엇을 할까요?';
+    Widget promptLine() => Semantics(
+          liveRegion: true,
+          child: Text(
+            prompt,
+            key: const ValueKey('seq-dock-prompt'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.w800),
+          ),
+        );
 
     return MongrooPanel(
       key: const ValueKey('seq-command-dock'),
       padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
       radius: 16,
+      color: scheme.surface.withAlpha(238),
       borderColor: scheme.error.withAlpha(85),
+      shadowOffset: const Offset(0, -3),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -597,8 +796,7 @@ class _ExpeditionSequentialCommandDockState
                         key: ValueKey('seq-member-${member.memberId}'),
                         member: member,
                         plant: _plantOf(member.memberId),
-                        isActor:
-                            !locked && member.memberId == actor?.memberId,
+                        isActor: !locked && member.memberId == actor?.memberId,
                         acted: battle.hasActed(member.memberId),
                         awaiting: _awaiting.any(
                           (item) => item.memberId == member.memberId,
@@ -619,52 +817,44 @@ class _ExpeditionSequentialCommandDockState
                     beads,
                     const SizedBox(height: 7),
                     chips,
+                    const SizedBox(height: 8),
+                    promptLine(),
                   ],
                 );
               }
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: beads,
+                  Row(
+                    children: [
+                      Expanded(child: promptLine()),
+                      const SizedBox(width: 8),
+                      beads,
+                    ],
                   ),
-                  const SizedBox(height: 7),
+                  const SizedBox(height: 6),
                   chips,
                 ],
               );
             },
           ),
-          const SizedBox(height: 8),
-          Semantics(
-            liveRegion: true,
-            child: Text(
-              prompt,
-              key: const ValueKey('seq-dock-prompt'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w800),
-            ),
-          ),
           const SizedBox(height: 6),
           if (actor != null)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (final actionCode in const ['attack', 'skill', 'guard']) ...[
-                  if (actionCode != 'attack') const SizedBox(width: 6),
-                  Expanded(
-                    child: _DockActionCard(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final wrap = constraints.maxWidth < 340 ||
+                    MediaQuery.textScalerOf(context).scale(1) >= 1.5;
+                final cards = [
+                  for (final actionCode in expeditionCombatActionOrder)
+                    _DockActionCard(
                       key: ValueKey('seq-dock-card-$actionCode'),
                       action: _actionFor(actor, actionCode),
                       actionCode: actionCode,
                       effectKey: _effectKeyFor(actor, actionCode),
                       weakness: actionCode != 'guard' &&
-                          _actionFor(actor, actionCode).affinity ==
-                              battle.enemy.weakness,
+                          _isWeak(_actionFor(actor, actionCode)),
+                      resistance: actionCode != 'guard' &&
+                          _isResisted(_actionFor(actor, actionCode)),
                       expectedDamage: _expectedDamage(actor, actionCode),
                       lockReason: _lockReason(actor, actionCode),
                       enabled:
@@ -673,9 +863,29 @@ class _ExpeditionSequentialCommandDockState
                       onLongPress: () =>
                           unawaited(_showActionDetails(actor, actionCode)),
                     ),
-                  ),
-                ],
-              ],
+                ];
+                if (wrap) {
+                  return GridView.count(
+                    key: const ValueKey('seq-dock-action-grid'),
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 6,
+                    crossAxisSpacing: 6,
+                    childAspectRatio: 1.65,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: cards,
+                  );
+                }
+                return Row(
+                  key: const ValueKey('seq-dock-action-row'),
+                  children: [
+                    for (var index = 0; index < cards.length; index++) ...[
+                      if (index > 0) const SizedBox(width: 6),
+                      Expanded(child: cards[index]),
+                    ],
+                  ],
+                );
+              },
             ),
         ],
       ),
@@ -696,10 +906,42 @@ class _IntentLine extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final intent = battle.enemy.intent;
     final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final weakLabel = battle.enemy.weakKelLabel ??
+        battle.enemy.weakElementLabel ??
+        battle.enemy.weaknessLabel;
+    final resistLabel =
+        battle.enemy.resistKelLabel ?? battle.enemy.resistElementLabel;
+    final matchupTag = MongrooTag(
+      label:
+          resistLabel == null ? '↑ $weakLabel' : '↑ $weakLabel  ↓ $resistLabel',
+      icon: _dockElementIcon(
+        battle.enemy.weakElement ?? battle.enemy.weakness,
+      ),
+      backgroundColor: _dockElementColor(
+        context,
+        battle.enemy.weakElement ?? battle.enemy.weakness,
+      ).withAlpha(38),
+      maxWidth: textScale >= 1.5 ? 180 : null,
+    );
+    final intentSummary = Row(
+      children: [
+        Icon(Icons.gps_fixed_rounded, size: 17, color: scheme.error),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            '${intent.name} · ${intent.targetLabel} · 위력 ${intent.power}',
+            maxLines: textScale >= 1.35 ? 2 : 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
+        ),
+      ],
+    );
     return Semantics(
       button: true,
-      label:
-          '적 의도 ${intent.name}, ${intent.targetLabel}, 위력 ${intent.power}. 약점 ${battle.enemy.weaknessLabel}. 눌러서 발견 정보 보기',
+      label: '적 의도 ${intent.name}, ${intent.targetLabel}, 위력 ${intent.power}. '
+          '약점 $weakLabel${resistLabel == null ? '' : ', 내성 $resistLabel'}. '
+          '눌러서 발견 정보 보기',
       child: Material(
         color: scheme.errorContainer.withAlpha(74),
         borderRadius: BorderRadius.circular(10),
@@ -709,28 +951,22 @@ class _IntentLine extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
-            child: Row(
-              children: [
-                Icon(Icons.gps_fixed_rounded, size: 17, color: scheme.error),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    '${intent.name} · ${intent.targetLabel} · 위력 ${intent.power}',
-                    maxLines: textScale >= 1.35 ? 2 : 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelMedium,
+            child: textScale >= 1.5
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      intentSummary,
+                      const SizedBox(height: 5),
+                      Align(alignment: Alignment.centerLeft, child: matchupTag),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(child: intentSummary),
+                      const SizedBox(width: 6),
+                      matchupTag,
+                    ],
                   ),
-                ),
-                const SizedBox(width: 6),
-                MongrooTag(
-                  label: '약점 ${battle.enemy.weaknessLabel}',
-                  icon: _dockAffinityIcon(battle.enemy.weakness),
-                  backgroundColor:
-                      _dockAffinityColor(context, battle.enemy.weakness)
-                          .withAlpha(38),
-                ),
-              ],
-            ),
           ),
         ),
       ),
@@ -816,9 +1052,8 @@ class _FocusBeads extends StatelessWidget {
                       ? palette.butter
                       : scheme.outlineVariant.withAlpha(90),
                   border: Border.all(
-                    color: index < focus
-                        ? palette.butter
-                        : scheme.outlineVariant,
+                    color:
+                        index < focus ? palette.butter : scheme.outlineVariant,
                   ),
                 ),
               ),
@@ -876,7 +1111,11 @@ class _DockMemberChip extends StatelessWidget {
       label:
           '${member.name}, 체력 ${member.hp}/${member.maxHp}, $statusLabel${targeted ? ', 적의 다음 공격 대상' : ''}',
       child: Opacity(
-        opacity: down ? .55 : acted ? .72 : 1,
+        opacity: down
+            ? .55
+            : acted
+                ? .72
+                : 1,
         child: Material(
           color: isActor ? scheme.primaryContainer : scheme.surface,
           shape: RoundedRectangleBorder(
@@ -949,9 +1188,8 @@ class _DockMemberChip extends StatelessWidget {
                           value: hp,
                           minHeight: 5,
                           borderRadius: BorderRadius.circular(99),
-                          color: hp > .35
-                              ? const Color(0xFF69B77B)
-                              : scheme.error,
+                          color:
+                              hp > .35 ? const Color(0xFF69B77B) : scheme.error,
                         ),
                       ),
                       if (member.guard > 0) ...[
@@ -982,13 +1220,14 @@ class _DockMemberChip extends StatelessWidget {
   }
 }
 
-class _DockActionCard extends StatelessWidget {
+class _DockActionCard extends StatefulWidget {
   const _DockActionCard({
     super.key,
     required this.action,
     required this.actionCode,
     required this.effectKey,
     required this.weakness,
+    required this.resistance,
     required this.expectedDamage,
     required this.lockReason,
     required this.enabled,
@@ -1000,6 +1239,7 @@ class _DockActionCard extends StatelessWidget {
   final String actionCode;
   final String effectKey;
   final bool weakness;
+  final bool resistance;
   final int expectedDamage;
   final String? lockReason;
   final bool enabled;
@@ -1007,96 +1247,164 @@ class _DockActionCard extends StatelessWidget {
   final VoidCallback onLongPress;
 
   @override
+  State<_DockActionCard> createState() => _DockActionCardState();
+}
+
+class _DockActionCardState extends State<_DockActionCard> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = _dockActionColor(context, actionCode);
-    final line = lockReason ??
-        switch (actionCode) {
-          'guard' => '방어 +${action.guard} · 집중 +${action.focusDelta}',
-          'skill' => weakness
-              ? '예상 $expectedDamage · 약점'
-              : '예상 $expectedDamage · 집중 -${action.focusCost}',
-          _ => weakness ? '예상 $expectedDamage · 약점' : '예상 $expectedDamage',
+    final color = _dockActionColor(context, widget.actionCode);
+    final line = widget.lockReason ??
+        switch (widget.actionCode) {
+          'guard' =>
+            '방어 +${widget.action.guard} · 집중 +${widget.action.focusDelta}',
+          'attack' => widget.weakness
+              ? '예상 ${widget.expectedDamage} · 약점'
+              : widget.resistance
+                  ? '예상 ${widget.expectedDamage} · 내성'
+                  : '예상 ${widget.expectedDamage} · 집중 +${widget.action.focusDelta}',
+          _ => widget.weakness
+              ? '예상 ${widget.expectedDamage} · 약점'
+              : widget.resistance
+                  ? '예상 ${widget.expectedDamage} · 내성'
+                  : '예상 ${widget.expectedDamage} · 집중 -${widget.action.focusCost}',
         };
     return Semantics(
       button: true,
-      enabled: enabled,
-      label:
-          '${action.name}, $line. 누르면 바로 행동해요. 길게 눌러 설명 보기',
-      child: Material(
-        color: lockReason != null
-            ? scheme.surfaceContainerHighest.withAlpha(140)
-            : scheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: weakness && lockReason == null
-                ? scheme.error
-                : scheme.outlineVariant,
-            width: weakness && lockReason == null ? 1.6 : 1,
+      enabled: widget.enabled,
+      label: '${widget.action.name}, $line. 탭하면 실행해요. 길게 누르면 상세 보기',
+      customSemanticsActions: {
+        CustomSemanticsAction(label: '상세 보기'): widget.onLongPress,
+      },
+      child: RawGestureDetector(
+        behavior: HitTestBehavior.opaque,
+        gestures: {
+          LongPressGestureRecognizer:
+              GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+            () => LongPressGestureRecognizer(
+              duration: expeditionSkillDetailHoldDuration,
+            ),
+            (recognizer) {
+              recognizer.onLongPress = widget.onLongPress;
+            },
           ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: enabled ? onPressed : null,
-          onLongPress: onLongPress,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 84),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              child: Opacity(
-                opacity: lockReason != null ? .58 : 1,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        _DockEffectThumbnail(effectKey: effectKey, size: 38),
-                        if (weakness && lockReason == null)
-                          Positioned(
-                            top: -4,
-                            right: -6,
-                            child: Icon(
-                              Icons.flash_on_rounded,
-                              size: 15,
-                              color: scheme.error,
-                            ),
+        },
+        child: AnimatedScale(
+          scale: widget.enabled && _pressed ? .96 : 1,
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOutCubic,
+          child: Material(
+            color: widget.lockReason != null
+                ? scheme.surfaceContainerHighest.withAlpha(210)
+                : scheme.surface.withAlpha(238),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: widget.weakness && widget.lockReason == null
+                    ? scheme.error
+                    : widget.resistance && widget.lockReason == null
+                        ? scheme.outline
+                        : scheme.outlineVariant,
+                width: (widget.weakness || widget.resistance) &&
+                        widget.lockReason == null
+                    ? 1.8
+                    : 1,
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: widget.enabled ? widget.onPressed : null,
+              onHighlightChanged: widget.enabled
+                  ? (value) => setState(() => _pressed = value)
+                  : null,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minWidth: 48,
+                  minHeight: 58,
+                ),
+                child: Opacity(
+                  opacity: widget.lockReason != null ? .58 : 1,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      ExcludeSemantics(
+                        child: _DockActionVisual(
+                          action: widget.action,
+                          actionCode: widget.actionCode,
+                          effectKey: widget.effectKey,
+                          color: color,
+                        ),
+                      ),
+                      if (widget.actionCode != 'attack' &&
+                          widget.actionCode != 'guard' &&
+                          widget.action.focusCost > 0)
+                        Positioned(
+                          top: 3,
+                          left: 3,
+                          child: _DockActionBadge(
+                            icon: Icons.bolt_rounded,
+                            label: '${widget.action.focusCost}',
+                            color: color,
                           ),
-                        if (lockReason != null)
-                          const Positioned(
-                            top: -4,
-                            right: -6,
-                            child: Icon(Icons.lock_outline_rounded, size: 15),
+                        ),
+                      if (widget.weakness && widget.lockReason == null)
+                        Positioned(
+                          top: 3,
+                          right: 3,
+                          child: Icon(
+                            Icons.arrow_upward_rounded,
+                            size: 17,
+                            color: scheme.error,
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      action.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.copyWith(fontWeight: FontWeight.w800),
-                    ),
-                    Text(
-                      line,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: lockReason != null
-                                ? scheme.onSurfaceVariant
-                                : weakness
-                                    ? scheme.error
-                                    : color,
-                            fontSize: 10,
+                        )
+                      else if (widget.resistance && widget.lockReason == null)
+                        Positioned(
+                          top: 3,
+                          right: 3,
+                          child: Icon(
+                            Icons.arrow_downward_rounded,
+                            size: 17,
+                            color: scheme.onSurfaceVariant,
                           ),
-                    ),
-                  ],
+                        )
+                      else if (widget.lockReason != null)
+                        Positioned(
+                          top: 3,
+                          right: 3,
+                          child: widget.action.cooldownRemaining > 0
+                              ? _DockActionBadge(
+                                  icon: Icons.timer_outlined,
+                                  label: '${widget.action.cooldownRemaining}',
+                                  color: scheme.onSurfaceVariant,
+                                )
+                              : Icon(
+                                  Icons.lock_outline_rounded,
+                                  size: 16,
+                                  color: scheme.onSurfaceVariant,
+                                ),
+                        ),
+                      if (widget.lockReason != null)
+                        Positioned(
+                          left: 2,
+                          right: 2,
+                          bottom: 2,
+                          child: Text(
+                            widget.lockReason!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            textScaler: TextScaler.noScaling,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(fontSize: 8, height: 1),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1105,6 +1413,98 @@ class _DockActionCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _DockActionVisual extends StatelessWidget {
+  const _DockActionVisual({
+    required this.action,
+    required this.actionCode,
+    required this.effectKey,
+    required this.color,
+    this.size = 44,
+  });
+
+  final ExpeditionBattleAction action;
+  final String actionCode;
+  final String effectKey;
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    if (actionCode == 'attack' || actionCode == 'guard') {
+      return Icon(
+        actionCode == 'guard'
+            ? Icons.shield_outlined
+            : Icons.sports_martial_arts_rounded,
+        size: size * .68,
+        color: color,
+      );
+    }
+    if (_dockSkillIconAssets[action.code] case final asset?) {
+      return SizedBox.square(
+        dimension: size,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(size * .25),
+            border: Border.all(color: Colors.white.withAlpha(34)),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(size * .25 - 1),
+            child: Image.asset(
+              asset,
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.medium,
+              excludeFromSemantics: true,
+            ),
+          ),
+        ),
+      );
+    }
+    return _DockEffectThumbnail(effectKey: effectKey, size: size);
+  }
+}
+
+class _DockActionBadge extends StatelessWidget {
+  const _DockActionBadge({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface.withAlpha(235),
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: [
+            BoxShadow(color: color.withAlpha(70), blurRadius: 3),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 9, color: color),
+              Text(
+                label,
+                textScaler: TextScaler.noScaling,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 9,
+                  height: 1,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
 }
 
 class _DockEffectThumbnail extends StatelessWidget {
@@ -1138,11 +1538,28 @@ class _DockEffectThumbnail extends StatelessWidget {
 Color _dockActionColor(BuildContext context, String action) {
   final scheme = Theme.of(context).colorScheme;
   return switch (action) {
-    'skill' => scheme.secondary,
+    'unique_1' || 'unique_2' => scheme.secondary,
+    'selected_1' || 'selected_2' => scheme.tertiary,
     'guard' => scheme.primary,
-    _ => scheme.tertiary,
+    _ => scheme.error,
   };
 }
+
+const _dockSkillIconAssets = <String, String>{
+  'sprout_cheer': 'assets/adventure/skill-icons/baby-pot/sprout-cheer-v1.webp',
+  'root_embrace': 'assets/adventure/skill-icons/baby-pot/root-embrace-v1.webp',
+  'sunny_warmth_share':
+      'assets/adventure/skill-icons/baby-pot/sunny-warmth-share-v1.webp',
+  'field_note_echo':
+      'assets/adventure/skill-icons/baby-pot/field-note-echo-v1.webp',
+  'heart_moon_charm':
+      'assets/adventure/skill-icons/gumiho-pot/heart-moon-charm-v1.webp',
+  'nine_tail_eclipse':
+      'assets/adventure/skill-icons/gumiho-pot/nine-tail-eclipse-v1.webp',
+  'venom_seam': 'assets/adventure/skill-icons/ninja-pot/venom-seam-v1.webp',
+  'shadow_execution':
+      'assets/adventure/skill-icons/ninja-pot/shadow-execution-v1.webp',
+};
 
 Color _dockAffinityColor(BuildContext context, String affinity) {
   final theme = Theme.of(context);
@@ -1156,6 +1573,39 @@ Color _dockAffinityColor(BuildContext context, String affinity) {
     _ => scheme.secondary,
   };
 }
+
+Color _dockElementColor(BuildContext context, String element) {
+  return switch (element) {
+    'fire' || 'strike' => const Color(0xFFD9553F),
+    'water' || 'ice' => const Color(0xFF3F7FBF),
+    'wind' => const Color(0xFF43A58D),
+    'lightning' => const Color(0xFFE1AD32),
+    'light' || 'heart' => const Color(0xFFD66591),
+    'steel' || 'force' => const Color(0xFF667585),
+    'poison' => const Color(0xFF7B4AA8),
+    'shadow' || 'moon' => const Color(0xFF625A9C),
+    'nature' => const Color(0xFF4E8A55),
+    _ => _dockAffinityColor(context, element).withAlpha(230),
+  };
+}
+
+IconData _dockElementIcon(String element) => switch (element) {
+      'fire' => Icons.local_fire_department_rounded,
+      'strike' => Icons.sports_martial_arts_rounded,
+      'water' => Icons.water_drop_outlined,
+      'ice' => Icons.ac_unit_rounded,
+      'wind' => Icons.air_rounded,
+      'lightning' => Icons.bolt_rounded,
+      'light' => Icons.wb_sunny_outlined,
+      'heart' => Icons.favorite_rounded,
+      'steel' => Icons.shield_outlined,
+      'force' => Icons.blur_circular_rounded,
+      'poison' => Icons.science_outlined,
+      'shadow' => Icons.brightness_2_outlined,
+      'moon' => Icons.nightlight_round,
+      'nature' => Icons.eco_outlined,
+      _ => _dockAffinityIcon(element),
+    };
 
 IconData _dockAffinityIcon(String affinity) => switch (affinity) {
       'care' => Icons.favorite_outline_rounded,

@@ -62,7 +62,7 @@ async def _action(
 
 
 async def _fight_guardian(client, headers: dict, run: dict, key_prefix: str) -> dict:
-    """테스트도 실제 클라이언트처럼 대원별 행동을 순서대로 예약한다."""
+    """실제 AUTO처럼 집중력·쿨타임·상성을 읽어 합법 행동을 예약한다."""
 
     turn = 1
     while (run.get("current_event") or {}).get("battle", {}).get("status") == "active":
@@ -72,13 +72,34 @@ async def _fight_guardian(client, headers: dict, run: dict, key_prefix: str) -> 
         for member in battle["party"]:
             if member["hp"] <= 0:
                 continue
-            skill_cost = member["kit"]["skill"]["focus_cost"]
-            if focus >= skill_cost:
-                action = "skill"
-                focus -= skill_cost
+            skills = [
+                *member["kit"].get("unique_skills", []),
+                *member["kit"].get("selected_skills", []),
+            ]
+            usable = [
+                skill
+                for skill in skills
+                if skill.get("available", True)
+                and int(skill.get("cooldown_remaining", 0)) == 0
+                and int(skill.get("focus_cost", 0)) <= focus
+            ]
+            if usable:
+                chosen = max(
+                    usable,
+                    key=lambda skill: (
+                        skill.get("matchup") == "weak",
+                        int(skill.get("power", 0)),
+                        -int(skill.get("focus_cost", 0)),
+                    ),
+                )
+                action = chosen["slot"]
+                focus -= int(chosen.get("focus_cost", 0))
             else:
                 action = "attack"
-                focus = min(battle["max_focus"], focus + 1)
+                focus = min(
+                    battle["max_focus"],
+                    focus + int(member["kit"]["basic"].get("focus_delta", 1)),
+                )
             commands.append({"member_id": member["member_id"], "action": action})
         run = await _action(
             client,
@@ -434,7 +455,7 @@ async def test_species_signature_skill_uses_its_own_name_and_effect(
     }
     assert (
         run["current_event"]["battle"]["party"][0]["kit"]["skill"]["name"]
-        == "온기 지휘"
+        == "지휘검 일섬"
     )
 
 
@@ -671,9 +692,7 @@ async def test_guardian_accepts_sequential_partial_commands(
         f"/adventure/expeditions/{run['run']['id']}/combat/turns",
         headers=headers,
         json={
-            "commands": [
-                {"member_id": living[0]["member_id"], "action": "attack"}
-            ],
+            "commands": [{"member_id": living[0]["member_id"], "action": "attack"}],
             "partial": True,
             "expected_revision": run["run"]["revision"],
             "client_action_id": "manual-partial-0001",
@@ -698,9 +717,7 @@ async def test_guardian_accepts_sequential_partial_commands(
             f"/adventure/expeditions/{run['run']['id']}/combat/turns",
             headers=headers,
             json={
-                "commands": [
-                    {"member_id": member["member_id"], "action": "attack"}
-                ],
+                "commands": [{"member_id": member["member_id"], "action": "attack"}],
                 "partial": True,
                 "expected_revision": revision,
                 "client_action_id": f"manual-partial-{index:04d}",
@@ -715,8 +732,7 @@ async def test_guardian_accepts_sequential_partial_commands(
     assert final_battle["round"] == 2
     assert final_battle["pending_round"]["acted"] == []
     assert any(
-        event["type"] == "enemy_action"
-        for event in payload["last_combat_exchange"]
+        event["type"] == "enemy_action" for event in payload["last_combat_exchange"]
     )
 
 

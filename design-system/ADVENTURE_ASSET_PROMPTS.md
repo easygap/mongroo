@@ -447,7 +447,83 @@ Materials/textures: rough living bark, worn matte wood, aged stone, brushed mute
 Constraints: no people, no characters, no creatures, no readable text, no letters, no numbers, no logos, no UI, no watermark; believable safe conservatory construction; large simple shapes; the living tree must look healthy and naturally integrated, not imprisoned or cut.
 Avoid: photorealism, fantasy throne room, boss arena, horror, skulls, weapons, treasure piles, neon, glowing tree, magical runes, floating particles, excessive flowers, excessive gold, ornate filigree, galaxy effects, glossy plastic, dramatic cinematic fog, perfect symmetry.
 ```
+
+## 전투 중심 모험 화면 v1 — ImageGen 시각 기준안
+
+- 생성 방식: 내장 ImageGen, 프로젝트 소유 배경 1장·캐릭터 3명·수호자 1종을 역할별
+  참조로 사용
+- 출력:
+  `design-system/concepts/adventure-combat-first-v1/combat-first-visual-target-v1.png`
+- 실제 규격: 864×1821 RGB PNG(390×844 논리 화면에 가까운 세로 비율)
+- 출력 SHA-256:
+  `DA92DAB816C6BDD4D01DF9333AE619465DA498350F660B92A85F96B9750C29F7`
+- 전체 프롬프트·입력 역할·승인/비승인 범위:
+  `design-system/concepts/adventure-combat-first-v1/README.md`
+
+이 이미지는 `한 카메라·한 바닥`, 세 캐릭터와 수호자의 동시 가시성, 세로 화면 약 76%의
+전장, 상단 진행 rail, 하단 반투명 스킬 dock, 뽀또 손에서 수호자까지 실제로 이어지는 덩굴
+비행 경로를 한 장에서 검토하기 위해 만들었다. 화면 안에는 설명문·가짜 한글·던전 카드·
+별도 지도 패널을 요청하지 않았다.
+
+승인 대상은 **배치·시선 순서·깊이·공격 경로**뿐이다. 생성 결과의 캐릭터 pose, 크기,
+스킬 아이콘 그림, HP bar, stage glyph, 배경 픽셀은 production 에셋이 아니다. PNG에서
+아이콘·캐릭터·배경을 잘라 쓰거나 한 장의 raster HUD로 앱에 넣지 않는다. 실제 제작은
+배경 pass, actor action, VFX keyframe, UI semantic layer를 각각 분리하고
+`EXPEDITION_ASSET_PRODUCTION.md`의 alpha·blend·contact QA를 통과해야 한다.
+
+## 스킬 아이콘 v1 — ImageGen 도색 master
+
+대상은 고유 스킬 60개(20 family×3tier), 감정 스킬 6개, 기록서 36개로 총 102개다.
+기본 공격·지키기·AUTO·잠금·비용은 생성형 그림이 아니라 semantic vector와 런타임
+overlay를 사용한다. 한 호출에는 아이콘 하나만 만들며, 서로 다른 스킬을 grid·여러
+패널·`n` 변형으로 한꺼번에 생성한 뒤 잘라 쓰지 않는다.
+
+공통 프롬프트 골격:
+
+```text
+Use case: stylized-concept
+Asset type: one production mobile RPG skill icon for {family_code}, {tier_or_base}
+Input images: Image 1 is the exact approved Mongroo skill-icon style board. Image 2 is the exact
+{character|emotion-family|skill-book} motif reference. Image 3 is the previous approved icon for
+this same family and is included only when creating T2 or T3; preserve its identity, not its pixels.
+Primary request: paint one instantly readable icon for {skill_name}: {single_dominant_motif} performing
+{clear_action_verb}. Keep one motif and one direction of motion; this must still read at 48 px.
+Scene/backdrop: a restrained full-bleed square vignette that supports the motif and is part of the
+painting, with no separate UI frame, no landscape, and no transparent checkerboard.
+Composition: 1024x1024 square master, one dominant motif occupying 58 to 72 percent of the canvas,
+at least 12 percent safe margin on every side, centered visual weight, strong silhouette, no cropping.
+Style/medium: Mongroo premium 2.5D storybook mobile-game icon, warm dark-brown ink contours,
+matte gouache and cel-painted volume, broad clean shapes, restrained paper texture, one primary
+family color, one secondary accent, soft cream highlight, top-left key light.
+Tier continuity: {T1 establishes the motif | T2 keeps the silhouette and adds one authored motif layer |
+T3 keeps the family identity and adds one decisive finishing shape}. Do not express tier by brightness alone.
+Constraints: exactly one icon painting; no text, letters, numbers, skill name, tier number, pips, border,
+button chrome, rarity frame, cost badge, cooldown, lock, UI, logo, watermark, full-body character,
+face portrait, battlefield scene, multiple panels, or neighboring icon.
+Avoid: generic elemental orb, generic magic circle, neon bloom, lens flare, glossy 3D emblem,
+photorealism, ornate gold, tiny particles, noisy foliage, low-contrast silhouette, palette swap of
+another skill, fake typography, cropped motif.
+```
+
+제작·검수 순서는 다음으로 고정한다.
+
+1. T1·감정·기록서 최초 아이콘은 Image 1 스타일 보드와 Image 2 모티프만 참조한다.
+2. 같은 고유 family의 T2·T3는 직전 승인본을 Image 3으로 넣어 실루엣·방향·핵심 사물을
+   잠그고, 새 모티프 한 층만 추가한다. 이전 tier와 단순 색상 차이만 나면 반려한다.
+3. 생성 결과를 `$CODEX_HOME/generated_images/`에 방치하지 않고 승인 즉시
+   `design-system/concepts/character-skill-vfx-v1/icons/sources/`로 복사한다.
+4. prompt 원문, 입력 이미지 역할·hash, 출력 source hash, 승인자, tier parent를 manifest에
+   기록한 뒤 사람 paint-over와 색상 정리를 수행한다.
+5. full-bleed 아이콘에는 alpha를 만들지 않는다. cutout 예외만 평면 chroma 원본과
+   `remove_chroma_key.py` soft matte·despill 절차를 사용한다.
+6. 128·64·48·32px, 흑백·저채도, 밝고 어두운 전장 6종 위에서 확인한다. 48px에서
+   1초 안에 주모티프와 다른 장착 스킬을 구분할 수 있어야 승인한다.
+
 ## 탐험 전투 공격 VFX v1
+
+> **prototype 기록.** 아래 2×4 일괄 생성 방식과 공용 `enemy_wave`는 2026-08-10부터
+> 정식 제작에 쓰지 않는다. 생성 ID 재현·비교용으로만 보존하며 v2 계약은 다음 절을
+> 따른다.
 
 - 생성 방식: 내장 ImageGen, 참조 이미지 기반 2×4 접촉 시트
 - 소스·프롬프트·후처리 계약:
@@ -458,3 +534,72 @@ Avoid: photorealism, fantasy throne room, boss arena, horror, skulls, weapons, t
 
 전투 중 공격 모양은 위 래스터 프레임만 사용한다. 캔버스 코드는 바닥 명암과
 입력 전 예고 범위처럼 에셋 정체성을 갖지 않는 보조 UI에만 허용한다.
+
+## 탐험 전투 공격 VFX v2 — 단계별 투명 키프레임
+
+한 요청에는 family 하나의 keyframe 하나만 만든다. 먼저
+`design-system/EXPEDITION_ASSET_PRODUCTION.md` 7.3.1의 model sheet를 승인하고,
+`anticipation → travel_mid → first_contact → max_impact → fade` 순서로 진행한다.
+두 번째 호출부터는 model sheet·프로젝트 스타일 참조와 **직전 승인 프레임**을 함께
+참조한다. 완성 sprite sheet, 여러 칸, 여러 프레임, 캐릭터와 공격 합성 화면을 한 번에
+요청하지 않는다.
+
+공통 프롬프트 골격:
+
+```text
+Use case: stylized-concept
+Asset type: production 2D game VFX keyframe for {family_code}, stage {anticipation|travel_mid|first_contact|max_impact|fade}
+Input images: Image 1 is the project style reference; Image 2 is the approved family model sheet;
+Image 3 is the previous approved keyframe and must be omitted only for the first keyframe.
+Primary request: Draw only the same {attack_object} at the requested next moment.
+Preserve exactly: main silhouette identity, {part_count}, main body thickness {px_range},
+warm dark-brown outline thickness, upper-left light direction, {palette}, origin-facing direction.
+Motion state: {stage_specific_shape_change}. The object must read as one continuous attack
+that can travel from {origin_anchor} to {target_anchor}.
+Scene/backdrop: one perfectly flat solid {key_color} chroma-key field for local background removal.
+Use #FF00FF for green subjects and #00FF00 otherwise; the selected key color must not occur in the subject.
+Composition: one effect object, centered with safe padding, no cropping, no floor perspective.
+Constraints: the background is one uniform color with no shadow, gradient, texture, reflection,
+floor plane, or lighting variation; crisp padded silhouette; no cast shadow or contact shadow.
+Avoid: character, monster, hand, weapon holder, scenery, UI, text, number, border, panel,
+checkerboard, watermark, glow beam, lens flare, grain, micro-particle spray, neighboring frame,
+or any use of {key_color} inside the attack object.
+```
+
+단계별 지시는 다음 의미만 바꾼다.
+
+| 단계 | 모양 변화 | 금지 |
+|---|---|---|
+| `anticipation` | origin 가까이 말리거나 응축, 발사 방향이 읽힘 | 이미 화면 중앙까지 뻗은 본체 |
+| `travel_mid` | 같은 본체가 50% 지점까지 펴지거나 이동, 부품 수 유지 | impact 파편·타깃 흔적 |
+| `first_contact` | 선단만 타깃을 감싸거나 처음 부딪힘 | 최대 폭발·본체 소멸 |
+| `max_impact` | 승인된 접촉점에서 가장 큰 타격 형태, 파편 수 상한 준수 | 전면 백색 섬광·무관한 새 문양 |
+| `fade` | 같은 부품이 풀리거나 작아져 회수, silhouette의 흔적 유지 | 다른 물체로 변형·갑자기 빈 프레임 |
+
+- 플레이어 고유 20종, 감정 전투 6종, 기록서 모듈 12종, 일반 엉킴 8종,
+  큰 엉킴 8종, 수호짐승 8종의 62 family가 같은 절차를 쓴다.
+- 적 공격 프롬프트도 품질·투명도·연속성 기준이 동일하다. `enemy_wave`라는 공용
+  파동을 이름·색만 바꿔 생성하지 않는다.
+- ImageGen 결과는 승인 keyframe일 뿐 runtime frame이 아니다. 2D animator가
+  in-between을 만들고 테크니컬 아트가 alpha·pivot·anchor·contact event를 검수한
+  뒤에만 `production_ready:true`가 된다.
+- 내장 ImageGen 산출물은
+  `$CODEX_HOME/skills/.system/imagegen/scripts/remove_chroma_key.py`의 soft matte·despill
+  경로로 alpha PNG로 변환한다. 네 모서리 투명·key fringe 0·외곽선 보존을 확인하기
+  전에는 해당 family의 RGBA master로 승격하지 않는다. ImageGen 배경이 단색 지시와 달리
+  명도 기울기를 가져 기본 soft matte가 본체까지 반투명하게 만들면, v2 빌더의 채널 분리·
+  1px core 수축·RGB dilation·0.75px feather를 사용하고 light/dark QA를 다시 통과해야 한다.
+  반투명 연기·유리·액체처럼 chroma 제거가 부적합한 family만 제작 책임자의 명시적 승인 뒤
+  true-alpha CLI fallback을 검토한다.
+
+### 2026-08-10 v2 production candidate
+
+- 제작 기록·ImageGen ID·재현 prompt:
+  `concepts/adventure-combat-vfx-v2/README.md`
+- 기계 판정·source/alpha/runtime hash:
+  `concepts/adventure-combat-vfx-v2/manifest.json`
+- 플레이어: `care_vines`, 단일 pose 원본 10장 → 576×288 alpha WebP 10장.
+- 적: 돌비늘 장부지기 `ledger_claw`, 단일 pose 원본 10장 → 576×288 alpha WebP 10장.
+- 두 family 모두 코드 생성 공격 픽셀은 0이며 light/dark contact sheet를 통과했다.
+- 실제 기기 합성, actor attack/hit, contact SFX·햅틱, profile 전에는
+  `production_ready:false`다. `record_wave`·`seal_crush`는 아직 기존 prototype fallback이다.

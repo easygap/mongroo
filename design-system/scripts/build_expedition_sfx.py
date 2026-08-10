@@ -125,6 +125,14 @@ def build(output_root: Path) -> None:
             (_tone(0.35, 247, 147, harmonics=((1, 1), (2, 0.12))), 0.56, 0.14),
             (_noise(0.22, seed=79, decay=3.8), 0.16, 0.04),
         ),
+        "story-postcard.wav": _mix(
+            # 마른 종이 봉인이 갈라지는 짧은 질감 뒤, 길이 완성되는 세 음을
+            # 남긴다. 전투 승리음과 다른 음역이라 귀환 장면의 의미를 구분한다.
+            (_noise(0.14, seed=101, decay=5.2), 0.20, 0),
+            (_tone(0.24, 392, 523, harmonics=((1, 1), (2, 0.10))), 0.46, 0.08),
+            (_tone(0.30, 523, 659, harmonics=((1, 1), (2, 0.08))), 0.42, 0.20),
+            (_tone(0.38, 659, 784, harmonics=((1, 1), (2, 0.06))), 0.36, 0.34),
+        ),
     }
     for filename, samples in sounds.items():
         _write(output_root / filename, samples)

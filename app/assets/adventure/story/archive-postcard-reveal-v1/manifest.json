@@ -1,0 +1,112 @@
+{
+  "asset_key": "archive_postcard_reveal_v1",
+  "source": "design-system/concepts/adventure-story-reveal-v1/postcard-reveal-transparent-v3.png",
+  "frame_count": 6,
+  "frame_size": [
+    512,
+    512
+  ],
+  "timing_ms": [
+    150,
+    150,
+    150,
+    170,
+    190,
+    420
+  ],
+  "story_cue_frame": 3,
+  "reveal_cue_frame": 5,
+  "reduced_motion_frame": 5,
+  "frames": [
+    {
+      "index": 0,
+      "file": "frame-00.webp",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_bounds": [
+        67,
+        129,
+        473,
+        451
+      ],
+      "visible_ratio": 0.3561
+    },
+    {
+      "index": 1,
+      "file": "frame-01.webp",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_bounds": [
+        54,
+        132,
+        460,
+        453
+      ],
+      "visible_ratio": 0.3555
+    },
+    {
+      "index": 2,
+      "file": "frame-02.webp",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_bounds": [
+        36,
+        132,
+        443,
+        453
+      ],
+      "visible_ratio": 0.3563
+    },
+    {
+      "index": 3,
+      "file": "frame-03.webp",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_bounds": [
+        60,
+        52,
+        475,
+        361
+      ],
+      "visible_ratio": 0.3671
+    },
+    {
+      "index": 4,
+      "file": "frame-04.webp",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_bounds": [
+        14,
+        44,
+        512,
+        370
+      ],
+      "visible_ratio": 0.4246
+    },
+    {
+      "index": 5,
+      "file": "frame-05.webp",
+      "canvas": [
+        512,
+        512
+      ],
+      "alpha_bounds": [
+        0,
+        37,
+        466,
+        391
+      ],
+      "visible_ratio": 0.4956
+    }
+  ]
+}

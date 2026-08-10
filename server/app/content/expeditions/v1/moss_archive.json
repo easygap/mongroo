@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "content_version": "2026.08.4",
+  "content_version": "2026.08.10",
   "region": {
     "code": "moss_archive",
     "name": "이끼 기억서고",
     "short_name": "기억서고",
-    "description": "젖은 표찰과 뿌리 목록 사이에서 잊힌 마음의 기록을 찾아가는 첫 탐험지예요.",
+    "description": "숨 쉬는 장부와 새벽 우편의 흔적을 따라, 끊긴 온실 밖 길을 되찾는 첫 던전이에요.",
     "recommended_stage": 2,
     "stat_cap": 7,
     "reward": {"exp": 6, "seeds": 2, "item_code": "moss_key"}
@@ -18,7 +18,16 @@
       "summary": "입구 선반에서 장부 뭉치가 엉켜 길을 반쯤 막고 있어요.",
       "estimated_seconds": 75,
       "tangles": ["tangled_ledger"],
-      "weakness": "insight"
+      "weakness": "insight",
+      "story": {
+        "code": "archive_first_golden_thread",
+        "chapter": 1,
+        "phase": "setup",
+        "title": "장부 끝의 금빛 실",
+        "caption": "풀려난 장부의 마지막 장에서, 이 서고의 것이 아닌 금빛 실 한 가닥이 다음 서가를 가리켜요.",
+        "scene_key": "dungeon_gate",
+        "codex_entry": "archive.clue.golden_thread"
+      }
     },
     {
       "no": 2,
@@ -26,7 +35,16 @@
       "title": "번진 이름들",
       "summary": "젖은 표찰의 글자를 어떤 방식으로 되살릴지 골라요.",
       "estimated_seconds": 45,
-      "event_code": "wet_label_order"
+      "event_code": "wet_label_order",
+      "story": {
+        "code": "archive_address_without_name",
+        "chapter": 2,
+        "phase": "setup",
+        "title": "이름 없는 받는 이",
+        "caption": "되살린 표찰은 한 이름이 아니라 ‘마음정원의 친구들 앞으로’라는 오래된 주소였어요.",
+        "scene_key": "flooded_cave",
+        "codex_entry": "archive.clue.shared_address"
+      }
     },
     {
       "no": 3,
@@ -35,7 +53,16 @@
       "summary": "말린 꽃잎 표본이 바람에 흩어져 떼로 떠다녀요.",
       "estimated_seconds": 100,
       "tangles": ["tangled_ledger", "drifting_pressings"],
-      "weakness": "insight"
+      "weakness": "insight",
+      "story": {
+        "code": "archive_foreign_petal",
+        "chapter": 3,
+        "phase": "rising",
+        "title": "도감에 없는 꽃잎",
+        "caption": "압화 사이에서 이 온실 도감에 없는 금빛 꽃잎이 나와요. 누군가 바깥에서 우편을 보낸 흔적이에요.",
+        "scene_key": "treasure_vault",
+        "codex_entry": "archive.clue.foreign_petal"
+      }
     },
     {
       "no": 4,
@@ -45,14 +72,34 @@
       "summary": "선반 세 칸이 통째로 엉켜 큰 매듭이 됐어요.",
       "estimated_seconds": 130,
       "tangles": ["shelf_snarl"],
-      "weakness": "courage"
+      "weakness": "courage",
+      "story": {
+        "code": "archive_dawn_route_postcard",
+        "chapter": 4,
+        "phase": "turn",
+        "title": "새벽길 우편",
+        "caption": "큰 매듭 안에서 마른 우편이 깨어나요. 봉인 아래의 금빛 길은 우물정원을 거쳐 온실 밖 문으로 이어져요.",
+        "scene_key": "treasure_vault",
+        "visual_asset": "archive_postcard_reveal_v1",
+        "audio_cue": "story_postcard_reveal",
+        "codex_entry": "archive.artifact.dawn_route_postcard"
+      }
     },
     {
       "no": 5,
       "kind": "camp",
       "title": "메아리 우물 쉼터",
       "summary": "물가에 앉아 숨을 고르고 오늘 본 것을 이야기해요.",
-      "estimated_seconds": 30
+      "estimated_seconds": 30,
+      "story": {
+        "code": "archive_two_knocks",
+        "chapter": 5,
+        "phase": "rising",
+        "title": "한 박자 늦은 두 번의 노크",
+        "caption": "우편을 물가에 놓자 우물 아래에서 두 번의 노크가 돌아와요. 바깥의 누군가도 아직 답장을 기다리고 있어요.",
+        "scene_key": "echo_well",
+        "codex_entry": "archive.clue.two_knocks"
+      }
     },
     {
       "no": 6,
@@ -60,7 +107,16 @@
       "title": "엉킨 뿌리 목록",
       "summary": "뿌리 사이에 끼인 목록을 어떻게 꺼낼지 골라요.",
       "estimated_seconds": 50,
-      "event_code": "root_catalogue"
+      "event_code": "root_catalogue",
+      "story": {
+        "code": "archive_librarian_confession",
+        "chapter": 6,
+        "phase": "truth",
+        "title": "사서가 닫아 둔 길",
+        "caption": "뿌리 사서는 오래전 백지바람이 주소를 지우자, 잘못 배달될까 두려워 우편길을 닫았다고 털어놓아요.",
+        "scene_key": "root_tunnel",
+        "codex_entry": "archive.record.blankwind_protocol"
+      }
     },
     {
       "no": 7,
@@ -69,7 +125,16 @@
       "summary": "여러 엉킴이 한자리에 모여 마지막 길목을 지켜요.",
       "estimated_seconds": 130,
       "tangles": ["drifting_pressings", "shelf_snarl"],
-      "weakness": "care"
+      "weakness": "care",
+      "story": {
+        "code": "archive_shared_ledger",
+        "chapter": 7,
+        "phase": "climax",
+        "title": "혼자 들 수 없는 장부",
+        "caption": "탐험대가 장부의 네 귀퉁이를 함께 들자 빈 주소가 다시 나타나요. 마지막 확인은 장부지기가 품고 있어요.",
+        "scene_key": "moon_tower",
+        "codex_entry": "archive.record.four_corner_witness"
+      }
     },
     {
       "no": 8,
@@ -78,7 +143,18 @@
       "summary": "분류하지 못한 기억 장부를 꼭 끌어안은 채 길을 막고 있어요.",
       "estimated_seconds": 150,
       "event_code": "ledger_keeper",
-      "weakness": "care"
+      "weakness": "care",
+      "story": {
+        "code": "archive_route_reopened",
+        "chapter": 8,
+        "phase": "resolution",
+        "title": "답장이 향할 첫 길",
+        "caption": "장부지기가 품을 열자 우편의 길이 완성돼요. 첫 목적지는 메아리 우물정원—이제 답장을 보낼 차례예요.",
+        "scene_key": "monster_den",
+        "visual_asset": "archive_postcard_reveal_v1",
+        "audio_cue": "story_postcard_reveal",
+        "codex_entry": "archive.route.echo_well"
+      }
     }
   ],
   "map": {
@@ -175,6 +251,8 @@
         "max_rounds": 6,
         "starting_focus": 3,
         "max_focus": 5,
+        "weak_element": "water",
+        "resist_element": "steel",
         "weakness_cycle": ["insight", "care", "courage", "focus"],
         "intents": [
           {

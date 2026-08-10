@@ -24,6 +24,7 @@ class ExpeditionActionCue {
     required this.combat,
     this.weaknessHit = false,
     this.combatResult,
+    this.motionProfile,
   });
 
   final int id;
@@ -41,6 +42,7 @@ class ExpeditionActionCue {
   final ExpeditionCombatFeedback? combat;
   final bool weaknessHit;
   final String? combatResult;
+  final String? motionProfile;
 
   bool get isGuardianExchange => combat?.kind == 'guardian';
   bool get isCombatRound =>
@@ -52,6 +54,11 @@ class ExpeditionActionCue {
   bool get playsEnemyAttack =>
       kind == ExpeditionActionCueKind.combatEnemy ||
       (kind == ExpeditionActionCueKind.resolution && isGuardianExchange);
+  String get enemyEffectKey {
+    if (kind == ExpeditionActionCueKind.combatEnemy) return effectKey;
+    return combat?.attackName == '장부 발톱' ? 'ledger_claw' : 'enemy_wave';
+  }
+
   bool get dealsGuardianDamage =>
       playsPartyAttack && (combat?.guardDamage ?? 0) > 0;
   bool get isTerminalCombatOutcome => combatResult != null;
@@ -144,6 +151,7 @@ class ExpeditionActionCue {
         effectKey:
             event.effectKey ?? (enemyAction ? 'enemy_wave' : 'echo_wave'),
       ),
+      motionProfile: event.motionProfile,
     );
   }
 }
@@ -154,7 +162,8 @@ String _skillEffectKey(ExpeditionMember member, ExpeditionSkill skill) {
   if (code.contains('magical') || code.contains('sparkling')) {
     return 'prism_burst';
   }
-  if (code.contains('ninja') || code.contains('rainy')) return 'mist_dash';
+  if (code.contains('venom') || code.contains('ninja')) return 'venom_seam';
+  if (code.contains('rainy')) return 'mist_dash';
   if (code.contains('moonlit') || code.contains('aloof')) {
     return 'insight_arc';
   }

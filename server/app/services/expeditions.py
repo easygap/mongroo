@@ -55,7 +55,7 @@ from app.models.reward import RewardEvent
 from app.services import game as game_service
 from app.services import rewards
 from app.services.adventure import ITEMS, character_stats
-from app.services.plants import growth_state_payload, stage_from_exp
+from app.services.plants import growth_state_payload, level_from_exp, stage_from_exp
 
 
 _CONTENT_PATH = (
@@ -99,7 +99,10 @@ def select_map_template(
 
 
 def _base_map_node(
-    content: dict[str, Any], *, event_code: str | None = None, node_type: str | None = None
+    content: dict[str, Any],
+    *,
+    event_code: str | None = None,
+    node_type: str | None = None,
 ) -> dict[str, Any] | None:
     """기본 지도에서 장면 정보를 빌려 올 노드를 찾는다."""
 
@@ -243,6 +246,9 @@ def _plant_snapshot(
         "name": plant.name,
         "status": plant.status,
         "species": {"code": species.code, "name": species.name},
+        "exp": int(plant.exp),
+        "level": level_from_exp(plant.exp),
+        "rarity": int(species.rarity),
         "stage": stage,
         "form": form,
         "stats": effective_stats,
@@ -261,6 +267,9 @@ def _guide_snapshot(position: int, *, stat_cap: int | None = None) -> dict:
         "plant_id": None,
         "name": "기록 안내자" if position == 0 else f"기록 안내자 {position + 1}",
         "species": {"code": "archive_guide", "name": "서고 안내자"},
+        "exp": 250,
+        "level": 16,
+        "rarity": 1,
         "stage": 2,
         "form": "mosaic",
         "stats": effective_stats,
@@ -1339,9 +1348,10 @@ async def choose(
     )
     if state is None or event is None or choice is None:
         raise AppError(422, "EXPEDITION_CHOICE_INVALID", "선택지를 찾을 수 없습니다.")
-    if isinstance(event.get("encounter"), dict) and event["encounter"].get(
-        "kind"
-    ) == "guardian":
+    if (
+        isinstance(event.get("encounter"), dict)
+        and event["encounter"].get("kind") == "guardian"
+    ):
         raise AppError(
             409,
             "EXPEDITION_COMBAT_COMMAND_REQUIRED",
@@ -1543,14 +1553,10 @@ async def resolve_combat_turn(
             "last_exchange", []
         )
         party_actions = [
-            item
-            for item in round_events
-            if item.get("type") == "party_action"
+            item for item in round_events if item.get("type") == "party_action"
         ]
         actor_names = list(
-            dict.fromkeys(
-                item.get("actor_name", "탐험대원") for item in party_actions
-            )
+            dict.fromkeys(item.get("actor_name", "탐험대원") for item in party_actions)
         )
         resolve_before = run.resolve
         victory = resolved["status"] == "victory"
@@ -1571,8 +1577,7 @@ async def resolve_combat_turn(
                 if victory
                 else "봉인이 완성돼 긴급 귀환했어요"
             ),
-            "score": int(resolved["enemy_max_guard"])
-            - int(resolved["enemy_guard"]),
+            "score": int(resolved["enemy_max_guard"]) - int(resolved["enemy_guard"]),
             "stat": resolved.get("weakness"),
             "actor_name": ", ".join(actor_names) or "탐험대",
             "resolve_before": resolve_before,
@@ -1965,6 +1970,26 @@ async def _record_stage_clear(db: AsyncSession, run: ExpeditionRun) -> dict | No
     }
 
 
+def _stage_story_cue(run: ExpeditionRun, stage_progress: dict | None) -> dict | None:
+    """Return the authored first-clear beat; replays never interrupt with it."""
+
+    if run.stage_no is None or not stage_progress or not stage_progress["first_clear"]:
+        return None
+    content = load_content()
+    stage = next(
+        (item for item in content["stages"] if int(item["no"]) == run.stage_no),
+        None,
+    )
+    if stage is None or not isinstance(stage.get("story"), dict):
+        return None
+    return {
+        **stage["story"],
+        "region_code": run.region_code,
+        "stage_no": run.stage_no,
+        "first_clear": True,
+    }
+
+
 async def _record_completion_progress(
     db: AsyncSession, run: ExpeditionRun
 ) -> dict[str, Any]:
@@ -2115,9 +2140,7 @@ async def extract(
             "EXPEDITION_OBJECTIVE_REQUIRED",
             "탐험 목표를 확보한 뒤 귀환할 수 있습니다.",
         )
-    if run.stage_no is None and _node_defs(run)[run.current_node_code][
-        "type"
-    ] not in (
+    if run.stage_no is None and _node_defs(run)[run.current_node_code]["type"] not in (
         "exit",
         "camp",
         "entrance",
@@ -2181,6 +2204,7 @@ async def extract(
             loot.disposition = "granted"
             loot.granted_at = utcnow()
     completion_progress = await _record_completion_progress(db, run)
+    story_cue = _stage_story_cue(run, completion_progress.get("stage"))
     run.status = "completed"
     run.completed_at = utcnow()
     run.summary_snapshot = {
@@ -2189,6 +2213,7 @@ async def extract(
         "memory_count": len(run.run_memory_snapshot.get("outcomes", [])),
         "objective_secured": True,
         "progress": completion_progress,
+        "story_cue": story_cue,
         "return_scene": await _return_scene(db, run),
     }
     await db.execute(

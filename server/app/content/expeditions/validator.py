@@ -31,6 +31,9 @@ ALLOWED_COMBAT_EFFECT_KEYS = {"insight_arc", "care_vines", "safe_guard"}
 STAGE_COUNT = 8
 ALLOWED_STAGE_KINDS = {"battle", "event", "camp", "boss"}
 STAGE_KIND_COUNTS = {"battle": 4, "event": 2, "camp": 1, "boss": 1}
+ALLOWED_STORY_PHASES = {"setup", "rising", "turn", "truth", "climax", "resolution"}
+ALLOWED_STORY_ASSETS = {"archive_postcard_reveal_v1"}
+ALLOWED_STORY_AUDIO_CUES = {"story_postcard_reveal"}
 
 
 class ContentValidationError(ValueError):
@@ -147,6 +150,7 @@ def _validate_stages(
 
     region_code = (content.get("region") or {}).get("code")
     kind_counts: dict[str, int] = {}
+    story_codes: set[str] = set()
     for index, stage in enumerate(stages):
         prefix = f"stages[{index}]"
         if not isinstance(stage, dict):
@@ -189,6 +193,13 @@ def _validate_stages(
         weakness = stage.get("weakness")
         if weakness is not None and weakness not in ALLOWED_STATS:
             errors.append(f"{prefix}.weakness: {sorted(ALLOWED_STATS)} 중 하나여야 합니다")
+        _validate_stage_story(
+            stage.get("story"),
+            expected_chapter=index + 1,
+            prefix=f"{prefix}.story",
+            seen_codes=story_codes,
+            errors=errors,
+        )
 
     for kind, expected in STAGE_KIND_COUNTS.items():
         if kind_counts.get(kind, 0) != expected:
@@ -198,6 +209,50 @@ def _validate_stages(
             )
     if stages and stages[-1].get("kind") != "boss":
         errors.append("stages: 마지막 스테이지는 수호짐승 보스여야 합니다")
+
+
+def _validate_stage_story(
+    story: Any,
+    *,
+    expected_chapter: int,
+    prefix: str,
+    seen_codes: set[str],
+    errors: list[str],
+) -> None:
+    """최초 클리어 컷을 짧고 결정적인 한 장면으로 유지한다."""
+
+    if not isinstance(story, dict):
+        errors.append(f"{prefix}: 최초 클리어 이야기 객체가 필요합니다")
+        return
+    code = story.get("code")
+    if not isinstance(code, str) or not code.strip():
+        errors.append(f"{prefix}.code: 값이 필요합니다")
+    elif code in seen_codes:
+        errors.append(f"{prefix}.code: {code}가 중복됩니다")
+    else:
+        seen_codes.add(code)
+    if story.get("chapter") != expected_chapter:
+        errors.append(f"{prefix}.chapter: {expected_chapter}이어야 합니다")
+    if story.get("phase") not in ALLOWED_STORY_PHASES:
+        errors.append(
+            f"{prefix}.phase: {sorted(ALLOWED_STORY_PHASES)} 중 하나여야 합니다"
+        )
+    for key, limit in (("title", 28), ("caption", 100), ("codex_entry", 80)):
+        value = story.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"{prefix}.{key}: 비어 있지 않은 문장이 필요합니다")
+        elif len(value) > limit:
+            errors.append(f"{prefix}.{key}: {limit}자 이하여야 합니다")
+    if story.get("scene_key") not in ALLOWED_SCENE_KEYS:
+        errors.append(f"{prefix}.scene_key: 지원하지 않는 장면입니다")
+    visual_asset = story.get("visual_asset")
+    if visual_asset is not None and visual_asset not in ALLOWED_STORY_ASSETS:
+        errors.append(f"{prefix}.visual_asset: 지원하지 않는 스토리 에셋입니다")
+    audio_cue = story.get("audio_cue")
+    if audio_cue is not None and audio_cue not in ALLOWED_STORY_AUDIO_CUES:
+        errors.append(f"{prefix}.audio_cue: 지원하지 않는 오디오 cue입니다")
+    if audio_cue is not None and visual_asset is None:
+        errors.append(f"{prefix}: 오디오 cue는 검수된 시각 에셋과 함께 써야 합니다")
 
 
 def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:

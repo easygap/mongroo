@@ -25,6 +25,40 @@ from app.models.plant import Plant
 # 첫 기록에서 새싹을 보고 기록 중심 이용자도 약 3주 안에 만개하도록 조정한다.
 STAGE_THRESHOLDS = [0, 20, 100, 250, 450]
 HARVEST_EXP = STAGE_THRESHOLDS[-1]
+# 전투 레벨은 외형 성장 5단계보다 촘촘한 1~30 성장 보상 축이다.
+# 인덱스가 레벨-1이고 값은 그 레벨에 진입하는 누적 EXP다.
+LEVEL_EXP_THRESHOLDS = [
+    0,
+    10,
+    20,
+    35,
+    50,
+    65,
+    80,
+    90,
+    100,
+    120,
+    140,
+    160,
+    185,
+    210,
+    230,
+    250,
+    280,
+    310,
+    340,
+    370,
+    400,
+    425,
+    450,
+    500,
+    550,
+    610,
+    670,
+    740,
+    815,
+    900,
+]
 STAGE_NAMES = {1: "씨앗", 2: "새싹", 3: "줄기", 4: "개화", 5: "만개"}
 MUSEUM_MAX_FEATURED = 10
 
@@ -276,6 +310,18 @@ def stage_from_exp(exp: int) -> int:
         if exp >= threshold:
             stage = i
     return stage
+
+
+def level_from_exp(exp: int) -> int:
+    """누적 EXP를 1~30 전투 레벨로 바꾼다."""
+
+    level = 1
+    for index, threshold in enumerate(LEVEL_EXP_THRESHOLDS, start=1):
+        if exp >= threshold:
+            level = index
+        else:
+            break
+    return level
 
 
 def next_stage_exp(exp: int) -> int | None:

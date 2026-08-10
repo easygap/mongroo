@@ -178,7 +178,10 @@ class ExpeditionSkillRequest(ExpeditionActionRequest):
 
 class ExpeditionCombatCommand(BaseModel):
     member_id: int = Field(ge=1)
-    action: str = Field(pattern="^(attack|skill|guard)$")
+    # skill은 저장 중인 구버전 run/앱을 위한 unique_1 alias다.
+    action: str = Field(
+        pattern="^(attack|skill|unique_1|unique_2|selected_1|selected_2|guard)$"
+    )
 
 
 class ExpeditionCombatTurnRequest(ExpeditionActionRequest):

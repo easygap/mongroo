@@ -26,16 +26,6 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
             .firstOrNull ??
         expedition.party.firstOrNull;
 
-    final stage = _ImmersiveBattleStage(
-      node: node,
-      expedition: expedition,
-      actor: actor,
-      cue: state.actionCue,
-      paceScale: settings.pace.toDouble(),
-      shortEffects: settings.shortEffects,
-      onCueCompleted:
-          ref.read(expeditionControllerProvider.notifier).clearActionCue,
-    );
     final Widget commandDock = kSequentialCommandDock
         ? ExpeditionSequentialCommandDock(
             expedition: expedition,
@@ -56,6 +46,22 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final compactHud = constraints.maxWidth < 820;
+        final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.5;
+        final mobileDockHeight =
+            largeText || constraints.maxWidth < 340 ? 300.0 : 238.0;
+        final stage = _ImmersiveBattleStage(
+          node: node,
+          expedition: expedition,
+          actor: actor,
+          cue: state.actionCue,
+          paceScale: settings.pace.toDouble(),
+          shortEffects: settings.shortEffects,
+          audioEnabled: settings.audioEnabled,
+          bottomHudInset: compactHud ? mobileDockHeight - 12 : 0,
+          onCueCompleted:
+              ref.read(expeditionControllerProvider.notifier).clearActionCue,
+        );
         if (constraints.maxWidth >= 820) {
           return Padding(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
@@ -87,19 +93,37 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
           );
         }
 
+        final scheme = Theme.of(context).colorScheme;
         return Padding(
-          padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-          child: Column(
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 6),
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              topBar,
-              const SizedBox(height: 4),
-              Expanded(flex: 56, child: stage),
-              const SizedBox(height: 7),
-              Flexible(
-                flex: 44,
-                child: SingleChildScrollView(
-                  key: const ValueKey('immersive-combat-command-scroll'),
-                  child: commandDock,
+              stage,
+              Positioned(
+                top: 4,
+                left: 6,
+                right: 6,
+                child: MongrooPanel(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  radius: 14,
+                  color: scheme.surface.withAlpha(232),
+                  shadowOffset: const Offset(0, 2),
+                  child: topBar,
+                ),
+              ),
+              Positioned(
+                left: 6,
+                right: 6,
+                bottom: 4,
+                height: mobileDockHeight,
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: SingleChildScrollView(
+                    key: const ValueKey('immersive-combat-command-scroll'),
+                    reverse: true,
+                    child: commandDock,
+                  ),
                 ),
               ),
             ],
@@ -118,6 +142,8 @@ class _ImmersiveBattleStage extends StatelessWidget {
     required this.cue,
     required this.paceScale,
     required this.shortEffects,
+    required this.audioEnabled,
+    required this.bottomHudInset,
     required this.onCueCompleted,
   });
 
@@ -127,6 +153,8 @@ class _ImmersiveBattleStage extends StatelessWidget {
   final ExpeditionActionCue? cue;
   final double paceScale;
   final bool shortEffects;
+  final bool audioEnabled;
+  final double bottomHudInset;
   final VoidCallback onCueCompleted;
 
   @override
@@ -150,6 +178,8 @@ class _ImmersiveBattleStage extends StatelessWidget {
           cue: cue,
           paceScale: paceScale,
           shortEffects: shortEffects,
+          audioEnabled: audioEnabled,
+          bottomHudInset: bottomHudInset,
           onCueCompleted: onCueCompleted,
         ),
       ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +15,7 @@ import 'expedition_controller.dart';
 import 'expedition_battle_dock.dart';
 import 'expedition_battle_panel.dart';
 import 'expedition_combat_overlay.dart';
+import 'expedition_combat_audio.dart';
 import 'expedition_scene.dart';
 import 'moss_archive_scene.dart';
 
@@ -55,6 +58,8 @@ class ExpeditionScreen extends ConsumerWidget {
     final expedition = shell.expedition;
     final notifier = ref.read(expeditionControllerProvider.notifier);
     final title = expedition?.region.name ?? '함께 떠나는 모험';
+    final immersiveCombat = expedition?.run.isActive == true &&
+        expedition?.currentEvent?.battle != null;
     // 허브 안쪽 화면에서는 시스템 뒤로가기가 화면을 닫지 않고 한 단계만 돌아간다.
     final canPopShell =
         expedition != null || shell.shellView == ExpeditionShellView.hub;
@@ -64,20 +69,22 @@ class ExpeditionScreen extends ConsumerWidget {
         if (!didPop) notifier.goBackInShell();
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(title),
-          actions: [
-            if (expedition?.run.mode == 'tutorial' &&
-                expedition?.run.isActive == true)
-              IconButton(
-                onPressed: notifier.replayTutorialHelp,
-                tooltip: '현재 조작 도움말 다시 보기',
-                icon: const Icon(Icons.help_outline_rounded),
+        appBar: immersiveCombat
+            ? null
+            : AppBar(
+                title: Text(title),
+                actions: [
+                  if (expedition?.run.mode == 'tutorial' &&
+                      expedition?.run.isActive == true)
+                    IconButton(
+                      onPressed: notifier.replayTutorialHelp,
+                      tooltip: '현재 조작 도움말 다시 보기',
+                      icon: const Icon(Icons.help_outline_rounded),
+                    ),
+                ],
               ),
-          ],
-        ),
         body: SafeArea(
-          top: false,
+          top: immersiveCombat,
           child: shell.loading
               ? const Center(child: CircularProgressIndicator())
               : expedition != null

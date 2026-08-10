@@ -34,6 +34,7 @@ app/android/key.properties
 # local QA artifacts
 .playwright-cli/
 .playwright-mcp/
+tmp/
 output/
 server/output/
 server/.pytest-tmp-*/

@@ -4,11 +4,20 @@ import pytest
 
 from app.content.expeditions.combat import (
     CombatRuleError,
+    SPECIES_SECONDARY_SKILLS,
     SPECIES_SKILLS,
     guardian_battle_payload,
+    member_battle_kit,
     new_guardian_battle,
     resolve_guardian_round,
     submit_guardian_action,
+)
+from app.content.expeditions.combat_identity import (
+    ELEMENT_KEL,
+    EMOTION_DISCIPLINES,
+    FUSION_LAYER_PROFILES,
+    KEL_LABELS,
+    validate_combat_identity_catalog,
 )
 
 
@@ -19,6 +28,8 @@ def _profile(
     species: str,
     form: str,
     stats: dict[str, int],
+    level: int = 25,
+    rarity: int = 1,
 ) -> dict:
     return {
         "id": member_id,
@@ -28,6 +39,9 @@ def _profile(
             "name": name,
             "species": {"code": species},
             "form": form,
+            "level": level,
+            "rarity": rarity,
+            "stage": 5,
             "stats": stats,
         },
     }
@@ -155,11 +169,10 @@ def test_first_command_also_changes_the_front_target(profiles):
     )
 
     counter = next(
-        event
-        for event in resolved["last_exchange"]
-        if event["type"] == "enemy_action"
+        event for event in resolved["last_exchange"] if event["type"] == "enemy_action"
     )
     assert counter["targets"][0]["member_id"] == 2
+    assert counter["effect_key"] == "ledger_claw"
     assert [member["member_id"] for member in resolved["party"]] == [2, 1]
 
 
@@ -177,9 +190,7 @@ def test_breaking_the_guard_ends_the_battle_before_the_counter(profiles):
 
     assert resolved["status"] == "victory"
     assert resolved["enemy_guard"] == 0
-    assert all(
-        event["type"] != "enemy_action" for event in resolved["last_exchange"]
-    )
+    assert all(event["type"] != "enemy_action" for event in resolved["last_exchange"])
 
 
 def test_round_limit_creates_a_real_defeat_state(profiles):
@@ -214,7 +225,11 @@ def test_payload_exposes_every_species_unique_manual_skill(profiles):
         "student-pot",
     }
     assert expected_species <= set(SPECIES_SKILLS)
+    assert expected_species <= set(SPECIES_SECONDARY_SKILLS)
     assert len({SPECIES_SKILLS[code]["code"] for code in expected_species}) == 10
+    assert (
+        len({SPECIES_SECONDARY_SKILLS[code]["code"] for code in expected_species}) == 10
+    )
 
     payload = guardian_battle_payload(
         new_guardian_battle("keeper", _encounter(), profiles),
@@ -222,7 +237,59 @@ def test_payload_exposes_every_species_unique_manual_skill(profiles):
         profiles,
     )
     assert payload["enemy"]["intent"]["target"] == "front"
-    assert payload["party"][0]["kit"]["skill"]["name"] == "그림자 틈베기"
+    assert payload["party"][0]["kit"]["skill"]["name"] == "맹독 틈베기"
+    assert payload["party"][0]["kit"]["skill"]["effect_key"] == "venom_seam"
+
+    action = submit_guardian_action(
+        new_guardian_battle("keeper", _encounter(), profiles),
+        {"member_id": 1, "action": "skill"},
+        _encounter(),
+        profiles,
+    )["last_exchange"][0]
+    assert action["motion_profile"] == "ninja-pot.venom-draw"
+
+
+def test_combat_kit_v6_exposes_and_resolves_all_six_fixed_slots(profiles):
+    encounter = _encounter(starting_focus=5, enemy_max_guard=500)
+    payload = guardian_battle_payload(
+        new_guardian_battle("keeper", encounter, profiles),
+        encounter,
+        profiles,
+    )
+    kit = payload["party"][0]["kit"]
+    assert kit["version"] == 6
+    assert [skill["slot"] for skill in kit["unique_skills"]] == [
+        "unique_1",
+        "unique_2",
+    ]
+    assert [skill["slot"] for skill in kit["selected_skills"]] == [
+        "selected_1",
+        "selected_2",
+    ]
+
+    for action in (
+        "attack",
+        "unique_1",
+        "unique_2",
+        "selected_1",
+        "selected_2",
+        "guard",
+    ):
+        resolved = submit_guardian_action(
+            new_guardian_battle("keeper", encounter, profiles),
+            {"member_id": 1, "action": action},
+            encounter,
+            profiles,
+        )
+        assert resolved["last_exchange"][0]["action"] == action
+
+    legacy = submit_guardian_action(
+        new_guardian_battle("keeper", encounter, profiles),
+        {"member_id": 1, "action": "skill"},
+        encounter,
+        profiles,
+    )
+    assert legacy["last_exchange"][0]["action"] == "unique_1"
 
 
 def _submit_round(battle, commands, encounter, profiles):
@@ -314,9 +381,7 @@ def test_partial_action_returns_only_new_events(profiles):
     after_first = submit_guardian_action(
         battle, {"member_id": 2, "action": "attack"}, encounter, profiles
     )
-    assert [event["type"] for event in after_first["last_exchange"]] == [
-        "party_action"
-    ]
+    assert [event["type"] for event in after_first["last_exchange"]] == ["party_action"]
     assert after_first["status"] == "active"
     assert after_first["round"] == 1
     assert after_first["pending"]["acted"] == [2]
@@ -384,9 +449,7 @@ def test_partial_victory_ends_round_without_enemy_action(profiles):
         battle, {"member_id": 1, "action": "attack"}, encounter, profiles
     )
     assert resolved["status"] == "victory"
-    assert all(
-        event["type"] != "enemy_action" for event in resolved["last_exchange"]
-    )
+    assert all(event["type"] != "enemy_action" for event in resolved["last_exchange"])
     assert resolved["pending"] is None
 
 
@@ -400,9 +463,7 @@ def test_partial_front_target_follows_action_order(profiles):
         state, {"member_id": 1, "action": "attack"}, encounter, profiles
     )
     counter = next(
-        event
-        for event in state["last_exchange"]
-        if event["type"] == "enemy_action"
+        event for event in state["last_exchange"] if event["type"] == "enemy_action"
     )
     assert counter["targets"][0]["member_id"] == 2
     assert [member["member_id"] for member in state["party"]] == [2, 1]
@@ -444,7 +505,9 @@ def test_wave_battle_starts_from_the_first_tangle(profiles):
     battle = new_guardian_battle("stage_wave_3", encounter, profiles)
 
     assert battle["enemy_kind"] == "tangle"
-    assert battle["enemy_guard"] == 34
+    assert battle["enemy_guard"] == 42
+    assert battle["growth_index"] == 83
+    assert battle["barrier_scale_bp"] == 12_433
     assert battle["max_rounds"] == 8
     # 첫 웨이브의 약점 순환과 등장 문구를 그대로 쓴다.
     assert battle["weakness"] == "insight"
@@ -456,11 +519,33 @@ def test_wave_battle_starts_from_the_first_tangle(profiles):
     assert payload["wave"] == {"index": 1, "count": 2, "name": "엉킨 장부 뭉치"}
 
 
+def test_early_levels_do_not_scale_enemy_barrier_before_power_rounding_moves():
+    early_profiles = [
+        _profile(
+            1,
+            name="초기 대원",
+            species="baby-pot",
+            form="sunny",
+            stats={"care": 4, "focus": 4, "courage": 4, "insight": 4},
+            level=3,
+        )
+    ]
+    battle = new_guardian_battle(
+        "early_guardian",
+        {"kind": "guardian", "enemy_max_guard": 100},
+        early_profiles,
+    )
+
+    assert battle["growth_index"] == 7
+    assert battle["barrier_scale_bp"] == 10_000
+    assert battle["enemy_guard"] == 100
+
+
 def test_clearing_a_wave_ends_the_round_and_brings_the_next_tangle(profiles):
     encounter = _wave_encounter(["tangled_ledger", "drifting_pressings"])
     battle = new_guardian_battle("stage_wave_3", encounter, profiles)
 
-    # 그림자 틈베기: 18 + 관찰 7 = 25, 약점 +7, 약점 관통 +6 = 38 ≥ 34.
+    # 맹독 틈베기는 불 약점 엉킴에 중립이고, 안내자의 강철 공격이 마무리한다.
     resolved = resolve_guardian_round(
         battle,
         [
@@ -472,19 +557,24 @@ def test_clearing_a_wave_ends_the_round_and_brings_the_next_tangle(profiles):
     )
 
     types = [event["type"] for event in resolved["last_exchange"]]
-    assert types == ["party_action", "wave_cleared", "wave_intro"]
+    assert types == [
+        "party_action",
+        "party_action",
+        "wave_cleared",
+        "wave_intro",
+    ]
     # 웨이브가 풀리면 그 라운드는 끝난다 — 남은 대원 차례도, 적 예고 공격도 없다.
     assert resolved["status"] == "active"
     assert resolved["wave_index"] == 1
-    assert resolved["enemy_guard"] == 36
+    assert resolved["enemy_guard"] == 45
     assert resolved["round"] == 2
     assert resolved["weakness"] == "care"
     assert resolved["pending"] is None
-    # 집중력은 웨이브를 넘어 이어진다. 3 - 스킬 2 = 1.
-    assert resolved["focus"] == 1
-    cleared = resolved["last_exchange"][1]
+    # 집중력은 웨이브를 넘어 이어진다. 3 - 스킬 2 + 기본 공격 1 = 2.
+    assert resolved["focus"] == 2
+    cleared = resolved["last_exchange"][2]
     assert cleared["caption"] == "엉킨 장부가 스르르 풀려 제자리 서가로 돌아갔어요."
-    intro = resolved["last_exchange"][2]
+    intro = resolved["last_exchange"][3]
     assert intro["enemy_name"] == "표류 압화 떼"
 
     payload = guardian_battle_payload(resolved, encounter, profiles)
@@ -509,9 +599,7 @@ def test_final_wave_release_becomes_the_victory_caption(profiles):
     outcome = resolved["last_exchange"][-1]
     assert outcome["type"] == "outcome"
     assert outcome["caption"] == "엉킨 장부가 스르르 풀려 제자리 서가로 돌아갔어요."
-    assert all(
-        event["type"] != "enemy_action" for event in resolved["last_exchange"]
-    )
+    assert all(event["type"] != "enemy_action" for event in resolved["last_exchange"])
 
 
 def test_sequential_wave_battle_matches_batch_exactly(profiles):
@@ -539,8 +627,7 @@ def test_sequential_wave_battle_matches_batch_exactly(profiles):
             command
             for command in commands
             if any(
-                member["member_id"] == command["member_id"]
-                and member["hp"] > 0
+                member["member_id"] == command["member_id"] and member["hp"] > 0
                 for member in batch["party"]
             )
         ]
@@ -578,3 +665,343 @@ def test_wave_round_budget_is_shared_across_waves(profiles):
 
     assert resolved["status"] == "defeat"
     assert resolved["defeat_reason"] == "seal_completed"
+
+
+def test_identity_catalog_separates_species_fantasy_from_emotion_material():
+    validate_combat_identity_catalog()
+
+    assert {
+        SPECIES_SKILLS["gumiho-pot"]["element"],
+        SPECIES_SECONDARY_SKILLS["gumiho-pot"]["element"],
+    } == {"heart", "moon"}
+    assert {
+        SPECIES_SKILLS["ninja-pot"]["element"],
+        SPECIES_SECONDARY_SKILLS["ninja-pot"]["element"],
+    } == {"poison", "shadow"}
+    assert EMOTION_DISCIPLINES["ember"]["primary_element"] == "fire"
+    assert EMOTION_DISCIPLINES["rainy"]["primary_element"] == "water"
+    assert EMOTION_DISCIPLINES["mosaic"]["primary_element"] == "steel"
+    for form, discipline in EMOTION_DISCIPLINES.items():
+        assert ELEMENT_KEL[discipline["primary_element"]] == form
+        assert ELEMENT_KEL[discipline["secondary_element"]] == form
+
+    generic_plant_words = ("잎", "뿌리", "덩굴", "꽃잎", "새싹")
+    for species in set(SPECIES_SKILLS) - {"baby-pot", "archive_guide"}:
+        text = " ".join(
+            (
+                SPECIES_SKILLS[species]["name"],
+                SPECIES_SKILLS[species]["description"],
+                SPECIES_SECONDARY_SKILLS[species]["name"],
+                SPECIES_SECONDARY_SKILLS[species]["description"],
+            )
+        )
+        assert not any(word in text for word in generic_plant_words)
+
+
+def test_all_signature_elements_map_to_six_learnable_growth_kels():
+    signature_elements = {
+        skill["element"]
+        for catalog in (SPECIES_SKILLS, SPECIES_SECONDARY_SKILLS)
+        for species, skill in catalog.items()
+        if species != "archive_guide"
+    }
+    assert signature_elements <= set(ELEMENT_KEL)
+    assert {ELEMENT_KEL[element] for element in signature_elements} <= set(KEL_LABELS)
+    assert set(ELEMENT_KEL.values()) == set(KEL_LABELS)
+
+
+def test_signature_growth_uses_level_tier_rarity_curve_and_emotion_fusion():
+    stats = {"care": 4, "focus": 5, "courage": 6, "insight": 7}
+    low_common = member_battle_kit(
+        _profile(
+            1,
+            name="여우",
+            species="gumiho-pot",
+            form="ember",
+            stats=stats,
+            level=1,
+            rarity=1,
+        )
+    )
+    low_rare = member_battle_kit(
+        _profile(
+            1,
+            name="여우",
+            species="gumiho-pot",
+            form="ember",
+            stats=stats,
+            level=1,
+            rarity=5,
+        )
+    )
+    grown_common = member_battle_kit(
+        _profile(
+            1,
+            name="여우",
+            species="gumiho-pot",
+            form="ember",
+            stats=stats,
+            level=30,
+            rarity=1,
+        )
+    )
+    grown_rare = member_battle_kit(
+        _profile(
+            1,
+            name="여우",
+            species="gumiho-pot",
+            form="ember",
+            stats=stats,
+            level=30,
+            rarity=5,
+        )
+    )
+
+    assert low_rare["signature_scale_bp"] < low_common["signature_scale_bp"]
+    assert grown_rare["signature_scale_bp"] > grown_common["signature_scale_bp"]
+    assert grown_rare["signature_tier"] == 3
+    assert low_rare["unique_skills"][0]["fusion_variant"] is None
+    assert low_rare["unique_skills"][0]["fusion_vfx_family"] is None
+    assert grown_rare["unique_skills"][0]["elements"] == ["heart", "fire"]
+    assert grown_rare["unique_skills"][1]["elements"] == ["moon", "fire"]
+    assert (
+        grown_rare["unique_skills"][0]["fusion_variant"]
+        == "gumiho-pot.ember.unique_1.t3"
+    )
+    assert (
+        grown_rare["unique_skills"][0]["fusion_vfx_family"]
+        == FUSION_LAYER_PROFILES["ember"]["vfx_family"]
+    )
+    assert (
+        grown_rare["unique_skills"][0]["power"] > low_rare["unique_skills"][0]["power"]
+    )
+
+
+def test_all_character_emotion_t3_fusion_variants_are_unique_and_complete():
+    stats = {"care": 4, "focus": 5, "courage": 6, "insight": 7}
+    variants = set()
+    for species, form in itertools.product(
+        sorted(set(SPECIES_SKILLS) - {"archive_guide"}),
+        sorted(EMOTION_DISCIPLINES),
+    ):
+        kit = member_battle_kit(
+            _profile(
+                1,
+                name="융합 검수",
+                species=species,
+                form=form,
+                stats=stats,
+                level=25,
+            )
+        )
+        for skill in kit["unique_skills"]:
+            assert (
+                skill["fusion_vfx_family"] == FUSION_LAYER_PROFILES[form]["vfx_family"]
+            )
+            assert skill["fusion_production_ready"] is False
+            variants.add(skill["fusion_variant"])
+
+    assert len(variants) == 10 * 6 * 2
+
+
+@pytest.mark.parametrize("level", [3, 16, 30])
+def test_matchup_multiplier_keeps_same_weight_across_level_bands(level):
+    profile = _profile(
+        1,
+        name="여우",
+        species="gumiho-pot",
+        form="sparkling",
+        stats={"care": 4, "focus": 5, "courage": 6, "insight": 7},
+        level=level,
+        rarity=3,
+    )
+    neutral = member_battle_kit(profile)["unique_skills"][0]
+    weak = member_battle_kit(
+        profile,
+        current_weak_element="light",
+        current_resist_element="water",
+    )["unique_skills"][0]
+    resisted = member_battle_kit(
+        profile,
+        current_weak_element="water",
+        current_resist_element="light",
+    )["unique_skills"][0]
+
+    assert weak["matchup_bp"] == 15_000
+    assert resisted["matchup_bp"] == 6_000
+    assert abs(weak["power"] / neutral["power"] - 1.5) <= 0.05
+    assert abs(resisted["power"] / neutral["power"] - 0.6) <= 0.05
+
+
+def test_tier_power_keeps_signature_cooldown_floor_and_level_unlocks_slots():
+    stats = {"care": 4, "focus": 5, "courage": 6, "insight": 7}
+    level_15 = member_battle_kit(
+        _profile(
+            1,
+            name="닌자",
+            species="ninja-pot",
+            form="moonlit",
+            stats=stats,
+            level=15,
+        )
+    )
+    level_16 = member_battle_kit(
+        _profile(
+            1,
+            name="닌자",
+            species="ninja-pot",
+            form="moonlit",
+            stats=stats,
+            level=16,
+        )
+    )
+    level_3 = member_battle_kit(
+        _profile(
+            1,
+            name="닌자",
+            species="ninja-pot",
+            form="moonlit",
+            stats=stats,
+            level=3,
+        )
+    )
+    level_25 = member_battle_kit(
+        _profile(
+            1,
+            name="닌자",
+            species="ninja-pot",
+            form="moonlit",
+            stats=stats,
+            level=25,
+        )
+    )
+
+    assert level_15["unique_skills"][0]["cooldown_turns"] == 1
+    assert level_16["unique_skills"][0]["cooldown_turns"] == 1
+    assert level_16["unique_skills"][0]["tier_power_bp"] == 11_000
+    assert level_25["unique_skills"][0]["cooldown_turns"] == 1
+    assert level_25["unique_skills"][1]["cooldown_turns"] == 2
+    assert level_3["unique_skills"][0]["available"] is True
+    assert level_3["selected_skills"][0]["available"] is False
+    assert level_3["selected_skills"][1]["available"] is False
+
+
+def test_server_cooldown_blocks_next_round_then_releases():
+    stats = {"care": 4, "focus": 5, "courage": 6, "insight": 7}
+    cooldown_profiles = [
+        _profile(
+            1,
+            name="닌자",
+            species="ninja-pot",
+            form="moonlit",
+            stats=stats,
+            level=3,
+        ),
+        _profile(
+            2,
+            name="안내자",
+            species="archive_guide",
+            form="mosaic",
+            stats=stats,
+            level=25,
+        ),
+    ]
+    encounter = _encounter(
+        starting_focus=5,
+        enemy_max_guard=500,
+        max_rounds=6,
+    )
+    state = resolve_guardian_round(
+        new_guardian_battle("keeper", encounter, cooldown_profiles),
+        [
+            {"member_id": 1, "action": "unique_1"},
+            {"member_id": 2, "action": "guard"},
+        ],
+        encounter,
+        cooldown_profiles,
+    )
+    payload = guardian_battle_payload(state, encounter, cooldown_profiles)
+    assert payload["party"][0]["kit"]["unique_skills"][0]["cooldown_remaining"] == 1
+
+    with pytest.raises(CombatRuleError) as error:
+        submit_guardian_action(
+            state,
+            {"member_id": 1, "action": "unique_1"},
+            encounter,
+            cooldown_profiles,
+        )
+    assert error.value.code == "EXPEDITION_COMBAT_COOLDOWN"
+
+    state = resolve_guardian_round(
+        state,
+        [
+            {"member_id": 1, "action": "attack"},
+            {"member_id": 2, "action": "guard"},
+        ],
+        encounter,
+        cooldown_profiles,
+    )
+    payload = guardian_battle_payload(state, encounter, cooldown_profiles)
+    assert payload["party"][0]["kit"]["unique_skills"][0]["cooldown_remaining"] == 0
+
+
+def test_element_weakness_and_resistance_are_applied_server_side():
+    stats = {"care": 4, "focus": 5, "courage": 6, "insight": 7}
+    ninja = _profile(
+        1,
+        name="닌자",
+        species="ninja-pot",
+        form="moonlit",
+        stats=stats,
+        level=25,
+    )
+    guide = _profile(
+        2,
+        name="안내자",
+        species="archive_guide",
+        form="mosaic",
+        stats=stats,
+        level=25,
+    )
+    encounter = _encounter(
+        starting_focus=5,
+        enemy_max_guard=500,
+        weak_element="poison",
+        resist_element="steel",
+    )
+    battle = new_guardian_battle("keeper", encounter, [ninja, guide])
+    kit = member_battle_kit(ninja, current_weak_element="poison")
+    state = submit_guardian_action(
+        battle,
+        {"member_id": 1, "action": "unique_1"},
+        encounter,
+        [ninja, guide],
+    )
+    event = state["last_exchange"][0]
+    assert event["matchup"] == "weak"
+    assert event["weakness_hit"] is True
+    assert event["damage"] == kit["unique_skills"][0]["power"]
+    assert event["damage"] > kit["unique_skills"][0]["power_neutral"]
+
+    steel_encounter = _encounter(
+        starting_focus=5,
+        enemy_max_guard=500,
+        weak_element="water",
+        resist_element="steel",
+    )
+    steel_kit = member_battle_kit(
+        guide,
+        current_weak_element="water",
+        current_resist_element="steel",
+    )
+    state = submit_guardian_action(
+        new_guardian_battle("keeper", steel_encounter, [guide]),
+        {"member_id": 2, "action": "attack"},
+        steel_encounter,
+        [guide],
+    )
+    event = state["last_exchange"][0]
+    assert event["matchup"] == "resist"
+    assert event["resistance_hit"] is True
+    assert event["damage"] == steel_kit["basic"]["power"]
+    assert event["damage"] < steel_kit["basic"]["power_neutral"]

@@ -1,0 +1,223 @@
+{
+  "version": 1,
+  "source_policy": "one reviewed ImageGen source per visible pose",
+  "code_generated_attack_pixels": false,
+  "effects": {
+    "venom_seam": {
+      "effect_key": "venom_seam",
+      "runtime_directory": "venom-seam-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "origin": "actor_hand_r",
+      "target": "guardian_center",
+      "release_frame": 1,
+      "travel_frames": [
+        2,
+        3
+      ],
+      "contact_frames": [
+        4
+      ],
+      "reaction_frame": 5,
+      "recovery_frames": [
+        6
+      ],
+      "production_candidate": true,
+      "production_ready": false,
+      "alpha_source": "imagegen_skill_remove_chroma_key",
+      "source_sha256": {
+        "pose-00-anticipation-chroma.png": "3013FEA1210BF0F0AE07CE0AC17FD5168B8786C2F710C723C69A706D1C89DFC2",
+        "pose-01-release-chroma.png": "DB6BF1240B3EA0FEE8F5366144E7D3B7BE2BE730216E819A41A05D1D20694CBD",
+        "pose-02-travel-chroma.png": "D48B8F369360E85E9A7B1292A20ED00D3736ACE6BB1598BE2C0A34A45F427F29",
+        "pose-03-precontact-chroma.png": "7858DF920FCC1DD8485775E5A70B67DCADC93BE65A219D4C95E8A88785AEBCE7",
+        "pose-04-contact-chroma.png": "3D46C1F7475C6EF7A6333194F21F82002879989D6CEF00CC6763337059C46120",
+        "pose-05-reaction-chroma.png": "33AD4BE683E458EC100B688B3534F69A5DBD91987716E6C3DC2AA08C108ED498",
+        "pose-06-recovery-chroma.png": "DA18EDBB0DB615F0C0A5C1C2CFA3D42C8F250116F7DFECC67F80F81675226079"
+      },
+      "alpha_sha256": {
+        "pose-00-anticipation.png": "6660BA698C4655D4B56F60F3CFBFD4DB0DF846A4E881B7C51CBA34FF191C31B1",
+        "pose-01-release.png": "6F792AE1F0666DEFF49F651B3D447D35C715ECC7D5835F8F84C0839BC895FAC3",
+        "pose-02-travel.png": "390F8BFD8C41DE7E8EF97848A49043F336DF7BDCC9873EA276642D09244035B3",
+        "pose-03-precontact.png": "EFB96F73D2F777382E6109C43339950176AD1BC0065D88CAFF94B494EB2FE9B3",
+        "pose-04-contact.png": "9AD3DF494D75F851E47F999A1A953A60FD3CCB9908401E1885DC07276DD1EF83",
+        "pose-05-reaction.png": "28D0D9B3B71D7DE7028FBD297BEA043646F6D8C9EACE36C504F959EA89C2570A",
+        "pose-06-recovery.png": "E1F0F0507D34E671DEFFDCBDAE47D5B872E65D83A4870EE69C6325666915D902"
+      },
+      "runtime_sha256": {
+        "frame-00.webp": "6A24B890D4F9CC4A33C2603002ABECC6535124454A17D1715DA0B29EBB30E734",
+        "frame-01.webp": "E18B662683813ED5146833D214114763BFAA5E174BCAA65DDEF5A2D62C48374B",
+        "frame-02.webp": "DD99B6F48A8765DC367C1A067BFC0BD0A36EDCBCC32B2920453252216AD1E479",
+        "frame-03.webp": "0319CEE516D107C899C98209457164354A41890287E166A1F85A189DD11D3402",
+        "frame-04.webp": "60C1012272E81169B1C340ABF9426942BCE880D94EFC1119718A8FB4A58499C7",
+        "frame-05.webp": "EA75D9D469486CC047FAE09872AFC6A99742746153B1019684E5383E0CCB82AE",
+        "frame-06.webp": "AFE74EEC962F3493CA04C2032D59AF6FB46FE7022EC683C4E4215AF4873D3FA0"
+      },
+      "frames": [
+        {
+          "index": 0,
+          "phase": "anticipation",
+          "duration_ms": 90,
+          "source_size": [
+            1254,
+            1254
+          ],
+          "source_crop": [
+            0,
+            0,
+            1254,
+            1254
+          ],
+          "bbox": [
+            42,
+            92,
+            198,
+            223
+          ],
+          "coverage": 0.0348,
+          "magenta_residue": 16
+        },
+        {
+          "index": 1,
+          "phase": "release",
+          "duration_ms": 70,
+          "source_size": [
+            1254,
+            1254
+          ],
+          "source_crop": [
+            0,
+            0,
+            1254,
+            1254
+          ],
+          "bbox": [
+            108,
+            85,
+            303,
+            222
+          ],
+          "coverage": 0.0355,
+          "magenta_residue": 100
+        },
+        {
+          "index": 2,
+          "phase": "travel",
+          "duration_ms": 65,
+          "source_size": [
+            1254,
+            1254
+          ],
+          "source_crop": [
+            0,
+            0,
+            1254,
+            1254
+          ],
+          "bbox": [
+            192,
+            94,
+            409,
+            203
+          ],
+          "coverage": 0.0223,
+          "magenta_residue": 173
+        },
+        {
+          "index": 3,
+          "phase": "travel",
+          "duration_ms": 65,
+          "source_size": [
+            1254,
+            1254
+          ],
+          "source_crop": [
+            0,
+            0,
+            1254,
+            1254
+          ],
+          "bbox": [
+            294,
+            85,
+            475,
+            192
+          ],
+          "coverage": 0.0201,
+          "magenta_residue": 183
+        },
+        {
+          "index": 4,
+          "phase": "contact",
+          "duration_ms": 85,
+          "source_size": [
+            1254,
+            1254
+          ],
+          "source_crop": [
+            0,
+            0,
+            1254,
+            1254
+          ],
+          "bbox": [
+            348,
+            86,
+            553,
+            196
+          ],
+          "coverage": 0.0267,
+          "magenta_residue": 339
+        },
+        {
+          "index": 5,
+          "phase": "reaction",
+          "duration_ms": 105,
+          "source_size": [
+            1254,
+            1254
+          ],
+          "source_crop": [
+            0,
+            0,
+            1254,
+            1254
+          ],
+          "bbox": [
+            410,
+            87,
+            489,
+            167
+          ],
+          "coverage": 0.0074,
+          "magenta_residue": 386
+        },
+        {
+          "index": 6,
+          "phase": "recovery",
+          "duration_ms": 125,
+          "source_size": [
+            1536,
+            1024
+          ],
+          "source_crop": [
+            0,
+            0,
+            1536,
+            1024
+          ],
+          "bbox": [
+            374,
+            50,
+            526,
+            238
+          ],
+          "coverage": 0.0109,
+          "magenta_residue": 45
+        }
+      ]
+    }
+  }
+}

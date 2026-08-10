@@ -42,14 +42,22 @@ flutter:
     - assets/rooms/
     - assets/adventure/
     - assets/adventure/effects/care-vines/
+    - assets/adventure/effects/care-vines-v2/
+    - assets/adventure/effects/ledger-claw-v2/
     - assets/adventure/effects/safe-guard/
     - assets/adventure/effects/ember-arc/
     - assets/adventure/effects/prism-burst/
     - assets/adventure/effects/mist-dash/
+    - assets/adventure/effects/venom-seam-v1/
     - assets/adventure/effects/insight-arc/
     - assets/adventure/effects/echo-wave/
     - assets/adventure/effects/enemy-wave/
+    - assets/adventure/skill-icons/baby-pot/
+    - assets/adventure/skill-icons/gumiho-pot/
+    - assets/adventure/skill-icons/ninja-pot/
     - assets/adventure/sfx/
+    - assets/adventure/music/
+    - assets/adventure/story/archive-postcard-reveal-v1/
     - assets/species/
     - assets/fonts/LICENSE-GothicA1.txt
     - assets/fonts/LICENSE-Galmuri.txt

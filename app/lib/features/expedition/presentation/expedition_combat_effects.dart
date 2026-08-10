@@ -129,6 +129,7 @@ Color expeditionCombatEffectColor(String key) => switch (key) {
       'ember_arc' => const Color(0xFFFF9B71),
       'prism_burst' => const Color(0xFFD7B8FF),
       'mist_dash' => const Color(0xFF9EDCF3),
+      'venom_seam' => const Color(0xFF9C55D8),
       'insight_arc' => const Color(0xFF8ED7FF),
       'enemy_wave' => const Color(0xFFFF7968),
       _ => const Color(0xFFFFD98A),

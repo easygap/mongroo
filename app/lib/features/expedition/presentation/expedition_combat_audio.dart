@@ -10,14 +10,19 @@ enum ExpeditionCombatSound {
   guard,
   victory,
   defeat,
+  storyReveal,
 }
+
+enum ExpeditionMusicState { base, combat, guardian }
 
 /// 짧은 전투 효과음을 미리 로드하고 재사용한다.
 ///
 /// 오디오 장치가 없거나 브라우저가 자동 재생을 막아도 전투 흐름은
 /// 멈추지 않도록 재생 오류는 합법적으로 무시한다.
 class ExpeditionCombatAudio {
-  ExpeditionCombatAudio() : _ready = _loadPools();
+  ExpeditionCombatAudio({bool enabled = true})
+      : _enabled = enabled,
+        _ready = _loadPools();
 
   static final _context = AudioContext(
     android: const AudioContextAndroid(
@@ -30,6 +35,15 @@ class ExpeditionCombatAudio {
     iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
   );
 
+  static final _musicContext = AudioContext(
+    android: const AudioContextAndroid(
+      contentType: AndroidContentType.music,
+      usageType: AndroidUsageType.game,
+      audioFocus: AndroidAudioFocus.none,
+    ),
+    iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
+  );
+
   static const _paths = {
     ExpeditionCombatSound.command: 'adventure/sfx/combat-command.wav',
     ExpeditionCombatSound.hit: 'adventure/sfx/combat-hit.wav',
@@ -38,10 +52,22 @@ class ExpeditionCombatAudio {
     ExpeditionCombatSound.guard: 'adventure/sfx/combat-guard.wav',
     ExpeditionCombatSound.victory: 'adventure/sfx/combat-victory.wav',
     ExpeditionCombatSound.defeat: 'adventure/sfx/combat-defeat.wav',
+    ExpeditionCombatSound.storyReveal: 'adventure/sfx/story-postcard.wav',
+  };
+
+  static const _musicPaths = {
+    ExpeditionMusicState.base: 'adventure/music/moss-archive-base.m4a',
+    ExpeditionMusicState.combat: 'adventure/music/moss-archive-combat.m4a',
+    ExpeditionMusicState.guardian: 'adventure/music/moss-archive-guardian.m4a',
   };
 
   final Future<Map<ExpeditionCombatSound, AudioPool>> _ready;
+  AudioPlayer _activeMusic = AudioPlayer();
+  AudioPlayer _standbyMusic = AudioPlayer();
+  ExpeditionMusicState? _musicState;
+  bool _enabled;
   bool _disposed = false;
+  int _transitionGeneration = 0;
 
   static Future<Map<ExpeditionCombatSound, AudioPool>> _loadPools() async {
     final pools = <ExpeditionCombatSound, AudioPool>{};
@@ -65,7 +91,7 @@ class ExpeditionCombatAudio {
     ExpeditionCombatSound sound, {
     double volume = 0.72,
   }) async {
-    if (_disposed) return;
+    if (_disposed || !_enabled) return;
     try {
       final pools = await _ready;
       if (_disposed) return;
@@ -75,11 +101,85 @@ class ExpeditionCombatAudio {
     }
   }
 
+  /// 16초 마디를 처음부터 다시 틀지 않고 지역 음악을 시작하거나 교차 전환한다.
+  Future<void> playMusic(
+    ExpeditionMusicState state, {
+    double volume = 0.18,
+  }) async {
+    if (_disposed || !_enabled || _musicState == state) return;
+    final generation = ++_transitionGeneration;
+    try {
+      final path = _musicPaths[state]!;
+      if (_musicState == null) {
+        await _activeMusic.setReleaseMode(ReleaseMode.loop);
+        await _activeMusic.play(
+          AssetSource(path),
+          volume: volume,
+          ctx: _musicContext,
+        );
+        if (!_disposed && generation == _transitionGeneration) {
+          _musicState = state;
+        }
+        return;
+      }
+
+      final position = await _activeMusic.getCurrentPosition() ?? Duration.zero;
+      await _standbyMusic.setReleaseMode(ReleaseMode.loop);
+      await _standbyMusic.play(
+        AssetSource(path),
+        volume: 0,
+        position: Duration(
+          milliseconds: position.inMilliseconds %
+              const Duration(seconds: 16).inMilliseconds,
+        ),
+        ctx: _musicContext,
+      );
+      for (var step = 1; step <= 8; step++) {
+        if (_disposed || generation != _transitionGeneration) return;
+        final progress = step / 8;
+        await Future.wait([
+          _activeMusic.setVolume(volume * (1 - progress)),
+          _standbyMusic.setVolume(volume * progress),
+        ]);
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+      }
+      await _activeMusic.stop();
+      final previous = _activeMusic;
+      _activeMusic = _standbyMusic;
+      _standbyMusic = previous;
+      _musicState = state;
+    } on Object {
+      // 음악 로드 실패도 전투 입력과 효과음 재생을 막지 않는다.
+    }
+  }
+
+  Future<void> setEnabled(bool value) async {
+    if (_disposed || _enabled == value) return;
+    _enabled = value;
+    ++_transitionGeneration;
+    try {
+      if (value) {
+        final state = _musicState;
+        _musicState = null;
+        if (state != null) await playMusic(state);
+      } else {
+        await Future.wait([_activeMusic.pause(), _standbyMusic.pause()]);
+      }
+    } on Object {
+      // 설정 변경은 오디오 장치 상태와 무관하게 즉시 UI에 반영한다.
+    }
+  }
+
   Future<void> dispose() async {
     _disposed = true;
+    ++_transitionGeneration;
     try {
       final pools = await _ready;
-      await Future.wait(pools.values.map((pool) => pool.dispose()));
+      await Future.wait([
+        ...pools.values.map((pool) => pool.dispose()),
+        _activeMusic.dispose(),
+        _standbyMusic.dispose(),
+      ]);
     } on Object {
       // 초기화가 실패한 플랫폼에서는 해제할 플레이어가 없다.
     }

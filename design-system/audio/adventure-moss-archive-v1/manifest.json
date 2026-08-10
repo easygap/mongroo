@@ -1,0 +1,42 @@
+{
+  "asset_key": "moss_archive_adaptive_music_v1",
+  "authorship": "original deterministic synthesis; no external samples",
+  "bpm": 60,
+  "loop_seconds": 16.0,
+  "shared_motif": "C-G-A-E, four-note Garden Return motif",
+  "files": [
+    {
+      "state": "base",
+      "master": "design-system/audio/adventure-moss-archive-v1/moss-archive-base-master.wav",
+      "runtime": "app/assets/adventure/music/moss-archive-base.m4a",
+      "duration_seconds": 16.0,
+      "sample_rate": 48000,
+      "master_bit_depth": 24,
+      "target_lufs": -20,
+      "master_sha256": "99629cca14af09c6501e30b0f09e820c6d535296002cd33e9bdf35d413fe8d03",
+      "runtime_sha256": "828b926bc63d363d8e343ccfab0fb83842b5f893ae65e9ff3d977d29d6349e9e"
+    },
+    {
+      "state": "combat",
+      "master": "design-system/audio/adventure-moss-archive-v1/moss-archive-combat-master.wav",
+      "runtime": "app/assets/adventure/music/moss-archive-combat.m4a",
+      "duration_seconds": 16.0,
+      "sample_rate": 48000,
+      "master_bit_depth": 24,
+      "target_lufs": -19,
+      "master_sha256": "038e0d97e2feabd6cf6973c6a9b2e590e67acd98a563ad25e77bb01f834a7fa0",
+      "runtime_sha256": "50e46d8ae63646af6e4548e709feffc30a76eeb061e04b0b2d94c3ae0d334d6d"
+    },
+    {
+      "state": "guardian",
+      "master": "design-system/audio/adventure-moss-archive-v1/moss-archive-guardian-master.wav",
+      "runtime": "app/assets/adventure/music/moss-archive-guardian.m4a",
+      "duration_seconds": 16.0,
+      "sample_rate": 48000,
+      "master_bit_depth": 24,
+      "target_lufs": -18,
+      "master_sha256": "acd10225bb40963fab5edd73072d6c6f9070243310b41a4f7abe1519f8a14c79",
+      "runtime_sha256": "ebd1b30381fa6b5289ccdd4e5001ad8b99d796ec016bae69306eafd27dfe5a9a"
+    }
+  ]
+}

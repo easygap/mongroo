@@ -32,6 +32,8 @@ class ExpeditionEncounterStage extends StatefulWidget {
     required this.onCueCompleted,
     this.paceScale = 1.0,
     this.shortEffects = false,
+    this.audioEnabled = true,
+    this.bottomHudInset = 0,
   });
 
   final ExpeditionEncounter? encounter;
@@ -48,6 +50,12 @@ class ExpeditionEncounterStage extends StatefulWidget {
   /// 짧은 연출 모드. 시동·여운 구간을 약 40% 줄이되 판정 정보(행동·피해·
   /// 승패)는 전부 유지한다. `disableAnimations` 접근성 설정과는 독립이다.
   final bool shortEffects;
+
+  /// 사용자가 끄면 BGM과 SFX만 멈추고 시각·촉각 판정은 유지한다.
+  final bool audioEnabled;
+
+  /// 전장을 줄이지 않고 가장자리 명령 HUD가 차지하는 하단 영역만 피한다.
+  final double bottomHudInset;
 
   @override
   State<ExpeditionEncounterStage> createState() =>
@@ -75,7 +83,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
       vsync: this,
       duration: const Duration(milliseconds: 3600),
     );
-    _audio = ExpeditionCombatAudio();
+    _audio = ExpeditionCombatAudio(enabled: widget.audioEnabled);
   }
 
   /// 배속·짧은 연출을 하나의 시간 배율로 합친다. 승리·패배 프레임은
@@ -121,6 +129,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     super.didChangeDependencies();
     _precacheGuardianImages();
     _precacheEffectStarts();
+    _syncMusic();
     if (MediaQuery.disableAnimationsOf(context)) {
       _ambientController
         ..stop()
@@ -134,9 +143,27 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   @override
   void didUpdateWidget(covariant ExpeditionEncounterStage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.audioEnabled != widget.audioEnabled) {
+      unawaited(_audio.setEnabled(widget.audioEnabled));
+    }
+    if (oldWidget.battle?.enemyKind != widget.battle?.enemyKind ||
+        oldWidget.encounter?.kind != widget.encounter?.kind) {
+      _syncMusic();
+    }
     if (oldWidget.cue?.id != widget.cue?.id) {
       _playCueIfNeeded();
     }
+  }
+
+  void _syncMusic() {
+    if (!widget.audioEnabled) return;
+    final state = widget.battle?.enemyKind == 'guardian' ||
+            widget.encounter?.kind == 'guardian'
+        ? ExpeditionMusicState.guardian
+        : widget.battle != null
+            ? ExpeditionMusicState.combat
+            : null;
+    if (state != null) unawaited(_audio.playMusic(state));
   }
 
   int _guardianCacheWidth(BuildContext context) {
@@ -166,8 +193,10 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     if (_effectStartsPrecached) return;
     _effectStartsPrecached = true;
     final fullSequences = <String>{
-      if (widget.battle != null || widget.encounter?.kind == 'guardian')
+      if (widget.battle != null || widget.encounter?.kind == 'guardian') ...{
+        'ledger_claw',
         'enemy_wave',
+      },
       if (widget.battle != null)
         for (final member in widget.battle!.party) ...{
           if (member.kit.basic.effectKey != null) member.kit.basic.effectKey!,
@@ -187,7 +216,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   Future<void> _precacheCueEffects(ExpeditionActionCue cue) async {
     final effectKeys = <String>{
       if (cue.playsPartyAttack) cue.effectKey,
-      if (cue.playsEnemyAttack) 'enemy_wave',
+      if (cue.playsEnemyAttack) cue.enemyEffectKey,
     };
     await Future.wait<void>([
       for (final effectKey in effectKeys)
@@ -269,7 +298,10 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
         ),
       );
     }
-    if (cue.playsEnemyAttack && _previousProgress < .62 && progress >= .62) {
+    final enemyContact = ExpeditionCombatTimeline.enemyContactProgress(cue);
+    if (cue.playsEnemyAttack &&
+        _previousProgress < enemyContact &&
+        progress >= enemyContact) {
       if ((cue.combat?.counterDamage ?? 0) > 0) {
         HapticFeedback.mediumImpact();
         unawaited(_audio.play(ExpeditionCombatSound.hit, volume: .76));
@@ -348,8 +380,10 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
           child: LayoutBuilder(
             builder: (context, constraints) {
               final size = constraints.biggest;
+              final usableHeight =
+                  math.max(220.0, size.height - widget.bottomHudInset);
               final actorWidth = math.min(152.0, size.width * .40);
-              final actorHeight = size.height * .82;
+              final actorHeight = usableHeight * .82;
               return Stack(
                 clipBehavior: Clip.hardEdge,
                 children: [
@@ -365,9 +399,9 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                   if (guardianActive && widget.party.length > 1)
                     Positioned(
                       left: 0,
-                      bottom: 1,
+                      bottom: 1 + widget.bottomHudInset,
                       width: size.width * .39,
-                      height: size.height * .52,
+                      height: usableHeight * .52,
                       child: _CombatPartyFormation(
                         party: widget.party,
                         battle: battle,
@@ -395,7 +429,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                   if (cue != null || widget.actor != null)
                     Positioned(
                       left: size.width * .035,
-                      bottom: actorBottom,
+                      bottom: actorBottom + widget.bottomHudInset,
                       width: actorWidth,
                       height: actorHeight,
                       child: _AnimatedCombatActor(
@@ -442,7 +476,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                     Positioned(
                       left: 12,
                       right: 12,
-                      bottom: 10,
+                      bottom: 10 + widget.bottomHudInset,
                       child: ExpeditionTelegraphChip(
                         attackName: battle?.enemy.intent.name ??
                             encounter?.attackName ??

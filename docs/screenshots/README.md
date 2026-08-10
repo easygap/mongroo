@@ -31,16 +31,38 @@ docs/screenshots/web/
 11-adventure-hub.webp           이어서 모험하기 카드가 있는 모험 허브
 12-stage-map.webp               기억서고 8스테이지 지도
 13-stage-preview.webp           등장 엉킴·약점·예상 시간 스테이지 시트
-14-wave-battle.webp             카드 독·예고·집중력이 담긴 웨이브 전투
-15-elite-battle.webp            큰 엉킴(서가 뒤엉킴) 전투
+14-wave-battle.webp             (v2.0 prototype) 분리 패널·카드 독 웨이브 전투
+15-elite-battle.webp            (v2.0 prototype) 절차적 큰 엉킴 전투
 16-expedition-return.webp       함께 돌아온 탐험대 귀환 요약
-17-sequential-combat.gif        카드 탭 → 즉시 행동 → 다음 차례 흐름 녹화
-18-wave-clear.gif               엉킴이 풀리고 다음 웨이브가 나타나는 녹화
-19-tangle-release.gif           큰 엉킴이 풀려나는 승리 녹화
+17-sequential-combat.gif        (v2.0 prototype) 카드 탭 순차 행동 녹화
+18-wave-clear.gif               (v2.0 prototype) 스냅샷 웨이브 교체 녹화
+19-tangle-release.gif           (v2.0 prototype) 절차적 큰 엉킴 풀림 녹화
+20-integrated-battle.webp        (미촬영) v2.2 통합 전장·6아이콘 벨트
+21-player-skill-contact.gif      (미촬영) actor→비행→접촉→피격 플레이어 공격
+22-enemy-skill-contact.gif       (미촬영) 적별 예고→공격→접촉→아군 반응
+23-emotion-matchup.webp          (미촬영) 여섯 성장결 약점↑·내성↓와 선택 스킬 벨트
+24-skill-long-press.webp         (미촬영) 평상시 설명 0 → 길게 누르기 peek sheet
+25-imagegen-skill-icons.webp     (미촬영) 102개 도색 아이콘의 128·64·48·32px QA
+26-battle-trail.gif              (미촬영) 접근→조우→전투→풀려남→전진 연속 화면
+27-combat-first-hud.webp         (미촬영) 전장 72~78%·상단 8점 rail·하단 6아이콘 dock
+28-player-enemy-contact-grid.webp (미촬영) 플레이어/적 origin→travel→contact→reaction 비교
+29-blend-backgrounds.webp        (미촬영) 네 지역 밝음/어두움 alpha fringe·depth·shadow QA
+30-store-gameplay-15s.mp4        (미촬영) 실제 빌드 준비→접촉→피격→환경 복원 15초 무편집 증빙
 ```
 
-8~10번 구버전 전투 화면은 스테이지 개편 이전 기록으로만 남긴다. README에는
-11번 이후의 최신 화면만 사용한다.
+8~10번은 스테이지 개편 이전, 14·15·17~19번은 v2.0 기능 prototype 기록이다.
+v2.2의 통합 전장·6아이콘 벨트·정식 플레이어/적 스프라이트가 아니므로 마케팅·완료
+증빙에 사용하지 않는다. README에는 허브·지도·귀환인 11~13·16만 유지하고 전투는
+v2.2 캡처로 교체한 뒤 다시 싣는다.
+
+`design-system/concepts/adventure-combat-first-v1/combat-first-visual-target-v1.png`는
+ImageGen으로 만든 배치 기준안이며 실제 앱 캡처가 아니다. 26~30번의 구현 증빙을 대신하거나
+스토어 화면에 사용할 수 없고, 문서에서는 반드시 `visual target`으로 표기한다.
+
+30번은 콘셉트 컷·가짜 HUD·사후 합성 공격을 섞지 않는다. 실제 출시 후보 빌드에서 같은
+세션을 연속 녹화하고 사용자 입력, actor 준비, 공격 이동, 접촉, target reaction, 환경
+복원이 15초 안에 들어가야 한다. 로딩 제거 외의 점프 컷이 필요하면 합격 증빙으로 쓰지
+않는다.
 
 `docs/readme/mongroo-emotion-growth-hero.webp`는 기능 증빙 화면이 아니라 README
 첫 화면에 사용하는 콘셉트 일러스트다. 실제 기능 설명에는 항상 `screenshots/`

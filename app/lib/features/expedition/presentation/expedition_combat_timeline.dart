@@ -25,6 +25,16 @@ abstract final class ExpeditionCombatTimeline {
   static double segment(double value, double start, double end) =>
       ((value - start) / (end - start)).clamp(0.0, 1.0);
 
+  /// 적 공격 스프라이트와 피격 피드백이 같은 접촉 프레임을 공유하는 구간이다.
+  static double enemyEffectStart(ExpeditionActionCue cue) =>
+      cue.playsPartyAttack ? .52 : .24;
+
+  static double enemyEffectEnd(ExpeditionActionCue cue) =>
+      cue.playsPartyAttack ? .91 : .94;
+
+  static double enemyContactProgress(ExpeditionActionCue cue) =>
+      cue.playsPartyAttack ? .72 : .62;
+
   static double floatingOpacity(double value, double start, double end) {
     final local = segment(value, start, end);
     return math.sin(local * math.pi).clamp(0.0, 1.0);
@@ -54,6 +64,45 @@ abstract final class ExpeditionCombatTimeline {
       return Offset(
         recoil,
         4 * math.sin(segment(value, .38, .76) * math.pi),
+      );
+    }
+    final profile = cue.motionProfile ?? '';
+    if (profile.contains('venom-draw') || profile.contains('undying-chain')) {
+      final windUp = math.sin(segment(value, .02, .18) * math.pi);
+      final release = math.sin(segment(value, .14, .34) * math.pi);
+      return Offset(-8 * windUp + 14 * release, 3 * windUp - 5 * release);
+    }
+    if (profile.contains('shadow-cross')) {
+      final dash = math.sin(segment(value, .04, .52) * math.pi);
+      final settle = math.sin(segment(value, .55, .82) * math.pi);
+      return Offset(48 * dash - 8 * settle, -10 * dash);
+    }
+    if (profile.contains('counter-punch') ||
+        profile.contains('iron-uppercut') ||
+        profile.contains('forward-brawler') ||
+        profile.contains('command-draw') ||
+        profile.contains('steel-verdict') ||
+        profile.contains('spotlight-step') ||
+        profile.contains('ribbon-finale')) {
+      final strike = math.sin(segment(value, .04, .50) * math.pi);
+      final recoil = math.sin(segment(value, .54, .80) * math.pi);
+      return Offset(38 * strike - 7 * recoil, -12 * strike);
+    }
+    if (profile.contains('circling-tempest')) {
+      final orbit = segment(value, .04, .68);
+      final envelope = math.sin(orbit * math.pi);
+      return Offset(
+        math.sin(orbit * math.pi * 2) * 22 * envelope,
+        -15 * envelope,
+      );
+    }
+    if (profile.isNotEmpty) {
+      // 주문·지휘·지원기는 자리를 지킨 채 떠오른다. 공격 본체와 궤적은 이
+      // 좌표식이 아니라 검수된 래스터 프레임 시퀀스가 전담한다.
+      final channel = math.sin(segment(value, .04, .68) * math.pi);
+      return Offset(
+        math.sin(segment(value, .04, .68) * math.pi * 2) * 4 * channel,
+        -10 * channel,
       );
     }
     final cast = segment(value, .04, cue.isGuardianExchange ? .44 : .72);

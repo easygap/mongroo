@@ -1,5 +1,12 @@
 # 탐험 전투 VFX v1
 
+> **2026-08-10 상태: prototype 기록, 정식 출시 사용 금지.** 이 세트는 8프레임 완성
+> 시트를 한 번에 생성했고 플레이어 7효과와 공용 적 공격 `enemy_wave`만 제공하므로
+> `stage-battle-v2.2`의 캐릭터 고유 20종·감정 6종·적별 공격·actor/contact/reaction 계약을
+> 만족하지 않는다. 파일과 생성 ID는 비교·회귀 자료로 보존하되
+> `production_ready:false`로 취급한다. 후속 제작은
+> `design-system/EXPEDITION_ASSET_PRODUCTION.md` 7장·10장을 따른다.
+
 전투 중 공격 궤적을 Flutter `CustomPainter`로 생성하지 않고, 검수한 8단계
 래스터 시퀀스로 재생하기 위한 소스 계약이다. 플레이어 7종과 장부지기 반격
 1종, 총 64프레임을 제공한다.

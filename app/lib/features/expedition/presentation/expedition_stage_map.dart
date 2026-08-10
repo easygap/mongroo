@@ -56,7 +56,8 @@ class _ExpeditionHub extends ConsumerWidget {
                     const SizedBox(height: 10),
                     _TodayRewardLine(catalog: catalog),
                     const SizedBox(height: 22),
-                    Text('다른 길', style: Theme.of(context).textTheme.titleMedium),
+                    Text('다른 길',
+                        style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 10),
                     ..._hubEntries(stageMap).map(
                       (entry) => Padding(
@@ -667,13 +668,13 @@ class _StagePointBadge extends StatelessWidget {
 }
 
 /// 스테이지 상세 시트 — 종류, 등장 엉킴과 약점, 예상 시간, 출발.
-class _StageDetailSheet extends StatelessWidget {
+class _StageDetailSheet extends ConsumerWidget {
   const _StageDetailSheet({required this.stage});
 
   final ExpeditionStage stage;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     final locked = !stage.unlocked;
     return SafeArea(
@@ -748,7 +749,9 @@ class _StageDetailSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(
-                        Icons.blur_on_rounded,
+                        tangle.catalogued
+                            ? Icons.menu_book_rounded
+                            : Icons.help_outline_rounded,
                         size: 18,
                         color: scheme.tertiary,
                       ),
@@ -768,6 +771,23 @@ class _StageDetailSheet extends StatelessWidget {
                                   .bodySmall
                                   ?.copyWith(color: scheme.onSurfaceVariant),
                             ),
+                            if (tangle.catalogued &&
+                                tangle.skills.isNotEmpty) ...[
+                              const SizedBox(height: 5),
+                              Wrap(
+                                spacing: 5,
+                                runSpacing: 5,
+                                children: [
+                                  for (final skill in tangle.skills)
+                                    MongrooTag(
+                                      label: skill,
+                                      icon: Icons.bolt_rounded,
+                                      backgroundColor: scheme.tertiaryContainer
+                                          .withAlpha(118),
+                                    ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -786,6 +806,15 @@ class _StageDetailSheet extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 18),
+            if (stage.cleared && stage.story != null) ...[
+              OutlinedButton.icon(
+                key: const ValueKey('stage-story-replay'),
+                onPressed: () => _showStory(context, ref, stage.story!),
+                icon: const Icon(Icons.auto_stories_outlined),
+                label: const Text('이야기 다시 보기'),
+              ),
+              const SizedBox(height: 8),
+            ],
             if (locked)
               Text(
                 stage.lockReason ?? '아직 열리지 않은 길이에요.',
@@ -806,5 +835,46 @@ class _StageDetailSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _showStory(
+    BuildContext context,
+    WidgetRef ref,
+    ExpeditionStageStory story,
+  ) async {
+    final audioEnabled =
+        ref.read(expeditionBattleSettingsProvider).audioEnabled;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _StageStoryRevealCard(
+                  story: story,
+                  audioEnabled: audioEnabled,
+                  replay: true,
+                ),
+                const SizedBox(height: 8),
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('기록 덮기'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (!context.mounted) return;
+    await ref
+        .read(expeditionControllerProvider.notifier)
+        .markStageStorySeen(stage.no);
   }
 }

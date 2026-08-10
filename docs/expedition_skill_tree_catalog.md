@@ -1,12 +1,17 @@
 # 몽그루 직접 탐험 스킬트리 90노드 카탈로그
 
-최종 갱신: 2026-08-04
+최종 갱신: 2026-08-10
 상태: 구현·콘텐츠 원본 확정안
 대상 버전: `expedition-skill-trees-v1`
 
 이 문서는 `interactive_adventure_design.md` 7.3의 품종별 스킬트리를 실제 콘텐츠
 파일로 옮길 수 있도록 10품종의 배분 노드 90개를 모두 정의한다. 이 문서와 YAML이
 다르면 YAML 생성 전에 문서를 고치고 두 산출물의 hash를 CI에서 비교한다.
+
+> v1의 90노드는 전부 **고유 I 탐험용**이다. `character-skill-growth-v1.3`이 추가한
+> 고유 I 전투 기본기와 고유 II 결정기에는 자동 합성하지 않는다. 모바일 배치는
+> `docs/character_skill_growth_design.md` 13.5, 전투 아이콘은
+> `docs/expedition_stage_redesign.md` 4.2를 따른다.
 
 ## 1. 사용 규칙
 
@@ -52,7 +57,7 @@
 | `signature_retarget` | 노드 정의의 `parameter_schema` | 아래 10개 노드별 허용 키·enum·소유권을 정확히 검사 |
 | `choice_stat_flex` | `{replacement_stat_code}` | 행동자의 네 stat 중 원래 요구 stat과 다른 하나 |
 | `event_tag_flex` | `{}` | `choice_code`가 사건의 허용 `flex_choices`에 존재 |
-| `return_anchor` | `{}` | 현재 node가 이미 방문한 `camp|entrance` |
+| `return_anchor` | `{}` | 현재 node가 이미 방문한 `camp\|entrance` |
 | `map_state_guard` | `{target_edge_code}` | 현재 장치 전환으로 닫힐 공개·열린 간선 |
 | `story_consequence_hint` | `{target_choice_code}` | 현재 사건에 존재하고 미해결인 선택 |
 | `camp_reconfigure` | `{replace_node_code, new_node_code}` | 같은 tier, 선행·포인트 충족, 영구 build는 불변 |
@@ -164,9 +169,9 @@ run의 `runtime_effects_snapshot`은 다음처럼 크기가 제한된 상태만 
 | `pretty-pot.stagecraft.1` | 작은 무대 | choice / `event_tag_flex` | 현재 사건의 `performance` flex choice 1개를 열어 정상 판정 |
 | `pretty-pot.stagecraft.2` | 배역 바꾸기 | choice / `choice_stat_flex` | choice 요구 stat을 블루미의 다른 stat 하나로 대체 |
 | `pretty-pot.stagecraft.3` | 막이 닫히지 않게 | move / `map_state_guard` | 장치 전환으로 닫힐 열린 간선 1개를 다음 전환까지 유지 |
-| `pretty-pot.rapport.1` | 표정 읽기 | map / `story_consequence_hint` | `social|visitor` 사건 choice 1개의 기록 결과 종류 확인 |
+| `pretty-pot.rapport.1` | 표정 읽기 | map / `story_consequence_hint` | `social\|visitor` 사건 choice 1개의 기록 결과 종류 확인 |
 | `pretty-pot.rapport.2` | 다음 주인공 | choice / `actor_handoff` | 블루미 해결 뒤 다른 멤버 1명의 다음 사건 지원 +1 |
-| `pretty-pot.rapport.3` | 객석으로 건네기 | skill / `signature_retarget` | 자동 clear 대신 다른 멤버가 `social|performance` choice를 정상 판정할 때 지원 +1 |
+| `pretty-pot.rapport.3` | 객석으로 건네기 | skill / `signature_retarget` | 자동 clear 대신 다른 멤버가 `social\|performance` choice를 정상 판정할 때 지원 +1 |
 | `pretty-pot.spotlight.1` | 비추는 꽃잎 | map / `node_tag_peek` | 인접 미방문 노드 종류와 공개 tag 1개 확인 |
 | `pretty-pot.spotlight.2` | 무대 뒤 통로 | map / `hidden_edge_hint` | 방문 노드에 붙은 숨은 간선 방향 1개 확인 |
 | `pretty-pot.spotlight.3` | 다음 장면 시간표 | map / `node_cost_peek` | 거리 2 이내 노드 길빛 비용·필수 사건 여부 확인 |
@@ -193,9 +198,9 @@ run의 `runtime_effects_snapshot`은 다음처럼 크기가 제한된 상태만 
 
 | code | 이름 | activation/module | trigger와 정확한 효과 |
 |---|---|---|---|
-| `zombie-pot.night_sense.1` | 어둠 속 윤곽 | map / `node_tag_peek` | 인접 미방문 노드 종류·tag 1개 확인, `dark|dream`이면 거리 2까지 허용 |
+| `zombie-pot.night_sense.1` | 어둠 속 윤곽 | map / `node_tag_peek` | 인접 미방문 노드 종류·tag 1개 확인, `dark\|dream`이면 거리 2까지 허용 |
 | `zombie-pot.night_sense.2` | 끊긴 그림자 | map / `hidden_edge_hint` | 현재/방문 노드의 숨은 간선 방향 1개 확인 |
-| `zombie-pot.night_sense.3` | 꿈 바깥 감각 | skill / `signature_retarget` | `dark|dream` 비용 0 대신 임의 인접 노드 1개의 종류·tag 공개, 비용은 그대로 |
+| `zombie-pot.night_sense.3` | 꿈 바깥 감각 | skill / `signature_retarget` | `dark\|dream` 비용 0 대신 임의 인접 노드 1개의 종류·tag 공개, 비용은 그대로 |
 | `zombie-pot.afterimage.1` | 남은 발자국 | map / `return_anchor` | 현재 camp/entrance를 1회 귀환점으로 지정 |
 | `zombie-pot.afterimage.2` | 조금 전의 결말 | map / `story_consequence_hint` | 현재 사건 choice 1개의 기록 결과 종류 확인 |
 | `zombie-pot.afterimage.3` | 사라지지 않은 길 | move / `map_state_guard` | 장치 전환 때 열린 간선 1개 유지 |
@@ -212,10 +217,10 @@ run의 `runtime_effects_snapshot`은 다음처럼 크기가 제한된 상태만 
 | `gumiho-pot.foxfire.1` | 꼬리 끝 불빛 | map / `hidden_edge_hint` | 현재/방문 노드의 숨은 간선 방향 1개 확인 |
 | `gumiho-pot.foxfire.2` | 두 갈래 유인 | map / `node_cost_peek` | 거리 2 이내 노드 1개의 비용·필수 사건 여부 확인 |
 | `gumiho-pot.foxfire.3` | 불빛 돌려놓기 | skill / `signature_retarget` | 숨은 연결 개방 대신 공개된 깊은 방 1개의 이번 이동 비용 -1 |
-| `gumiho-pot.illusion.1` | 다른 얼굴의 사건 | choice / `event_tag_flex` | 현재 사건의 `social|mystery` flex choice 중 하나를 열어 정상 판정 |
+| `gumiho-pot.illusion.1` | 다른 얼굴의 사건 | choice / `event_tag_flex` | 현재 사건의 `social\|mystery` flex choice 중 하나를 열어 정상 판정 |
 | `gumiho-pot.illusion.2` | 시선 돌리기 | choice / `choice_stat_flex` | choice 요구 stat을 여우비의 다른 stat 하나로 대체 |
 | `gumiho-pot.illusion.3` | 남겨둔 환영 | move / `map_state_guard` | 장치 전환 때 열린 간선 1개 유지 |
-| `gumiho-pot.charm.1` | 속마음 한 조각 | map / `story_consequence_hint` | `social|guardian` choice 1개의 기록 결과 종류 확인 |
+| `gumiho-pot.charm.1` | 속마음 한 조각 | map / `story_consequence_hint` | `social\|guardian` choice 1개의 기록 결과 종류 확인 |
 | `gumiho-pot.charm.2` | 손끝으로 넘기기 | choice / `actor_handoff` | 여우비 해결 뒤 다른 멤버의 다음 사건 지원 +1 |
 | `gumiho-pot.charm.3` | 야영의 다른 이야기 | camp / `camp_reconfigure` | 같은 tier 노드 하나를 사용 상태 그대로 교체 |
 
@@ -242,7 +247,7 @@ run의 `runtime_effects_snapshot`은 다음처럼 크기가 제한된 상태만 
 | code | 이름 | activation/module | trigger와 정확한 효과 |
 |---|---|---|---|
 | `magical-pot.transmute.1` | 잎맥 치환 | choice / `choice_stat_flex` | 일반 choice 요구 stat을 별솔의 다른 stat 하나로 대체 |
-| `magical-pot.transmute.2` | 장면 재분류 | choice / `event_tag_flex` | 현재 사건의 `puzzle|care` flex choice 하나를 열어 정상 판정 |
+| `magical-pot.transmute.2` | 장면 재분류 | choice / `event_tag_flex` | 현재 사건의 `puzzle\|care` flex choice 하나를 열어 정상 판정 |
 | `magical-pot.transmute.3` | 비용으로 바꾸기 | skill / `signature_retarget` | stat 변경 대신 해당 choice를 무판정 준비도 1의 안전 해결로 교체 |
 | `magical-pot.starlight.1` | 별잎 관측 | map / `node_tag_peek` | 인접 미방문 노드 종류·tag 1개 확인 |
 | `magical-pot.starlight.2` | 고정된 별자리 | move / `map_state_guard` | 열린 간선 1개를 다음 장치 전환까지 유지 |
