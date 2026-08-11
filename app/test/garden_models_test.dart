@@ -446,6 +446,57 @@ void main() {
     expect(tsundere.motionKey, 'tsundere_turn_away');
   });
 
+  test('프리미엄 지원가 v4 이미지와 구매 포함 복장을 노출한다', () {
+    ShopItem premium({
+      required String slug,
+      required String outfit,
+      required String motionKey,
+    }) =>
+        ShopItem.fromJson({
+          'id': slug == 'nurse-pot' ? 51 : 52,
+          'code': 'character_${slug.replaceAll('-', '_')}',
+          'type': 'main_character',
+          'name': slug,
+          'price_seeds': slug == 'nurse-pot' ? 280 : 240,
+          'rarity': 5,
+          'asset_manifest': {
+            'asset_key': 'characters/$slug',
+            'asset_version': 4,
+            'species_code': slug,
+            'motion_key': motionKey,
+            'base_outfit': {
+              'key': outfit.toLowerCase().replaceAll(' ', '-'),
+              'name': outfit,
+              'included_with_character': true,
+            },
+          },
+        });
+
+    final nurse = premium(
+      slug: 'nurse-pot',
+      outfit: '순백 트리아주',
+      motionKey: 'nurse_breathe',
+    );
+    final maestro = premium(
+      slug: 'maestro-pot',
+      outfit: '미드나잇 레조넌스',
+      motionKey: 'maestro_cue',
+    );
+
+    expect(
+        nurse.bundledCharacterAssetPath, 'assets/characters/nurse-pot-v4.webp');
+    expect(maestro.bundledCharacterAssetPath,
+        'assets/characters/maestro-pot-v4.webp');
+    expect(nurse.growthSpeciesCode, 'nurse-pot');
+    expect(maestro.growthSpeciesCode, 'maestro-pot');
+    expect(nurse.baseOutfitName, '순백 트리아주');
+    expect(maestro.baseOutfitName, '미드나잇 레조넌스');
+    expect(nurse.includesBaseOutfit, isTrue);
+    expect(maestro.includesBaseOutfit, isTrue);
+    expect(nurse.motionKey, 'nurse_breathe');
+    expect(maestro.motionKey, 'maestro_cue');
+  });
+
   test('캐릭터 기본 소개와 대사는 성격별로 구분된다', () {
     const expected = <String, List<String>>{
       'baby-pot': ['쪽쪽이를 문 호기심쟁이 막내', '뽀또! 새싹 하나 더 찾았어!'],

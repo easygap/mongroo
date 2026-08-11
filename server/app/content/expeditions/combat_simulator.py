@@ -35,6 +35,7 @@ POLICIES: tuple[PolicyCode, ...] = (
     "weakness_first",
     "survival",
 )
+PREMIUM_SPECIES = frozenset({"maestro-pot", "nurse-pot"})
 SLOT_ORDER = {
     "attack": 0,
     "selected_1": 1,
@@ -283,6 +284,40 @@ def _choose_action(
     intent_power = int(_current_intent(payload).get("power", 0))
 
     if policy == "survival":
+        party = list(payload.get("party", []))
+        living_count = sum(int(member["hp"]) > 0 for member in party)
+        downed_count = len(party) - living_count
+        missing_hp = sum(
+            max(0, int(member["max_hp"]) - int(member["hp"]))
+            for member in party
+            if int(member["hp"]) > 0
+        )
+
+        def recovery_score(candidate: Mapping[str, Any]) -> int:
+            values = candidate.get("effect_values") or {}
+            return (
+                int(values.get("heal_lowest", 0))
+                + int(values.get("heal_all", 0)) * living_count
+                + int(values.get("party_guard", 0)) * living_count
+                + int(values.get("target_guard", 0))
+            )
+
+        revivers = [
+            candidate
+            for candidate in candidates
+            if int((candidate.get("effect_values") or {}).get("revive_count", 0)) > 0
+        ]
+        if downed_count and revivers:
+            choice = max(
+                revivers,
+                key=lambda item: (
+                    int((item.get("effect_values") or {}).get("revive_count", 0)),
+                    recovery_score(item),
+                    int(item["power"]),
+                ),
+            )
+            return str(choice["slot"]), [*opportunities, "guard"]
+
         weakeners = [
             candidate
             for candidate in candidates
@@ -297,10 +332,23 @@ def _choose_action(
                 ),
             )
             return str(choice["slot"]), [*opportunities, "guard"]
-        if (
-            _would_be_targeted(payload, actor)
-            and intent_power >= int(actor["hp"])
-        ):
+        healers = [
+            candidate
+            for candidate in candidates
+            if candidate.get("effect")
+            in {"heal_lowest", "triage_heal", "white_garden_oath"}
+        ]
+        if missing_hp >= 2 and healers:
+            choice = max(
+                healers,
+                key=lambda item: (
+                    min(missing_hp, recovery_score(item)),
+                    recovery_score(item),
+                    int(item["power"]),
+                ),
+            )
+            return str(choice["slot"]), [*opportunities, "guard"]
+        if _would_be_targeted(payload, actor) and intent_power >= int(actor["hp"]):
             return "guard", [*opportunities, "guard"]
 
     ranked_pool = candidates
@@ -512,6 +560,15 @@ def _species_gap(results: Sequence[SimulationResult]) -> dict[str, Any]:
         species: round(sum(values) / len(values), 3)
         for species, values in sorted(score_rounds.items())
     }
+    hp_totals: dict[str, list[int]] = defaultdict(lambda: [0, 0])
+    for result in results:
+        totals = hp_totals[result.case.species]
+        totals[0] += result.remaining_hp
+        totals[1] += result.maximum_hp
+    remaining_hp_rates = {
+        species: round(100 * remaining / max(1, maximum), 2)
+        for species, (remaining, maximum) in sorted(hp_totals.items())
+    }
     return {
         "win_rate_pct": rates,
         "max_gap_pp": round(max(rates.values()) - min(rates.values()), 2),
@@ -519,6 +576,7 @@ def _species_gap(results: Sequence[SimulationResult]) -> dict[str, Any]:
         "max_mean_score_round_gap": round(
             max(mean_scores.values()) - min(mean_scores.values()), 3
         ),
+        "remaining_hp_pct": remaining_hp_rates,
     }
 
 
@@ -544,6 +602,22 @@ def _balance_gates(report: Mapping[str, Any]) -> dict[str, Any]:
     survival_policy = report["policy_summary"]["survival"]
     matchup_pair = report["matchup_contribution"]
     species = report["species_gap"]["weakness_first"]
+    survival_species = report["species_gap"]["survival"]
+    standard_species = set(species["win_rate_pct"]) - PREMIUM_SPECIES
+    standard_win_rates = [species["win_rate_pct"][code] for code in standard_species]
+    standard_score_rounds = [
+        species["mean_score_rounds"][code] for code in standard_species
+    ]
+    standard_survival_rates = [
+        survival_species["win_rate_pct"][code] for code in standard_species
+    ]
+    standard_remaining_hp = [
+        survival_species["remaining_hp_pct"][code] for code in standard_species
+    ]
+    standard_gap_pp = round(max(standard_win_rates) - min(standard_win_rates), 2)
+    premium_survival_floor = min(
+        survival_species["win_rate_pct"][code] for code in PREMIUM_SPECIES
+    )
     reference_slots = {
         slot: details["use_rate_when_available_pct"]
         for slot, details in matchup["slot_use"].items()
@@ -553,8 +627,7 @@ def _balance_gates(report: Mapping[str, Any]) -> dict[str, Any]:
         "use_rate_when_available_pct"
     ]
     matchup_selection_lift = round(
-        matchup["weakness_hit_rate_pct"]
-        - neutral_policy["weakness_hit_rate_pct"],
+        matchup["weakness_hit_rate_pct"] - neutral_policy["weakness_hit_rate_pct"],
         2,
     )
 
@@ -625,15 +698,34 @@ def _balance_gates(report: Mapping[str, Any]) -> dict[str, Any]:
             "actual": reference_slots,
             "target": "사용 가능한 기본·고유·선택·방어 슬롯 선택률 각각 5% 이상",
         },
-        "species_coverage_gap": {
-            "pass": species["max_gap_pp"] <= 5.0,
+        "species_role_positioning": {
+            "pass": standard_gap_pp <= 5.0
+            and species["mean_score_rounds"]["maestro-pot"]
+            <= min(standard_score_rounds)
+            and survival_species["remaining_hp_pct"]["nurse-pot"]
+            >= max(standard_remaining_hp)
+            and premium_survival_floor
+            >= sum(standard_survival_rates) / len(standard_survival_rates),
             "actual": {
-                "max_gap_pp": species["max_gap_pp"],
-                "max_mean_score_round_gap": species[
-                    "max_mean_score_round_gap"
+                "standard_max_gap_pp": standard_gap_pp,
+                "all_species_max_gap_pp": species["max_gap_pp"],
+                "maestro_mean_score_rounds": species["mean_score_rounds"][
+                    "maestro-pot"
                 ],
+                "standard_fastest_mean_score_rounds": min(standard_score_rounds),
+                "nurse_survival_remaining_hp_pct": survival_species["remaining_hp_pct"][
+                    "nurse-pot"
+                ],
+                "standard_best_remaining_hp_pct": max(standard_remaining_hp),
+                "premium_survival_win_floor_pct": premium_survival_floor,
+                "standard_survival_win_average_pct": round(
+                    sum(standard_survival_rates) / len(standard_survival_rates), 2
+                ),
             },
-            "target": "동일 전수 셀 품종 승률 격차 5%p 이하",
+            "target": (
+                "기본 10종 승률 격차 5%p 이하, 세렌은 최단 공략, "
+                "백화는 최고 생존 잔여 체력, 프리미엄 생존 승률은 기본 평균 이상"
+            ),
         },
     }
     return {
@@ -675,8 +767,7 @@ def run_balance_matrix() -> dict[str, Any]:
             "total_battles": len(cases) * len(POLICIES),
         },
         "policy_summary": {
-            policy: _summarize_results(results)
-            for policy, results in by_policy.items()
+            policy: _summarize_results(results) for policy, results in by_policy.items()
         },
         "stage_summary": stage_summary,
         "matchup_contribution": _paired_matchup_report(by_policy),

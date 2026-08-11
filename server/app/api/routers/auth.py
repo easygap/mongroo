@@ -18,7 +18,7 @@ from app.core.security import (TokenError, create_access_token, create_refresh_t
                                decode_token, hash_password, sha256_hex, verify_password)
 from app.core.timeutil import to_utc_iso, utcnow
 from app.models.enums import PlantStatus
-from app.models.game import Item, UserItem
+from app.models.game import Item, UserItem, UserSpeciesUnlock
 from app.models.plant import Plant, PlantSpecies
 from app.models.user import AuthSession, LoginRateLimit, RefreshToken, User
 from app.schemas.requests import (
@@ -234,6 +234,20 @@ async def signup(body: SignupRequest, db: AsyncSession = Depends(get_db)):
     )
     if starter_item is not None:
         db.add(UserItem(user_id=user.id, item_id=starter_item.id))
+        starter_species_code = starter_item.asset_manifest.get("species_code")
+        if isinstance(starter_species_code, str):
+            starter_species = await db.scalar(
+                sa.select(PlantSpecies).where(
+                    PlantSpecies.code == starter_species_code
+                )
+            )
+            if starter_species is not None:
+                db.add(
+                    UserSpeciesUnlock(
+                        user_id=user.id,
+                        species_id=starter_species.id,
+                    )
+                )
     payload = await _issue_tokens(db, user)
     await db.commit()
     return payload

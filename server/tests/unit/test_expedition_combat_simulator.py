@@ -7,14 +7,15 @@ from app.content.expeditions.combat_simulator import (
     simulate_case,
     simulation_cases,
 )
+from app.content.expeditions.combat_balance import COMBAT_BALANCE_VERSION
 
 
 def test_exact_matrix_covers_all_identity_and_stage_cells_once():
     cases = list(simulation_cases())
 
-    assert len(cases) == 9_600
+    assert len(cases) == 11_520
     assert len({case.key for case in cases}) == len(cases)
-    assert len({case.species for case in cases}) == 10
+    assert len({case.species for case in cases}) == 12
     assert len({case.form for case in cases}) == 6
     assert {case.rarity for case in cases} == {1, 2, 3, 4, 5}
     assert len({case.region_code for case in cases}) == 4
@@ -56,7 +57,16 @@ def test_each_policy_replays_the_same_case_deterministically():
 
 
 def test_neutral_max_damage_policy_does_not_peek_at_matchup_power():
-    case = next(iter(simulation_cases()))
+    case = next(
+        case
+        for case in simulation_cases()
+        if case.species == "aloof-pot"
+        and case.form == "sunny"
+        and case.rarity == 1
+        and case.level == 9
+        and case.region_code == "moss_archive"
+        and case.stage_shape == "tutorial"
+    )
 
     neutral = simulate_case(case, "max_damage")
     weakness = simulate_case(case, "weakness_first")
@@ -75,8 +85,9 @@ def test_checked_in_full_balance_report_passes_every_release_gate():
     )
 
     assert report["engine"] == "deterministic-exact-enumeration"
-    assert report["dimensions"]["cases_per_policy"] == 9_600
-    assert report["dimensions"]["total_battles"] == 28_800
+    assert report["combat_balance_version"] == COMBAT_BALANCE_VERSION
+    assert report["dimensions"]["cases_per_policy"] == 11_520
+    assert report["dimensions"]["total_battles"] == 34_560
     assert report["balance_gates"]["all_passed"] is True
     assert all(
         check["pass"]

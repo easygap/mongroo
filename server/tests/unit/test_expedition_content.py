@@ -154,7 +154,7 @@ def test_guardian_encounter_defines_manual_round_contract():
     assert encounter["kind"] == "guardian"
     assert encounter["enemy_name"] == "돌비늘 장부지기"
     assert encounter["enemy_max_guard"] == 100
-    assert encounter["max_rounds"] == 6
+    assert encounter["max_rounds"] == 8
     assert encounter["starting_focus"] < encounter["max_focus"]
     assert encounter["weakness_cycle"] == [
         "insight",
@@ -167,6 +167,16 @@ def test_guardian_encounter_defines_manual_round_contract():
         "all",
         "lowest",
     }
+    assert [phase["threshold_bp"] for phase in encounter["boss_phases"]] == [
+        10_000,
+        6_600,
+        3_300,
+    ]
+    assert [phase["name"] for phase in encounter["boss_phases"]] == [
+        "색인 수호",
+        "뿌리 봉쇄",
+        "최종 말소",
+    ]
     assert {choice["effect_key"] for choice in event["choices"]} == {
         "insight_arc",
         "care_vines",

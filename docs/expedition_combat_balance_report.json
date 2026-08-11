@@ -1,158 +1,158 @@
 {
   "schema_version": 1,
-  "combat_balance_version": 1,
-  "generated_at": "2026-08-11T04:59:32.602196+00:00",
+  "combat_balance_version": 2,
+  "generated_at": "2026-08-11T08:29:33.358073+00:00",
   "engine": "deterministic-exact-enumeration",
   "party_fixture": "owned identity 1 + Lv16 archive guide 2",
   "dimensions": {
-    "species": 10,
+    "species": 12,
     "forms": 6,
     "rarities": 5,
     "recommended_levels_per_region": 2,
     "regions": 4,
     "stage_shapes": 4,
-    "cases_per_policy": 9600,
-    "total_battles": 28800
+    "cases_per_policy": 11520,
+    "total_battles": 34560
   },
   "policy_summary": {
     "max_damage": {
-      "cases": 9600,
-      "victories": 8864,
-      "win_rate_pct": 92.33,
+      "cases": 11520,
+      "victories": 11175,
+      "win_rate_pct": 97.01,
       "clear_rounds": {
         "p10": 1.0,
         "p50": 3.0,
         "p90": 4.0
       },
-      "one_round_clears": 1930,
-      "weakness_hit_rate_pct": 22.62,
-      "weak_action_uplift_pct": 45.16,
-      "weak_bonus_share_of_damage_pct": 10.93,
-      "remaining_hp_pct": 69.37,
+      "one_round_clears": 2353,
+      "weakness_hit_rate_pct": 23.18,
+      "weak_action_uplift_pct": 45.57,
+      "weak_bonus_share_of_damage_pct": 11.23,
+      "remaining_hp_pct": 76.3,
       "slot_use": {
         "attack": {
-          "uses": 33701,
-          "available_opportunities": 63770,
-          "use_rate_when_available_pct": 52.85
+          "uses": 40746,
+          "available_opportunities": 77790,
+          "use_rate_when_available_pct": 52.38
         },
         "selected_1": {
-          "uses": 6368,
-          "available_opportunities": 26309,
-          "use_rate_when_available_pct": 24.2
+          "uses": 7809,
+          "available_opportunities": 32050,
+          "use_rate_when_available_pct": 24.37
         },
         "unique_1": {
-          "uses": 23606,
-          "available_opportunities": 23686,
-          "use_rate_when_available_pct": 99.66
+          "uses": 29076,
+          "available_opportunities": 29108,
+          "use_rate_when_available_pct": 99.89
         },
         "selected_2": {
-          "uses": 40,
-          "available_opportunities": 5033,
-          "use_rate_when_available_pct": 0.79
+          "uses": 75,
+          "available_opportunities": 6184,
+          "use_rate_when_available_pct": 1.21
         },
         "unique_2": {
-          "uses": 55,
-          "available_opportunities": 10885,
-          "use_rate_when_available_pct": 0.51
+          "uses": 84,
+          "available_opportunities": 11685,
+          "use_rate_when_available_pct": 0.72
         },
         "guard": {
           "uses": 0,
-          "available_opportunities": 63770,
+          "available_opportunities": 77790,
           "use_rate_when_available_pct": 0.0
         }
       }
     },
     "weakness_first": {
-      "cases": 9600,
-      "victories": 8728,
-      "win_rate_pct": 90.92,
+      "cases": 11520,
+      "victories": 10920,
+      "win_rate_pct": 94.79,
       "clear_rounds": {
         "p10": 1.0,
         "p50": 3.0,
         "p90": 4.0
       },
-      "one_round_clears": 2119,
-      "weakness_hit_rate_pct": 38.39,
-      "weak_action_uplift_pct": 42.67,
-      "weak_bonus_share_of_damage_pct": 16.21,
-      "remaining_hp_pct": 68.76,
+      "one_round_clears": 2672,
+      "weakness_hit_rate_pct": 38.7,
+      "weak_action_uplift_pct": 42.74,
+      "weak_bonus_share_of_damage_pct": 16.38,
+      "remaining_hp_pct": 75.47,
       "slot_use": {
         "attack": {
-          "uses": 32533,
-          "available_opportunities": 60655,
-          "use_rate_when_available_pct": 53.64
+          "uses": 38075,
+          "available_opportunities": 73098,
+          "use_rate_when_available_pct": 52.09
         },
         "selected_1": {
-          "uses": 12641,
-          "available_opportunities": 23114,
-          "use_rate_when_available_pct": 54.69
+          "uses": 16180,
+          "available_opportunities": 28674,
+          "use_rate_when_available_pct": 56.43
         },
         "unique_1": {
-          "uses": 12338,
-          "available_opportunities": 27157,
-          "use_rate_when_available_pct": 45.43
+          "uses": 15235,
+          "available_opportunities": 33764,
+          "use_rate_when_available_pct": 45.12
         },
         "selected_2": {
-          "uses": 1100,
-          "available_opportunities": 4729,
-          "use_rate_when_available_pct": 23.26
+          "uses": 1420,
+          "available_opportunities": 5987,
+          "use_rate_when_available_pct": 23.72
         },
         "unique_2": {
-          "uses": 2043,
-          "available_opportunities": 12308,
-          "use_rate_when_available_pct": 16.6
+          "uses": 2188,
+          "available_opportunities": 13881,
+          "use_rate_when_available_pct": 15.76
         },
         "guard": {
           "uses": 0,
-          "available_opportunities": 60655,
+          "available_opportunities": 73098,
           "use_rate_when_available_pct": 0.0
         }
       }
     },
     "survival": {
-      "cases": 9600,
-      "victories": 8600,
-      "win_rate_pct": 89.58,
+      "cases": 11520,
+      "victories": 11028,
+      "win_rate_pct": 95.73,
       "clear_rounds": {
         "p10": 1.0,
         "p50": 3.0,
-        "p90": 4.0
+        "p90": 5.0
       },
-      "one_round_clears": 2114,
-      "weakness_hit_rate_pct": 41.72,
-      "weak_action_uplift_pct": 42.19,
-      "weak_bonus_share_of_damage_pct": 17.07,
-      "remaining_hp_pct": 68.6,
+      "one_round_clears": 2643,
+      "weakness_hit_rate_pct": 40.29,
+      "weak_action_uplift_pct": 42.7,
+      "weak_bonus_share_of_damage_pct": 16.9,
+      "remaining_hp_pct": 76.34,
       "slot_use": {
         "attack": {
-          "uses": 27944,
-          "available_opportunities": 71659,
-          "use_rate_when_available_pct": 39.0
+          "uses": 35774,
+          "available_opportunities": 82827,
+          "use_rate_when_available_pct": 43.19
         },
         "selected_1": {
-          "uses": 13598,
-          "available_opportunities": 31667,
-          "use_rate_when_available_pct": 42.94
+          "uses": 16716,
+          "available_opportunities": 34970,
+          "use_rate_when_available_pct": 47.8
         },
         "unique_1": {
-          "uses": 12187,
-          "available_opportunities": 36603,
-          "use_rate_when_available_pct": 33.3
+          "uses": 15170,
+          "available_opportunities": 40368,
+          "use_rate_when_available_pct": 37.58
         },
         "selected_2": {
-          "uses": 919,
-          "available_opportunities": 7230,
-          "use_rate_when_available_pct": 12.71
+          "uses": 1211,
+          "available_opportunities": 7599,
+          "use_rate_when_available_pct": 15.94
         },
         "unique_2": {
-          "uses": 2746,
-          "available_opportunities": 20546,
-          "use_rate_when_available_pct": 13.37
+          "uses": 3635,
+          "available_opportunities": 19807,
+          "use_rate_when_available_pct": 18.35
         },
         "guard": {
-          "uses": 14265,
-          "available_opportunities": 71659,
-          "use_rate_when_available_pct": 19.91
+          "uses": 10321,
+          "available_opportunities": 82827,
+          "use_rate_when_available_pct": 12.46
         }
       }
     }
@@ -160,55 +160,55 @@
   "stage_summary": {
     "max_damage": {
       "tutorial": {
-        "cases": 2400,
-        "victories": 2400,
+        "cases": 2880,
+        "victories": 2880,
         "win_rate_pct": 100.0,
         "clear_rounds": {
           "p10": 1.0,
           "p50": 1.0,
           "p90": 2.0
         },
-        "one_round_clears": 1930,
-        "weakness_hit_rate_pct": 30.02,
-        "weak_action_uplift_pct": 50.66,
-        "weak_bonus_share_of_damage_pct": 13.53,
-        "remaining_hp_pct": 98.52,
+        "one_round_clears": 2353,
+        "weakness_hit_rate_pct": 27.26,
+        "weak_action_uplift_pct": 51.53,
+        "weak_bonus_share_of_damage_pct": 12.49,
+        "remaining_hp_pct": 99.04,
         "slot_use": {
           "attack": {
-            "uses": 2310,
-            "available_opportunities": 6593,
-            "use_rate_when_available_pct": 35.04
+            "uses": 2623,
+            "available_opportunities": 7857,
+            "use_rate_when_available_pct": 33.38
           },
           "selected_1": {
-            "uses": 200,
-            "available_opportunities": 3983,
-            "use_rate_when_available_pct": 5.02
+            "uses": 243,
+            "available_opportunities": 4874,
+            "use_rate_when_available_pct": 4.99
           },
           "unique_1": {
-            "uses": 4083,
-            "available_opportunities": 4103,
-            "use_rate_when_available_pct": 99.51
+            "uses": 4991,
+            "available_opportunities": 4999,
+            "use_rate_when_available_pct": 99.84
           },
           "selected_2": {
             "uses": 0,
-            "available_opportunities": 905,
+            "available_opportunities": 1134,
             "use_rate_when_available_pct": 0.0
           },
           "unique_2": {
             "uses": 0,
-            "available_opportunities": 2570,
+            "available_opportunities": 2663,
             "use_rate_when_available_pct": 0.0
           },
           "guard": {
             "uses": 0,
-            "available_opportunities": 6593,
+            "available_opportunities": 7857,
             "use_rate_when_available_pct": 0.0
           }
         }
       },
       "standard": {
-        "cases": 2400,
-        "victories": 2400,
+        "cases": 2880,
+        "victories": 2880,
         "win_rate_pct": 100.0,
         "clear_rounds": {
           "p10": 2.0,
@@ -216,133 +216,133 @@
           "p90": 4.0
         },
         "one_round_clears": 0,
-        "weakness_hit_rate_pct": 22.06,
-        "weak_action_uplift_pct": 45.2,
-        "weak_bonus_share_of_damage_pct": 10.35,
-        "remaining_hp_pct": 70.21,
+        "weakness_hit_rate_pct": 21.18,
+        "weak_action_uplift_pct": 45.03,
+        "weak_bonus_share_of_damage_pct": 9.87,
+        "remaining_hp_pct": 76.82,
         "slot_use": {
           "attack": {
-            "uses": 9273,
-            "available_opportunities": 17169,
-            "use_rate_when_available_pct": 54.01
+            "uses": 10951,
+            "available_opportunities": 20569,
+            "use_rate_when_available_pct": 53.24
           },
           "selected_1": {
-            "uses": 2023,
-            "available_opportunities": 7051,
-            "use_rate_when_available_pct": 28.69
+            "uses": 2457,
+            "available_opportunities": 8558,
+            "use_rate_when_available_pct": 28.71
           },
           "unique_1": {
-            "uses": 5860,
-            "available_opportunities": 5880,
-            "use_rate_when_available_pct": 99.66
+            "uses": 7131,
+            "available_opportunities": 7139,
+            "use_rate_when_available_pct": 99.89
           },
           "selected_2": {
-            "uses": 13,
-            "available_opportunities": 1491,
-            "use_rate_when_available_pct": 0.87
+            "uses": 24,
+            "available_opportunities": 1763,
+            "use_rate_when_available_pct": 1.36
           },
           "unique_2": {
-            "uses": 0,
-            "available_opportunities": 2788,
-            "use_rate_when_available_pct": 0.0
+            "uses": 6,
+            "available_opportunities": 2981,
+            "use_rate_when_available_pct": 0.2
           },
           "guard": {
             "uses": 0,
-            "available_opportunities": 17169,
+            "available_opportunities": 20569,
             "use_rate_when_available_pct": 0.0
           }
         }
       },
       "elite": {
-        "cases": 2400,
-        "victories": 2338,
-        "win_rate_pct": 97.42,
+        "cases": 2880,
+        "victories": 2877,
+        "win_rate_pct": 99.9,
         "clear_rounds": {
           "p10": 2.0,
           "p50": 2.0,
           "p90": 3.0
         },
         "one_round_clears": 0,
-        "weakness_hit_rate_pct": 26.39,
-        "weak_action_uplift_pct": 44.93,
-        "weak_bonus_share_of_damage_pct": 12.83,
-        "remaining_hp_pct": 64.21,
+        "weakness_hit_rate_pct": 27.87,
+        "weak_action_uplift_pct": 46.08,
+        "weak_bonus_share_of_damage_pct": 13.82,
+        "remaining_hp_pct": 73.64,
         "slot_use": {
           "attack": {
-            "uses": 8337,
-            "available_opportunities": 15776,
-            "use_rate_when_available_pct": 52.85
+            "uses": 9631,
+            "available_opportunities": 18448,
+            "use_rate_when_available_pct": 52.21
           },
           "selected_1": {
-            "uses": 1623,
-            "available_opportunities": 6384,
-            "use_rate_when_available_pct": 25.42
+            "uses": 1822,
+            "available_opportunities": 7402,
+            "use_rate_when_available_pct": 24.61
           },
           "unique_1": {
-            "uses": 5788,
-            "available_opportunities": 5808,
-            "use_rate_when_available_pct": 99.66
+            "uses": 6962,
+            "available_opportunities": 6970,
+            "use_rate_when_available_pct": 99.89
           },
           "selected_2": {
-            "uses": 3,
-            "available_opportunities": 1123,
-            "use_rate_when_available_pct": 0.27
+            "uses": 8,
+            "available_opportunities": 1366,
+            "use_rate_when_available_pct": 0.59
           },
           "unique_2": {
             "uses": 25,
-            "available_opportunities": 2605,
-            "use_rate_when_available_pct": 0.96
+            "available_opportunities": 2706,
+            "use_rate_when_available_pct": 0.92
           },
           "guard": {
             "uses": 0,
-            "available_opportunities": 15776,
+            "available_opportunities": 18448,
             "use_rate_when_available_pct": 0.0
           }
         }
       },
       "mixed": {
-        "cases": 2400,
-        "victories": 1726,
-        "win_rate_pct": 71.92,
+        "cases": 2880,
+        "victories": 2538,
+        "win_rate_pct": 88.12,
         "clear_rounds": {
           "p10": 3.0,
-          "p50": 3.0,
+          "p50": 4.0,
           "p90": 6.0
         },
         "one_round_clears": 0,
-        "weakness_hit_rate_pct": 18.55,
-        "weak_action_uplift_pct": 42.8,
-        "weak_bonus_share_of_damage_pct": 9.04,
-        "remaining_hp_pct": 44.55,
+        "weakness_hit_rate_pct": 20.68,
+        "weak_action_uplift_pct": 43.4,
+        "weak_bonus_share_of_damage_pct": 10.03,
+        "remaining_hp_pct": 55.72,
         "slot_use": {
           "attack": {
-            "uses": 13781,
-            "available_opportunities": 24232,
-            "use_rate_when_available_pct": 56.87
+            "uses": 17541,
+            "available_opportunities": 30916,
+            "use_rate_when_available_pct": 56.74
           },
           "selected_1": {
-            "uses": 2522,
-            "available_opportunities": 8891,
-            "use_rate_when_available_pct": 28.37
+            "uses": 3287,
+            "available_opportunities": 11216,
+            "use_rate_when_available_pct": 29.31
           },
           "unique_1": {
-            "uses": 7875,
-            "available_opportunities": 7895,
-            "use_rate_when_available_pct": 99.75
+            "uses": 9992,
+            "available_opportunities": 10000,
+            "use_rate_when_available_pct": 99.92
           },
           "selected_2": {
-            "uses": 24,
-            "available_opportunities": 1514,
-            "use_rate_when_available_pct": 1.59
+            "uses": 43,
+            "available_opportunities": 1921,
+            "use_rate_when_available_pct": 2.24
           },
           "unique_2": {
-            "uses": 30,
-            "available_opportunities": 2922,
-            "use_rate_when_available_pct": 1.03
+            "uses": 53,
+            "available_opportunities": 3335,
+            "use_rate_when_available_pct": 1.59
           },
           "guard": {
             "uses": 0,
-            "available_opportunities": 24232,
+            "available_opportunities": 30916,
             "use_rate_when_available_pct": 0.0
           }
         }
@@ -350,189 +350,189 @@
     },
     "weakness_first": {
       "tutorial": {
-        "cases": 2400,
-        "victories": 2400,
+        "cases": 2880,
+        "victories": 2880,
         "win_rate_pct": 100.0,
         "clear_rounds": {
           "p10": 1.0,
           "p50": 1.0,
-          "p90": 2.0
+          "p90": 1.0
         },
-        "one_round_clears": 2119,
-        "weakness_hit_rate_pct": 68.01,
-        "weak_action_uplift_pct": 44.72,
-        "weak_bonus_share_of_damage_pct": 23.46,
-        "remaining_hp_pct": 98.62,
+        "one_round_clears": 2672,
+        "weakness_hit_rate_pct": 67.62,
+        "weak_action_uplift_pct": 43.36,
+        "weak_bonus_share_of_damage_pct": 23.12,
+        "remaining_hp_pct": 99.18,
         "slot_use": {
           "attack": {
-            "uses": 1929,
-            "available_opportunities": 6242,
-            "use_rate_when_available_pct": 30.9
+            "uses": 2006,
+            "available_opportunities": 7320,
+            "use_rate_when_available_pct": 27.4
           },
           "selected_1": {
-            "uses": 1666,
-            "available_opportunities": 4033,
-            "use_rate_when_available_pct": 41.31
+            "uses": 2427,
+            "available_opportunities": 4989,
+            "use_rate_when_available_pct": 48.65
           },
           "unique_1": {
-            "uses": 1782,
-            "available_opportunities": 4337,
-            "use_rate_when_available_pct": 41.09
+            "uses": 1825,
+            "available_opportunities": 5354,
+            "use_rate_when_available_pct": 34.09
           },
           "selected_2": {
-            "uses": 285,
-            "available_opportunities": 906,
-            "use_rate_when_available_pct": 31.46
+            "uses": 387,
+            "available_opportunities": 1085,
+            "use_rate_when_available_pct": 35.67
           },
           "unique_2": {
-            "uses": 580,
-            "available_opportunities": 2822,
-            "use_rate_when_available_pct": 20.55
+            "uses": 675,
+            "available_opportunities": 2932,
+            "use_rate_when_available_pct": 23.02
           },
           "guard": {
             "uses": 0,
-            "available_opportunities": 6242,
+            "available_opportunities": 7320,
             "use_rate_when_available_pct": 0.0
           }
         }
       },
       "standard": {
-        "cases": 2400,
-        "victories": 2400,
+        "cases": 2880,
+        "victories": 2880,
         "win_rate_pct": 100.0,
         "clear_rounds": {
           "p10": 2.0,
           "p50": 3.0,
-          "p90": 4.0
+          "p90": 3.0
         },
         "one_round_clears": 0,
-        "weakness_hit_rate_pct": 39.0,
-        "weak_action_uplift_pct": 41.89,
-        "weak_bonus_share_of_damage_pct": 15.73,
-        "remaining_hp_pct": 69.19,
+        "weakness_hit_rate_pct": 38.28,
+        "weak_action_uplift_pct": 41.39,
+        "weak_bonus_share_of_damage_pct": 15.45,
+        "remaining_hp_pct": 75.69,
         "slot_use": {
           "attack": {
-            "uses": 9156,
-            "available_opportunities": 16547,
-            "use_rate_when_available_pct": 55.33
+            "uses": 10390,
+            "available_opportunities": 19515,
+            "use_rate_when_available_pct": 53.24
           },
           "selected_1": {
-            "uses": 3547,
-            "available_opportunities": 6093,
-            "use_rate_when_available_pct": 58.21
+            "uses": 4603,
+            "available_opportunities": 7527,
+            "use_rate_when_available_pct": 61.15
           },
           "unique_1": {
-            "uses": 2826,
-            "available_opportunities": 7583,
-            "use_rate_when_available_pct": 37.27
+            "uses": 3232,
+            "available_opportunities": 9482,
+            "use_rate_when_available_pct": 34.09
           },
           "selected_2": {
-            "uses": 338,
-            "available_opportunities": 1284,
-            "use_rate_when_available_pct": 26.32
+            "uses": 460,
+            "available_opportunities": 1531,
+            "use_rate_when_available_pct": 30.05
           },
           "unique_2": {
-            "uses": 680,
-            "available_opportunities": 3346,
-            "use_rate_when_available_pct": 20.32
+            "uses": 830,
+            "available_opportunities": 3830,
+            "use_rate_when_available_pct": 21.67
           },
           "guard": {
             "uses": 0,
-            "available_opportunities": 16547,
+            "available_opportunities": 19515,
             "use_rate_when_available_pct": 0.0
           }
         }
       },
       "elite": {
-        "cases": 2400,
-        "victories": 2366,
-        "win_rate_pct": 98.58,
+        "cases": 2880,
+        "victories": 2877,
+        "win_rate_pct": 99.9,
         "clear_rounds": {
           "p10": 2.0,
           "p50": 2.0,
           "p90": 3.0
         },
         "one_round_clears": 0,
-        "weakness_hit_rate_pct": 37.01,
-        "weak_action_uplift_pct": 44.05,
-        "weak_bonus_share_of_damage_pct": 16.54,
-        "remaining_hp_pct": 64.8,
+        "weakness_hit_rate_pct": 38.63,
+        "weak_action_uplift_pct": 44.83,
+        "weak_bonus_share_of_damage_pct": 17.4,
+        "remaining_hp_pct": 74.16,
         "slot_use": {
           "attack": {
-            "uses": 8305,
-            "available_opportunities": 15559,
-            "use_rate_when_available_pct": 53.38
+            "uses": 9452,
+            "available_opportunities": 18153,
+            "use_rate_when_available_pct": 52.07
           },
           "selected_1": {
-            "uses": 2805,
-            "available_opportunities": 5952,
-            "use_rate_when_available_pct": 47.13
+            "uses": 3344,
+            "available_opportunities": 7057,
+            "use_rate_when_available_pct": 47.39
           },
           "unique_1": {
-            "uses": 3929,
-            "available_opportunities": 6282,
-            "use_rate_when_available_pct": 62.54
+            "uses": 4895,
+            "available_opportunities": 7562,
+            "use_rate_when_available_pct": 64.73
           },
           "selected_2": {
-            "uses": 231,
-            "available_opportunities": 1004,
-            "use_rate_when_available_pct": 23.01
+            "uses": 282,
+            "available_opportunities": 1279,
+            "use_rate_when_available_pct": 22.05
           },
           "unique_2": {
-            "uses": 289,
-            "available_opportunities": 2716,
-            "use_rate_when_available_pct": 10.64
+            "uses": 180,
+            "available_opportunities": 3167,
+            "use_rate_when_available_pct": 5.68
           },
           "guard": {
             "uses": 0,
-            "available_opportunities": 15559,
+            "available_opportunities": 18153,
             "use_rate_when_available_pct": 0.0
           }
         }
       },
       "mixed": {
-        "cases": 2400,
-        "victories": 1562,
-        "win_rate_pct": 65.08,
+        "cases": 2880,
+        "victories": 2283,
+        "win_rate_pct": 79.27,
         "clear_rounds": {
           "p10": 3.0,
           "p50": 3.0,
           "p90": 5.0
         },
         "one_round_clears": 0,
-        "weakness_hit_rate_pct": 30.62,
-        "weak_action_uplift_pct": 40.94,
-        "weak_bonus_share_of_damage_pct": 13.51,
-        "remaining_hp_pct": 42.42,
+        "weakness_hit_rate_pct": 31.52,
+        "weak_action_uplift_pct": 41.8,
+        "weak_bonus_share_of_damage_pct": 13.98,
+        "remaining_hp_pct": 52.85,
         "slot_use": {
           "attack": {
-            "uses": 13143,
-            "available_opportunities": 22307,
-            "use_rate_when_available_pct": 58.92
+            "uses": 16227,
+            "available_opportunities": 28110,
+            "use_rate_when_available_pct": 57.73
           },
           "selected_1": {
-            "uses": 4623,
-            "available_opportunities": 7036,
-            "use_rate_when_available_pct": 65.7
+            "uses": 5806,
+            "available_opportunities": 9101,
+            "use_rate_when_available_pct": 63.8
           },
           "unique_1": {
-            "uses": 3801,
-            "available_opportunities": 8955,
-            "use_rate_when_available_pct": 42.45
+            "uses": 5283,
+            "available_opportunities": 11366,
+            "use_rate_when_available_pct": 46.48
           },
           "selected_2": {
-            "uses": 246,
-            "available_opportunities": 1535,
-            "use_rate_when_available_pct": 16.03
+            "uses": 291,
+            "available_opportunities": 2092,
+            "use_rate_when_available_pct": 13.91
           },
           "unique_2": {
-            "uses": 494,
-            "available_opportunities": 3424,
-            "use_rate_when_available_pct": 14.43
+            "uses": 503,
+            "available_opportunities": 3952,
+            "use_rate_when_available_pct": 12.73
           },
           "guard": {
             "uses": 0,
-            "available_opportunities": 22307,
+            "available_opportunities": 28110,
             "use_rate_when_available_pct": 0.0
           }
         }
@@ -540,190 +540,190 @@
     },
     "survival": {
       "tutorial": {
-        "cases": 2400,
-        "victories": 2400,
+        "cases": 2880,
+        "victories": 2880,
         "win_rate_pct": 100.0,
         "clear_rounds": {
           "p10": 1.0,
           "p50": 1.0,
-          "p90": 2.0
+          "p90": 1.0
         },
-        "one_round_clears": 2114,
-        "weakness_hit_rate_pct": 63.18,
-        "weak_action_uplift_pct": 44.73,
-        "weak_bonus_share_of_damage_pct": 22.94,
-        "remaining_hp_pct": 98.58,
+        "one_round_clears": 2643,
+        "weakness_hit_rate_pct": 63.93,
+        "weak_action_uplift_pct": 43.59,
+        "weak_bonus_share_of_damage_pct": 22.93,
+        "remaining_hp_pct": 99.24,
         "slot_use": {
           "attack": {
-            "uses": 2186,
-            "available_opportunities": 6397,
-            "use_rate_when_available_pct": 34.17
+            "uses": 2349,
+            "available_opportunities": 7549,
+            "use_rate_when_available_pct": 31.12
           },
           "selected_1": {
-            "uses": 1604,
-            "available_opportunities": 4191,
-            "use_rate_when_available_pct": 38.27
+            "uses": 2294,
+            "available_opportunities": 5195,
+            "use_rate_when_available_pct": 44.16
           },
           "unique_1": {
-            "uses": 1382,
-            "available_opportunities": 4200,
-            "use_rate_when_available_pct": 32.9
+            "uses": 1358,
+            "available_opportunities": 5200,
+            "use_rate_when_available_pct": 26.12
           },
           "selected_2": {
-            "uses": 230,
-            "available_opportunities": 906,
-            "use_rate_when_available_pct": 25.39
+            "uses": 333,
+            "available_opportunities": 1085,
+            "use_rate_when_available_pct": 30.69
           },
           "unique_2": {
-            "uses": 985,
-            "available_opportunities": 2742,
-            "use_rate_when_available_pct": 35.92
+            "uses": 1215,
+            "available_opportunities": 3224,
+            "use_rate_when_available_pct": 37.69
           },
           "guard": {
-            "uses": 10,
-            "available_opportunities": 6397,
-            "use_rate_when_available_pct": 0.16
+            "uses": 0,
+            "available_opportunities": 7549,
+            "use_rate_when_available_pct": 0.0
           }
         }
       },
       "standard": {
-        "cases": 2400,
-        "victories": 2127,
-        "win_rate_pct": 88.62,
+        "cases": 2880,
+        "victories": 2880,
+        "win_rate_pct": 100.0,
         "clear_rounds": {
           "p10": 2.0,
           "p50": 3.0,
-          "p90": 3.0
+          "p90": 4.0
         },
         "one_round_clears": 0,
-        "weakness_hit_rate_pct": 36.84,
-        "weak_action_uplift_pct": 42.47,
-        "weak_bonus_share_of_damage_pct": 15.31,
-        "remaining_hp_pct": 65.85,
+        "weakness_hit_rate_pct": 35.45,
+        "weak_action_uplift_pct": 41.74,
+        "weak_bonus_share_of_damage_pct": 14.7,
+        "remaining_hp_pct": 76.23,
         "slot_use": {
           "attack": {
-            "uses": 8833,
-            "available_opportunities": 18720,
-            "use_rate_when_available_pct": 47.18
+            "uses": 10472,
+            "available_opportunities": 21674,
+            "use_rate_when_available_pct": 48.32
           },
           "selected_1": {
-            "uses": 3352,
-            "available_opportunities": 7568,
-            "use_rate_when_available_pct": 44.29
+            "uses": 4267,
+            "available_opportunities": 8705,
+            "use_rate_when_available_pct": 49.02
           },
           "unique_1": {
-            "uses": 2760,
-            "available_opportunities": 9228,
-            "use_rate_when_available_pct": 29.91
+            "uses": 3131,
+            "available_opportunities": 10957,
+            "use_rate_when_available_pct": 28.58
           },
           "selected_2": {
-            "uses": 248,
-            "available_opportunities": 2137,
-            "use_rate_when_available_pct": 11.61
+            "uses": 371,
+            "available_opportunities": 1805,
+            "use_rate_when_available_pct": 20.55
           },
           "unique_2": {
-            "uses": 1145,
-            "available_opportunities": 4608,
-            "use_rate_when_available_pct": 24.85
+            "uses": 1644,
+            "available_opportunities": 4806,
+            "use_rate_when_available_pct": 34.21
           },
           "guard": {
-            "uses": 2382,
-            "available_opportunities": 18720,
-            "use_rate_when_available_pct": 12.72
+            "uses": 1789,
+            "available_opportunities": 21674,
+            "use_rate_when_available_pct": 8.25
           }
         }
       },
       "elite": {
-        "cases": 2400,
-        "victories": 2241,
-        "win_rate_pct": 93.38,
+        "cases": 2880,
+        "victories": 2831,
+        "win_rate_pct": 98.3,
         "clear_rounds": {
           "p10": 2.0,
           "p50": 2.0,
           "p90": 4.0
         },
         "one_round_clears": 0,
-        "weakness_hit_rate_pct": 45.62,
-        "weak_action_uplift_pct": 42.7,
-        "weak_bonus_share_of_damage_pct": 18.89,
-        "remaining_hp_pct": 62.35,
+        "weakness_hit_rate_pct": 43.34,
+        "weak_action_uplift_pct": 43.69,
+        "weak_bonus_share_of_damage_pct": 18.51,
+        "remaining_hp_pct": 73.91,
         "slot_use": {
           "attack": {
-            "uses": 6782,
-            "available_opportunities": 19093,
-            "use_rate_when_available_pct": 35.52
+            "uses": 8686,
+            "available_opportunities": 19959,
+            "use_rate_when_available_pct": 43.52
           },
           "selected_1": {
-            "uses": 3476,
-            "available_opportunities": 8566,
-            "use_rate_when_available_pct": 40.58
+            "uses": 4020,
+            "available_opportunities": 8451,
+            "use_rate_when_available_pct": 47.57
           },
           "unique_1": {
-            "uses": 4126,
-            "available_opportunities": 9385,
-            "use_rate_when_available_pct": 43.96
+            "uses": 4774,
+            "available_opportunities": 9142,
+            "use_rate_when_available_pct": 52.22
           },
           "selected_2": {
-            "uses": 209,
-            "available_opportunities": 1433,
-            "use_rate_when_available_pct": 14.58
+            "uses": 252,
+            "available_opportunities": 1535,
+            "use_rate_when_available_pct": 16.42
           },
           "unique_2": {
-            "uses": 84,
-            "available_opportunities": 5586,
-            "use_rate_when_available_pct": 1.5
+            "uses": 96,
+            "available_opportunities": 4817,
+            "use_rate_when_available_pct": 1.99
           },
           "guard": {
-            "uses": 4416,
-            "available_opportunities": 19093,
-            "use_rate_when_available_pct": 23.13
+            "uses": 2131,
+            "available_opportunities": 19959,
+            "use_rate_when_available_pct": 10.68
           }
         }
       },
       "mixed": {
-        "cases": 2400,
-        "victories": 1832,
-        "win_rate_pct": 76.33,
+        "cases": 2880,
+        "victories": 2437,
+        "win_rate_pct": 84.62,
         "clear_rounds": {
           "p10": 3.0,
           "p50": 3.0,
-          "p90": 7.0
+          "p90": 6.0
         },
         "one_round_clears": 0,
-        "weakness_hit_rate_pct": 36.0,
-        "weak_action_uplift_pct": 40.01,
-        "weak_bonus_share_of_damage_pct": 14.71,
-        "remaining_hp_pct": 47.62,
+        "weakness_hit_rate_pct": 35.27,
+        "weak_action_uplift_pct": 42.13,
+        "weak_bonus_share_of_damage_pct": 15.29,
+        "remaining_hp_pct": 55.97,
         "slot_use": {
           "attack": {
-            "uses": 10143,
-            "available_opportunities": 27449,
-            "use_rate_when_available_pct": 36.95
+            "uses": 14267,
+            "available_opportunities": 33645,
+            "use_rate_when_available_pct": 42.4
           },
           "selected_1": {
-            "uses": 5166,
-            "available_opportunities": 11342,
-            "use_rate_when_available_pct": 45.55
+            "uses": 6135,
+            "available_opportunities": 12619,
+            "use_rate_when_available_pct": 48.62
           },
           "unique_1": {
-            "uses": 3919,
-            "available_opportunities": 13790,
-            "use_rate_when_available_pct": 28.42
+            "uses": 5907,
+            "available_opportunities": 15069,
+            "use_rate_when_available_pct": 39.2
           },
           "selected_2": {
-            "uses": 232,
-            "available_opportunities": 2754,
-            "use_rate_when_available_pct": 8.42
+            "uses": 255,
+            "available_opportunities": 3174,
+            "use_rate_when_available_pct": 8.03
           },
           "unique_2": {
-            "uses": 532,
-            "available_opportunities": 7610,
-            "use_rate_when_available_pct": 6.99
+            "uses": 680,
+            "available_opportunities": 6960,
+            "use_rate_when_available_pct": 9.77
           },
           "guard": {
-            "uses": 7457,
-            "available_opportunities": 27449,
-            "use_rate_when_available_pct": 27.17
+            "uses": 6401,
+            "available_opportunities": 33645,
+            "use_rate_when_available_pct": 19.03
           }
         }
       }
@@ -731,13 +731,13 @@
   },
   "matchup_contribution": {
     "definition": "max_damage score rounds - weakness_first score rounds",
-    "positive_case_rate_pct": 9.85,
-    "negative_case_rate_pct": 4.55,
+    "positive_case_rate_pct": 11.4,
+    "negative_case_rate_pct": 5.57,
     "round_delta": {
       "p10": 0.0,
       "p50": 0.0,
-      "p90": 0.0,
-      "mean": 0.02
+      "p90": 1.0,
+      "mean": 0.01
     },
     "region_p50": {
       "echo_well": 0.0,
@@ -749,87 +749,141 @@
   "species_gap": {
     "max_damage": {
       "win_rate_pct": {
-        "aloof-pot": 91.35,
-        "baby-pot": 94.9,
-        "gumiho-pot": 95.31,
-        "handsome-pot": 91.88,
-        "magical-pot": 90.73,
-        "ninja-pot": 92.19,
-        "pretty-pot": 91.67,
-        "student-pot": 92.19,
-        "tsundere-pot": 92.5,
-        "zombie-pot": 90.62
+        "aloof-pot": 94.9,
+        "baby-pot": 100.0,
+        "gumiho-pot": 99.58,
+        "handsome-pot": 97.29,
+        "maestro-pot": 97.08,
+        "magical-pot": 94.27,
+        "ninja-pot": 93.54,
+        "nurse-pot": 99.9,
+        "pretty-pot": 95.1,
+        "student-pot": 96.77,
+        "tsundere-pot": 98.96,
+        "zombie-pot": 96.67
       },
-      "max_gap_pp": 4.69,
+      "max_gap_pp": 6.46,
       "mean_score_rounds": {
-        "aloof-pot": 2.971,
-        "baby-pot": 3.057,
-        "gumiho-pot": 2.906,
-        "handsome-pot": 3.036,
-        "magical-pot": 2.96,
-        "ninja-pot": 3.082,
-        "pretty-pot": 3.147,
-        "student-pot": 3.035,
-        "tsundere-pot": 3.05,
-        "zombie-pot": 3.047
+        "aloof-pot": 2.844,
+        "baby-pot": 2.802,
+        "gumiho-pot": 2.75,
+        "handsome-pot": 2.798,
+        "maestro-pot": 2.753,
+        "magical-pot": 2.829,
+        "ninja-pot": 3.048,
+        "nurse-pot": 2.73,
+        "pretty-pot": 2.99,
+        "student-pot": 2.847,
+        "tsundere-pot": 2.823,
+        "zombie-pot": 2.797
       },
-      "max_mean_score_round_gap": 0.241
+      "max_mean_score_round_gap": 0.318,
+      "remaining_hp_pct": {
+        "aloof-pot": 73.71,
+        "baby-pot": 83.33,
+        "gumiho-pot": 81.94,
+        "handsome-pot": 75.69,
+        "maestro-pot": 76.74,
+        "magical-pot": 73.09,
+        "ninja-pot": 72.4,
+        "nurse-pot": 77.99,
+        "pretty-pot": 72.79,
+        "student-pot": 75.36,
+        "tsundere-pot": 78.19,
+        "zombie-pot": 74.0
+      }
     },
     "weakness_first": {
       "win_rate_pct": {
-        "aloof-pot": 89.48,
-        "baby-pot": 91.67,
-        "gumiho-pot": 91.67,
-        "handsome-pot": 89.48,
-        "magical-pot": 90.21,
-        "ninja-pot": 90.31,
-        "pretty-pot": 91.15,
-        "student-pot": 91.15,
-        "tsundere-pot": 93.75,
-        "zombie-pot": 90.31
+        "aloof-pot": 93.33,
+        "baby-pot": 96.88,
+        "gumiho-pot": 96.46,
+        "handsome-pot": 93.75,
+        "maestro-pot": 99.27,
+        "magical-pot": 93.23,
+        "ninja-pot": 91.98,
+        "nurse-pot": 96.25,
+        "pretty-pot": 92.6,
+        "student-pot": 93.75,
+        "tsundere-pot": 95.1,
+        "zombie-pot": 94.9
       },
-      "max_gap_pp": 4.27,
+      "max_gap_pp": 7.29,
       "mean_score_rounds": {
-        "aloof-pot": 2.969,
-        "baby-pot": 3.057,
-        "gumiho-pot": 3.057,
-        "handsome-pot": 3.028,
-        "magical-pot": 2.925,
-        "ninja-pot": 3.095,
-        "pretty-pot": 3.089,
-        "student-pot": 2.945,
-        "tsundere-pot": 2.941,
-        "zombie-pot": 2.987
+        "aloof-pot": 2.87,
+        "baby-pot": 2.775,
+        "gumiho-pot": 2.802,
+        "handsome-pot": 2.841,
+        "maestro-pot": 2.524,
+        "magical-pot": 2.806,
+        "ninja-pot": 3.002,
+        "nurse-pot": 2.815,
+        "pretty-pot": 2.978,
+        "student-pot": 2.861,
+        "tsundere-pot": 2.818,
+        "zombie-pot": 2.799
       },
-      "max_mean_score_round_gap": 0.17
+      "max_mean_score_round_gap": 0.478,
+      "remaining_hp_pct": {
+        "aloof-pot": 72.86,
+        "baby-pot": 79.99,
+        "gumiho-pot": 79.54,
+        "handsome-pot": 74.82,
+        "maestro-pot": 79.28,
+        "magical-pot": 71.95,
+        "ninja-pot": 70.45,
+        "nurse-pot": 78.91,
+        "pretty-pot": 73.93,
+        "student-pot": 74.19,
+        "tsundere-pot": 75.63,
+        "zombie-pot": 73.67
+      }
     },
     "survival": {
       "win_rate_pct": {
-        "aloof-pot": 88.12,
-        "baby-pot": 88.54,
-        "gumiho-pot": 96.56,
-        "handsome-pot": 89.48,
-        "magical-pot": 89.06,
-        "ninja-pot": 87.71,
-        "pretty-pot": 89.48,
-        "student-pot": 90.21,
-        "tsundere-pot": 88.65,
-        "zombie-pot": 88.02
+        "aloof-pot": 92.6,
+        "baby-pot": 97.5,
+        "gumiho-pot": 98.96,
+        "handsome-pot": 93.65,
+        "maestro-pot": 99.9,
+        "magical-pot": 93.75,
+        "ninja-pot": 92.4,
+        "nurse-pot": 99.38,
+        "pretty-pot": 96.35,
+        "student-pot": 94.58,
+        "tsundere-pot": 94.79,
+        "zombie-pot": 94.9
       },
-      "max_gap_pp": 8.85,
+      "max_gap_pp": 7.5,
       "mean_score_rounds": {
-        "aloof-pot": 3.256,
-        "baby-pot": 3.367,
-        "gumiho-pot": 3.1,
-        "handsome-pot": 3.223,
-        "magical-pot": 3.265,
-        "ninja-pot": 3.311,
-        "pretty-pot": 3.318,
-        "student-pot": 3.222,
-        "tsundere-pot": 3.352,
-        "zombie-pot": 3.159
+        "aloof-pot": 2.953,
+        "baby-pot": 2.86,
+        "gumiho-pot": 2.823,
+        "handsome-pot": 2.906,
+        "maestro-pot": 2.742,
+        "magical-pot": 3.006,
+        "ninja-pot": 3.072,
+        "nurse-pot": 2.812,
+        "pretty-pot": 2.94,
+        "student-pot": 2.955,
+        "tsundere-pot": 2.981,
+        "zombie-pot": 2.908
       },
-      "max_mean_score_round_gap": 0.267
+      "max_mean_score_round_gap": 0.33,
+      "remaining_hp_pct": {
+        "aloof-pot": 73.13,
+        "baby-pot": 80.08,
+        "gumiho-pot": 83.15,
+        "handsome-pot": 75.13,
+        "maestro-pot": 76.97,
+        "magical-pot": 71.92,
+        "ninja-pot": 71.33,
+        "nurse-pot": 83.86,
+        "pretty-pot": 77.81,
+        "student-pot": 74.67,
+        "tsundere-pot": 74.25,
+        "zombie-pot": 73.47
+      }
     }
   },
   "balance_gates": {
@@ -839,7 +893,7 @@
         "pass": true,
         "actual": {
           "win_rate_pct": 100.0,
-          "p90": 2.0
+          "p90": 1.0
         },
         "target": "승률 100%, P90 1~2라운드"
       },
@@ -855,7 +909,7 @@
       "elite_pacing": {
         "pass": true,
         "actual": {
-          "win_rate_pct": 98.58,
+          "win_rate_pct": 99.9,
           "p50": 2.0,
           "one_round_clears": 0
         },
@@ -864,7 +918,7 @@
       "mixed_mastery": {
         "pass": true,
         "actual": {
-          "win_rate_pct": 76.33,
+          "win_rate_pct": 84.62,
           "p50": 3.0,
           "one_round_clears": 0
         },
@@ -873,39 +927,45 @@
       "matchup_damage": {
         "pass": true,
         "actual": {
-          "weak_action_uplift_pct": 42.67,
-          "weakness_hit_rate_pct": 38.39
+          "weak_action_uplift_pct": 42.74,
+          "weakness_hit_rate_pct": 38.7
         },
         "target": "일반 약점 1.50배·프리즘 약점 1.30배 혼합 실피해 상승 40~50%"
       },
       "matchup_selection": {
         "pass": true,
         "actual": {
-          "weakness_hit_lift_pp": 15.77,
-          "faster_case_rate_pct": 9.85,
-          "slower_case_rate_pct": 4.55
+          "weakness_hit_lift_pp": 15.52,
+          "faster_case_rate_pct": 11.4,
+          "slower_case_rate_pct": 5.57
         },
         "target": "약점 우선 시 적중률 +10%p 이상, 빨라지는 셀이 느려지는 셀 이상"
       },
       "slot_coverage": {
         "pass": true,
         "actual": {
-          "attack": 53.64,
-          "selected_1": 54.69,
-          "unique_1": 45.43,
-          "selected_2": 23.26,
-          "unique_2": 16.6,
-          "guard": 19.91
+          "attack": 52.09,
+          "selected_1": 56.43,
+          "unique_1": 45.12,
+          "selected_2": 23.72,
+          "unique_2": 15.76,
+          "guard": 12.46
         },
         "target": "사용 가능한 기본·고유·선택·방어 슬롯 선택률 각각 5% 이상"
       },
-      "species_coverage_gap": {
+      "species_role_positioning": {
         "pass": true,
         "actual": {
-          "max_gap_pp": 4.27,
-          "max_mean_score_round_gap": 0.17
+          "standard_max_gap_pp": 4.9,
+          "all_species_max_gap_pp": 7.29,
+          "maestro_mean_score_rounds": 2.524,
+          "standard_fastest_mean_score_rounds": 2.775,
+          "nurse_survival_remaining_hp_pct": 83.86,
+          "standard_best_remaining_hp_pct": 83.15,
+          "premium_survival_win_floor_pct": 99.38,
+          "standard_survival_win_average_pct": 94.95
         },
-        "target": "동일 전수 셀 품종 승률 격차 5%p 이하"
+        "target": "기본 10종 승률 격차 5%p 이하, 세렌은 최단 공략, 백화는 최고 생존 잔여 체력, 프리미엄 생존 승률은 기본 평균 이상"
       }
     }
   }

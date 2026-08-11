@@ -65,6 +65,8 @@ MOTION_ARCHETYPE_BY_PROFILE = {
     "magical-pot.meteor-cast": "cast",
     "aloof-pot.zero-point": "brace",
     "student-pot.formula-write": "cast",
+    "nurse-pot.triage-step": "cast",
+    "maestro-pot.downbeat": "draw",
     "archive-guide.lantern-cast": "cast",
     # 캐릭터 고유 II
     "baby-pot.root-embrace": "channel",
@@ -77,6 +79,8 @@ MOTION_ARCHETYPE_BY_PROFILE = {
     "magical-pot.timefold-comet": "cast",
     "aloof-pot.steel-verdict": "cast",
     "student-pot.seal-rewrite": "brace",
+    "nurse-pot.white-oath": "channel",
+    "maestro-pot.silent-coda": "channel",
     "archive-guide.archive-seal": "brace",
     # 감정 성장기·공용 행동
     "emotion.open-radiant": "cast",

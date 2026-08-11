@@ -18,6 +18,11 @@ const _v3CharacterSlugs = {
   'gumiho-pot',
 };
 
+const _v4CharacterSlugs = {
+  'nurse-pot',
+  'maestro-pot',
+};
+
 int gardenInt(Object? value, [int fallback = 0]) => switch (value) {
       int number => number,
       num number => number.toInt(),
@@ -295,11 +300,13 @@ class ShopItem {
       return bundledAssetPath;
     }
     final slug = key.substring(key.indexOf('/') + 1);
-    final version = _v3CharacterSlugs.contains(slug)
-        ? '-v3'
-        : _v2CharacterSlugs.contains(slug)
-            ? '-v2'
-            : '';
+    final version = _v4CharacterSlugs.contains(slug)
+        ? '-v4'
+        : _v3CharacterSlugs.contains(slug)
+            ? '-v3'
+            : _v2CharacterSlugs.contains(slug)
+                ? '-v2'
+                : '';
     return 'assets/characters/$slug$version.webp';
   }
 
@@ -322,6 +329,11 @@ class ShopItem {
       gardenString(assetManifest, 'collection_quote');
   bool get hasCollectionStory =>
       storyRole != null || loreHook != null || collectionQuote != null;
+
+  Map<String, dynamic> get baseOutfit =>
+      gardenMap(assetManifest['base_outfit']);
+  String? get baseOutfitName => gardenString(baseOutfit, 'name');
+  bool get includesBaseOutfit => baseOutfit['included_with_character'] == true;
 
   bool get isSpeciesUnlock => type == 'species_unlock';
 
@@ -359,6 +371,8 @@ class ShopItem {
     if (identity.contains('ninja')) return 'ninja_snap';
     if (identity.contains('aloof')) return 'aloof_glance';
     if (identity.contains('student')) return 'student_adjust';
+    if (identity.contains('nurse')) return 'nurse_breathe';
+    if (identity.contains('maestro')) return 'maestro_cue';
     if (identity.contains('dewdrop')) return 'dewdrop_bob';
     if (identity.contains('star')) return 'star_hop';
     if (identity.contains('bunny')) return 'bunny_bounce';
@@ -381,6 +395,8 @@ class ShopItem {
     if (identity.contains('ninja')) return '잎 수리검을 다루는 재빠른 정찰꾼';
     if (identity.contains('aloof')) return '서리꽃을 지키는 말수 적은 라이벌';
     if (identity.contains('student')) return '수첩부터 펴는 원칙주의 학생회장';
+    if (identity.contains('nurse')) return '모두의 생명선을 지키는 성숙한 백의 수호사';
+    if (identity.contains('maestro')) return '전장의 박자를 바꾸는 냉정한 공명 지휘자';
     if (identity.contains('dewdrop')) return '잎 목도리를 두른 물방울 탐험가';
     if (identity.contains('star')) return '길을 먼저 밝히는 별 모양 씨앗';
     if (identity.contains('bunny')) return '씨앗 가방을 멘 잎귀 토끼';
@@ -407,6 +423,10 @@ class ShopItem {
     if (identity.contains('ninja')) return '연막 잎 준비. 셋에 움직여.';
     if (identity.contains('aloof')) return '서리꽃은 함부로 만지지 마.';
     if (identity.contains('student')) return '수첩 펴. 할 일부터 정리하자.';
+    if (identity.contains('nurse')) {
+      return '괜찮아. 누구도 혼자 쓰러지게 두지 않아.';
+    }
+    if (identity.contains('maestro')) return '승리할 박자는 내가 정할게.';
     if (identity.contains('dewdrop')) return '이슬길은 내가 먼저 살펴볼게!';
     if (identity.contains('star')) return '반짝! 이쪽 길이야.';
     if (identity.contains('bunny')) return '새 씨앗 냄새가 나. 따라와!';

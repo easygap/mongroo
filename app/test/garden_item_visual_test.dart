@@ -317,7 +317,7 @@ void main() {
     expect(starAfter.y, lessThan(starBefore.y - 1));
   });
 
-  testWidgets('10종 성장 캐릭터는 모두 서로 다른 탭 모션을 지원한다', (tester) async {
+  testWidgets('12종 성장 캐릭터는 모두 서로 다른 탭 모션을 지원한다', (tester) async {
     const characters = {
       'baby-pot': 'baby_bounce',
       'handsome-pot': 'prince_flourish',
@@ -329,6 +329,8 @@ void main() {
       'magical-pot': 'magical_hover',
       'aloof-pot': 'aloof_glance',
       'student-pot': 'student_adjust',
+      'nurse-pot': 'nurse_breathe',
+      'maestro-pot': 'maestro_cue',
     };
 
     for (final entry in characters.entries) {

@@ -750,7 +750,8 @@ async def test_guardian_defeat_forces_safe_return_and_loses_carried_rewards(
         await _start(client, headers, plant_id),
         "manual-defeat",
     )
-    for turn in range(1, 7):
+    max_rounds = run["current_event"]["battle"]["max_rounds"]
+    for turn in range(1, max_rounds + 1):
         battle = run["current_event"]["battle"]
         run = await _action(
             client,

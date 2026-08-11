@@ -37,8 +37,12 @@ from app.content.expeditions.combat_identity import (
     TANGLE_ELEMENT_MATCHUPS,
     TIER_POWER_BP,
     basic_scale_bp,
+    character_combat_stats,
+    combat_effect_summary,
+    combat_effect_values,
     combat_tier,
     element_kel_map,
+    EMOTION_VFX_PALETTES,
     rarity_scale_bp,
     scaled_power,
 )
@@ -130,6 +134,13 @@ def member_battle_kit(
     level = combat_level_from_snapshot(snapshot)
     rarity = max(1, min(5, int(snapshot.get("rarity", 1))))
     tier = combat_tier(level)
+    combat_profile = character_combat_stats(
+        str(species_code), level=level, rarity=rarity, form=str(form)
+    )
+    combat_stats = dict(combat_profile["values"])
+    emotion_palette = dict(
+        EMOTION_VFX_PALETTES.get(form, EMOTION_VFX_PALETTES["mosaic"])
+    )
     signature_scale = rarity_scale_bp(level, rarity)
     basic_scale = basic_scale_bp(level, rarity)
     weak_kel = element_kels.get(str(current_weak_element))
@@ -185,7 +196,11 @@ def member_battle_kit(
         cooldown_turns = int(skill["cooldown_turns"])
         if source == "signature" and tier >= 3 and cooldown_turns > 0:
             cooldown_turns = max(1, cooldown_turns - 1)
-        raw_power = int(skill["power"]) + stats[skill_affinity]
+        raw_power = (
+            int(skill["power"])
+            + stats[skill_affinity]
+            + max(0, (int(combat_stats["offense"]) - 20) // 6)
+        )
         power_scale = signature_scale if source == "signature" else 10_000
         tier_power_bp = TIER_POWER_BP[tier]
         growth_power = scaled_power(raw_power, power_scale)
@@ -202,6 +217,14 @@ def member_battle_kit(
         ):
             effect_bp = EFFECT_POWER_BP["last_stand"]
         ready_round = int(cooldowns.get(str(skill["code"]), 0))
+        effect_values = combat_effect_values(
+            str(skill["effect"]), tier=tier, combat_stats=combat_stats
+        )
+        vfx_intensity = (0.86, 1.0, 1.14)[tier - 1]
+        audio_layer = ("light", "full", "signature")[tier - 1]
+        impact_shake = (2.2, 3.2, 4.4)[tier - 1]
+        if slot == "unique_2":
+            impact_shake += 0.8
         return {
             **skill,
             "slot": slot,
@@ -219,6 +242,10 @@ def member_battle_kit(
             "matchup": matchup,
             "matchup_bp": matchup_bp,
             "effect_power_bp": effect_bp,
+            "effect_values": effect_values,
+            "mechanic_summary": combat_effect_summary(
+                str(skill["effect"]), effect_values
+            ),
             "power": scaled_power(matched_power, effect_bp),
             "affinity": skill_affinity,
             "affinity_label": AFFINITY_LABELS[skill_affinity],
@@ -240,12 +267,25 @@ def member_battle_kit(
             ),
             "fusion_production_ready": False if fusion_profile is not None else None,
             "prism_shifted": prism_shifted,
+            "presentation_tier": tier,
+            "vfx_intensity": vfx_intensity,
+            "audio_layer": audio_layer,
+            "camera_profile": (
+                "ultimate"
+                if slot == "unique_2" and tier >= 3
+                else "impact"
+                if tier >= 2
+                else "steady"
+            ),
+            "emotion_vfx_primary": emotion_palette["primary"],
+            "emotion_vfx_secondary": emotion_palette["secondary"],
             "damage_type_label": DAMAGE_TYPE_LABELS[skill["damage_type"]],
             "effect_key": ELEMENT_RUNTIME_EFFECTS[element],
             "kel_fallback_family": kel_fallback_family(skill_kel),
             "motion": combat_motion(
                 str(skill["motion_profile"]),
-                ultimate=slot == "unique_2",
+                ultimate=slot == "unique_2" and tier >= 2,
+                impact_shake_px=impact_shake,
             ),
             "cooldown_turns": cooldown_turns,
             "cooldown_remaining": cooldown_remaining(str(skill["code"])),
@@ -266,7 +306,7 @@ def member_battle_kit(
         ),
         slot="unique_2",
         source="signature",
-        unlock_level=3,
+        unlock_level=7,
     )
     selected_1 = resolve_skill(
         FORM_COMBAT_SKILLS.get(form, FORM_COMBAT_SKILLS["mosaic"]),
@@ -281,14 +321,16 @@ def member_battle_kit(
         unlock_level=23,
     )
     basic_element = str(discipline["primary_element"])
-    basic_raw_power = 10 + stats[affinity] // 2
+    basic_raw_power = (
+        10 + stats[affinity] // 2 + max(0, (int(combat_stats["offense"]) - 20) // 8)
+    )
     basic_kel = element_kels[basic_element]
     basic_matchup = _kel_matchup([basic_kel], weak_kel=weak_kel, resist_kel=resist_kel)
     basic_neutral_power = scaled_power(
         scaled_power(basic_raw_power, basic_scale), TIER_POWER_BP[tier]
     )
     return {
-        "version": 6,
+        "version": 7,
         "kel_map_version": int(kel_map_version),
         "level": level,
         "rarity": rarity,
@@ -299,6 +341,11 @@ def member_battle_kit(
         "affinity": affinity,
         "affinity_label": AFFINITY_LABELS[affinity],
         "emotion_discipline": discipline["name"],
+        "role": combat_profile["role"],
+        "role_label": combat_profile["role_label"],
+        "combat_stats": combat_stats,
+        "combat_stat_labels": combat_profile["labels"],
+        "emotion_vfx_palette": emotion_palette,
         "primary_element": basic_element,
         "primary_element_label": ELEMENT_LABELS[basic_element],
         "secondary_element": discipline["secondary_element"],
@@ -319,6 +366,8 @@ def member_battle_kit(
             "matchup": basic_matchup,
             "matchup_bp": MATCHUP_POWER_BP[basic_matchup],
             "effect_power_bp": 10_000,
+            "effect_values": {},
+            "mechanic_summary": "집중 회복 1",
             "power": scaled_power(basic_neutral_power, MATCHUP_POWER_BP[basic_matchup]),
             "focus_delta": 1,
             "affinity": affinity,
@@ -334,6 +383,12 @@ def member_battle_kit(
             "damage_type_label": DAMAGE_TYPE_LABELS["projectile"],
             "motion_profile": discipline["motion_profile"],
             "vfx_family": discipline["basic_vfx_family"],
+            "presentation_tier": tier,
+            "vfx_intensity": (0.86, 1.0, 1.14)[tier - 1],
+            "audio_layer": ("light", "full", "signature")[tier - 1],
+            "camera_profile": "steady" if tier == 1 else "impact",
+            "emotion_vfx_primary": emotion_palette["primary"],
+            "emotion_vfx_secondary": emotion_palette["secondary"],
             "effect_key": ELEMENT_RUNTIME_EFFECTS[basic_element],
             "kel_fallback_family": kel_fallback_family(basic_kel),
             "motion": combat_motion(str(discipline["motion_profile"])),
@@ -349,13 +404,14 @@ def member_battle_kit(
             "name": "마음 지키기",
             "description": "피해를 두 칸 막고 집중력 1을 얻어요.",
             "available": True,
-            "guard": 2,
+            "guard": 2 + max(0, (int(combat_stats["vitality"]) - 12) // 10),
             "focus_delta": 1,
             "motion_profile": "guard.channel",
             "vfx_family": "common.safe-guard",
             "effect_key": "safe_guard",
             "kel_fallback_family": None,
             "motion": combat_motion("guard.channel", impact_shake_px=0.0),
+            "mechanic_summary": "피해 방어 · 집중 회복 1",
             "cooldown_turns": 0,
             "cooldown_remaining": 0,
         },
@@ -398,6 +454,115 @@ def _resolve_waves(
     return waves
 
 
+def _resolve_boss_phases(
+    encounter: dict[str, Any],
+    *,
+    element_kels: Any,
+) -> list[dict[str, Any]]:
+    phases: list[dict[str, Any]] = []
+    for index, raw in enumerate(encounter.get("boss_phases") or []):
+        phase = dict(raw)
+        weak_element = str(phase.get("weak_element", encounter.get("weak_element")))
+        resist_element = str(
+            phase.get("resist_element", encounter.get("resist_element"))
+        )
+        phases.append(
+            {
+                **phase,
+                "index": index + 1,
+                "threshold_bp": int(phase.get("threshold_bp", 10_000)),
+                "weak_element": weak_element,
+                "resist_element": resist_element,
+                "weak_kel": element_kels[weak_element],
+                "resist_kel": element_kels[resist_element],
+                "weakness_cycle": list(
+                    phase.get("weakness_cycle")
+                    or encounter.get("weakness_cycle")
+                    or AFFINITIES
+                ),
+                "intent_power_bonus": int(phase.get("intent_power_bonus", 0)),
+                "focus_reward": int(phase.get("focus_reward", 0)),
+            }
+        )
+    return phases
+
+
+def _current_boss_phase(state: dict[str, Any]) -> dict[str, Any] | None:
+    phases = state.get("boss_phases") or []
+    index = int(state.get("boss_phase_index", 0))
+    return phases[index] if 0 <= index < len(phases) else None
+
+
+def _boss_phase_payload(state: dict[str, Any]) -> dict[str, Any] | None:
+    phase = _current_boss_phase(state)
+    if phase is None:
+        return None
+    phases = state.get("boss_phases") or []
+    index = int(state.get("boss_phase_index", 0))
+    next_phase = phases[index + 1] if index + 1 < len(phases) else None
+    max_guard = max(1, int(state.get("enemy_max_guard", 1)))
+    return {
+        "index": index + 1,
+        "count": len(phases),
+        "code": phase.get("code", f"phase_{index + 1}"),
+        "name": phase.get("name", f"{index + 1}페이즈"),
+        "tone": phase.get("tone", "mosaic"),
+        "intent_power_bonus": int(phase.get("intent_power_bonus", 0)),
+        "next_threshold_guard": (
+            max(1, (max_guard * int(next_phase["threshold_bp"]) + 9_999) // 10_000)
+            if next_phase is not None
+            else None
+        ),
+    }
+
+
+def _advance_boss_phase(state: dict[str, Any]) -> list[dict[str, Any]]:
+    phases = state.get("boss_phases") or []
+    events: list[dict[str, Any]] = []
+    if not phases or int(state.get("enemy_guard", 0)) <= 0:
+        return events
+    max_guard = max(1, int(state.get("enemy_max_guard", 1)))
+    index = int(state.get("boss_phase_index", 0))
+    while index + 1 < len(phases):
+        next_phase = phases[index + 1]
+        threshold = (max_guard * int(next_phase["threshold_bp"]) + 9_999) // 10_000
+        if int(state["enemy_guard"]) > threshold:
+            break
+        index += 1
+        phase = phases[index]
+        state["boss_phase_index"] = index
+        state["weakness"] = phase["weakness_cycle"][0]
+        state["weak_element"] = phase["weak_element"]
+        state["resist_element"] = phase["resist_element"]
+        state["weak_kel"] = phase["weak_kel"]
+        state["resist_kel"] = phase["resist_kel"]
+        state["intent_index"] = 0
+        state["focus"] = min(
+            int(state.get("max_focus", 5)),
+            int(state.get("focus", 0)) + int(phase.get("focus_reward", 0)),
+        )
+        events.append(
+            _push_event(
+                state,
+                {
+                    "type": "boss_phase",
+                    "phase_index": index + 1,
+                    "phase_count": len(phases),
+                    "phase_code": phase.get("code", f"phase_{index + 1}"),
+                    "phase_name": phase.get("name", f"{index + 1}페이즈"),
+                    "effect_key": "prism_burst",
+                    "vfx_family": "guardian.phase-break",
+                    "presentation_tier": min(3, index + 1),
+                    "audio_layer": "signature" if index + 1 >= 3 else "full",
+                    "caption": phase.get(
+                        "intro_caption", "수호자가 새로운 봉인 자세를 펼쳤어요."
+                    ),
+                },
+            )
+        )
+    return events
+
+
 def _party_growth_scale_bp(profiles: list[dict[str, Any]]) -> tuple[int, int]:
     growth_index = growth_index_for_party(profiles)
     # Lv1~3에서는 계수 반올림으로 플레이어 위력이 아직 오르지 않을 수 있다.
@@ -406,6 +571,19 @@ def _party_growth_scale_bp(profiles: list[dict[str, Any]]) -> tuple[int, int]:
     scalable_growth = max(0, growth_index - 10)
     barrier_bonus_bp = (3_000 * scalable_growth + 45) // 90
     return growth_index, 10_000 + barrier_bonus_bp
+
+
+def _combat_hp_for_profile(profile: dict[str, Any]) -> int:
+    snapshot = profile.get("snapshot", {})
+    level = combat_level_from_snapshot(snapshot)
+    rarity = max(1, min(5, int(snapshot.get("rarity", 1))))
+    species_code = str(snapshot.get("species", {}).get("code", "archive_guide"))
+    form = str(snapshot.get("form", "mosaic"))
+    stats = character_combat_stats(species_code, level=level, rarity=rarity, form=form)[
+        "values"
+    ]
+    vitality_bonus = max(0, (int(stats["vitality"]) - 8) // 6)
+    return combat_hp_for_level(level) + vitality_bonus
 
 
 def _current_wave(state: dict[str, Any]) -> dict[str, Any] | None:
@@ -422,6 +600,7 @@ def new_guardian_battle(
     kel_map_version = CURRENT_KEL_MAP_VERSION
     element_kels = element_kel_map(kel_map_version)
     waves = _resolve_waves(encounter, kel_map_version=kel_map_version)
+    boss_phases = _resolve_boss_phases(encounter, element_kels=element_kels)
     growth_index, barrier_scale_bp = _party_growth_scale_bp(profiles)
     max_focus = int(encounter.get("max_focus", 5))
     configured_focus = int(encounter.get("starting_focus", 3))
@@ -449,8 +628,17 @@ def new_guardian_battle(
         base_barrier = int(encounter.get("enemy_max_guard", 100))
         barrier = scaled_power(base_barrier, barrier_scale_bp)
         opening_caption = "돌비늘 장부지기가 길을 막았어요."
+        if boss_phases:
+            opening = boss_phases[0]
+            weakness_cycle = list(opening["weakness_cycle"])
+            weak_element = opening["weak_element"]
+            resist_element = opening["resist_element"]
+            opening_caption = (
+                f"{opening_caption} "
+                f"{opening.get('intro_caption', '첫 번째 봉인이 깨어났어요.')}"
+            )
     return {
-        "version": 2,
+        "version": 3,
         "balance_version": COMBAT_BALANCE_VERSION,
         "kel_map_version": kel_map_version,
         "event_code": event_code,
@@ -465,6 +653,8 @@ def new_guardian_battle(
         "enemy_kind": "tangle" if waves else "guardian",
         "waves": waves,
         "wave_index": 0,
+        "boss_phases": boss_phases,
+        "boss_phase_index": 0,
         "enemy_guard": barrier,
         "enemy_max_guard": barrier,
         "growth_index": growth_index,
@@ -478,12 +668,8 @@ def new_guardian_battle(
         "party": [
             {
                 "member_id": int(profile["id"]),
-                "hp": combat_hp_for_level(
-                    combat_level_from_snapshot(profile.get("snapshot", {}))
-                ),
-                "max_hp": combat_hp_for_level(
-                    combat_level_from_snapshot(profile.get("snapshot", {}))
-                ),
+                "hp": _combat_hp_for_profile(profile),
+                "max_hp": _combat_hp_for_profile(profile),
                 "guard": 0,
                 "cooldown_until_round": {},
                 "ready_round": {},
@@ -502,17 +688,31 @@ def _intent(
     encounter: dict[str, Any],
     index: int,
     wave: dict[str, Any] | None = None,
+    boss_phase: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    intents = (wave or {}).get("intents") or encounter.get("intents") or []
+    intents = (
+        (wave or {}).get("intents")
+        or (boss_phase or {}).get("intents")
+        or encounter.get("intents")
+        or []
+    )
     if not intents:
-        return present_intent({
-            "code": "guardian_strike",
-            "name": encounter.get("attack_name", "수호자의 공격"),
-            "telegraph": encounter.get("telegraph", "공격을 준비하고 있어요."),
-            "target": "front",
-            "power": 1,
-        })
-    return present_intent(dict(intents[index % len(intents)]))
+        return present_intent(
+            {
+                "code": "guardian_strike",
+                "name": encounter.get("attack_name", "수호자의 공격"),
+                "telegraph": encounter.get("telegraph", "공격을 준비하고 있어요."),
+                "target": "front",
+                "power": 1,
+            }
+        )
+    presented = present_intent(dict(intents[index % len(intents)]))
+    if boss_phase is not None:
+        presented["power"] = int(presented.get("power", 1)) + int(
+            boss_phase.get("intent_power_bonus", 0)
+        )
+        presented["boss_phase"] = int(boss_phase.get("index", 1))
+    return presented
 
 
 def guardian_battle_payload(
@@ -554,7 +754,13 @@ def guardian_battle_payload(
             }
         )
     wave = _current_wave(state)
-    intent = _intent(encounter, int(state.get("intent_index", 0)), wave=wave)
+    boss_phase = _current_boss_phase(state)
+    intent = _intent(
+        encounter,
+        int(state.get("intent_index", 0)),
+        wave=wave,
+        boss_phase=boss_phase,
+    )
     pending = state.get("pending")
     acted = [
         int(member_id)
@@ -565,6 +771,11 @@ def guardian_battle_payload(
         for member in state.get("party", [])
         if int(member["hp"]) > 0
     ]
+    required_member_ids = (
+        [int(member_id) for member_id in pending.get("required_member_ids", [])]
+        if isinstance(pending, dict) and "required_member_ids" in pending
+        else living_ids
+    )
     return {
         **copy.deepcopy(state),
         "kel_map_version": kel_map_version,
@@ -601,10 +812,13 @@ def guardian_battle_payload(
             if wave
             else None
         ),
+        "boss_phase": _boss_phase_payload(state),
         "pending_round": {
             "acted": acted,
             "awaiting": [
-                member_id for member_id in living_ids if member_id not in acted
+                member_id
+                for member_id in required_member_ids
+                if member_id not in acted and member_id in living_ids
             ],
         },
         "party": party,
@@ -641,7 +855,13 @@ def _begin_round_if_needed(state: dict[str, Any]) -> dict[str, Any]:
     # 방어는 라운드 단위다. 지난 적 행동 뒤 남은 수치를 다음 라운드에 이월하지 않는다.
     for member in state.get("party", []):
         member["guard"] = 0
-    pending = {"acted": [], "intent_power_delta": 0}
+    pending = {
+        "acted": [],
+        "required_member_ids": [
+            int(member["member_id"]) for member in _living_party(state)
+        ],
+        "intent_power_delta": 0,
+    }
     state["pending"] = pending
     state["round_exchange"] = []
     return pending
@@ -764,6 +984,14 @@ def _apply_member_command(
     matchup_bp = 10_000
     cooldown_turns = 0
     cooldown_until_round = 0
+    effect_values: dict[str, int] = {}
+    mechanic_summary = ""
+    presentation_tier = 1
+    vfx_intensity = 0.86
+    audio_layer = "light"
+    camera_profile = "steady"
+    emotion_vfx_primary = None
+    emotion_vfx_secondary = None
     caption = ""
 
     if action == "guard":
@@ -811,9 +1039,26 @@ def _apply_member_command(
         action_kels = [str(item) for item in action_data.get("kels", [])]
         fusion_variant = action_data.get("fusion_variant")
         fusion_vfx_family = action_data.get("fusion_vfx_family")
+        effect_values = {
+            str(key): int(value)
+            for key, value in dict(action_data.get("effect_values") or {}).items()
+        }
+        mechanic_summary = str(action_data.get("mechanic_summary") or "")
+        presentation_tier = int(action_data.get("presentation_tier", 1))
+        vfx_intensity = float(action_data.get("vfx_intensity", 0.86))
+        audio_layer = str(action_data.get("audio_layer", "light"))
+        camera_profile = str(action_data.get("camera_profile", "steady"))
+        emotion_vfx_primary = action_data.get("emotion_vfx_primary")
+        emotion_vfx_secondary = action_data.get("emotion_vfx_secondary")
         power_neutral = int(action_data.get("power_neutral", action_data["power"]))
         matchup_bp = int(action_data.get("matchup_bp", 10_000))
         damage = int(action_data["power"])
+        # 지휘 버프와 적 취약은 사용한 스킬 자신이 아니라 같은 라운드의
+        # 뒤쪽 행동부터 적용된다. 행동 순서를 고르는 이유가 실제 판정에 남는다.
+        damage = scaled_power(damage, int(pending.get("party_power_bp", 10_000)))
+        damage = scaled_power(
+            damage, int(pending.get("enemy_vulnerability_bp", 10_000))
+        )
         modern_matchup = int(state.get("version", 1)) >= 2 and bool(
             state.get("weak_kel")
         )
@@ -837,17 +1082,27 @@ def _apply_member_command(
         effect = action_data.get("effect")
         if effect == "shield_all":
             for target in _living_party(state):
-                target["guard"] = int(target["guard"]) + 1
+                target["guard"] = int(target["guard"]) + int(
+                    effect_values.get("party_guard", 1)
+                )
         elif effect == "focus_refund":
-            focus = min(max_focus, focus + 1)
+            focus = min(max_focus, focus + int(effect_values.get("focus_refund", 1)))
         elif effect == "heal_lowest":
             target = min(
                 _living_party(state),
                 key=lambda item: (int(item["hp"]), item["member_id"]),
             )
-            target["hp"] = min(int(target["max_hp"]), int(target["hp"]) + 1)
+            target["hp"] = min(
+                int(target["max_hp"]),
+                int(target["hp"]) + int(effect_values.get("heal_lowest", 1)),
+            )
+            target["guard"] = int(target["guard"]) + int(
+                effect_values.get("target_guard", 0)
+            )
         elif effect == "guard_self":
-            member_state["guard"] = int(member_state["guard"]) + 2
+            member_state["guard"] = int(member_state["guard"]) + int(
+                effect_values.get("self_guard", 2)
+            )
         elif (
             not modern_matchup
             and effect == "last_stand"
@@ -855,15 +1110,71 @@ def _apply_member_command(
         ):
             damage += 8
         elif effect == "weaken_intent":
-            pending["intent_power_delta"] = (
-                int(pending.get("intent_power_delta", 0)) - 1
-            )
+            pending["intent_power_delta"] = int(
+                pending.get("intent_power_delta", 0)
+            ) + int(effect_values.get("intent_power_delta", -1))
         elif not modern_matchup and effect == "weakness_pierce" and weakness_hit:
             damage += 6
         elif not modern_matchup and effect == "steady_read" and not weakness_hit:
             damage += 5
         elif effect == "study_refund":
-            focus = min(max_focus, focus + 2)
+            focus = min(max_focus, focus + int(effect_values.get("focus_refund", 2)))
+        elif effect == "triage_heal":
+            target = min(
+                _living_party(state),
+                key=lambda item: (int(item["hp"]), item["member_id"]),
+            )
+            target["hp"] = min(
+                int(target["max_hp"]),
+                int(target["hp"]) + int(effect_values.get("heal_lowest", 2)),
+            )
+            target["guard"] = int(target["guard"]) + int(
+                effect_values.get("target_guard", 0)
+            )
+        elif effect == "white_garden_oath":
+            revive_count = int(effect_values.get("revive_count", 0))
+            if revive_count > 0:
+                downed = sorted(
+                    (
+                        target
+                        for target in state.get("party", [])
+                        if int(target["hp"]) <= 0
+                    ),
+                    key=lambda item: int(item["member_id"]),
+                )
+                for target in downed[:revive_count]:
+                    target["hp"] = min(
+                        int(target["max_hp"]),
+                        max(1, int(effect_values.get("revive_hp", 1))),
+                    )
+            living = _living_party(state)
+            heal_all = int(effect_values.get("heal_all", 0))
+            party_guard = int(effect_values.get("party_guard", 0))
+            for target in living:
+                target["hp"] = min(int(target["max_hp"]), int(target["hp"]) + heal_all)
+                target["guard"] = int(target["guard"]) + party_guard
+            heal_lowest = int(effect_values.get("heal_lowest", 0))
+            if heal_lowest > 0 and living:
+                target = min(
+                    living, key=lambda item: (int(item["hp"]), item["member_id"])
+                )
+                target["hp"] = min(
+                    int(target["max_hp"]), int(target["hp"]) + heal_lowest
+                )
+        elif effect == "resonance_boost":
+            pending["party_power_bp"] = max(
+                int(pending.get("party_power_bp", 10_000)),
+                int(effect_values.get("party_power_bp", 10_000)),
+            )
+            focus = min(max_focus, focus + int(effect_values.get("focus_refund", 0)))
+        elif effect == "silent_coda":
+            pending["intent_power_delta"] = int(
+                pending.get("intent_power_delta", 0)
+            ) + int(effect_values.get("intent_power_delta", -1))
+            pending["enemy_vulnerability_bp"] = max(
+                int(pending.get("enemy_vulnerability_bp", 10_000)),
+                int(effect_values.get("enemy_vulnerability_bp", 10_000)),
+            )
         if action != "attack":
             cooldown_turns = int(action_data.get("cooldown_turns", 0))
             if cooldown_turns > 0:
@@ -883,6 +1194,8 @@ def _apply_member_command(
             )
         else:
             caption = f"{actor_name}의 {action_name}! 장벽 {damage} 피해."
+        if mechanic_summary:
+            caption = f"{caption} {mechanic_summary}."
 
     state["focus"] = focus
     return _push_event(
@@ -905,6 +1218,14 @@ def _apply_member_command(
             "kels": action_kels,
             "fusion_variant": fusion_variant,
             "fusion_vfx_family": fusion_vfx_family,
+            "effect_values": effect_values,
+            "mechanic_summary": mechanic_summary,
+            "presentation_tier": presentation_tier,
+            "vfx_intensity": vfx_intensity,
+            "audio_layer": audio_layer,
+            "camera_profile": camera_profile,
+            "emotion_vfx_primary": emotion_vfx_primary,
+            "emotion_vfx_secondary": emotion_vfx_secondary,
             "power_neutral": power_neutral,
             "matchup_bp": matchup_bp,
             "weakness_hit": weakness_hit,
@@ -933,7 +1254,13 @@ def _finalize_round(
     intent_power_delta = int(pending.get("intent_power_delta", 0))
     events: list[dict[str, Any]] = []
     wave = _current_wave(state)
-    intent = _intent(encounter, int(state.get("intent_index", 0)), wave=wave)
+    boss_phase = _current_boss_phase(state)
+    intent = _intent(
+        encounter,
+        int(state.get("intent_index", 0)),
+        wave=wave,
+        boss_phase=boss_phase,
+    )
     power = max(0, int(intent.get("power", 1)) + intent_power_delta)
     targets = _target_members(state, intent)
     target_events = []
@@ -985,6 +1312,7 @@ def _finalize_round(
     else:
         weakness_cycle = list(
             (wave or {}).get("weakness_cycle")
+            or (boss_phase or {}).get("weakness_cycle")
             or encounter.get("weakness_cycle")
             or AFFINITIES
         )
@@ -1113,6 +1441,7 @@ def resolve_guardian_round(
             events.extend(_enemy_cleared_events(state))
             round_over = True
             break
+        events.extend(_advance_boss_phase(state))
     if not round_over:
         events.extend(_finalize_round(state, encounter, profile_by_id))
     state["last_exchange"] = events
@@ -1142,9 +1471,16 @@ def submit_guardian_action(
     if int(state["enemy_guard"]) <= 0:
         events.extend(_enemy_cleared_events(state))
     else:
+        events.extend(_advance_boss_phase(state))
         pending = _pending_round(state) or {"acted": []}
-        living_ids = {int(member["member_id"]) for member in _living_party(state)}
-        if living_ids <= set(int(item) for item in pending.get("acted", [])):
+        required_member_ids = {
+            int(item)
+            for item in pending.get(
+                "required_member_ids",
+                [member["member_id"] for member in _living_party(state)],
+            )
+        }
+        if required_member_ids <= set(int(item) for item in pending.get("acted", [])):
             events.extend(_finalize_round(state, encounter, profile_by_id))
     state["last_exchange"] = events
     _extend_log(state, events)

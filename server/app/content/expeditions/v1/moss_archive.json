@@ -248,12 +248,50 @@
         "attack_name": "기록 파동",
         "telegraph": "앞발의 푸른 문양이 차오르면 기록 파동이 밀려와요.",
         "damage_target": "탐험대",
-        "max_rounds": 6,
+        "max_rounds": 8,
         "starting_focus": 3,
         "max_focus": 5,
         "weak_element": "water",
         "resist_element": "steel",
         "weakness_cycle": ["insight", "care", "courage", "focus"],
+        "boss_phases": [
+          {
+            "code": "index_guard",
+            "name": "색인 수호",
+            "threshold_bp": 10000,
+            "weak_element": "water",
+            "resist_element": "steel",
+            "weakness_cycle": ["insight", "care", "courage", "focus"],
+            "intent_power_bonus": 0,
+            "focus_reward": 0,
+            "tone": "rainy",
+            "intro_caption": "푸른 색인 문양이 발끝부터 차오르기 시작했어요."
+          },
+          {
+            "code": "root_lock",
+            "name": "뿌리 봉쇄",
+            "threshold_bp": 6600,
+            "weak_element": "fire",
+            "resist_element": "water",
+            "weakness_cycle": ["care", "courage", "focus", "insight"],
+            "intent_power_bonus": 1,
+            "focus_reward": 1,
+            "tone": "ember",
+            "intro_caption": "장벽이 갈라지자 붉은 뿌리 봉인이 전장을 조여 와요. 약점과 공격 순서가 바뀌었어요."
+          },
+          {
+            "code": "final_redaction",
+            "name": "최종 말소",
+            "threshold_bp": 3300,
+            "weak_element": "lightning",
+            "resist_element": "steel",
+            "weakness_cycle": ["focus", "insight", "courage", "care"],
+            "intent_power_bonus": 1,
+            "focus_reward": 1,
+            "tone": "sparkling",
+            "intro_caption": "마지막 장부가 펼쳐지고 치명적인 말소 문양이 드러났어요. 남은 봉인을 한 번에 끊어야 해요."
+          }
+        ],
         "intents": [
           {
             "code": "ledger_claw",

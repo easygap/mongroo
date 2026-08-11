@@ -156,6 +156,7 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
       ExpeditionAutoMode.continuous => 'AUTO·연속',
     };
     final wave = battle.wave;
+    final bossPhase = battle.bossPhase;
     return SizedBox(
       height: 48,
       child: Row(
@@ -174,6 +175,25 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
                 label: '웨이브 ${wave.index}/${wave.count}',
                 icon: Icons.blur_on_rounded,
                 backgroundColor: scheme.tertiaryContainer.withAlpha(130),
+              ),
+            ),
+          ],
+          if (bossPhase != null) ...[
+            const SizedBox(width: 6),
+            Semantics(
+              liveRegion: true,
+              label:
+                  '${bossPhase.count}단계 보스 중 ${bossPhase.index}단계 ${bossPhase.name}',
+              child: MongrooTag(
+                key: const ValueKey('seq-dock-boss-phase'),
+                label:
+                    'P${bossPhase.index}/${bossPhase.count} · ${bossPhase.name}',
+                icon: bossPhase.isFinal
+                    ? Icons.warning_amber_rounded
+                    : Icons.change_circle_outlined,
+                backgroundColor: bossPhase.isFinal
+                    ? scheme.errorContainer.withAlpha(160)
+                    : scheme.secondaryContainer.withAlpha(140),
               ),
             ),
           ],
@@ -603,6 +623,46 @@ class _ExpeditionSequentialCommandDockState
                 ),
                 const SizedBox(height: 14),
                 Text(action.description),
+                if (action.mechanicSummary.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '기믹 · ${action.mechanicSummary}',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                ],
+                if (member.kit.roleLabel.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      MongrooTag(
+                        label: member.kit.roleLabel,
+                        icon: Icons.badge_outlined,
+                      ),
+                      for (final key in const [
+                        'offense',
+                        'vitality',
+                        'support',
+                        'control',
+                      ])
+                        if (member.kit.combatStats[key] case final value?)
+                          MongrooTag(
+                            label:
+                                '${member.kit.combatStatLabels[key] ?? key} $value',
+                            icon: switch (key) {
+                              'offense' => Icons.flash_on_outlined,
+                              'vitality' => Icons.favorite_outline_rounded,
+                              'support' => Icons.health_and_safety_outlined,
+                              _ => Icons.tune_rounded,
+                            },
+                          ),
+                    ],
+                  ),
+                ],
                 if (actionCode != 'guard') ...[
                   const SizedBox(height: 10),
                   Wrap(
@@ -1584,6 +1644,12 @@ const _dockSkillIconAssets = <String, String>{
   'venom_seam': 'assets/adventure/skill-icons/ninja-pot/venom-seam-v1.webp',
   'shadow_execution':
       'assets/adventure/skill-icons/ninja-pot/shadow-execution-v1.webp',
+  'triage_bloom': 'assets/adventure/skill-icons/nurse-pot/triage-bloom-v1.webp',
+  'white_garden_oath':
+      'assets/adventure/skill-icons/nurse-pot/white-garden-oath-v1.webp',
+  'golden_downbeat':
+      'assets/adventure/skill-icons/maestro-pot/golden-downbeat-v1.webp',
+  'silent_coda': 'assets/adventure/skill-icons/maestro-pot/silent-coda-v1.webp',
 };
 
 Color _dockAffinityColor(BuildContext context, String affinity) {

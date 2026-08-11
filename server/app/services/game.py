@@ -678,8 +678,11 @@ async def purchase_item(db: AsyncSession, user_id: int, item_id: int) -> dict:
         )
 
     species_unlock = None
-    if item.type == "species_unlock":
-        species_code = item.asset_manifest.get("species_code")
+    species_code = item.asset_manifest.get("species_code")
+    unlocks_growth_species = item.type == "species_unlock" or (
+        item.type == "main_character" and isinstance(species_code, str)
+    )
+    if unlocks_growth_species:
         species = await db.scalar(
             sa.select(PlantSpecies).where(PlantSpecies.code == species_code)
         )
@@ -695,9 +698,10 @@ async def purchase_item(db: AsyncSession, user_id: int, item_id: int) -> dict:
             )
             .with_for_update()
         )
-        if already_unlocked is not None:
+        if already_unlocked is not None and item.type == "species_unlock":
             raise AppError(409, "SPECIES_ALREADY_UNLOCKED", "이미 해금한 품종입니다.")
-        species_unlock = UserSpeciesUnlock(user_id=user.id, species_id=species.id)
+        if already_unlocked is None:
+            species_unlock = UserSpeciesUnlock(user_id=user.id, species_id=species.id)
 
     user.seed_balance -= item.price_seeds
     db.add(

@@ -8,6 +8,22 @@ List<Map<String, dynamic>> _combatMaps(Object? value) => value is List
     ? value.whereType<Map<String, dynamic>>().toList(growable: false)
     : const [];
 
+Map<String, int> _combatIntMap(Object? value) {
+  final source = _combatMap(value);
+  return {
+    for (final entry in source.entries)
+      if (entry.value is num) entry.key: (entry.value as num).toInt(),
+  };
+}
+
+Map<String, String> _combatStringMap(Object? value) {
+  final source = _combatMap(value);
+  return {
+    for (final entry in source.entries)
+      if (entry.value is String) entry.key: entry.value as String,
+  };
+}
+
 class ExpeditionCombatCommand {
   const ExpeditionCombatCommand({
     required this.memberId,
@@ -39,6 +55,7 @@ class ExpeditionBattle {
     this.pendingRound,
     this.enemyKind = 'guardian',
     this.wave,
+    this.bossPhase,
   });
 
   final int version;
@@ -61,6 +78,9 @@ class ExpeditionBattle {
 
   /// 웨이브 진행. 엉킴 웨이브 전투에만 있다.
   final ExpeditionBattleWave? wave;
+
+  /// 3페이즈 보스의 현재 봉인 상태. 일반 수호전과 엉킴에는 없다.
+  final ExpeditionBattleBossPhase? bossPhase;
 
   bool get isTangle => enemyKind == 'tangle';
 
@@ -113,6 +133,11 @@ class ExpeditionBattle {
                 json['wave'] as Map<String, dynamic>,
               )
             : null,
+        bossPhase: json['boss_phase'] is Map<String, dynamic>
+            ? ExpeditionBattleBossPhase.fromJson(
+                json['boss_phase'] as Map<String, dynamic>,
+              )
+            : null,
       );
 }
 
@@ -132,6 +157,41 @@ class ExpeditionBattleWave {
         index: _combatInt(json['index'], 1),
         count: _combatInt(json['count'], 1),
         name: json['name'] as String? ?? '',
+      );
+}
+
+class ExpeditionBattleBossPhase {
+  const ExpeditionBattleBossPhase({
+    required this.index,
+    required this.count,
+    required this.code,
+    required this.name,
+    required this.tone,
+    required this.intentPowerBonus,
+    this.nextThresholdGuard,
+  });
+
+  final int index;
+  final int count;
+  final String code;
+  final String name;
+  final String tone;
+  final int intentPowerBonus;
+  final int? nextThresholdGuard;
+
+  bool get isFinal => index >= count;
+
+  factory ExpeditionBattleBossPhase.fromJson(Map<String, dynamic> json) =>
+      ExpeditionBattleBossPhase(
+        index: _combatInt(json['index'], 1),
+        count: _combatInt(json['count'], 1),
+        code: json['code'] as String? ?? 'phase_1',
+        name: json['name'] as String? ?? '수호 페이즈',
+        tone: json['tone'] as String? ?? 'mosaic',
+        intentPowerBonus: _combatInt(json['intent_power_bonus']),
+        nextThresholdGuard: json['next_threshold_guard'] is num
+            ? (json['next_threshold_guard'] as num).toInt()
+            : null,
       );
 }
 
@@ -411,6 +471,11 @@ class ExpeditionBattleKit {
     this.signatureScaleBp = 10000,
     this.basicScaleBp = 10000,
     this.emotionDiscipline = '',
+    this.role = '',
+    this.roleLabel = '',
+    this.combatStats = const {},
+    this.combatStatLabels = const {},
+    this.emotionVfxPalette = const {},
     this.primaryElement,
     this.primaryElementLabel,
     this.secondaryElement,
@@ -431,6 +496,11 @@ class ExpeditionBattleKit {
   final int signatureScaleBp;
   final int basicScaleBp;
   final String emotionDiscipline;
+  final String role;
+  final String roleLabel;
+  final Map<String, int> combatStats;
+  final Map<String, String> combatStatLabels;
+  final Map<String, String> emotionVfxPalette;
   final String? primaryElement;
   final String? primaryElementLabel;
   final String? secondaryElement;
@@ -508,6 +578,11 @@ class ExpeditionBattleKit {
       signatureScaleBp: _combatInt(json['signature_scale_bp'], 10000),
       basicScaleBp: _combatInt(json['basic_scale_bp'], 10000),
       emotionDiscipline: json['emotion_discipline'] as String? ?? '',
+      role: json['role'] as String? ?? '',
+      roleLabel: json['role_label'] as String? ?? '',
+      combatStats: _combatIntMap(json['combat_stats']),
+      combatStatLabels: _combatStringMap(json['combat_stat_labels']),
+      emotionVfxPalette: _combatStringMap(json['emotion_vfx_palette']),
       primaryElement: json['primary_element'] as String?,
       primaryElementLabel: json['primary_element_label'] as String?,
       secondaryElement: json['secondary_element'] as String?,
@@ -544,6 +619,8 @@ class ExpeditionBattleAction {
     this.matchup = 'neutral',
     this.matchupBp = 10000,
     this.effectPowerBp = 10000,
+    this.effectValues = const {},
+    this.mechanicSummary = '',
     this.cooldownTurns = 0,
     this.cooldownRemaining = 0,
     this.element,
@@ -562,6 +639,12 @@ class ExpeditionBattleAction {
     this.readyRound = 0,
     this.fusionVariant,
     this.fusionVfxFamily,
+    this.presentationTier = 1,
+    this.vfxIntensity = .86,
+    this.audioLayer = 'light',
+    this.cameraProfile = 'steady',
+    this.emotionVfxPrimary,
+    this.emotionVfxSecondary,
   });
 
   final String slot;
@@ -590,6 +673,8 @@ class ExpeditionBattleAction {
   final String matchup;
   final int matchupBp;
   final int effectPowerBp;
+  final Map<String, int> effectValues;
+  final String mechanicSummary;
   final int cooldownTurns;
   final int cooldownRemaining;
   final String? element;
@@ -608,6 +693,12 @@ class ExpeditionBattleAction {
   final int readyRound;
   final String? fusionVariant;
   final String? fusionVfxFamily;
+  final int presentationTier;
+  final double vfxIntensity;
+  final String audioLayer;
+  final String cameraProfile;
+  final String? emotionVfxPrimary;
+  final String? emotionVfxSecondary;
 
   factory ExpeditionBattleAction.fromJson(
     Map<String, dynamic> json, {
@@ -643,6 +734,8 @@ class ExpeditionBattleAction {
         matchup: json['matchup'] as String? ?? 'neutral',
         matchupBp: _combatInt(json['matchup_bp'], 10000),
         effectPowerBp: _combatInt(json['effect_power_bp'], 10000),
+        effectValues: _combatIntMap(json['effect_values']),
+        mechanicSummary: json['mechanic_summary'] as String? ?? '',
         cooldownTurns: _combatInt(json['cooldown_turns']),
         cooldownRemaining: _combatInt(json['cooldown_remaining']),
         element: json['element'] as String?,
@@ -676,6 +769,15 @@ class ExpeditionBattleAction {
         ),
         fusionVariant: json['fusion_variant'] as String?,
         fusionVfxFamily: json['fusion_vfx_family'] as String?,
+        presentationTier: _combatInt(
+          json['presentation_tier'],
+          _combatInt(json['tier'], 1),
+        ),
+        vfxIntensity: (json['vfx_intensity'] as num?)?.toDouble() ?? .86,
+        audioLayer: json['audio_layer'] as String? ?? 'light',
+        cameraProfile: json['camera_profile'] as String? ?? 'steady',
+        emotionVfxPrimary: json['emotion_vfx_primary'] as String?,
+        emotionVfxSecondary: json['emotion_vfx_secondary'] as String?,
       );
 
   factory ExpeditionBattleAction.unavailable({
@@ -736,6 +838,14 @@ class ExpeditionBattleEvent {
     this.fusionVariant,
     this.fusionVfxFamily,
     this.kelMapVersion = 1,
+    this.effectValues = const {},
+    this.mechanicSummary = '',
+    this.presentationTier = 1,
+    this.vfxIntensity = .86,
+    this.audioLayer = 'light',
+    this.cameraProfile = 'steady',
+    this.emotionVfxPrimary,
+    this.emotionVfxSecondary,
   });
 
   final int sequence;
@@ -771,6 +881,14 @@ class ExpeditionBattleEvent {
   final String? fusionVariant;
   final String? fusionVfxFamily;
   final int kelMapVersion;
+  final Map<String, int> effectValues;
+  final String mechanicSummary;
+  final int presentationTier;
+  final double vfxIntensity;
+  final String audioLayer;
+  final String cameraProfile;
+  final String? emotionVfxPrimary;
+  final String? emotionVfxSecondary;
 
   bool get isPartyAction => type == 'party_action';
   bool get isEnemyAction => type == 'enemy_action';
@@ -824,6 +942,14 @@ class ExpeditionBattleEvent {
         fusionVariant: json['fusion_variant'] as String?,
         fusionVfxFamily: json['fusion_vfx_family'] as String?,
         kelMapVersion: _combatInt(json['kel_map_version'], 1),
+        effectValues: _combatIntMap(json['effect_values']),
+        mechanicSummary: json['mechanic_summary'] as String? ?? '',
+        presentationTier: _combatInt(json['presentation_tier'], 1),
+        vfxIntensity: (json['vfx_intensity'] as num?)?.toDouble() ?? .86,
+        audioLayer: json['audio_layer'] as String? ?? 'light',
+        cameraProfile: json['camera_profile'] as String? ?? 'steady',
+        emotionVfxPrimary: json['emotion_vfx_primary'] as String?,
+        emotionVfxSecondary: json['emotion_vfx_secondary'] as String?,
         targets: _combatMaps(json['targets'])
             .map(ExpeditionBattleTarget.fromJson)
             .toList(growable: false),

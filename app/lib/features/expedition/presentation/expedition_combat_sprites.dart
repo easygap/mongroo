@@ -70,6 +70,9 @@ class ExpeditionCombatSpriteLayer extends StatelessWidget {
                   start: ExpeditionCombatTimeline.partyEffectStart,
                   end: ExpeditionCombatTimeline.partyEffectEnd,
                   reduceMotion: reduceMotion,
+                  tint: _combatHexColor(cue.emotionVfxPrimary),
+                  secondaryTint: _combatHexColor(cue.emotionVfxSecondary),
+                  intensity: cue.vfxIntensity,
                 ),
               );
             }
@@ -82,6 +85,7 @@ class ExpeditionCombatSpriteLayer extends StatelessWidget {
                   start: ExpeditionCombatTimeline.enemyEffectStart(cue),
                   end: ExpeditionCombatTimeline.enemyEffectEnd(cue),
                   reduceMotion: reduceMotion,
+                  intensity: 1,
                 ),
               );
             }
@@ -99,6 +103,9 @@ class _EffectSequence extends StatelessWidget {
     required this.start,
     required this.end,
     required this.reduceMotion,
+    required this.intensity,
+    this.tint,
+    this.secondaryTint,
   });
 
   final ExpeditionCombatEffectSpec effect;
@@ -106,6 +113,9 @@ class _EffectSequence extends StatelessWidget {
   final double start;
   final double end;
   final bool reduceMotion;
+  final double intensity;
+  final Color? tint;
+  final Color? secondaryTint;
 
   @override
   Widget build(BuildContext context) {
@@ -133,33 +143,65 @@ class _EffectSequence extends StatelessWidget {
       gaplessPlayback: true,
       excludeFromSemantics: true,
     );
-    return Opacity(
-      opacity: edgeOpacity.clamp(0.0, 1.0),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          if (!reduceMotion)
-            Opacity(
-              opacity: .16,
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 2.2, sigmaY: 2.2),
-                child: Image.asset(
-                  asset,
-                  fit: BoxFit.contain,
-                  alignment: Alignment.center,
-                  color: _effectBlendColor(effect),
-                  colorBlendMode: BlendMode.srcIn,
-                  filterQuality: FilterQuality.low,
-                  gaplessPlayback: true,
-                  excludeFromSemantics: true,
+    final safeIntensity = intensity.clamp(.8, 1.2).toDouble();
+    return Transform.scale(
+      scale: 1 + (safeIntensity - 1) * .08,
+      child: Opacity(
+        opacity: edgeOpacity.clamp(0.0, 1.0),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (!reduceMotion)
+              Opacity(
+                opacity: (.14 + (safeIntensity - .8) * .10).clamp(.12, .18),
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(
+                    sigmaX: 1.8 + safeIntensity * .4,
+                    sigmaY: 1.8 + safeIntensity * .4,
+                  ),
+                  child: Image.asset(
+                    asset,
+                    fit: BoxFit.contain,
+                    alignment: Alignment.center,
+                    color: tint ?? _effectBlendColor(effect),
+                    colorBlendMode: BlendMode.srcIn,
+                    filterQuality: FilterQuality.low,
+                    gaplessPlayback: true,
+                    excludeFromSemantics: true,
+                  ),
                 ),
               ),
-            ),
-          image,
-        ],
+            if (!reduceMotion && secondaryTint != null && safeIntensity > 1.05)
+              Opacity(
+                opacity: .055,
+                child: Transform.scale(
+                  scale: 1.025,
+                  child: Image.asset(
+                    asset,
+                    fit: BoxFit.contain,
+                    alignment: Alignment.center,
+                    color: secondaryTint,
+                    colorBlendMode: BlendMode.srcIn,
+                    filterQuality: FilterQuality.low,
+                    gaplessPlayback: true,
+                    excludeFromSemantics: true,
+                  ),
+                ),
+              ),
+            image,
+          ],
+        ),
       ),
     );
   }
+}
+
+Color? _combatHexColor(String? value) {
+  if (value == null) return null;
+  final hex = value.replaceFirst('#', '');
+  if (hex.length != 6) return null;
+  final parsed = int.tryParse(hex, radix: 16);
+  return parsed == null ? null : Color(0xFF000000 | parsed);
 }
 
 Color _effectBlendColor(ExpeditionCombatEffectSpec effect) =>

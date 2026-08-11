@@ -92,9 +92,9 @@ def test_new_battle_snapshots_balance_version_focus_and_member_hp():
     assert battle["average_party_level"] == 18
     assert battle["focus"] == 4
     assert [(member["hp"], member["max_hp"]) for member in battle["party"]] == [
-        (4, 4),
         (5, 5),
         (6, 6),
+        (8, 8),
     ]
     assert growth_index_for_party(profiles) == 59
 

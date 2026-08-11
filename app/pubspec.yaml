@@ -58,6 +58,8 @@ flutter:
     - assets/adventure/skill-icons/baby-pot/
     - assets/adventure/skill-icons/gumiho-pot/
     - assets/adventure/skill-icons/ninja-pot/
+    - assets/adventure/skill-icons/nurse-pot/
+    - assets/adventure/skill-icons/maestro-pot/
     - assets/adventure/sfx/
     - assets/adventure/music/
     - assets/adventure/story/archive-postcard-reveal-v1/

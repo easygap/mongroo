@@ -52,6 +52,17 @@ KEL_LABELS = {
     "mosaic": "모아결",
 }
 
+EMOTION_VFX_PALETTES: Mapping[str, Mapping[str, str]] = MappingProxyType(
+    {
+        "sunny": MappingProxyType({"primary": "#FFD48A", "secondary": "#FF8FA8"}),
+        "rainy": MappingProxyType({"primary": "#8FD8F2", "secondary": "#B7C8FF"}),
+        "ember": MappingProxyType({"primary": "#FF7B61", "secondary": "#FFC05C"}),
+        "moonlit": MappingProxyType({"primary": "#9DA7E8", "secondary": "#71C6C8"}),
+        "sparkling": MappingProxyType({"primary": "#C6A8FF", "secondary": "#FFE37A"}),
+        "mosaic": MappingProxyType({"primary": "#A8C5BE", "secondary": "#D8C9B7"}),
+    }
+)
+
 INITIAL_KEL_MAP_VERSION = 1
 CURRENT_KEL_MAP_VERSION = 1
 
@@ -130,6 +141,49 @@ DAMAGE_TYPE_LABELS = {
     "control": "제어",
     "magic": "마법",
     "curse": "주술",
+}
+
+COMBAT_STAT_KEYS = ("offense", "vitality", "support", "control")
+COMBAT_STAT_LABELS = {
+    "offense": "공격",
+    "vitality": "생존",
+    "support": "지원",
+    "control": "제어",
+}
+
+
+def _role(
+    code: str,
+    label: str,
+    base: tuple[int, int, int, int],
+    growth: tuple[int, int, int, int],
+) -> dict[str, Any]:
+    """캐릭터 역할과 레벨당 0.1 단위 성장치를 한 묶음으로 만든다."""
+
+    return {
+        "code": code,
+        "label": label,
+        "base": dict(zip(COMBAT_STAT_KEYS, base, strict=True)),
+        "growth_tenths": dict(zip(COMBAT_STAT_KEYS, growth, strict=True)),
+    }
+
+
+# 감정 능력치와 별개로 캐릭터 자체가 갖는 전투 체질이다. 같은 감정으로 자라도
+# 역할이 겹치지 않도록 공격·생존·지원·제어의 시작점과 성장률을 다르게 둔다.
+COMBAT_ROLE_PROFILES: dict[str, dict[str, Any]] = {
+    "baby-pot": _role("guardian_support", "새싹 수호", (5, 9, 9, 5), (2, 4, 4, 2)),
+    "handsome-pot": _role("tempo_striker", "지휘 검격", (9, 8, 6, 7), (4, 3, 2, 3)),
+    "pretty-pot": _role("stage_healer", "무대 회복", (7, 6, 10, 7), (3, 2, 4, 3)),
+    "tsundere-pot": _role("counter_tank", "반격 전위", (9, 10, 4, 6), (4, 4, 2, 2)),
+    "zombie-pot": _role("last_stand", "불사 압박", (10, 11, 3, 7), (4, 5, 1, 3)),
+    "gumiho-pot": _role("charm_controller", "매혹 제어", (8, 7, 7, 10), (3, 2, 3, 4)),
+    "ninja-pot": _role("weakness_assassin", "약점 암살", (11, 6, 4, 9), (5, 2, 1, 4)),
+    "magical-pot": _role("prism_burst", "상성 폭발", (11, 6, 6, 9), (5, 2, 2, 4)),
+    "aloof-pot": _role("steady_controller", "안정 제어", (9, 9, 5, 10), (4, 3, 2, 4)),
+    "student-pot": _role("focus_engine", "집중 순환", (7, 7, 9, 9), (2, 3, 4, 4)),
+    "nurse-pot": _role("premium_healer", "백의 수호", (8, 11, 14, 8), (3, 4, 5, 3)),
+    "maestro-pot": _role("resonance_director", "공명 지휘", (9, 8, 11, 14), (3, 3, 4, 5)),
+    "archive_guide": _role("archive_support", "기록 지원", (6, 9, 9, 8), (2, 3, 3, 3)),
 }
 
 # 아직 전용 스프라이트 계열이 없는 기술이 사용하는 시각 시제품이다.
@@ -337,6 +391,36 @@ SPECIES_SKILLS: dict[str, dict[str, Any]] = {
         vfx_family="student-pot.ink-formula",
         tier_names=("단식", "연립식", "완전 증명"),
     ),
+    "nurse-pot": _skill(
+        "triage_bloom",
+        "응급 개화",
+        "백색 앰플을 터뜨려 장벽을 가르고 가장 지친 동료를 즉시 치료해요.",
+        power=16,
+        focus_cost=2,
+        cooldown_turns=1,
+        effect="triage_heal",
+        element="light",
+        secondary_element="nature",
+        damage_type="support",
+        motion_profile="nurse-pot.triage-step",
+        vfx_family="nurse-pot.triage-bloom",
+        tier_names=("응급 처치", "백색 봉합", "생명선 개화"),
+    ),
+    "maestro-pot": _skill(
+        "golden_downbeat",
+        "황금 첫박",
+        "짧은 첫박으로 장벽을 흔들고 뒤이어 행동하는 동료의 위력을 끌어올려요.",
+        power=17,
+        focus_cost=2,
+        cooldown_turns=1,
+        effect="resonance_boost",
+        element="sound",
+        secondary_element="light",
+        damage_type="support",
+        motion_profile="maestro-pot.downbeat",
+        vfx_family="maestro-pot.golden-downbeat",
+        tier_names=("첫박", "겹박", "완전 공명"),
+    ),
     "archive_guide": _skill(
         "archive_lantern",
         "기록 등불",
@@ -496,6 +580,36 @@ SPECIES_SECONDARY_SKILLS: dict[str, dict[str, Any]] = {
         vfx_family="student-pot.seal-rewrite",
         tier_names=("초고", "교정", "완전 재작성"),
     ),
+    "nurse-pot": _skill(
+        "white_garden_oath",
+        "백의정원 선서",
+        "동료의 생명선을 잇고 성장할수록 전원 회복·보호·긴급 소생까지 펼쳐요.",
+        power=12,
+        focus_cost=4,
+        cooldown_turns=4,
+        effect="white_garden_oath",
+        element="light",
+        secondary_element="heart",
+        damage_type="support",
+        motion_profile="nurse-pot.white-oath",
+        vfx_family="nurse-pot.white-garden-oath",
+        tier_names=("백의 서약", "보호 병동", "생명선 귀환"),
+    ),
+    "maestro-pot": _skill(
+        "silent_coda",
+        "침묵의 코다",
+        "마지막 박자를 끊어 수호자의 다음 공격을 낮추고 아군이 파고들 틈을 만들어요.",
+        power=15,
+        focus_cost=4,
+        cooldown_turns=4,
+        effect="silent_coda",
+        element="sound",
+        secondary_element="shadow",
+        damage_type="control",
+        motion_profile="maestro-pot.silent-coda",
+        vfx_family="maestro-pot.silent-coda",
+        tier_names=("쉼표", "무음 악장", "절대 종지"),
+    ),
     "archive_guide": _skill(
         "archive_seal",
         "기록 봉인",
@@ -572,7 +686,7 @@ EMOTION_DISCIPLINES: dict[str, dict[str, Any]] = {
 }
 
 # T3 고유기는 캐릭터 고유 family를 교체하지 않고 이 감정층을 두 번째 레이어로
-# 합성한다. 실제 variant key는 species × form × unique slot으로 만들어 10×6×2
+# 합성한다. 실제 variant key는 species × form × unique slot으로 만들어 12×6×2
 # 조합을 데이터에서 구분한다. production_ready는 해당 레이어의 실기 QA 뒤에만
 # 별도 manifest에서 승격한다.
 FUSION_LAYER_PROFILES: dict[str, dict[str, str]] = {
@@ -732,11 +846,142 @@ TANGLE_ELEMENT_MATCHUPS = {
 
 RARITY_CURVES_BP = {
     1: (10_000, 2_000),
-    2: (9_800, 2_500),
-    3: (9_600, 3_000),
-    4: (9_400, 3_500),
-    5: (9_200, 4_000),
+    2: (10_100, 2_300),
+    3: (10_200, 2_600),
+    4: (10_300, 3_000),
+    5: (10_400, 3_500),
 }
+
+EMOTION_COMBAT_STAT_BONUSES: Mapping[str, Mapping[str, int]] = MappingProxyType(
+    {
+        "sunny": MappingProxyType({"support": 2}),
+        "rainy": MappingProxyType({"vitality": 1, "control": 1}),
+        "ember": MappingProxyType({"offense": 2}),
+        "moonlit": MappingProxyType({"control": 2}),
+        "sparkling": MappingProxyType({"offense": 1, "control": 1}),
+        "mosaic": MappingProxyType({"vitality": 2}),
+    }
+)
+
+
+def character_combat_stats(
+    species_code: str,
+    *,
+    level: int,
+    rarity: int,
+    form: str,
+) -> dict[str, Any]:
+    """캐릭터 체질·레벨·희귀도·감정 성장결을 합성한 전투 스탯."""
+
+    profile = COMBAT_ROLE_PROFILES.get(
+        species_code, COMBAT_ROLE_PROFILES["archive_guide"]
+    )
+    safe_level = max(1, min(30, int(level)))
+    safe_rarity = max(1, min(5, int(rarity)))
+    rarity_bonus = (safe_rarity - 1) // 2
+    form_bonus = EMOTION_COMBAT_STAT_BONUSES.get(form, {})
+    values = {
+        key: int(profile["base"][key])
+        + ((safe_level - 1) * int(profile["growth_tenths"][key]) + 5) // 10
+        + rarity_bonus
+        + int(form_bonus.get(key, 0))
+        for key in COMBAT_STAT_KEYS
+    }
+    return {
+        "role": profile["code"],
+        "role_label": profile["label"],
+        "values": values,
+        "labels": {key: COMBAT_STAT_LABELS[key] for key in COMBAT_STAT_KEYS},
+    }
+
+
+def combat_effect_values(
+    effect: str,
+    *,
+    tier: int,
+    combat_stats: Mapping[str, int],
+) -> dict[str, int]:
+    """티어가 오를 때 단순 피해가 아닌 실제 기믹 수치를 확장한다."""
+
+    safe_tier = max(1, min(3, int(tier)))
+    support_bonus = max(0, (int(combat_stats.get("support", 0)) - 14) // 8)
+    control_bonus = max(0, (int(combat_stats.get("control", 0)) - 14) // 9)
+    if effect == "shield_all":
+        return {"party_guard": (1, 1, 2)[safe_tier - 1] + support_bonus}
+    if effect == "focus_refund":
+        return {"focus_refund": (1, 1, 2)[safe_tier - 1]}
+    if effect == "heal_lowest":
+        return {
+            "heal_lowest": (1, 2, 2)[safe_tier - 1] + support_bonus,
+            "target_guard": 1 if safe_tier >= 3 else 0,
+        }
+    if effect == "guard_self":
+        return {"self_guard": (2, 3, 4)[safe_tier - 1]}
+    if effect == "weaken_intent":
+        return {
+            "intent_power_delta": -min(
+                3, (1, 1, 2)[safe_tier - 1] + control_bonus
+            )
+        }
+    if effect == "study_refund":
+        return {"focus_refund": (2, 2, 3)[safe_tier - 1]}
+    if effect == "triage_heal":
+        return {
+            "heal_lowest": (2, 2, 3)[safe_tier - 1] + support_bonus,
+            "target_guard": (0, 1, 2)[safe_tier - 1],
+        }
+    if effect == "white_garden_oath":
+        return {
+            "heal_lowest": 2 + support_bonus if safe_tier == 1 else 0,
+            "heal_all": (0, 1, 2)[safe_tier - 1] + support_bonus,
+            "party_guard": (1, 1, 2)[safe_tier - 1] + support_bonus,
+            "revive_count": 1 if safe_tier >= 3 else 0,
+            "revive_hp": 1 if safe_tier >= 3 else 0,
+        }
+    if effect == "resonance_boost":
+        return {
+            "party_power_bp": (11_000, 11_500, 12_200)[safe_tier - 1]
+            + support_bonus * 200,
+            "focus_refund": 1 if safe_tier >= 2 else 0,
+        }
+    if effect == "silent_coda":
+        return {
+            "intent_power_delta": -min(
+                3, (1, 1, 2)[safe_tier - 1] + control_bonus
+            ),
+            "enemy_vulnerability_bp": (11_000, 11_750, 12_750)[safe_tier - 1]
+            + control_bonus * 250,
+        }
+    return {}
+
+
+def combat_effect_summary(effect: str, values: Mapping[str, int]) -> str:
+    """상세 UI가 서버 판정과 같은 숫자를 설명하도록 짧은 문장으로 만든다."""
+
+    parts: list[str] = []
+    labels = {
+        "party_guard": "전원 보호",
+        "self_guard": "자신 보호",
+        "target_guard": "대상 보호",
+        "heal_lowest": "최저 체력 회복",
+        "heal_all": "전원 회복",
+        "focus_refund": "집중 회복",
+        "revive_count": "긴급 소생",
+    }
+    for key, label in labels.items():
+        value = int(values.get(key, 0))
+        if value > 0:
+            parts.append(f"{label} {value}")
+    intent_delta = int(values.get("intent_power_delta", 0))
+    if intent_delta < 0:
+        parts.append(f"적 위력 {intent_delta}")
+    party_power_bp = int(values.get("party_power_bp", 10_000))
+    if party_power_bp > 10_000:
+        parts.append(f"후속 위력 +{(party_power_bp - 10_000) / 100:.0f}%")
+    vulnerability_bp = int(values.get("enemy_vulnerability_bp", 10_000))
+    if vulnerability_bp > 10_000:
+        parts.append(f"받는 피해 +{(vulnerability_bp - 10_000) / 100:.1f}%")
+    return " · ".join(parts) if parts else effect.replace("_", " ")
 
 
 def combat_tier(level: int) -> int:
@@ -772,17 +1017,19 @@ def validate_combat_identity_catalog() -> None:
     user_species = set(SPECIES_SKILLS) - {"archive_guide"}
     if user_species != set(SPECIES_SECONDARY_SKILLS) - {"archive_guide"}:
         raise ValueError("unique I/II species coverage mismatch")
-    if len(user_species) != 10:
-        raise ValueError("exactly ten playable species are required")
+    if len(user_species) != 12:
+        raise ValueError("exactly twelve playable species are required")
+    if user_species | {"archive_guide"} != set(COMBAT_ROLE_PROFILES):
+        raise ValueError("every playable species and guide needs one combat role")
 
     all_unique = [
         *(SPECIES_SKILLS[code] for code in sorted(user_species)),
         *(SPECIES_SECONDARY_SKILLS[code] for code in sorted(user_species)),
     ]
-    if len({skill["code"] for skill in all_unique}) != 20:
-        raise ValueError("all twenty signature skill codes must be unique")
-    if len({skill["vfx_family"] for skill in all_unique}) != 20:
-        raise ValueError("all twenty signature VFX families must be unique")
+    if len({skill["code"] for skill in all_unique}) != 24:
+        raise ValueError("all twenty-four signature skill codes must be unique")
+    if len({skill["vfx_family"] for skill in all_unique}) != 24:
+        raise ValueError("all twenty-four signature VFX families must be unique")
     if CURRENT_KEL_MAP_VERSION not in ELEMENT_KEL_BY_VERSION:
         raise ValueError("current growth kel map version must exist")
     if INITIAL_KEL_MAP_VERSION not in ELEMENT_KEL_BY_VERSION:
@@ -825,6 +1072,8 @@ def validate_combat_identity_catalog() -> None:
             )
     if set(FUSION_LAYER_PROFILES) != set(EMOTION_DISCIPLINES):
         raise ValueError("every emotion discipline needs one T3 fusion layer")
+    if set(EMOTION_VFX_PALETTES) != set(EMOTION_DISCIPLINES):
+        raise ValueError("every emotion discipline needs one restrained VFX palette")
     if len(
         {profile["vfx_family"] for profile in FUSION_LAYER_PROFILES.values()}
     ) != len(EMOTION_DISCIPLINES):

@@ -723,6 +723,68 @@ async def test_species_item_unlock_allows_planting(client, session_factory):
     assert planted.json()["species"]["code"] == "cactus"
 
 
+async def test_main_character_purchase_unlocks_its_growth_species(
+    client, session_factory
+):
+    tokens = await signup(client)
+    user_id = tokens["user"]["id"]
+    await _set_seed_balance(session_factory, user_id, 300)
+
+    async with session_factory() as db:
+        species = PlantSpecies(
+            code="test-nurse-pot",
+            name="테스트 백의 수호사",
+            persona_key="test_white_guardian",
+            asset_manifest={"combat": {"role": "premium_healer"}},
+            rarity=5,
+            unlock_price=280,
+        )
+        db.add(species)
+        await db.flush()
+        character = Item(
+            code="character_test_nurse_pot",
+            type="main_character",
+            name="테스트 백화",
+            description="구매와 성장 계보를 함께 여는 테스트 캐릭터",
+            price_seeds=280,
+            rarity=5,
+            asset_manifest={
+                "asset_key": "characters/test-nurse-pot",
+                "species_code": "test-nurse-pot",
+                "base_outfit": {
+                    "name": "순백 트리아주",
+                    "included_with_character": True,
+                },
+            },
+            is_active=True,
+        )
+        db.add(character)
+        await db.commit()
+        character_id = character.id
+        species_id = species.id
+
+    purchased = await client.post(
+        f"/shop/items/{character_id}/purchase",
+        headers=auth_headers(tokens, idem=True),
+    )
+
+    assert purchased.status_code == 200
+    assert purchased.json()["seed_balance"] == 20
+    assert purchased.json()["user_item"]["item"]["code"] == (
+        "character_test_nurse_pot"
+    )
+    async with session_factory() as db:
+        unlock_count = await db.scalar(
+            sa.select(sa.func.count())
+            .select_from(UserSpeciesUnlock)
+            .where(
+                UserSpeciesUnlock.user_id == user_id,
+                UserSpeciesUnlock.species_id == species_id,
+            )
+        )
+    assert unlock_count == 1
+
+
 async def test_direct_species_purchase_is_owned_consistently_in_collection(
     client, session_factory
 ):

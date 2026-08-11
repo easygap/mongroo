@@ -780,6 +780,13 @@ class _CollectionStorySheet extends StatelessWidget {
                       label: '정원에서의 역할 · $role',
                       icon: Icons.theater_comedy_outlined,
                     ),
+                  if (item.baseOutfitName case final outfit?)
+                    _StoryTag(
+                      label: item.includesBaseOutfit
+                          ? '기본 재화 복장 · $outfit (구매 시 포함)'
+                          : '기본 복장 · $outfit',
+                      icon: Icons.checkroom_outlined,
+                    ),
                 ],
               ),
               if (item.isMoodResonance) ...[

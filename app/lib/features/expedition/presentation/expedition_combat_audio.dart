@@ -101,6 +101,30 @@ class ExpeditionCombatAudio {
     }
   }
 
+  /// 고레벨 스킬은 같은 원샷을 크게만 틀지 않고 짧은 두 번째 음색을 얹는다.
+  /// 전용 음원이 없는 스킬도 티어 차이를 들을 수 있고, 레이어 간격이 짧아
+  /// 명령 입력 피드백은 늦어지지 않는다.
+  Future<void> playSkillTier({
+    required int tier,
+    required bool ultimate,
+  }) async {
+    final safeTier = tier.clamp(1, 3);
+    await play(
+      ExpeditionCombatSound.command,
+      volume: switch (safeTier) {
+        1 => .46,
+        2 => .54,
+        _ => .62,
+      },
+    );
+    if (safeTier < 3 || _disposed || !_enabled) return;
+    await Future<void>.delayed(const Duration(milliseconds: 42));
+    await play(
+      ExpeditionCombatSound.weakness,
+      volume: ultimate ? .31 : .23,
+    );
+  }
+
   /// 16초 마디를 처음부터 다시 틀지 않고 지역 음악을 시작하거나 교차 전환한다.
   Future<void> playMusic(
     ExpeditionMusicState state, {

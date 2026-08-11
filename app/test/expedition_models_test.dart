@@ -662,6 +662,21 @@ void main() {
     }
   });
 
+  testWidgets('간호사와 지휘자의 프리미엄 고유 스킬 아이콘을 번들에서 읽는다', (tester) async {
+    const assets = <String>[
+      'assets/adventure/skill-icons/nurse-pot/triage-bloom-v1.webp',
+      'assets/adventure/skill-icons/nurse-pot/white-garden-oath-v1.webp',
+      'assets/adventure/skill-icons/maestro-pot/golden-downbeat-v1.webp',
+      'assets/adventure/skill-icons/maestro-pot/silent-coda-v1.webp',
+    ];
+
+    for (final asset in assets) {
+      final data = await rootBundle.load(asset);
+      expect(data.lengthInBytes, greaterThan(8000), reason: asset);
+      expect(_webpCanvasSize(data), (width: 256, height: 256), reason: asset);
+    }
+  });
+
   testWidgets('플레이어와 몬스터 공격을 효과별 투명 스프라이트로 읽는다', (tester) async {
     const effectKeys = [
       'care_vines',
@@ -1011,6 +1026,87 @@ void main() {
       'combat_turn',
       'retreat',
     ]);
+  });
+
+  test('v7 역할 스탯·감정 연출·보스 페이즈 계약을 파싱한다', () {
+    final raw = _battleSnapshotJson();
+    final event = raw['current_event'] as Map<String, dynamic>;
+    final battleJson = event['battle'] as Map<String, dynamic>;
+    battleJson['version'] = 3;
+    battleJson['boss_phase'] = {
+      'index': 3,
+      'count': 3,
+      'code': 'final_erasure',
+      'name': '최종 말소',
+      'tone': 'ember',
+      'intent_power_bonus': 2,
+      'next_threshold_guard': null,
+    };
+    final party = battleJson['party'] as List<dynamic>;
+    final member = party.first as Map<String, dynamic>;
+    final kit = member['kit'] as Map<String, dynamic>;
+    kit['version'] = 7;
+    kit['role'] = 'premium_healer';
+    kit['role_label'] = '프리미엄 힐러';
+    kit['combat_stats'] = {
+      'offense': 16,
+      'vitality': 24,
+      'support': 35,
+      'control': 18,
+    };
+    kit['combat_stat_labels'] = {
+      'offense': '공격',
+      'vitality': '생존',
+      'support': '지원',
+      'control': '제어',
+    };
+    kit['emotion_vfx_palette'] = {
+      'primary': '#F4C56A',
+      'secondary': '#FFF0B8',
+    };
+    final uniqueSkills = kit['unique_skills'] as List<dynamic>;
+    final unique = uniqueSkills.first as Map<String, dynamic>;
+    unique['effect_values'] = {'heal_lowest': 3, 'target_guard': 2};
+    unique['mechanic_summary'] = '최저 체력 회복 3 · 대상 보호 2';
+    unique['presentation_tier'] = 3;
+    unique['vfx_intensity'] = 1.12;
+    unique['audio_layer'] = 'signature';
+    unique['camera_profile'] = 'signature-close';
+    unique['emotion_vfx_primary'] = '#F4C56A';
+    unique['emotion_vfx_secondary'] = '#FFF0B8';
+    final exchange = raw['last_combat_exchange'] as List<dynamic>;
+    final action = exchange.first as Map<String, dynamic>;
+    action['effect_values'] = {'heal_lowest': 3, 'target_guard': 2};
+    action['mechanic_summary'] = '최저 체력 회복 3 · 대상 보호 2';
+    action['presentation_tier'] = 3;
+    action['vfx_intensity'] = 1.12;
+    action['audio_layer'] = 'signature';
+    action['camera_profile'] = 'signature-close';
+    action['emotion_vfx_primary'] = '#F4C56A';
+    action['emotion_vfx_secondary'] = '#FFF0B8';
+
+    final snapshot = ExpeditionSnapshot.fromJson(raw);
+    final battle = snapshot.currentEvent!.battle!;
+    final parsedKit = battle.party.first.kit;
+    final parsedSkill = parsedKit.uniqueSkills.first;
+    final parsedEvent = snapshot.lastCombatExchange.first;
+
+    expect(battle.version, 3);
+    expect(battle.bossPhase?.index, 3);
+    expect(battle.bossPhase?.name, '최종 말소');
+    expect(battle.bossPhase?.isFinal, isTrue);
+    expect(parsedKit.version, 7);
+    expect(parsedKit.role, 'premium_healer');
+    expect(parsedKit.combatStats['support'], 35);
+    expect(parsedKit.combatStatLabels['control'], '제어');
+    expect(parsedKit.emotionVfxPalette['primary'], '#F4C56A');
+    expect(parsedSkill.effectValues['heal_lowest'], 3);
+    expect(parsedSkill.mechanicSummary, contains('대상 보호 2'));
+    expect(parsedSkill.presentationTier, 3);
+    expect(parsedSkill.audioLayer, 'signature');
+    expect(parsedEvent.vfxIntensity, 1.12);
+    expect(parsedEvent.cameraProfile, 'signature-close');
+    expect(parsedEvent.emotionVfxPrimary, '#F4C56A');
   });
 
   testWidgets('전투 무대는 현재 장벽과 다음 공격을 표시한다', (tester) async {

@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from app.content.expeditions.combat_identity import ELEMENT_LABELS
 from app.content.expeditions.tangles import (
     TANGLE_CATALOG,
     validate_tangle_catalog,
@@ -357,6 +358,82 @@ def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:
                         or power < 1
                     ):
                         errors.append(f"{intent_prefix}.power: 1 이상이어야 합니다")
+            boss_phases = encounter.get("boss_phases")
+            if boss_phases is not None:
+                if not isinstance(boss_phases, list) or len(boss_phases) != 3:
+                    errors.append(
+                        f"{prefix}.encounter.boss_phases: 정확히 3개 페이즈가 필요합니다"
+                    )
+                else:
+                    thresholds: list[int] = []
+                    phase_codes: set[str] = set()
+                    for index, phase in enumerate(boss_phases):
+                        phase_prefix = f"{prefix}.encounter.boss_phases[{index}]"
+                        if not isinstance(phase, dict):
+                            errors.append(f"{phase_prefix}: 객체가 필요합니다")
+                            continue
+                        for field in ("code", "name", "intro_caption"):
+                            if not isinstance(phase.get(field), str) or not phase[
+                                field
+                            ].strip():
+                                errors.append(f"{phase_prefix}.{field}: 값이 필요합니다")
+                        code = phase.get("code")
+                        if isinstance(code, str) and code in phase_codes:
+                            errors.append(f"{phase_prefix}.code: 중복할 수 없습니다")
+                        if isinstance(code, str):
+                            phase_codes.add(code)
+                        threshold = phase.get("threshold_bp")
+                        if (
+                            not isinstance(threshold, int)
+                            or isinstance(threshold, bool)
+                            or not 1 <= threshold <= 10_000
+                        ):
+                            errors.append(
+                                f"{phase_prefix}.threshold_bp: 1~10000 정수가 필요합니다"
+                            )
+                        else:
+                            thresholds.append(threshold)
+                        weak_element = phase.get("weak_element")
+                        resist_element = phase.get("resist_element")
+                        if weak_element not in ELEMENT_LABELS:
+                            errors.append(
+                                f"{phase_prefix}.weak_element: 지원 원소가 아닙니다"
+                            )
+                        if resist_element not in ELEMENT_LABELS:
+                            errors.append(
+                                f"{phase_prefix}.resist_element: 지원 원소가 아닙니다"
+                            )
+                        if weak_element == resist_element:
+                            errors.append(
+                                f"{phase_prefix}: 약점과 내성 원소가 달라야 합니다"
+                            )
+                        phase_cycle = phase.get("weakness_cycle")
+                        if (
+                            not isinstance(phase_cycle, list)
+                            or len(phase_cycle) < 2
+                            or any(item not in ALLOWED_STATS for item in phase_cycle)
+                        ):
+                            errors.append(
+                                f"{phase_prefix}.weakness_cycle: 상성 2개 이상이 필요합니다"
+                            )
+                        for field in ("intent_power_bonus", "focus_reward"):
+                            value = phase.get(field)
+                            if (
+                                not isinstance(value, int)
+                                or isinstance(value, bool)
+                                or value < 0
+                            ):
+                                errors.append(
+                                    f"{phase_prefix}.{field}: 0 이상의 정수가 필요합니다"
+                                )
+                    if thresholds and (
+                        thresholds[0] != 10_000
+                        or thresholds != sorted(thresholds, reverse=True)
+                        or len(thresholds) != len(set(thresholds))
+                    ):
+                        errors.append(
+                            f"{prefix}.encounter.boss_phases: 임계치는 10000부터 내림차순이어야 합니다"
+                        )
     choice_codes: set[str] = set()
     stats: set[str] = set()
     safe_count = 0

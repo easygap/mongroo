@@ -52,6 +52,8 @@ const Map<String, String> gardenBundledAssetKeyPaths = {
   'characters/magical-pot': 'assets/characters/magical-pot-v2.webp',
   'characters/aloof-pot': 'assets/characters/aloof-pot-v2.webp',
   'characters/student-pot': 'assets/characters/student-pot-v2.webp',
+  'characters/nurse-pot': 'assets/characters/nurse-pot-v4.webp',
+  'characters/maestro-pot': 'assets/characters/maestro-pot-v4.webp',
 };
 
 /// `asset_key`가 없는 응답은 상품 코드로 찾는다.
@@ -84,6 +86,8 @@ const Map<String, String> gardenBundledItemCodePaths = {
   'companion_bunny': 'assets/companions/fluffy-bunny.webp',
   'species_cactus': 'assets/species/cactus-seed.webp',
   'species_sunflower': 'assets/species/sunflower-seed.webp',
+  'character_nurse_pot': 'assets/characters/nurse-pot-v4.webp',
+  'character_maestro_pot': 'assets/characters/maestro-pot-v4.webp',
 };
 
 String? gardenVisualAssetPath(ShopItem item) {
@@ -613,6 +617,8 @@ Duration _motionDuration(String motionKey) => switch (motionKey) {
       'magical_hover' => const Duration(milliseconds: 2800),
       'aloof_glance' => const Duration(milliseconds: 4200),
       'student_adjust' => const Duration(milliseconds: 2800),
+      'nurse_breathe' => const Duration(milliseconds: 3400),
+      'maestro_cue' => const Duration(milliseconds: 3000),
       _ => const Duration(milliseconds: 2400),
     };
 
@@ -668,6 +674,17 @@ _CharacterPose _characterPose(String motionKey, double progress) {
         rotation: wave * 0.008,
         scaleY: 1 - math.max(0, -softWave) * 0.008,
       ),
+    'nurse_breathe' => _CharacterPose(
+        y: wave * 1.5,
+        rotation: wave * .006,
+        scaleX: 1 + softWave * .006,
+        scaleY: 1 + softWave * .006,
+      ),
+    'maestro_cue' => _CharacterPose(
+        x: wave * 1.8,
+        rotation: wave * .012,
+        scaleX: 1 + math.max(0, softWave) * .008,
+      ),
     _ => _CharacterPose(
         y: wave * 3.5,
         rotation: wave * 0.015,
@@ -688,6 +705,8 @@ bool _supportsTapMotion(String motionKey) => const {
       'magical_hover',
       'aloof_glance',
       'student_adjust',
+      'nurse_breathe',
+      'maestro_cue',
     }.contains(motionKey);
 
 _CharacterPose _tapPose(String motionKey, double progress) {
@@ -756,6 +775,16 @@ _CharacterPose _tapPose(String motionKey, double progress) {
         rotation: -oscillation * envelope * 0.012,
         scaleX: 1 + 0.008 * envelope,
         scaleY: 1 - 0.015 * envelope,
+      ),
+    'nurse_breathe' => _CharacterPose(
+        y: -2.5 * envelope,
+        scaleX: 1 + .018 * envelope,
+        scaleY: 1 + .018 * envelope,
+      ),
+    'maestro_cue' => _CharacterPose(
+        x: 2.4 * oscillation * envelope,
+        rotation: -.025 * oscillation * envelope,
+        scaleX: 1 + .016 * envelope,
       ),
     _ => const _CharacterPose(),
   };

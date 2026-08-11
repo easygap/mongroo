@@ -251,16 +251,23 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                     : _scaled(ExpeditionCombatTimeline.skillDuration);
     _actionController.forward(from: 0);
     if (cue.isCombatRound) {
-      unawaited(
-        _audio.play(
-          cue.effectKey == 'safe_guard'
-              ? ExpeditionCombatSound.guard
-              : cue.playsEnemyAttack
-                  ? ExpeditionCombatSound.enemy
-                  : ExpeditionCombatSound.command,
-          volume: cue.playsEnemyAttack ? .64 : .48,
-        ),
-      );
+      if (!cue.playsEnemyAttack && cue.effectKey != 'safe_guard') {
+        unawaited(
+          _audio.playSkillTier(
+            tier: cue.presentationTier,
+            ultimate: cue.cameraProfile == 'ultimate',
+          ),
+        );
+      } else {
+        unawaited(
+          _audio.play(
+            cue.effectKey == 'safe_guard'
+                ? ExpeditionCombatSound.guard
+                : ExpeditionCombatSound.enemy,
+            volume: cue.playsEnemyAttack ? .64 : .48,
+          ),
+        );
+      }
     }
   }
 

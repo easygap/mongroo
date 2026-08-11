@@ -63,13 +63,20 @@ def test_student_progression_reward_preserves_manifest_and_downgrades(
         assert {
             key: value
             for key, value in upgraded_manifest.items()
-            if key != "acquisition"
+            if key
+            not in {
+                "acquisition",
+                "species_code",
+                "growth_asset_namespace",
+            }
         } == original_manifest
         assert upgraded_manifest["acquisition"] == {
             "type": "record_count",
             "target": 30,
             "label": "마음을 기록한 날 누적 30일",
         }
+        assert upgraded_manifest["species_code"] == "student-pot"
+        assert upgraded_manifest["growth_asset_namespace"] == "plants/student-pot"
 
         command.downgrade(config, "0013_quest_expansion")
         with sqlite3.connect(database_path) as connection:

@@ -406,7 +406,11 @@ class PlantGrowthAssetResolver {
     'student-pot',
   };
 
-  static const _emotionAdultV4Species = _emotionAdultV2Species;
+  static const _emotionAdultV4Species = {
+    ..._emotionAdultV2Species,
+    'nurse-pot',
+    'maestro-pot',
+  };
 
   static const _layeredWardrobeSpecies = _emotionAdultV2Species;
 

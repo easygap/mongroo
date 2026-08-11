@@ -29,6 +29,12 @@ class ExpeditionActionCue {
     this.motion,
     this.vfxFamily,
     this.kelFallbackFamily,
+    this.presentationTier = 1,
+    this.vfxIntensity = .86,
+    this.audioLayer = 'light',
+    this.cameraProfile = 'steady',
+    this.emotionVfxPrimary,
+    this.emotionVfxSecondary,
   });
 
   final int id;
@@ -50,6 +56,12 @@ class ExpeditionActionCue {
   final ExpeditionCombatMotion? motion;
   final String? vfxFamily;
   final String? kelFallbackFamily;
+  final int presentationTier;
+  final double vfxIntensity;
+  final String audioLayer;
+  final String cameraProfile;
+  final String? emotionVfxPrimary;
+  final String? emotionVfxSecondary;
 
   bool get isGuardianExchange => combat?.kind == 'guardian';
   bool get isCombatRound =>
@@ -176,6 +188,12 @@ class ExpeditionActionCue {
       motion: event.motion,
       vfxFamily: event.vfxFamily,
       kelFallbackFamily: event.kelFallbackFamily,
+      presentationTier: event.presentationTier,
+      vfxIntensity: event.vfxIntensity,
+      audioLayer: event.audioLayer,
+      cameraProfile: event.cameraProfile,
+      emotionVfxPrimary: event.emotionVfxPrimary,
+      emotionVfxSecondary: event.emotionVfxSecondary,
     );
   }
 }
