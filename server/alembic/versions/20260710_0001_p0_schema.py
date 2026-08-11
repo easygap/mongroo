@@ -119,9 +119,10 @@ def upgrade() -> None:
     # 사용자당 활성 식물 1개 강제 (design.md 4.1)
     bind = op.get_bind()
     if bind.dialect.name == "mysql":
+        # user_id의 CASCADE FK를 유지하기 위해 인덱싱 가능한 VIRTUAL 생성 컬럼을 쓴다.
         op.execute(
             "ALTER TABLE plants ADD COLUMN active_user_id BIGINT "
-            "GENERATED ALWAYS AS (CASE WHEN status='active' THEN user_id ELSE NULL END) STORED"
+            "GENERATED ALWAYS AS (CASE WHEN status='active' THEN user_id ELSE NULL END) VIRTUAL"
         )
         op.execute(
             "CREATE UNIQUE INDEX uq_plants_active_user ON plants (active_user_id)"

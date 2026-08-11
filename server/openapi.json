@@ -2234,6 +2234,74 @@
         }
       }
     },
+    "/api/v1/adventure/stages": {
+      "get": {
+        "tags": [
+          "expeditions"
+        ],
+        "summary": "Stage Map",
+        "operationId": "stage_map_api_v1_adventure_stages_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/stages/{region_code}/{stage_no}/story-seen": {
+      "post": {
+        "tags": [
+          "expeditions"
+        ],
+        "summary": "Mark Stage Story Seen",
+        "operationId": "mark_stage_story_seen_api_v1_adventure_stages__region_code___stage_no__story_seen_post",
+        "parameters": [
+          {
+            "name": "region_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Region Code"
+            }
+          },
+          {
+            "name": "stage_no",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Stage No"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health/live": {
       "get": {
         "tags": [
@@ -2422,7 +2490,7 @@
           },
           "action": {
             "type": "string",
-            "pattern": "^(attack|skill|guard)$",
+            "pattern": "^(attack|skill|unique_1|unique_2|selected_1|selected_2|guard)$",
             "title": "Action"
           }
         },
@@ -2455,6 +2523,11 @@
             "maxItems": 3,
             "minItems": 1,
             "title": "Commands"
+          },
+          "partial": {
+            "type": "boolean",
+            "title": "Partial",
+            "default": false
           }
         },
         "type": "object",
@@ -2595,6 +2668,19 @@
             "minimum": 0.0,
             "title": "Guide Count",
             "default": 0
+          },
+          "stage_no": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 8.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage No"
           }
         },
         "type": "object",

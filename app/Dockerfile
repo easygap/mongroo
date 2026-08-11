@@ -1,4 +1,25 @@
-FROM ghcr.io/cirruslabs/flutter:3.44.6 AS build
+FROM debian:bookworm-slim@sha256:abd67ffcfa541b485a3dff59865ab629aa048a6c613e639d36e7456b0b229241 AS build
+
+# 배포 이미지는 공개 시점이 늦는 서드파티 태그 대신 공식 아카이브를 검증해 사용한다.
+ARG FLUTTER_VERSION=3.44.6
+ARG FLUTTER_ARCHIVE_SHA256=a6320fd72e9a2690c08e2a6a70874a30cb120dee7c78f49d2c628bd7c9e20525
+ENV FLUTTER_HOME=/opt/flutter
+ENV PATH="${FLUTTER_HOME}/bin:${FLUTTER_HOME}/bin/cache/dart-sdk/bin:${PATH}"
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends \
+      ca-certificates curl git unzip xz-utils zip \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl --fail --location --silent --show-error \
+      "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz" \
+      --output /tmp/flutter.tar.xz \
+    && echo "${FLUTTER_ARCHIVE_SHA256}  /tmp/flutter.tar.xz" \
+      | sha256sum --check --strict \
+    && tar --extract --xz --file /tmp/flutter.tar.xz --directory /opt \
+    && rm /tmp/flutter.tar.xz \
+    && git config --global --add safe.directory "${FLUTTER_HOME}" \
+    && flutter config --no-analytics --enable-web \
+    && flutter precache --web
 
 WORKDIR /workspace
 ARG API_BASE_URL=
