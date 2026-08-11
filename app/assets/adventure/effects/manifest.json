@@ -1,745 +1,202 @@
 {
-  "version": 1,
-  "layout": {
-    "columns": 2,
-    "rows": 4
-  },
+  "version": 2,
+  "frame_size": [576, 288],
+  "fallback_family": "fallback.echo-wave",
   "effects": [
     {
-      "effect_key": "care_vines",
-      "directory": "care-vines",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "removed_tiny_components": 109,
-      "frames": [
-        {
-          "index": 0,
-          "coverage": 0.0181,
-          "bbox": [
-            38,
-            196,
-            174,
-            295
-          ]
-        },
-        {
-          "index": 1,
-          "coverage": 0.0556,
-          "bbox": [
-            28,
-            177,
-            507,
-            296
-          ]
-        },
-        {
-          "index": 2,
-          "coverage": 0.0853,
-          "bbox": [
-            36,
-            112,
-            629,
-            282
-          ]
-        },
-        {
-          "index": 3,
-          "coverage": 0.0999,
-          "bbox": [
-            28,
-            135,
-            726,
-            287
-          ]
-        },
-        {
-          "index": 4,
-          "coverage": 0.1054,
-          "bbox": [
-            36,
-            102,
-            738,
-            258
-          ]
-        },
-        {
-          "index": 5,
-          "coverage": 0.1314,
-          "bbox": [
-            28,
-            79,
-            704,
-            284
-          ]
-        },
-        {
-          "index": 6,
-          "coverage": 0.1898,
-          "bbox": [
-            36,
-            52,
-            739,
-            294
-          ]
-        },
-        {
-          "index": 7,
-          "coverage": 0.062,
-          "bbox": [
-            28,
-            95,
-            722,
-            257
-          ]
-        }
-      ]
-    },
-    {
-      "effect_key": "safe_guard",
-      "directory": "safe-guard",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "removed_tiny_components": 76,
-      "frames": [
-        {
-          "index": 0,
-          "coverage": 0.0145,
-          "bbox": [
-            169,
-            222,
-            341,
-            324
-          ]
-        },
-        {
-          "index": 1,
-          "coverage": 0.0598,
-          "bbox": [
-            36,
-            90,
-            394,
-            326
-          ]
-        },
-        {
-          "index": 2,
-          "coverage": 0.0687,
-          "bbox": [
-            198,
-            110,
-            455,
-            339
-          ]
-        },
-        {
-          "index": 3,
-          "coverage": 0.1373,
-          "bbox": [
-            37,
-            109,
-            294,
-            340
-          ]
-        },
-        {
-          "index": 4,
-          "coverage": 0.1159,
-          "bbox": [
-            199,
-            109,
-            446,
-            317
-          ]
-        },
-        {
-          "index": 5,
-          "coverage": 0.1581,
-          "bbox": [
-            39,
-            97,
-            509,
-            318
-          ]
-        },
-        {
-          "index": 6,
-          "coverage": 0.0942,
-          "bbox": [
-            199,
-            87,
-            418,
-            282
-          ]
-        },
-        {
-          "index": 7,
-          "coverage": 0.0668,
-          "bbox": [
-            40,
-            92,
-            491,
-            282
-          ]
-        }
-      ]
-    },
-    {
-      "effect_key": "ember_arc",
-      "directory": "ember-arc",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "removed_tiny_components": 40,
-      "frames": [
-        {
-          "index": 0,
-          "coverage": 0.0238,
-          "bbox": [
-            112,
-            180,
-            268,
-            302
-          ]
-        },
-        {
-          "index": 1,
-          "coverage": 0.0609,
-          "bbox": [
-            55,
-            143,
-            444,
-            296
-          ]
-        },
-        {
-          "index": 2,
-          "coverage": 0.0861,
-          "bbox": [
-            86,
-            143,
-            635,
-            295
-          ]
-        },
-        {
-          "index": 3,
-          "coverage": 0.1044,
-          "bbox": [
-            47,
-            140,
-            665,
-            297
-          ]
-        },
-        {
-          "index": 4,
-          "coverage": 0.0854,
-          "bbox": [
-            83,
-            115,
-            727,
-            262
-          ]
-        },
-        {
-          "index": 5,
-          "coverage": 0.1479,
-          "bbox": [
-            37,
-            80,
-            676,
-            286
-          ]
-        },
-        {
-          "index": 6,
-          "coverage": 0.2173,
-          "bbox": [
-            66,
-            54,
-            744,
-            277
-          ]
-        },
-        {
-          "index": 7,
-          "coverage": 0.0495,
-          "bbox": [
-            52,
-            113,
-            703,
-            253
-          ]
-        }
-      ]
-    },
-    {
-      "effect_key": "prism_burst",
-      "directory": "prism-burst",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "removed_tiny_components": 157,
-      "frames": [
-        {
-          "index": 0,
-          "coverage": 0.021,
-          "bbox": [
-            54,
-            143,
-            192,
-            287
-          ]
-        },
-        {
-          "index": 1,
-          "coverage": 0.0286,
-          "bbox": [
-            44,
-            180,
-            327,
-            260
-          ]
-        },
-        {
-          "index": 2,
-          "coverage": 0.0438,
-          "bbox": [
-            146,
-            168,
-            624,
-            244
-          ]
-        },
-        {
-          "index": 3,
-          "coverage": 0.0795,
-          "bbox": [
-            133,
-            103,
-            698,
-            278
-          ]
-        },
-        {
-          "index": 4,
-          "coverage": 0.0475,
-          "bbox": [
-            212,
-            103,
-            655,
-            214
-          ]
-        },
-        {
-          "index": 5,
-          "coverage": 0.0796,
-          "bbox": [
-            98,
-            92,
-            626,
-            258
-          ]
-        },
-        {
-          "index": 6,
-          "coverage": 0.1511,
-          "bbox": [
-            91,
-            37,
-            670,
-            268
-          ]
-        },
-        {
-          "index": 7,
-          "coverage": 0.0554,
-          "bbox": [
-            72,
-            67,
-            676,
-            230
-          ]
-        }
-      ]
-    },
-    {
-      "effect_key": "mist_dash",
-      "directory": "mist-dash",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "removed_tiny_components": 50,
-      "frames": [
-        {
-          "index": 0,
-          "coverage": 0.0284,
-          "bbox": [
-            41,
-            194,
-            201,
-            296
-          ]
-        },
-        {
-          "index": 1,
-          "coverage": 0.037,
-          "bbox": [
-            95,
-            220,
-            422,
-            284
-          ]
-        },
-        {
-          "index": 2,
-          "coverage": 0.09,
-          "bbox": [
-            62,
-            172,
-            678,
-            274
-          ]
-        },
-        {
-          "index": 3,
-          "coverage": 0.111,
-          "bbox": [
-            34,
-            154,
-            709,
-            290
-          ]
-        },
-        {
-          "index": 4,
-          "coverage": 0.105,
-          "bbox": [
-            49,
-            123,
-            713,
-            258
-          ]
-        },
-        {
-          "index": 5,
-          "coverage": 0.1516,
-          "bbox": [
-            72,
-            68,
-            706,
-            303
-          ]
-        },
-        {
-          "index": 6,
-          "coverage": 0.2681,
-          "bbox": [
-            47,
-            30,
-            721,
-            292
-          ]
-        },
-        {
-          "index": 7,
-          "coverage": 0.0488,
-          "bbox": [
-            48,
-            120,
-            666,
-            255
-          ]
-        }
-      ]
-    },
-    {
-      "effect_key": "insight_arc",
-      "directory": "insight-arc",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "removed_tiny_components": 51,
-      "frames": [
-        {
-          "index": 0,
-          "coverage": 0.0218,
-          "bbox": [
-            51,
-            147,
-            136,
-            258
-          ]
-        },
-        {
-          "index": 1,
-          "coverage": 0.076,
-          "bbox": [
-            54,
-            137,
-            631,
-            257
-          ]
-        },
-        {
-          "index": 2,
-          "coverage": 0.0594,
-          "bbox": [
-            64,
-            122,
-            535,
-            242
-          ]
-        },
-        {
-          "index": 3,
-          "coverage": 0.0788,
-          "bbox": [
-            58,
-            134,
-            564,
-            247
-          ]
-        },
-        {
-          "index": 4,
-          "coverage": 0.0934,
-          "bbox": [
-            57,
-            90,
-            680,
-            256
-          ]
-        },
-        {
-          "index": 5,
-          "coverage": 0.1052,
-          "bbox": [
-            102,
-            67,
-            676,
-            257
-          ]
-        },
-        {
-          "index": 6,
-          "coverage": 0.2123,
-          "bbox": [
-            52,
-            55,
-            694,
-            270
-          ]
-        },
-        {
-          "index": 7,
-          "coverage": 0.0472,
-          "bbox": [
-            74,
-            65,
-            690,
-            264
-          ]
-        }
-      ]
-    },
-    {
-      "effect_key": "echo_wave",
+      "family": "fallback.echo-wave",
+      "effect_keys": ["echo_wave"],
+      "kel": null,
       "directory": "echo-wave",
       "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "removed_tiny_components": 106,
-      "frames": [
-        {
-          "index": 0,
-          "coverage": 0.0124,
-          "bbox": [
-            46,
-            204,
-            169,
-            288
-          ]
-        },
-        {
-          "index": 1,
-          "coverage": 0.0185,
-          "bbox": [
-            42,
-            204,
-            234,
-            288
-          ]
-        },
-        {
-          "index": 2,
-          "coverage": 0.0468,
-          "bbox": [
-            46,
-            117,
-            618,
-            291
-          ]
-        },
-        {
-          "index": 3,
-          "coverage": 0.0417,
-          "bbox": [
-            42,
-            114,
-            622,
-            293
-          ]
-        },
-        {
-          "index": 4,
-          "coverage": 0.0451,
-          "bbox": [
-            46,
-            95,
-            678,
-            267
-          ]
-        },
-        {
-          "index": 5,
-          "coverage": 0.0606,
-          "bbox": [
-            42,
-            75,
-            629,
-            298
-          ]
-        },
-        {
-          "index": 6,
-          "coverage": 0.1014,
-          "bbox": [
-            46,
-            42,
-            699,
-            291
-          ]
-        },
-        {
-          "index": 7,
-          "coverage": 0.0386,
-          "bbox": [
-            42,
-            67,
-            629,
-            212
-          ]
-        }
-      ]
+      "frame_size": [576, 288],
+      "frame_durations_ms": [80, 70, 65, 65, 75, 85, 110, 125],
+      "contact_frame": 5,
+      "pivot": [0.5, 0.5],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "D5100395CDC01F5364B03499AAD0879F0972E3C5B08B172D71D621FEE3606C40",
+      "runtime_hash": "A01F85ECB51BA8F5FAAC0764161855D0A4DB24E7A3EAD194CD9F0B96C8A18A55"
     },
     {
-      "effect_key": "enemy_wave",
+      "family": "common.safe-guard",
+      "effect_keys": ["safe_guard"],
+      "kel": null,
+      "directory": "safe-guard",
+      "frame_count": 8,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [80, 70, 65, 65, 75, 85, 110, 125],
+      "contact_frame": 5,
+      "pivot": [0.25, 0.65],
+      "anchor": "actor_center",
+      "production_ready": true,
+      "source_hash": "3490FE2F1B8E2F6754DF3B91CC69B999CF3CE95B3EE35EB97031E8D562A4B846",
+      "runtime_hash": "9702E5343BD7401CC04DECA48CE8ECF6A734B0029EE2FA8427382E69211606DB"
+    },
+    {
+      "family": "kel.sunny",
+      "effect_keys": ["care_vines"],
+      "kel": "sunny",
+      "directory": "care-vines-v2",
+      "frame_count": 10,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [90, 70, 70, 65, 65, 70, 75, 105, 80, 110],
+      "contact_frame": 5,
+      "pivot": [0.03, 0.76],
+      "anchor": "actor_hand_r",
+      "production_ready": false,
+      "source_hash": "CB4533E1FE2BE77B0279FBFC076AF0C76DDA2D650F9E80D066FE9795F865825B",
+      "runtime_hash": "0A699AAB80FDC8823874EE96803AFCDA27DB84442695AD54130EAF67707BA2F1"
+    },
+    {
+      "family": "kel.rainy",
+      "effect_keys": ["mist_dash"],
+      "kel": "rainy",
+      "directory": "mist-dash",
+      "frame_count": 8,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [80, 70, 65, 65, 75, 85, 110, 125],
+      "contact_frame": 5,
+      "pivot": [0.08, 0.72],
+      "anchor": "actor_hand_r",
+      "production_ready": true,
+      "source_hash": "4E802C59924774092CEC464EB545188DF616D69F89A6E0FD20262108CFA9FEFC",
+      "runtime_hash": "130DC6CF35ECF430AB77E1CCAEC3FF64735D59BBE85F8B8C67C8D7B61501079F"
+    },
+    {
+      "family": "kel.ember",
+      "effect_keys": ["ember_arc"],
+      "kel": "ember",
+      "directory": "ember-arc",
+      "frame_count": 8,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [80, 70, 65, 65, 75, 85, 110, 125],
+      "contact_frame": 5,
+      "pivot": [0.08, 0.72],
+      "anchor": "actor_hand_r",
+      "production_ready": true,
+      "source_hash": "980F45F57F2718C74112AED6A48501EB8669477FDF10D4C5975DB75E7E453DC6",
+      "runtime_hash": "906E06056F197012156F34CFDCFD1A688616849C46C1D629B62116FE72BA2F9C"
+    },
+    {
+      "family": "kel.moonlit",
+      "effect_keys": ["insight_arc"],
+      "kel": "moonlit",
+      "directory": "insight-arc",
+      "frame_count": 8,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [80, 70, 65, 65, 75, 85, 110, 125],
+      "contact_frame": 5,
+      "pivot": [0.08, 0.68],
+      "anchor": "actor_hand_r",
+      "production_ready": true,
+      "source_hash": "D807EE337F26B7568EE456A788C245556E463BDC009CB0F130A606BFD2C01ADE",
+      "runtime_hash": "F45FEEF6B27B0CF6829CDAC80852404507D7BEA140B9E91C517B7B5D4036D724"
+    },
+    {
+      "family": "kel.sparkling",
+      "effect_keys": ["prism_burst"],
+      "kel": "sparkling",
+      "directory": "prism-burst",
+      "frame_count": 8,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [80, 70, 65, 65, 75, 85, 110, 125],
+      "contact_frame": 5,
+      "pivot": [0.08, 0.65],
+      "anchor": "actor_hand_r",
+      "production_ready": true,
+      "source_hash": "C63D497494B9BD7F90A716C126D54098A9A4277F94DCA7DBF45D06095A61B212",
+      "runtime_hash": "D52C349E102120370BBF0AF9ABFF3886F43446DFA76307769AFB61FC1A56AD4C"
+    },
+    {
+      "family": "kel.mosaic",
+      "effect_keys": [],
+      "kel": "mosaic",
+      "directory": "echo-wave",
+      "frame_count": 8,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [80, 70, 65, 65, 75, 85, 110, 125],
+      "contact_frame": 5,
+      "pivot": [0.08, 0.7],
+      "anchor": "actor_hand_r",
+      "production_ready": true,
+      "source_hash": "D5100395CDC01F5364B03499AAD0879F0972E3C5B08B172D71D621FEE3606C40",
+      "runtime_hash": "A01F85ECB51BA8F5FAAC0764161855D0A4DB24E7A3EAD194CD9F0B96C8A18A55"
+    },
+    {
+      "family": "baby-pot.care-vines",
+      "effect_keys": [],
+      "kel": "sunny",
+      "directory": "care-vines-v2",
+      "frame_count": 10,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [90, 70, 70, 65, 65, 70, 75, 105, 80, 110],
+      "contact_frame": 5,
+      "pivot": [0.03, 0.76],
+      "anchor": "actor_hand_r",
+      "production_ready": false,
+      "source_hash": "CB4533E1FE2BE77B0279FBFC076AF0C76DDA2D650F9E80D066FE9795F865825B",
+      "runtime_hash": "0A699AAB80FDC8823874EE96803AFCDA27DB84442695AD54130EAF67707BA2F1"
+    },
+    {
+      "family": "ninja-pot.venom-seam",
+      "effect_keys": ["venom_seam"],
+      "kel": "rainy",
+      "directory": "venom-seam-v1",
+      "frame_count": 7,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [90, 70, 65, 65, 85, 105, 125],
+      "contact_frame": 4,
+      "pivot": [0.08, 0.72],
+      "anchor": "actor_hand_r",
+      "production_ready": false,
+      "source_hash": "66D1A7FC4D3E8CA8D4F2672271D6A50C39652B7DCF567C4C7E31C6F5177E300A",
+      "runtime_hash": "BC3A486C4B733452FA6C994A02D6D075D0435CE342EC28BFA2525F2D8712B12B"
+    },
+    {
+      "family": "guardian.ledger-claw",
+      "effect_keys": ["ledger_claw"],
+      "kel": "mosaic",
+      "directory": "ledger-claw-v2",
+      "frame_count": 10,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [100, 75, 65, 65, 70, 95, 75, 70, 80, 105],
+      "contact_frame": 5,
+      "pivot": [0.97, 0.58],
+      "anchor": "guardian_foreleg_r",
+      "production_ready": false,
+      "source_hash": "964BF0359681CA02E49A94B5BF755BE6FF8DCCD357A524B96B2117BE1E1FBCA3",
+      "runtime_hash": "A336C11DC376EFDC002E40491A86109CFDEF9195A0FC2A48C6FCB0F94E9A8012"
+    },
+    {
+      "family": "guardian.enemy-wave",
+      "effect_keys": ["enemy_wave"],
+      "kel": "mosaic",
       "directory": "enemy-wave",
       "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "removed_tiny_components": 59,
-      "frames": [
-        {
-          "index": 0,
-          "coverage": 0.0555,
-          "bbox": [
-            508,
-            132,
-            705,
-            302
-          ]
-        },
-        {
-          "index": 1,
-          "coverage": 0.0894,
-          "bbox": [
-            393,
-            92,
-            567,
-            341
-          ]
-        },
-        {
-          "index": 2,
-          "coverage": 0.0951,
-          "bbox": [
-            338,
-            110,
-            629,
-            309
-          ]
-        },
-        {
-          "index": 3,
-          "coverage": 0.1726,
-          "bbox": [
-            68,
-            108,
-            548,
-            309
-          ]
-        },
-        {
-          "index": 4,
-          "coverage": 0.1483,
-          "bbox": [
-            218,
-            81,
-            680,
-            286
-          ]
-        },
-        {
-          "index": 5,
-          "coverage": 0.1613,
-          "bbox": [
-            37,
-            92,
-            380,
-            301
-          ]
-        },
-        {
-          "index": 6,
-          "coverage": 0.2202,
-          "bbox": [
-            129,
-            61,
-            562,
-            300
-          ]
-        },
-        {
-          "index": 7,
-          "coverage": 0.0765,
-          "bbox": [
-            48,
-            89,
-            553,
-            266
-          ]
-        }
-      ]
+      "frame_size": [576, 288],
+      "frame_durations_ms": [80, 70, 65, 65, 75, 85, 110, 125],
+      "contact_frame": 5,
+      "pivot": [0.92, 0.55],
+      "anchor": "guardian_center",
+      "production_ready": true,
+      "source_hash": "8C4CEDA96EF679A5797E6574A6C25EA6E3A609E0B58780AEC0BACA313C57EADD",
+      "runtime_hash": "D6DE92A2A6E154312495D44EE6836F1F8043FC603672108232F28BED5E3B53D6"
+    },
+    {
+      "family": "tangled-ledger.paper-flurry",
+      "effect_keys": ["paper_flurry"],
+      "kel": "moonlit",
+      "directory": "paper-flurry-v1",
+      "frame_count": 7,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [100, 85, 75, 75, 90, 115, 140],
+      "contact_frame": 4,
+      "pivot": [0.94, 0.58],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "7D315AF77A3A61946D682727CF02541A1B610ACC626EE444616D52A554F04F5B",
+      "runtime_hash": "1A966C03E49B55FF43F2BAFB60F468CEA4D928AE78C10B4968804D24FC3D062A"
     }
   ]
 }

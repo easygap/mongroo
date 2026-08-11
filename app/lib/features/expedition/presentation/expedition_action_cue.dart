@@ -1,4 +1,5 @@
 import '../domain/expedition_models.dart';
+import 'expedition_combat_effect_catalog.dart';
 
 enum ExpeditionActionCueKind {
   skill,
@@ -25,6 +26,9 @@ class ExpeditionActionCue {
     this.weaknessHit = false,
     this.combatResult,
     this.motionProfile,
+    this.motion,
+    this.vfxFamily,
+    this.kelFallbackFamily,
   });
 
   final int id;
@@ -43,6 +47,9 @@ class ExpeditionActionCue {
   final bool weaknessHit;
   final String? combatResult;
   final String? motionProfile;
+  final ExpeditionCombatMotion? motion;
+  final String? vfxFamily;
+  final String? kelFallbackFamily;
 
   bool get isGuardianExchange => combat?.kind == 'guardian';
   bool get isCombatRound =>
@@ -54,10 +61,24 @@ class ExpeditionActionCue {
   bool get playsEnemyAttack =>
       kind == ExpeditionActionCueKind.combatEnemy ||
       (kind == ExpeditionActionCueKind.resolution && isGuardianExchange);
-  String get enemyEffectKey {
-    if (kind == ExpeditionActionCueKind.combatEnemy) return effectKey;
-    return combat?.attackName == '장부 발톱' ? 'ledger_claw' : 'enemy_wave';
-  }
+  ExpeditionCombatEffectSpec get partyEffect => resolveExpeditionCombatEffect(
+        vfxFamily: vfxFamily,
+        kelFallbackFamily: kelFallbackFamily,
+        legacyEffectKey: effectKey,
+      );
+  ExpeditionCombatEffectSpec get enemyEffect =>
+      kind == ExpeditionActionCueKind.combatEnemy
+          ? resolveExpeditionCombatEffect(
+              vfxFamily: vfxFamily,
+              kelFallbackFamily: kelFallbackFamily,
+              legacyEffectKey: effectKey,
+            )
+          : resolveExpeditionCombatEffect(
+              vfxFamily: 'guardian.enemy-wave',
+              legacyEffectKey: 'enemy_wave',
+            );
+  String get enemyEffectKey =>
+      enemyEffect.effectKeys.firstOrNull ?? 'enemy_wave';
 
   bool get dealsGuardianDamage =>
       playsPartyAttack && (combat?.guardDamage ?? 0) > 0;
@@ -152,6 +173,9 @@ class ExpeditionActionCue {
             event.effectKey ?? (enemyAction ? 'enemy_wave' : 'echo_wave'),
       ),
       motionProfile: event.motionProfile,
+      motion: event.motion,
+      vfxFamily: event.vfxFamily,
+      kelFallbackFamily: event.kelFallbackFamily,
     );
   }
 }

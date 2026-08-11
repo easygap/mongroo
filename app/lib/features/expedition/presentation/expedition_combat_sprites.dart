@@ -1,70 +1,24 @@
 import 'dart:math' as math;
+import 'dart:ui' show BlendMode, ImageFilter;
 
 import 'package:flutter/material.dart';
 
 import 'expedition_action_cue.dart';
+import 'expedition_combat_effect_catalog.dart';
 import 'expedition_combat_timeline.dart';
 
-const int expeditionCombatEffectFrameCount = 8;
-
-const Map<String, int> _expeditionCombatEffectFrameCounts = {
-  'care_vines': 10,
-  'ledger_claw': 10,
-  'venom_seam': 7,
-};
-
-const Map<String, List<int>> _expeditionCombatEffectFrameDurationsMs = {
-  'care_vines': [90, 70, 70, 65, 65, 70, 75, 105, 80, 110],
-  'ledger_claw': [100, 75, 65, 65, 70, 95, 75, 70, 80, 105],
-  'venom_seam': [90, 70, 65, 65, 85, 105, 125],
-};
-
-const Map<String, String> _expeditionCombatEffectDirectories = {
-  'care_vines': 'care-vines-v2',
-  'ledger_claw': 'ledger-claw-v2',
-  'safe_guard': 'safe-guard',
-  'ember_arc': 'ember-arc',
-  'prism_burst': 'prism-burst',
-  'mist_dash': 'mist-dash',
-  'venom_seam': 'venom-seam-v1',
-  'insight_arc': 'insight-arc',
-  'echo_wave': 'echo-wave',
-  'enemy_wave': 'enemy-wave',
-};
-
 int expeditionCombatEffectFrameCountFor(String effectKey) =>
-    _expeditionCombatEffectFrameCounts[effectKey] ??
-    expeditionCombatEffectFrameCount;
+    expeditionCombatEffectForKey(effectKey).frameCount;
 
 int expeditionCombatEffectFrameForProgress(
   String effectKey,
   double progress,
 ) {
-  final safeProgress = progress.clamp(0.0, 1.0);
-  final durations = _expeditionCombatEffectFrameDurationsMs[effectKey];
-  if (durations == null) {
-    return math.min(
-      expeditionCombatEffectFrameCountFor(effectKey) - 1,
-      (safeProgress * expeditionCombatEffectFrameCountFor(effectKey)).floor(),
-    );
-  }
-  if (safeProgress >= 1) return durations.length - 1;
-  final totalMs = durations.fold<int>(0, (total, value) => total + value);
-  final elapsedMs = safeProgress * totalMs;
-  var frameEndMs = 0;
-  for (var frame = 0; frame < durations.length; frame++) {
-    frameEndMs += durations[frame];
-    if (elapsedMs < frameEndMs) return frame;
-  }
-  return durations.length - 1;
+  return expeditionCombatEffectForKey(effectKey).frameForProgress(progress);
 }
 
 String expeditionCombatEffectAsset(String effectKey, int frame) {
-  final directory =
-      _expeditionCombatEffectDirectories[effectKey] ?? 'echo-wave';
-  final frameCount = expeditionCombatEffectFrameCountFor(effectKey);
-  final safeFrame = frame.clamp(0, frameCount - 1);
-  return 'assets/adventure/effects/$directory/frame-${safeFrame.toString().padLeft(2, '0')}.webp';
+  return expeditionCombatEffectForKey(effectKey).asset(frame);
 }
 
 List<String> expeditionCombatEffectAssets(String effectKey) => List.generate(
@@ -73,9 +27,15 @@ List<String> expeditionCombatEffectAssets(String effectKey) => List.generate(
       growable: false,
     );
 
+List<String> expeditionCombatEffectAssetsFor(
+  ExpeditionCombatEffectSpec effect,
+) =>
+    List.generate(effect.frameCount, effect.asset, growable: false);
+
 List<String> get expeditionCombatEffectFirstFrames =>
-    _expeditionCombatEffectDirectories.keys
-        .map((effectKey) => expeditionCombatEffectAsset(effectKey, 0))
+    expeditionCombatEffectsByFamily.values
+        .map((effect) => effect.asset(0))
+        .toSet()
         .toList(growable: false);
 
 /// 검수된 래스터 시퀀스만 재생하는 전투 이펙트 레이어.
@@ -105,10 +65,10 @@ class ExpeditionCombatSpriteLayer extends StatelessWidget {
               children.add(
                 _EffectSequence(
                   key: const ValueKey('combat-party-effect-sequence'),
-                  effectKey: cue.effectKey,
+                  effect: cue.partyEffect,
                   progress: progress,
-                  start: .03,
-                  end: .58,
+                  start: ExpeditionCombatTimeline.partyEffectStart,
+                  end: ExpeditionCombatTimeline.partyEffectEnd,
                   reduceMotion: reduceMotion,
                 ),
               );
@@ -117,7 +77,7 @@ class ExpeditionCombatSpriteLayer extends StatelessWidget {
               children.add(
                 _EffectSequence(
                   key: const ValueKey('combat-enemy-effect-sequence'),
-                  effectKey: cue.enemyEffectKey,
+                  effect: cue.enemyEffect,
                   progress: progress,
                   start: ExpeditionCombatTimeline.enemyEffectStart(cue),
                   end: ExpeditionCombatTimeline.enemyEffectEnd(cue),
@@ -134,14 +94,14 @@ class ExpeditionCombatSpriteLayer extends StatelessWidget {
 class _EffectSequence extends StatelessWidget {
   const _EffectSequence({
     super.key,
-    required this.effectKey,
+    required this.effect,
     required this.progress,
     required this.start,
     required this.end,
     required this.reduceMotion,
   });
 
-  final String effectKey;
+  final ExpeditionCombatEffectSpec effect;
   final double progress;
   final double start;
   final double end;
@@ -155,7 +115,7 @@ class _EffectSequence extends StatelessWidget {
     final normalized = reduceMotion
         ? .82
         : ExpeditionCombatTimeline.segment(progress, start, end);
-    final frame = expeditionCombatEffectFrameForProgress(effectKey, normalized);
+    final frame = effect.frameForProgress(normalized);
     final edgeOpacity = reduceMotion
         ? 1.0
         : math.min(
@@ -163,17 +123,52 @@ class _EffectSequence extends StatelessWidget {
                 progress, start - .02, start + .03),
             1 - ExpeditionCombatTimeline.segment(progress, end, end + .08),
           );
+    final asset = effect.asset(frame);
+    final image = Image.asset(
+      asset,
+      key: ValueKey('combat-effect-${effect.family}-frame-$frame'),
+      fit: BoxFit.contain,
+      alignment: Alignment.center,
+      filterQuality: FilterQuality.medium,
+      gaplessPlayback: true,
+      excludeFromSemantics: true,
+    );
     return Opacity(
       opacity: edgeOpacity.clamp(0.0, 1.0),
-      child: Image.asset(
-        expeditionCombatEffectAsset(effectKey, frame),
-        key: ValueKey('combat-effect-$effectKey-frame-$frame'),
-        fit: BoxFit.contain,
-        alignment: Alignment.center,
-        filterQuality: FilterQuality.medium,
-        gaplessPlayback: true,
-        excludeFromSemantics: true,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (!reduceMotion)
+            Opacity(
+              opacity: .16,
+              child: ImageFiltered(
+                imageFilter: ImageFilter.blur(sigmaX: 2.2, sigmaY: 2.2),
+                child: Image.asset(
+                  asset,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                  color: _effectBlendColor(effect),
+                  colorBlendMode: BlendMode.srcIn,
+                  filterQuality: FilterQuality.low,
+                  gaplessPlayback: true,
+                  excludeFromSemantics: true,
+                ),
+              ),
+            ),
+          image,
+        ],
       ),
     );
   }
 }
+
+Color _effectBlendColor(ExpeditionCombatEffectSpec effect) =>
+    switch (effect.kel) {
+      'sunny' => const Color(0xFFFFD99B),
+      'rainy' => const Color(0xFF91DFF2),
+      'ember' => const Color(0xFFFF9A6E),
+      'moonlit' => const Color(0xFF9EDFE8),
+      'sparkling' => const Color(0xFFCAB5FF),
+      'mosaic' => const Color(0xFFB7D4CB),
+      _ => const Color(0xFFC8EFE5),
+    };

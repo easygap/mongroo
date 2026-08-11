@@ -132,5 +132,6 @@ Color expeditionCombatEffectColor(String key) => switch (key) {
       'venom_seam' => const Color(0xFF9C55D8),
       'insight_arc' => const Color(0xFF8ED7FF),
       'enemy_wave' => const Color(0xFFFF7968),
+      'paper_flurry' => const Color(0xFFBDEAF0),
       _ => const Color(0xFFFFD98A),
     };

@@ -26,6 +26,16 @@ from app.content.expeditions.combat_identity import (
     element_kel_map,
     validate_combat_identity_catalog,
 )
+from app.content.expeditions.combat_motion import (
+    MOTION_ARCHETYPES,
+    combat_motion,
+)
+from app.content.expeditions.tangles import (
+    TANGLE_CATALOG,
+    TANGLE_INTENT_PRESENTATION,
+    tangle_definition,
+    validate_tangle_catalog,
+)
 
 
 def _profile(
@@ -1131,3 +1141,82 @@ def test_element_weakness_and_resistance_are_applied_server_side():
     assert event["resistance_hit"] is True
     assert event["damage"] == steel_kit["basic"]["power"]
     assert event["damage"] < steel_kit["basic"]["power_neutral"]
+
+
+def test_six_motion_archetypes_expose_complete_phase_contracts():
+    expected_phases = [
+        "anticipation",
+        "release",
+        "travel",
+        "contact",
+        "reaction",
+        "recovery",
+    ]
+    assert set(MOTION_ARCHETYPES) == {
+        "dash",
+        "draw",
+        "cast",
+        "brace",
+        "channel",
+        "leap",
+    }
+    for archetype in MOTION_ARCHETYPES:
+        normal = combat_motion("test.profile", archetype=archetype)
+        ultimate = combat_motion(
+            "test.profile",
+            archetype=archetype,
+            ultimate=True,
+        )
+        assert [phase["name"] for phase in normal["phases"]] == expected_phases
+        assert normal["total_ms"] == sum(phase["ms"] for phase in normal["phases"])
+        assert ultimate["total_ms"] > normal["total_ms"]
+    assert combat_motion("unknown.profile")["archetype"] == "cast"
+
+
+def test_all_twenty_four_tangle_intents_have_unique_visual_contracts():
+    intents = [
+        intent
+        for tangle in TANGLE_CATALOG.values()
+        for intent in tangle["intents"]
+    ]
+    assert validate_tangle_catalog() == []
+    assert len(intents) == len(TANGLE_INTENT_PRESENTATION) == 24
+    assert len({intent["vfx_family"] for intent in intents}) == 24
+    for intent in intents:
+        assert intent["motion"]["archetype"] == intent["archetype"]
+        assert len(intent["motion"]["phases"]) == 6
+        assert intent["kel_fallback_family"] == f"kel.{intent['kel']}"
+
+
+def test_round_events_snapshot_motion_and_vfx_without_name_branching(profiles):
+    encounter = _encounter(
+        waves=["tangled_ledger"],
+        starting_focus=5,
+        enemy_max_guard=500,
+    )
+    battle = new_guardian_battle("tangle-stage", encounter, profiles)
+    skill_state = submit_guardian_action(
+        battle,
+        {"member_id": 1, "action": "unique_1"},
+        encounter,
+        profiles,
+    )
+    party_event = skill_state["last_exchange"][0]
+    assert party_event["vfx_family"] == "ninja-pot.venom-seam"
+    assert party_event["kel_fallback_family"] == "kel.rainy"
+    assert party_event["motion"]["archetype"] == "draw"
+
+    resolved = submit_guardian_action(
+        skill_state,
+        {"member_id": 2, "action": "guard"},
+        encounter,
+        profiles,
+    )
+    enemy_event = next(
+        event for event in resolved["last_exchange"] if event["type"] == "enemy_action"
+    )
+    paper_flurry = tangle_definition("tangled_ledger")["intents"][0]
+    assert enemy_event["action_name"] == paper_flurry["name"]
+    assert enemy_event["effect_key"] == "paper_flurry"
+    assert enemy_event["vfx_family"] == "tangled-ledger.paper-flurry"
+    assert enemy_event["motion"]["archetype"] == "leap"

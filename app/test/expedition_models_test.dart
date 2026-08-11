@@ -10,6 +10,7 @@ import 'package:mongroo/features/expedition/presentation/expedition_controller.d
 import 'package:mongroo/features/expedition/presentation/expedition_action_cue.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_battle_dock.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_overlay.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_combat_effect_catalog.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_sprites.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_timeline.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_scene.dart';
@@ -514,6 +515,24 @@ Map<String, dynamic> _battleSnapshotJson() {
       'action_name': '새싹 응원',
       'effect_key': 'care_vines',
       'motion_profile': 'baby-pot.vine-cast',
+      'vfx_family': 'baby-pot.care-vines',
+      'kel_fallback_family': 'kel.sunny',
+      'motion': {
+        'profile': 'baby-pot.vine-cast',
+        'archetype': 'channel',
+        'facing': 'right',
+        'travel_ratio': .08,
+        'impact_shake_px': 2.5,
+        'total_ms': 760,
+        'phases': [
+          {'name': 'anticipation', 'ms': 170},
+          {'name': 'release', 'ms': 100},
+          {'name': 'travel', 'ms': 130},
+          {'name': 'contact', 'ms': 80},
+          {'name': 'reaction', 'ms': 120},
+          {'name': 'recovery', 'ms': 160},
+        ],
+      },
       'fusion_variant': 'baby-pot.sunny.unique_1.t3',
       'fusion_vfx_family': 'emotion-fusion.sunny-radiance',
       'weakness_hit': true,
@@ -654,6 +673,7 @@ void main() {
       'insight_arc',
       'echo_wave',
       'enemy_wave',
+      'paper_flurry',
     ];
 
     for (final effectKey in effectKeys) {
@@ -676,61 +696,88 @@ void main() {
     expect(expeditionCombatEffectFrameCountFor('venom_seam'), 7);
     expect(expeditionCombatEffectFrameForProgress('venom_seam', .5), 4);
     expect(expeditionCombatEffectFrameForProgress('enemy_wave', .5), 4);
+    expect(expeditionCombatEffectFrameForProgress('paper_flurry', .5), 4);
   });
 
-  test('고유 motion profile은 투척·돌진·채널링 동선을 구분한다', () {
-    const throwCue = ExpeditionActionCue(
-      id: 1,
-      kind: ExpeditionActionCueKind.combatParty,
-      actorName: '그림싹',
-      actorId: 11,
-      speciesCode: 'ninja-pot',
-      speciesName: '그림싹',
-      stage: 5,
-      form: 'rainy',
-      title: '맹독 틈베기',
-      effectKey: 'venom_seam',
-      outcome: null,
-      combat: null,
-      motionProfile: 'ninja-pot.venom-draw',
-    );
-    const dashCue = ExpeditionActionCue(
-      id: 2,
-      kind: ExpeditionActionCueKind.combatParty,
-      actorName: '그림싹',
-      actorId: 11,
-      speciesCode: 'ninja-pot',
-      speciesName: '그림싹',
-      stage: 5,
-      form: 'rainy',
-      title: '무영 처형',
-      effectKey: 'mist_dash',
-      outcome: null,
-      combat: null,
-      motionProfile: 'ninja-pot.shadow-cross',
-    );
-    const channelCue = ExpeditionActionCue(
-      id: 3,
-      kind: ExpeditionActionCueKind.combatParty,
-      actorName: '여우비',
-      actorId: 12,
-      speciesCode: 'gumiho-pot',
-      speciesName: '여우비',
-      stage: 5,
-      form: 'moonlit',
-      title: '구미 월식',
-      effectKey: 'prism_burst',
-      outcome: null,
-      combat: null,
-      motionProfile: 'gumiho-pot.nine-tail-eclipse',
-    );
+  test('서버가 지정한 여섯 motion archetype은 서로 다른 동선을 만든다', () {
+    const phases = [
+      ExpeditionCombatMotionPhase(name: 'anticipation', ms: 130),
+      ExpeditionCombatMotionPhase(name: 'release', ms: 100),
+      ExpeditionCombatMotionPhase(name: 'travel', ms: 220),
+      ExpeditionCombatMotionPhase(name: 'contact', ms: 80),
+      ExpeditionCombatMotionPhase(name: 'reaction', ms: 110),
+      ExpeditionCombatMotionPhase(name: 'recovery', ms: 160),
+    ];
+    ExpeditionActionCue cue(String archetype) => ExpeditionActionCue(
+          id: archetype.hashCode,
+          kind: ExpeditionActionCueKind.combatParty,
+          actorName: '그림싹',
+          actorId: 11,
+          speciesCode: 'ninja-pot',
+          speciesName: '그림싹',
+          stage: 5,
+          form: 'rainy',
+          title: archetype,
+          effectKey: 'venom_seam',
+          outcome: null,
+          combat: null,
+          motionProfile: 'test.$archetype',
+          motion: ExpeditionCombatMotion(
+            profile: 'test.$archetype',
+            archetype: archetype,
+            facing: 'right',
+            travelRatio: archetype == 'brace' ? 0 : .7,
+            impactShakePx: 2.5,
+            phases: phases,
+            totalMs: 800,
+          ),
+        );
 
-    final throwOffset = ExpeditionCombatTimeline.actorOffset(.25, throwCue);
-    final dashOffset = ExpeditionCombatTimeline.actorOffset(.25, dashCue);
-    final channelOffset = ExpeditionCombatTimeline.actorOffset(.25, channelCue);
-    expect(dashOffset.dx, greaterThan(throwOffset.dx));
-    expect(channelOffset.dy, lessThan(0));
-    expect({throwOffset, dashOffset, channelOffset}, hasLength(3));
+    final offsets = {
+      for (final archetype in const [
+        'dash',
+        'draw',
+        'cast',
+        'brace',
+        'channel',
+        'leap',
+      ])
+        archetype: ExpeditionCombatTimeline.actorOffset(.38, cue(archetype)),
+    };
+    expect(offsets.values.toSet(), hasLength(6));
+    expect(offsets['dash']!.dx, greaterThan(offsets['draw']!.dx));
+    expect(offsets['leap']!.dy, lessThan(offsets['cast']!.dy));
+    expect(offsets['brace']!.dx.abs(), lessThan(offsets['dash']!.dx.abs()));
+  });
+
+  test('VFX resolver는 exact, 결, legacy, 공용 순서로 대체한다', () {
+    expect(
+      resolveExpeditionCombatEffect(
+        vfxFamily: 'tangled-ledger.paper-flurry',
+        kelFallbackFamily: 'kel.moonlit',
+        legacyEffectKey: 'insight_arc',
+      ).directory,
+      'paper-flurry-v1',
+    );
+    expect(
+      resolveExpeditionCombatEffect(
+        vfxFamily: 'not-yet-produced',
+        kelFallbackFamily: 'kel.rainy',
+        legacyEffectKey: 'ember_arc',
+      ).directory,
+      'mist-dash',
+    );
+    expect(
+      resolveExpeditionCombatEffect(
+        vfxFamily: 'not-yet-produced',
+        legacyEffectKey: 'ember_arc',
+      ).directory,
+      'ember-arc',
+    );
+    expect(
+      resolveExpeditionCombatEffect(vfxFamily: 'not-yet-produced').family,
+      'fallback.echo-wave',
+    );
   });
 
   test('장부 발톱 적 이벤트는 전용 contact sprite와 같은 판정 시점을 쓴다', () {
@@ -905,6 +952,13 @@ void main() {
       snapshot.lastCombatExchange.single.motionProfile,
       'baby-pot.vine-cast',
     );
+    expect(
+      snapshot.lastCombatExchange.single.vfxFamily,
+      'baby-pot.care-vines',
+    );
+    expect(snapshot.lastCombatExchange.single.kelFallbackFamily, 'kel.sunny');
+    expect(snapshot.lastCombatExchange.single.motion?.archetype, 'channel');
+    expect(snapshot.lastCombatExchange.single.motion?.totalMs, 760);
     expect(
       snapshot.lastCombatExchange.single.fusionVariant,
       'baby-pot.sunny.unique_1.t3',
@@ -1579,18 +1633,18 @@ void main() {
         ),
       ),
     );
-    await tester.pump(const Duration(milliseconds: 650));
+    await tester.pump(const Duration(milliseconds: 700));
 
     expect(find.text('-86'), findsOneWidget);
     expect(
-      find.byKey(const ValueKey('combat-effect-insight_arc-frame-4')),
+      find.byKey(const ValueKey('combat-effect-kel.moonlit-frame-5')),
       findsOneWidget,
     );
     expect(
       find.byKey(const ValueKey('ledger-keeper-hit')),
       findsOneWidget,
     );
-    await tester.pump(const Duration(milliseconds: 550));
+    await tester.pump(const Duration(milliseconds: 650));
     expect(find.text('기록 파동'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('ledger-keeper-attack')),

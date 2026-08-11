@@ -25,6 +25,7 @@ except ImportError as exc:  # pragma: no cover - dependency failure is actionabl
 
 VFX_V2_ROOT = Path("design-system/concepts/adventure-combat-vfx-v2")
 VFX_V3_ROOT = Path("design-system/concepts/adventure-combat-vfx-v3")
+VFX_V4_ROOT = Path("design-system/concepts/adventure-combat-vfx-v4")
 RUNTIME_ROOT = Path("app/assets/adventure/effects")
 RUNTIME_SIZE = (576, 288)
 QA_CELL_SIZE = (288, 144)
@@ -196,6 +197,46 @@ EFFECT_SPECS = {
         fit_full_source=True,
         validate_magenta_residue=False,
         frame_center_x=(120, 205, 300, 385, 450, 450, 450),
+    ),
+    "paper_flurry": EffectSpec(
+        effect_key="paper_flurry",
+        runtime_directory="paper-flurry-v1",
+        source_directory="paper-flurry",
+        concept_root=VFX_V4_ROOT,
+        frame_sources=(
+            "pose-00-anticipation.png",
+            "pose-01-release.png",
+            "pose-02-travel.png",
+            "pose-03-precontact.png",
+            "pose-04-contact.png",
+            "pose-05-reaction.png",
+            "pose-06-recovery.png",
+        ),
+        frame_phases=(
+            "anticipation",
+            "release",
+            "travel",
+            "travel",
+            "contact",
+            "reaction",
+            "recovery",
+        ),
+        frame_durations_ms=(100, 85, 75, 75, 90, 115, 140),
+        origin="tangle_center",
+        target="front_actor",
+        release_frame=1,
+        travel_frames=(2, 3),
+        contact_frames=(4,),
+        reaction_frame=5,
+        recovery_frames=(6,),
+        origin_edge=None,
+        origin_tolerance_px=0,
+        min_coverage=0.004,
+        max_coverage=0.32,
+        preprocessed_alpha=True,
+        fit_full_source=True,
+        validate_magenta_residue=False,
+        frame_center_x=(440, 390, 350, 270, 165, 175, 255),
     ),
 }
 
@@ -590,7 +631,13 @@ def main() -> int:
                     }
                 )
                 manifest = {
-                    "version": 3 if concept_root == VFX_V2_ROOT else 1,
+                    "version": (
+                        4
+                        if concept_root == VFX_V4_ROOT
+                        else 3
+                        if concept_root == VFX_V2_ROOT
+                        else 1
+                    ),
                     "source_policy": "one reviewed ImageGen source per visible pose",
                     "code_generated_attack_pixels": False,
                     "effects": existing_effects,

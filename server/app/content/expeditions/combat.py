@@ -35,6 +35,11 @@ from app.content.expeditions.combat_identity import (
     rarity_scale_bp,
     scaled_power,
 )
+from app.content.expeditions.combat_motion import (
+    combat_motion,
+    kel_fallback_family,
+    present_intent,
+)
 from app.content.expeditions.tangles import tangle_definition
 
 
@@ -241,6 +246,11 @@ def member_battle_kit(
             "prism_shifted": prism_shifted,
             "damage_type_label": DAMAGE_TYPE_LABELS[skill["damage_type"]],
             "effect_key": ELEMENT_RUNTIME_EFFECTS[element],
+            "kel_fallback_family": kel_fallback_family(skill_kel),
+            "motion": combat_motion(
+                str(skill["motion_profile"]),
+                ultimate=slot == "unique_2",
+            ),
             "cooldown_turns": cooldown_turns,
             "cooldown_remaining": cooldown_remaining(str(skill["code"])),
             "ready_round": ready_round,
@@ -329,6 +339,8 @@ def member_battle_kit(
             "motion_profile": discipline["motion_profile"],
             "vfx_family": discipline["basic_vfx_family"],
             "effect_key": ELEMENT_RUNTIME_EFFECTS[basic_element],
+            "kel_fallback_family": kel_fallback_family(basic_kel),
+            "motion": combat_motion(str(discipline["motion_profile"])),
             "cooldown_turns": 0,
             "cooldown_remaining": 0,
         },
@@ -343,6 +355,11 @@ def member_battle_kit(
             "available": True,
             "guard": 2,
             "focus_delta": 1,
+            "motion_profile": "guard.channel",
+            "vfx_family": "common.safe-guard",
+            "effect_key": "safe_guard",
+            "kel_fallback_family": None,
+            "motion": combat_motion("guard.channel", impact_shake_px=0.0),
             "cooldown_turns": 0,
             "cooldown_remaining": 0,
         },
@@ -484,14 +501,14 @@ def _intent(
 ) -> dict[str, Any]:
     intents = (wave or {}).get("intents") or encounter.get("intents") or []
     if not intents:
-        return {
+        return present_intent({
             "code": "guardian_strike",
             "name": encounter.get("attack_name", "수호자의 공격"),
             "telegraph": encounter.get("telegraph", "공격을 준비하고 있어요."),
             "target": "front",
             "power": 1,
-        }
-    return dict(intents[index % len(intents)])
+        })
+    return present_intent(dict(intents[index % len(intents)]))
 
 
 def guardian_battle_payload(
@@ -730,6 +747,9 @@ def _apply_member_command(
     matchup = "neutral"
     effect_key = "safe_guard"
     motion_profile = "guard.channel"
+    vfx_family = "common.safe-guard"
+    kel_fallback = None
+    motion = combat_motion("guard.channel", impact_shake_px=0.0)
     action_element = None
     action_elements: list[str] = []
     action_kel = None
@@ -778,6 +798,9 @@ def _apply_member_command(
         affinity = action_data["affinity"]
         effect_key = action_data["effect_key"]
         motion_profile = str(action_data.get("motion_profile", "combat.lunge"))
+        vfx_family = str(action_data.get("vfx_family", "fallback.echo-wave"))
+        kel_fallback = action_data.get("kel_fallback_family")
+        motion = dict(action_data.get("motion") or combat_motion(motion_profile))
         action_element = action_data.get("element")
         action_elements = [str(item) for item in action_data.get("elements", [])]
         action_kel = action_data.get("kel")
@@ -869,6 +892,9 @@ def _apply_member_command(
             "action_name": action_name,
             "effect_key": effect_key,
             "motion_profile": motion_profile,
+            "motion": motion,
+            "vfx_family": vfx_family,
+            "kel_fallback_family": kel_fallback,
             "element": action_element,
             "elements": action_elements,
             "kel": action_kel,
@@ -932,11 +958,13 @@ def _finalize_round(
             {
                 "type": "enemy_action",
                 "action_name": intent.get("name", "수호자의 공격"),
-                "effect_key": (
-                    "ledger_claw"
-                    if intent.get("code") in {"ledger_claw", "claw"}
-                    else "enemy_wave"
-                ),
+                "effect_key": intent["effect_key"],
+                "motion_profile": intent["motion_profile"],
+                "motion": intent["motion"],
+                "vfx_family": intent["vfx_family"],
+                "kel": intent["kel"],
+                "kel_fallback_family": intent["kel_fallback_family"],
+                "kel_map_version": _battle_kel_map_version(state),
                 "enemy_guard_before": int(state["enemy_guard"]),
                 "enemy_guard_after": int(state["enemy_guard"]),
                 "targets": target_events,

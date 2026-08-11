@@ -214,13 +214,13 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   }
 
   Future<void> _precacheCueEffects(ExpeditionActionCue cue) async {
-    final effectKeys = <String>{
-      if (cue.playsPartyAttack) cue.effectKey,
-      if (cue.playsEnemyAttack) cue.enemyEffectKey,
+    final effects = {
+      if (cue.playsPartyAttack) cue.partyEffect,
+      if (cue.playsEnemyAttack) cue.enemyEffect,
     };
     await Future.wait<void>([
-      for (final effectKey in effectKeys)
-        for (final asset in expeditionCombatEffectAssets(effectKey))
+      for (final effect in effects)
+        for (final asset in expeditionCombatEffectAssetsFor(effect))
           precacheImage(AssetImage(asset), context),
     ]);
   }
@@ -237,15 +237,18 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     // 수호전은 명령을 고르는 동안 필요한 시퀀스를 먼저 디코드한다. 이벤트
     // 스킬처럼 바로 들어온 큐도 재생과 병렬로 나머지 프레임을 캐시에 올린다.
     unawaited(_precacheCueEffects(cue));
+    final serverMotionMs = cue.motion?.totalMs ?? 0;
     _actionController.duration = MediaQuery.disableAnimationsOf(context)
         ? const Duration(milliseconds: 1)
-        : cue.isCombatRound
-            ? cue.playsEnemyAttack
-                ? _scaled(ExpeditionCombatTimeline.enemyCommandDuration)
-                : _scaled(ExpeditionCombatTimeline.partyCommandDuration)
-            : cue.isGuardianExchange
-                ? _scaled(ExpeditionCombatTimeline.guardianDuration)
-                : _scaled(ExpeditionCombatTimeline.skillDuration);
+        : cue.isCombatRound && serverMotionMs > 0
+            ? _scaled(Duration(milliseconds: serverMotionMs))
+            : cue.isCombatRound
+                ? cue.playsEnemyAttack
+                    ? _scaled(ExpeditionCombatTimeline.enemyCommandDuration)
+                    : _scaled(ExpeditionCombatTimeline.partyCommandDuration)
+                : cue.isGuardianExchange
+                    ? _scaled(ExpeditionCombatTimeline.guardianDuration)
+                    : _scaled(ExpeditionCombatTimeline.skillDuration);
     _actionController.forward(from: 0);
     if (cue.isCombatRound) {
       unawaited(
@@ -268,9 +271,10 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
       return;
     }
     final progress = _actionController.value;
-    if (cue!.dealsGuardianDamage &&
-        _previousProgress < .34 &&
-        progress >= .34) {
+    final partyContact = ExpeditionCombatTimeline.partyContactProgress(cue!);
+    if (cue.dealsGuardianDamage &&
+        _previousProgress < partyContact &&
+        progress >= partyContact) {
       HapticFeedback.lightImpact();
       unawaited(
         _audio.play(
@@ -534,33 +538,72 @@ class _AnimatedGuardian extends StatelessWidget {
           animation: Listenable.merge([action, ambient]),
           builder: (context, _) {
             final progress = cue == null ? 0.0 : action.value;
+            final partyContact = cue == null
+                ? .34
+                : ExpeditionCombatTimeline.partyContactProgress(cue!);
+            final enemyContact = cue == null
+                ? .62
+                : ExpeditionCombatTimeline.enemyContactProgress(cue!);
             final defeatedBlend = cue?.combatResult == 'victory'
-                ? ExpeditionCombatTimeline.segment(progress, .68, .78)
+                ? ExpeditionCombatTimeline.segment(
+                    progress,
+                    partyContact + .24,
+                    partyContact + .34,
+                  )
                 : 0.0;
             final hitExit = cue?.combatResult == 'victory'
-                ? ExpeditionCombatTimeline.segment(progress, .68, .78)
-                : ExpeditionCombatTimeline.segment(progress, .52, .61);
+                ? ExpeditionCombatTimeline.segment(
+                    progress,
+                    partyContact + .24,
+                    partyContact + .34,
+                  )
+                : ExpeditionCombatTimeline.segment(
+                    progress,
+                    partyContact + .18,
+                    partyContact + .27,
+                  );
             final hitBlend = cue?.dealsGuardianDamage == true
                 ? math.min(
-                    ExpeditionCombatTimeline.segment(progress, .27, .34),
+                    ExpeditionCombatTimeline.segment(
+                      progress,
+                      partyContact - .07,
+                      partyContact,
+                    ),
                     1 - hitExit,
                   )
                 : 0.0;
             final attackBlend = cue?.playsEnemyAttack == true &&
                     combat?.counterResult != 'calmed'
                 ? math.min(
-                      ExpeditionCombatTimeline.segment(progress, .54, .61),
-                      1 - ExpeditionCombatTimeline.segment(progress, .84, .88),
+                      ExpeditionCombatTimeline.segment(
+                        progress,
+                        enemyContact - .08,
+                        enemyContact,
+                      ),
+                      1 -
+                          ExpeditionCombatTimeline.segment(
+                            progress,
+                            enemyContact + .20,
+                            enemyContact + .25,
+                          ),
                     ) *
                     (1 - defeatedBlend) *
                     (1 - hitBlend)
                 : 0.0;
             final guardianHit = cue?.dealsGuardianDamage == true
-                ? ExpeditionCombatTimeline.segment(progress, .31, .56)
+                ? ExpeditionCombatTimeline.segment(
+                    progress,
+                    partyContact - .03,
+                    partyContact + .22,
+                  )
                 : 0.0;
             final guardianFlash = cue?.dealsGuardianDamage == true
                 ? math.sin(
-                    ExpeditionCombatTimeline.segment(progress, .32, .48) *
+                    ExpeditionCombatTimeline.segment(
+                          progress,
+                          partyContact - .02,
+                          partyContact + .14,
+                        ) *
                         math.pi,
                   )
                 : 0.0;
@@ -569,15 +612,20 @@ class _AnimatedGuardian extends StatelessWidget {
             final attack = cue?.playsEnemyAttack == true &&
                     combat?.counterResult != 'calmed'
                 ? math.sin(
-                    ExpeditionCombatTimeline.segment(progress, .49, .80) *
+                    ExpeditionCombatTimeline.segment(
+                          progress,
+                          enemyContact - .13,
+                          enemyContact + .18,
+                        ) *
                         math.pi,
                   )
                 : 0.0;
             final shake = cue?.isGuardianExchange == true && !reduceMotion
                 ? cue?.playsEnemyAttack == true
-                    ? ExpeditionCombatTimeline.impactShake(progress)
+                    ? ExpeditionCombatTimeline.impactShake(progress, cue)
                     : cue?.dealsGuardianDamage == true
-                        ? ExpeditionCombatTimeline.partyImpactShake(progress)
+                        ? ExpeditionCombatTimeline.partyImpactShake(
+                            progress, cue)
                         : Offset.zero
                 : Offset.zero;
             final offset = Offset(
@@ -799,9 +847,10 @@ class _AnimatedCombatActor extends StatelessWidget {
           final progress = cue == null ? 0.0 : action.value;
           final shake = cue?.isGuardianExchange == true && !reduceMotion
               ? cue?.playsEnemyAttack == true
-                  ? ExpeditionCombatTimeline.impactShake(progress) * .35
+                  ? ExpeditionCombatTimeline.impactShake(progress, cue) * .35
                   : cue?.dealsGuardianDamage == true
-                      ? ExpeditionCombatTimeline.partyImpactShake(progress) *
+                      ? ExpeditionCombatTimeline.partyImpactShake(
+                              progress, cue) *
                           .18
                       : Offset.zero
               : Offset.zero;
@@ -818,7 +867,10 @@ class _AnimatedCombatActor extends StatelessWidget {
                 )
               : 0.0;
           return Transform.translate(
-            offset: ExpeditionCombatTimeline.actorOffset(progress, cue) + shake,
+            offset: (reduceMotion
+                    ? Offset.zero
+                    : ExpeditionCombatTimeline.actorOffset(progress, cue)) +
+                shake,
             child: Transform.rotate(
               angle: -cast * .035 + recoil * .045,
               alignment: Alignment.bottomCenter,
@@ -1015,6 +1067,10 @@ class _AnimatedCombatLabels extends StatelessWidget {
           animation: action,
           builder: (context, _) {
             final progress = action.value;
+            final partyContact =
+                ExpeditionCombatTimeline.partyContactProgress(cue);
+            final enemyContact =
+                ExpeditionCombatTimeline.enemyContactProgress(cue);
             return Stack(
               clipBehavior: Clip.none,
               children: [
@@ -1027,14 +1083,14 @@ class _AnimatedCombatLabels extends StatelessWidget {
                       actionName: cue.title,
                     ),
                   ),
-                if (progress >= .32 && (combat?.guardDamage ?? 0) > 0)
+                if (progress >= partyContact && (combat?.guardDamage ?? 0) > 0)
                   Positioned(
                     right: 54,
                     top: 104 -
                         ExpeditionCombatTimeline.segment(
                               progress,
-                              .32,
-                              .57,
+                              partyContact,
+                              partyContact + .25,
                             ) *
                             18,
                     child: ExpeditionDamageNumber(
@@ -1043,8 +1099,8 @@ class _AnimatedCombatLabels extends StatelessWidget {
                       color: expeditionCombatEffectColor(cue.effectKey),
                       opacity: ExpeditionCombatTimeline.floatingOpacity(
                         progress,
-                        .32,
-                        .72,
+                        partyContact,
+                        partyContact + .40,
                       ),
                     ),
                   ),
@@ -1060,11 +1116,15 @@ class _AnimatedCombatLabels extends StatelessWidget {
                       ),
                     ),
                   ),
-                if (cue.playsEnemyAttack && progress >= .56)
+                if (cue.playsEnemyAttack && progress >= enemyContact)
                   Positioned(
                     left: 58,
                     bottom: 78 +
-                        ExpeditionCombatTimeline.segment(progress, .56, .9) *
+                        ExpeditionCombatTimeline.segment(
+                              progress,
+                              enemyContact,
+                              enemyContact + .34,
+                            ) *
                             12,
                     child: ExpeditionDamageNumber(
                       label: combat!.counterDamage > 0
@@ -1082,8 +1142,8 @@ class _AnimatedCombatLabels extends StatelessWidget {
                           : const Color(0xFF9FE7D2),
                       opacity: ExpeditionCombatTimeline.floatingOpacity(
                         progress,
-                        .56,
-                        .94,
+                        enemyContact,
+                        enemyContact + .38,
                       ),
                     ),
                   ),

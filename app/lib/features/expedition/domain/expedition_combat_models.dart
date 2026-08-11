@@ -225,6 +225,12 @@ class ExpeditionBattleIntent {
     required this.telegraph,
     required this.target,
     required this.power,
+    this.effectKey,
+    this.vfxFamily,
+    this.kelFallbackFamily,
+    this.motionProfile,
+    this.motion,
+    this.kel,
   });
 
   final String code;
@@ -232,6 +238,12 @@ class ExpeditionBattleIntent {
   final String telegraph;
   final String target;
   final int power;
+  final String? effectKey;
+  final String? vfxFamily;
+  final String? kelFallbackFamily;
+  final String? motionProfile;
+  final ExpeditionCombatMotion? motion;
+  final String? kel;
 
   String get targetLabel => switch (target) {
         'all' => '탐험대 전체',
@@ -246,7 +258,99 @@ class ExpeditionBattleIntent {
         telegraph: json['telegraph'] as String? ?? '',
         target: json['target'] as String? ?? 'front',
         power: _combatInt(json['power'], 1),
+        effectKey: json['effect_key'] as String?,
+        vfxFamily: json['vfx_family'] as String?,
+        kelFallbackFamily: json['kel_fallback_family'] as String?,
+        motionProfile: json['motion_profile'] as String?,
+        motion: ExpeditionCombatMotion.fromNullableJson(json['motion']),
+        kel: json['kel'] as String?,
       );
+}
+
+class ExpeditionCombatMotionPhase {
+  const ExpeditionCombatMotionPhase({required this.name, required this.ms});
+
+  final String name;
+  final int ms;
+
+  factory ExpeditionCombatMotionPhase.fromJson(Map<String, dynamic> json) =>
+      ExpeditionCombatMotionPhase(
+        name: json['name'] as String? ?? '',
+        ms: _combatInt(json['ms']),
+      );
+}
+
+class ExpeditionCombatMotion {
+  const ExpeditionCombatMotion({
+    required this.profile,
+    required this.archetype,
+    required this.facing,
+    required this.travelRatio,
+    required this.impactShakePx,
+    required this.phases,
+    required this.totalMs,
+  });
+
+  static const supportedArchetypes = {
+    'dash',
+    'draw',
+    'cast',
+    'brace',
+    'channel',
+    'leap',
+  };
+
+  final String profile;
+  final String archetype;
+  final String facing;
+  final double travelRatio;
+  final double impactShakePx;
+  final List<ExpeditionCombatMotionPhase> phases;
+  final int totalMs;
+
+  double phaseStart(String name) {
+    if (totalMs <= 0) return 0;
+    var elapsed = 0;
+    for (final phase in phases) {
+      if (phase.name == name) return elapsed / totalMs;
+      elapsed += phase.ms;
+    }
+    return 0;
+  }
+
+  double phaseEnd(String name) {
+    if (totalMs <= 0) return 1;
+    var elapsed = 0;
+    for (final phase in phases) {
+      elapsed += phase.ms;
+      if (phase.name == name) return elapsed / totalMs;
+    }
+    return 1;
+  }
+
+  factory ExpeditionCombatMotion.fromJson(Map<String, dynamic> json) {
+    final phases = _combatMaps(json['phases'])
+        .map(ExpeditionCombatMotionPhase.fromJson)
+        .where((phase) => phase.name.isNotEmpty && phase.ms > 0)
+        .toList(growable: false);
+    final rawArchetype = json['archetype'] as String? ?? 'cast';
+    final phaseTotal = phases.fold<int>(0, (total, phase) => total + phase.ms);
+    return ExpeditionCombatMotion(
+      profile: json['profile'] as String? ?? '',
+      archetype:
+          supportedArchetypes.contains(rawArchetype) ? rawArchetype : 'cast',
+      facing: json['facing'] == 'left' ? 'left' : 'right',
+      travelRatio: (json['travel_ratio'] as num?)?.toDouble() ?? .18,
+      impactShakePx: (json['impact_shake_px'] as num?)?.toDouble() ?? 2.5,
+      phases: phases,
+      totalMs: _combatInt(json['total_ms'], phaseTotal),
+    );
+  }
+
+  static ExpeditionCombatMotion? fromNullableJson(Object? raw) {
+    final json = _combatMap(raw);
+    return json.isEmpty ? null : ExpeditionCombatMotion.fromJson(json);
+  }
 }
 
 class ExpeditionBattleMember {
@@ -449,6 +553,8 @@ class ExpeditionBattleAction {
     this.damageTypeLabel,
     this.motionProfile,
     this.vfxFamily,
+    this.kelFallbackFamily,
+    this.motion,
     this.kel,
     this.kelLabel,
     this.kels = const [],
@@ -493,6 +599,8 @@ class ExpeditionBattleAction {
   final String? damageTypeLabel;
   final String? motionProfile;
   final String? vfxFamily;
+  final String? kelFallbackFamily;
+  final ExpeditionCombatMotion? motion;
   final String? kel;
   final String? kelLabel;
   final List<String> kels;
@@ -548,6 +656,8 @@ class ExpeditionBattleAction {
         damageTypeLabel: json['damage_type_label'] as String?,
         motionProfile: json['motion_profile'] as String?,
         vfxFamily: json['vfx_family'] as String?,
+        kelFallbackFamily: json['kel_fallback_family'] as String?,
+        motion: ExpeditionCombatMotion.fromNullableJson(json['motion']),
         kel: json['kel'] as String?,
         kelLabel: json['kel_label'] as String?,
         kels: json['kels'] is List
@@ -613,6 +723,9 @@ class ExpeditionBattleEvent {
     this.element,
     this.elements = const [],
     this.motionProfile,
+    this.motion,
+    this.vfxFamily,
+    this.kelFallbackFamily,
     this.kel,
     this.kels = const [],
     this.powerNeutral = 0,
@@ -645,6 +758,9 @@ class ExpeditionBattleEvent {
   final String? element;
   final List<String> elements;
   final String? motionProfile;
+  final ExpeditionCombatMotion? motion;
+  final String? vfxFamily;
+  final String? kelFallbackFamily;
   final String? kel;
   final List<String> kels;
   final int powerNeutral;
@@ -690,6 +806,9 @@ class ExpeditionBattleEvent {
                 .toList(growable: false)
             : const [],
         motionProfile: json['motion_profile'] as String?,
+        motion: ExpeditionCombatMotion.fromNullableJson(json['motion']),
+        vfxFamily: json['vfx_family'] as String?,
+        kelFallbackFamily: json['kel_fallback_family'] as String?,
         kel: json['kel'] as String?,
         kels: json['kels'] is List
             ? (json['kels'] as List).whereType<String>().toList(growable: false)

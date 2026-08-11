@@ -1,14 +1,18 @@
 # 탐험 전투 코어 설계서 — 쿨타임·계수·상성·모션·이펙트
 
 최종 갱신: 2026-08-11
-문서 상태: **D 설계 확정 / K1 C 재검증 완료 / 전체 A·Q 미완료**
+문서 상태: **D 설계 확정 / K1·K2·K3·K5·K6·K7 C 완료 / K4·K8 진행**
 (`adventure_100_point_execution_contract.md` 2장 용어)
 관련 코드: `server/app/content/expeditions/combat.py`,
 `server/app/content/expeditions/combat_identity.py`,
+`server/app/content/expeditions/combat_motion.py`,
 `server/app/content/expeditions/tangles.py`,
 `app/lib/features/expedition/domain/expedition_combat_models.dart`,
+`app/assets/adventure/effects/manifest.json`,
+`app/lib/features/expedition/presentation/expedition_combat_effect_catalog.dart`,
 `app/lib/features/expedition/presentation/expedition_combat_timeline.dart`,
-`app/lib/features/expedition/presentation/expedition_combat_sprites.dart`
+`app/lib/features/expedition/presentation/expedition_combat_sprites.dart`,
+`design-system/scripts/generate_expedition_effect_catalog.py`
 
 ## 문서 적용 전제
 
@@ -34,8 +38,23 @@
 - 서버 이벤트의 `motion_profile`을 앱이 받아 투척·돌진·격투·회전·채널링 동선을
   구분한다. 실제 캐릭터별 cast pose 제작은 A 단계 잔여다.
 - `venom_seam`은 공용 안개에서 분리되어 ImageGen 독립 원화 7F runtime을 쓴다.
-  나머지 미제작 family fallback, manifest→Dart 자동 생성, 모든 적 의도 catalog화는
-  다음 C/A 단계다.
+  이 기록은 아래 2026-08-11 K5~K8 구현 전 기준선이며 현재 상태는 다음 절을 따른다.
+
+### 2026-08-11 K5~K8 구현 스냅샷
+
+- 서버가 6개 모션 아키타입의 `anticipation → release → travel → contact → reaction
+  → recovery` 구간, 이동률, 방향, 충격량을 kit와 전투 이벤트에 snapshot한다.
+- 앱은 `motion_profile` 문자열을 비교하지 않고 서버의 `archetype`과 `phases`를
+  해석한다. 저감 모션에서는 액터 이동·흔들림을 0으로 만들고 접촉 정보는 유지한다.
+- `manifest.json` v2가 frame 수·시간·contact frame·pivot·anchor·hash의 단일
+  원본이다. 생성 스크립트가 Dart 카탈로그를 만들며 과거 수동 상수 맵은 삭제됐다.
+- VFX는 `vfx_family → kel_fallback_family → legacy effect_key → echo_wave` 순서로
+  해석한다. 앞의 세 값이 없는 저장 run만 legacy 계층을 거친다.
+- 엉킴 12종의 24개 의도는 고유 family·결·아키타입·모션을 모두 선언한다. 서버와
+  앱의 한국어 공격명 분기는 0건이다.
+- `tangled-ledger.paper-flurry`는 Imagegen 포즈 원본 7장, 알파 마스터, 576×288
+  WebP, 밝은/어두운 배경 QA와 애니메이션 미리보기를 갖춘 K8 production
+  candidate다. 실기 GPU 프로파일 전이므로 `production_ready:false`는 유지한다.
 
 ### 2026-08-11 K1 재검증에서 확정한 보완
 
@@ -94,8 +113,8 @@ K1은 아래 원칙으로 닫는다.
 | 쿨타임 | 구현됨 | 아이콘 링·`재사용 N` 표시됨 | v5: tier 2에서 무력화 → **v6 해결** |
 | 스킬 계수 | 구현됨 | 서버값 그대로 사용 | v5 정액 혼용 → **v6 배수식 해결** |
 | 상성 | 구현됨 | 라벨 표시됨 | v5 14원소 사문화 → **v6 `ELEMENT_KEL` 해결** |
-| 스킬 모션 | `motion_profile` 27종 선언 | v5 미사용 | **v6 이벤트·아키타입 동선 연결, pose A 잔여** |
-| 스킬 이펙트 | `vfx_family` 27종 선언 | family별 점진 승격 | **`venom_seam` 분리, 나머지 fallback 잔여** |
+| 스킬 모션 | 6아키타입·6구간 phase snapshot | 서버 데이터 해석 | **K5 C 완료, 캐릭터별 pose A 잔여** |
+| 스킬 이펙트 | exact·결·공용 family 선언 | manifest v2 자동 카탈로그 | **K6·K7 C 완료, K8 family 제작 진행** |
 
 ### 1.2 측정으로 확인한 결함
 
@@ -729,7 +748,7 @@ anticipation → release → travel → contact → reaction → recovery
     "power": 1,
     "kel": "moonlit",              # 신규 — 적 공격도 결을 가진다
     "vfx_family": "tangled-ledger.paper-flurry",   # 신규
-    "motion_profile": "tangle.swirl-sweep",        # 신규
+    "motion_profile": "tangle.paper-flurry",       # 신규
     "archetype": "leap",                           # 신규
 }
 ```
@@ -943,11 +962,11 @@ anticipation → release → travel → contact → reaction → recovery
 | **K1** | C 재검증 완료 | 버전 고정 매핑, 대립축, 이중 결 kit, 서버 권위 상성 표시 | 서버·앱·설계서 | `COMBAT-KEL-01~04` |
 | **K2** | C 완료 | 6단계 정수 배수식 | `battle-state-v2`, v1 재생 경로 | `COMBAT-SCALE-02` |
 | **K3** | C 완료 | 하한 1, `ready_round`, `tier_bp` | 서버 + 앱 표시 | CD 단위·위젯 |
-| **K4** | C 부분 | 성장지수 장벽 연결; 지역/의도 밴드·시뮬레이터 잔여 | 카탈로그 + 시뮬레이터 | `BALANCE-02~03` 잔여 |
-| **K5** | C 부분 | 이벤트 배선과 5동선; 6아키타입 phase data 잔여 | 앱 연출 분기 | 동선 위젯 통과, pose Q 잔여 |
-| **K6** | C/A 부분 | `venom_seam` 전용 family; 3단 resolver·Dart 상수 제거 잔여 | 아트 승격 파이프라인 | 7F 번들·alpha 통과 |
-| **K7** | C 부분 | combat event code key 연결; 전 의도 catalog 잔여 | 카탈로그 + 앱 | `COMBAT-VFX-04` 잔여 |
-| **K8** | 진행 | family 68종 점진 제작 | `production_ready` 승격 | 3 family 후보, 전체 잔여 |
+| **K4** | 진행 | 성장지수 장벽 연결; 지역/의도 밴드·시뮬레이터 잔여 | 카탈로그 + 시뮬레이터 | `BALANCE-02~03` 잔여 |
+| **K5** | C 완료 | 6아키타입·6구간 phase, 서버 시간·방향·이동·충격 snapshot | 앱 연출 해석기 | 6동선·미지 `cast` fallback 통과, pose A 잔여 |
+| **K6** | C 완료 / A 진행 | 3단 resolver, manifest v2→Dart 생성, 수동 상수 제거 | 아트 승격 파이프라인 | 번들·alpha·contact 통과 |
+| **K7** | C 완료 | 적 의도 24종 code key·family·결·motion 선언 | 카탈로그 + 앱 | `COMBAT-VFX-04` 통과 |
+| **K8** | 진행 | family 68종 점진 제작 | `production_ready` 승격 | 4 family 후보, 전체 잔여 |
 
 K1~K4는 판정, K5~K7은 연출 배선, K8은 제작이다. **K5~K7은 아트가 하나도
 없어도 완료할 수 있다.** 배선이 먼저 끝나야 K8이 코드 수정 없이 굴러간다.
@@ -958,15 +977,31 @@ K1~K4는 판정, K5~K7은 연출 배선, K8은 제작이다. **K5~K7은 아트�
 - 버전 없는 초기 v2는 1로 복원하고, 미지 버전은 명시적 규칙 오류로 중단한다.
 - 12엉킴의 6개 방향 대립축이 각각 2회이며, 60개 품종×성장결 kit를 전수 검증한다.
 - Flutter는 T3 다중 결을 재판정하지 않고 `matchup` 하나와 실제 `matchup_bp`를 표시한다.
-- 서버 K1 회귀 35건과 Flutter 전투 모델·위젯 29건이 통과했다. 전체 회귀도 서버
-  420건·Flutter 289건, Ruff·Flutter 정적 분석까지 모두 통과했다.
+- 서버 K1 회귀와 Flutter 전투 모델·위젯 29건이 통과했다. 전체 회귀도 서버
+  423건·Flutter 290건, Ruff·Flutter 정적 분석까지 모두 통과했다.
 - K1에는 새 래스터 원본이 필요하지 않아 Imagegen 산출물을 완료 증거로 만들지 않았다.
   실제 스프라이트 제작은 접촉 프레임과 블렌딩 규칙을 검수하는 K5~K8에서 진행한다.
+
+### K5~K7 완료 및 K8 첫 구현 증거 — 2026-08-11
+
+- 서버 `combat_motion.py`가 6아키타입의 일반기·결정기 시간 밴드를 import 시점에
+  검증하고, action·event가 같은 motion payload를 보존한다.
+- `TANGLE_INTENT_PRESENTATION` 24개와 실제 의도 code 집합이 정확히 같고 모든
+  `vfx_family`가 서로 다르다.
+- 앱 `ExpeditionCombatTimeline`은 family의 실제 contact frame에 피해 숫자·SFX·
+  햅틱·피격 흔들림을 맞춘다. 액터 동선에는 한국어 이름이나 profile substring
+  분기가 없다.
+- `generate_expedition_effect_catalog.py`가 manifest v2의 family 중복, frame 시간,
+  contact 범위, pivot, 런타임 파일 수를 검증한 뒤 Dart 상수를 생성한다.
+- `paper-flurry-v1`은 포즈별 원본 7장과 알파 7장, 런타임 7장, source/runtime
+  aggregate SHA-256, light/dark QA, animated WebP를 보존한다.
+- `COMBAT-MOTION-02/03`, `COMBAT-VFX-01/02/04` 회귀 테스트를 추가했다.
 
 ### 중단 기준
 
 - K2에서 v1 재생 경로 테스트가 깨지면 진행 중 run이 손상되므로 즉시 중단한다.
-- K4 시뮬레이션이 합격선을 못 넘으면 수치를 고칠 때까지 K5로 넘어가지 않는다.
+- K4 시뮬레이션이 합격선을 못 넘으면 전투 수치의 출시 승격을 중단한다. 판정을
+  바꾸지 않는 K5~K7 연출 배선은 병렬 진행할 수 있지만 K8 출시 완료로 세지 않는다.
 - K6에서 Dart 상수와 manifest가 한 커밋 이상 공존하면 되돌린다.
 
 ---

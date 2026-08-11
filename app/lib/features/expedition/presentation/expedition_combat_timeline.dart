@@ -32,8 +32,18 @@ abstract final class ExpeditionCombatTimeline {
   static double enemyEffectEnd(ExpeditionActionCue cue) =>
       cue.playsPartyAttack ? .91 : .94;
 
-  static double enemyContactProgress(ExpeditionActionCue cue) =>
-      cue.playsPartyAttack ? .72 : .62;
+  static const double partyEffectStart = .03;
+  static const double partyEffectEnd = .58;
+
+  static double partyContactProgress(ExpeditionActionCue cue) =>
+      partyEffectStart +
+      (partyEffectEnd - partyEffectStart) * cue.partyEffect.contactProgress;
+
+  static double enemyContactProgress(ExpeditionActionCue cue) {
+    final start = enemyEffectStart(cue);
+    final end = enemyEffectEnd(cue);
+    return start + (end - start) * cue.enemyEffect.contactProgress;
+  }
 
   static double floatingOpacity(double value, double start, double end) {
     final local = segment(value, start, end);
@@ -41,18 +51,22 @@ abstract final class ExpeditionCombatTimeline {
   }
 
   /// 피격 순간에만 무대를 흔든다. 진폭은 멀미를 줄이기 위해 3.5px로 제한한다.
-  static Offset impactShake(double value) {
-    final local = segment(value, .70, .84);
+  static Offset impactShake(double value, [ExpeditionActionCue? cue]) {
+    final contact = cue == null ? .72 : enemyContactProgress(cue);
+    final local = segment(value, contact - .05, contact + .11);
     if (local <= 0 || local >= 1) return Offset.zero;
-    final strength = math.sin(local * math.pi) * 3.5;
+    final amplitude = (cue?.motion?.impactShakePx ?? 3.5).clamp(0.0, 3.5);
+    final strength = math.sin(local * math.pi) * amplitude;
     return Offset(math.sin(local * math.pi * 8) * strength, 0);
   }
 
   /// 대원의 공격이 장벽에 닿는 순간만 짧게 흔든다.
-  static Offset partyImpactShake(double value) {
-    final local = segment(value, .31, .48);
+  static Offset partyImpactShake(double value, [ExpeditionActionCue? cue]) {
+    final contact = cue == null ? .34 : partyContactProgress(cue);
+    final local = segment(value, contact - .04, contact + .10);
     if (local <= 0 || local >= 1) return Offset.zero;
-    final strength = math.sin(local * math.pi) * 2.8;
+    final amplitude = (cue?.motion?.impactShakePx ?? 2.8).clamp(0.0, 3.5);
+    final strength = math.sin(local * math.pi) * amplitude;
     return Offset(math.sin(local * math.pi * 7) * strength, 0);
   }
 
@@ -60,57 +74,49 @@ abstract final class ExpeditionCombatTimeline {
   static Offset actorOffset(double value, ExpeditionActionCue? cue) {
     if (cue == null) return Offset.zero;
     if (cue.isCombatRound && !cue.playsPartyAttack) {
-      final recoil = math.sin(segment(value, .38, .76) * math.pi) * -18;
+      final contact = enemyContactProgress(cue);
+      final recoil =
+          math.sin(segment(value, contact - .06, contact + .20) * math.pi) *
+              -18;
       return Offset(
         recoil,
-        4 * math.sin(segment(value, .38, .76) * math.pi),
+        4 * math.sin(segment(value, contact - .06, contact + .20) * math.pi),
       );
     }
-    final profile = cue.motionProfile ?? '';
-    if (profile.contains('venom-draw') || profile.contains('undying-chain')) {
-      final windUp = math.sin(segment(value, .02, .18) * math.pi);
-      final release = math.sin(segment(value, .14, .34) * math.pi);
-      return Offset(-8 * windUp + 14 * release, 3 * windUp - 5 * release);
-    }
-    if (profile.contains('shadow-cross')) {
-      final dash = math.sin(segment(value, .04, .52) * math.pi);
-      final settle = math.sin(segment(value, .55, .82) * math.pi);
-      return Offset(48 * dash - 8 * settle, -10 * dash);
-    }
-    if (profile.contains('counter-punch') ||
-        profile.contains('iron-uppercut') ||
-        profile.contains('forward-brawler') ||
-        profile.contains('command-draw') ||
-        profile.contains('steel-verdict') ||
-        profile.contains('spotlight-step') ||
-        profile.contains('ribbon-finale')) {
-      final strike = math.sin(segment(value, .04, .50) * math.pi);
-      final recoil = math.sin(segment(value, .54, .80) * math.pi);
-      return Offset(38 * strike - 7 * recoil, -12 * strike);
-    }
-    if (profile.contains('circling-tempest')) {
-      final orbit = segment(value, .04, .68);
-      final envelope = math.sin(orbit * math.pi);
-      return Offset(
-        math.sin(orbit * math.pi * 2) * 22 * envelope,
-        -15 * envelope,
-      );
-    }
-    if (profile.isNotEmpty) {
-      // 주문·지휘·지원기는 자리를 지킨 채 떠오른다. 공격 본체와 궤적은 이
-      // 좌표식이 아니라 검수된 래스터 프레임 시퀀스가 전담한다.
-      final channel = math.sin(segment(value, .04, .68) * math.pi);
-      return Offset(
-        math.sin(segment(value, .04, .68) * math.pi * 2) * 4 * channel,
-        -10 * channel,
-      );
-    }
-    final cast = segment(value, .04, cue.isGuardianExchange ? .44 : .72);
-    final lunge = math.sin(cast * math.pi) * 30;
-    final recoil = cue.isGuardianExchange
-        ? math.sin(segment(value, .68, .88) * math.pi) * -9
-        : 0.0;
-    return Offset(lunge + recoil, -math.sin(cast * math.pi) * 7);
+    final motion = cue.motion;
+    final archetype = motion?.archetype ?? 'cast';
+    final anticipationEnd = motion?.phaseEnd('anticipation') ?? .18;
+    final releaseStart = motion?.phaseStart('release') ?? anticipationEnd;
+    final contactEnd = motion?.phaseEnd('contact') ?? .62;
+    final reactionEnd = motion?.phaseEnd('reaction') ?? .78;
+    final travelRatio = (motion?.travelRatio ?? .18).clamp(0.0, 1.0);
+    final windUp = math.sin(segment(value, 0, anticipationEnd) * math.pi);
+    final action = math.sin(segment(value, releaseStart, contactEnd) * math.pi);
+    final settle = math.sin(segment(value, contactEnd, reactionEnd) * math.pi);
+    final direction = motion?.facing == 'left' ? -1.0 : 1.0;
+    return switch (archetype) {
+      'dash' => Offset(
+          direction * (18 + 40 * travelRatio) * action - direction * 8 * settle,
+          -9 * action,
+        ),
+      'draw' => Offset(
+          direction * (-9 * windUp + (12 + 12 * travelRatio) * action),
+          3 * windUp - 5 * action,
+        ),
+      'brace' => Offset(direction * (-5 * windUp + 3 * settle), 4 * action),
+      'channel' => Offset(
+          direction * math.sin(value * math.pi * 4) * 3 * action,
+          -9 * action - 2 * windUp,
+        ),
+      'leap' => Offset(
+          direction * (12 + 30 * travelRatio) * action - direction * 5 * settle,
+          -22 * action,
+        ),
+      _ => Offset(
+          direction * (4 + 8 * travelRatio) * action - direction * 3 * settle,
+          -11 * action,
+        ),
+    };
   }
 
   static double guardValue({

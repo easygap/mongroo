@@ -52,6 +52,7 @@ flutter:
     - assets/adventure/effects/insight-arc/
     - assets/adventure/effects/echo-wave/
     - assets/adventure/effects/enemy-wave/
+    - assets/adventure/effects/paper-flurry-v1/
     - assets/adventure/skill-icons/baby-pot/
     - assets/adventure/skill-icons/gumiho-pot/
     - assets/adventure/skill-icons/ninja-pot/

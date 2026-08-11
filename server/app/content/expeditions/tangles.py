@@ -9,7 +9,10 @@
 위력은 1~2로 단순하게 유지한다는 규칙을 어기면 아래 validate가 배포를 막는다.
 """
 
+import copy
 from typing import Any
+
+from app.content.expeditions.combat_motion import combat_motion, kel_fallback_family
 
 
 TANGLE_CATALOG: dict[str, dict[str, Any]] = {
@@ -332,8 +335,73 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
 }
 
 
+# 각 예고는 이름과 무관하게 고유 VFX와 모션 원형을 가진다. 전용 스프라이트가
+# 준비되기 전까지는 kel_fallback_family가 같은 재질의 검증된 공용 연출을 고른다.
+TANGLE_INTENT_PRESENTATION: dict[str, tuple[str, str, str]] = {
+    "paper_flurry": ("moonlit", "leap", "tangled-ledger.paper-flurry"),
+    "ink_mist": ("mosaic", "channel", "tangled-ledger.ink-mist"),
+    "petal_gust": ("moonlit", "leap", "drifting-pressings.petal-gust"),
+    "petal_dart": ("ember", "draw", "drifting-pressings.petal-dart"),
+    "shelf_sweep": ("mosaic", "dash", "shelf-snarl.shelf-sweep"),
+    "catalogue_rain": ("moonlit", "cast", "shelf-snarl.catalogue-rain"),
+    "echo_ring": ("sparkling", "channel", "knotted-echo.echo-ring"),
+    "sharp_note": ("sparkling", "cast", "knotted-echo.sharp-note"),
+    "splash_wave": ("rainy", "channel", "splashing-droplets.splash-wave"),
+    "water_pop": ("rainy", "cast", "splashing-droplets.water-pop"),
+    "bell_spin": ("moonlit", "leap", "bell-knot-swirl.bell-spin"),
+    "deep_toll": ("sparkling", "channel", "bell-knot-swirl.deep-toll"),
+    "dust_flare": ("sparkling", "cast", "snarled-stardust.dust-flare"),
+    "dust_lash": ("sparkling", "dash", "snarled-stardust.dust-lash"),
+    "box_roll": ("mosaic", "dash", "rolling-seedbox.box-roll"),
+    "seed_scatter": ("sunny", "cast", "rolling-seedbox.seed-scatter"),
+    "spring_snap": ("mosaic", "draw", "backwound-clockspring.spring-snap"),
+    "gear_grind": ("mosaic", "brace", "backwound-clockspring.gear-grind"),
+    "ring_spin": ("mosaic", "dash", "ring-shard-tangle.ring-spin"),
+    "shard_scatter": ("ember", "cast", "ring-shard-tangle.shard-scatter"),
+    "page_storm": ("moonlit", "leap", "scattered-records.page-storm"),
+    "paper_cut": ("ember", "draw", "scattered-records.paper-cut"),
+    "lens_glare": ("sunny", "cast", "matted-observatory.lens-glare"),
+    "tape_whip": ("mosaic", "draw", "matted-observatory.tape-whip"),
+}
+
+_EFFECT_KEY_BY_KEL = {
+    "sunny": "care_vines",
+    "rainy": "mist_dash",
+    "ember": "ember_arc",
+    "moonlit": "insight_arc",
+    "sparkling": "prism_burst",
+    "mosaic": "echo_wave",
+}
+
+for _tangle in TANGLE_CATALOG.values():
+    for _intent in _tangle["intents"]:
+        _code = str(_intent["code"])
+        _kel, _archetype, _vfx_family = TANGLE_INTENT_PRESENTATION[_code]
+        _motion_profile = f"tangle.{_code.replace('_', '-')}"
+        _intent.update(
+            {
+                "kel": _kel,
+                "vfx_family": _vfx_family,
+                "kel_fallback_family": kel_fallback_family(_kel),
+                "effect_key": (
+                    "paper_flurry"
+                    if _code == "paper_flurry"
+                    else _EFFECT_KEY_BY_KEL[_kel]
+                ),
+                "motion_profile": _motion_profile,
+                "archetype": _archetype,
+                "motion": combat_motion(
+                    _motion_profile,
+                    archetype=_archetype,
+                    facing="left",
+                    impact_shake_px=3.0 if int(_intent["power"]) == 2 else 2.2,
+                ),
+            }
+        )
+
+
 def tangle_definition(code: str) -> dict[str, Any]:
-    return TANGLE_CATALOG[code]
+    return copy.deepcopy(TANGLE_CATALOG[code])
 
 
 def tangles_of_region(region_code: str) -> dict[str, dict[str, Any]]:
@@ -382,6 +450,28 @@ def validate_tangle_catalog() -> list[str]:
             for key in ("code", "name", "telegraph"):
                 if not isinstance(intent.get(key), str) or not intent[key].strip():
                     errors.append(f"{where}.{key}: 값이 필요합니다")
+            for key in (
+                "kel",
+                "vfx_family",
+                "kel_fallback_family",
+                "effect_key",
+                "motion_profile",
+                "archetype",
+            ):
+                if not isinstance(intent.get(key), str) or not intent[key].strip():
+                    errors.append(f"{where}.{key}: 전투 표현 값이 필요합니다")
+            if intent.get("archetype") not in {
+                "dash",
+                "draw",
+                "cast",
+                "brace",
+                "channel",
+                "leap",
+            }:
+                errors.append(f"{where}.archetype: 지원하지 않는 모션 원형입니다")
+            motion = intent.get("motion")
+            if not isinstance(motion, dict) or len(motion.get("phases", [])) != 6:
+                errors.append(f"{where}.motion: 6구간 모션 계약이 필요합니다")
         # 처치·소멸 언어 금지 — 스토리 설계서 1.3의 canonical 표를 코드로 지킨다.
         for key in ("appear_caption", "release_caption", "description"):
             text = tangle.get(key) or ""
@@ -396,4 +486,18 @@ def validate_tangle_catalog() -> list[str]:
                 f"tangles.{region_code}: 일반 2 + 큰 엉킴 1 구성이어야 합니다 "
                 f"(현재 {len(codes)}종, 큰 엉킴 {len(elites)})"
             )
+    intent_codes = {
+        str(intent["code"])
+        for tangle in TANGLE_CATALOG.values()
+        for intent in tangle["intents"]
+    }
+    if intent_codes != set(TANGLE_INTENT_PRESENTATION):
+        errors.append("tangles.intents: 24개 표현 카탈로그와 예고 코드가 일치해야 합니다")
+    families = [
+        str(intent["vfx_family"])
+        for tangle in TANGLE_CATALOG.values()
+        for intent in tangle["intents"]
+    ]
+    if len(families) != 24 or len(set(families)) != 24:
+        errors.append("tangles.intents: 24개 예고는 서로 다른 VFX family가 필요합니다")
     return errors
