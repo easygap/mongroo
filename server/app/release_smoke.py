@@ -24,7 +24,7 @@ async def run() -> None:
 
     app = create_app()
     transport = ASGITransport(app=app)
-    email = f"release-smoke-{uuid.uuid4().hex}@example.invalid"
+    email = f"release-smoke-{uuid.uuid4().hex}@example.com"
     password = f"Smoke-{uuid.uuid4().hex}!"
     async with AsyncClient(
         transport=transport,
