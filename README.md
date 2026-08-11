@@ -125,46 +125,50 @@
   </tr>
 </table>
 
-### 카드 한 장이 곧 행동이에요
+### 약점은 보이고, 선택은 한 장으로 끝나요
 
-전투가 시작되면 `새싹이는 무엇을 할까요?` 하고 물어 옵니다. 캐릭터를 고르고
-카드를 누르면 그 자리에서 바로 움직입니다. 적의 다음 공격과 약점은 언제나
-먼저 공개되니, 누가 먼저 움직여 집중력을 모으고 누가 결정타를 넣을지만
-정하면 됩니다.
+전투가 시작되면 `새싹이는 무엇을 할까요?` 하고 물어 옵니다. 적이 다음에 누구를
+노리는지, 어떤 성장결에 약하고 강한지를 먼저 보여 주기 때문에 결과를 모른 채
+카드를 고를 필요가 없습니다. 햇살결·달빛결, 빗물결·불씨결, 별빛결·모아결은
+서로 마주 보는 세 쌍이라 몇 번만 플레이해도 자연스럽게 익힐 수 있습니다.
 
 <table>
   <tr>
-    <td width="52%"><img src="docs/screenshots/mobile/17-sequential-combat.gif" alt="카드를 누르면 바로 공격하고 다음 캐릭터에게 차례가 넘어가는 전투 흐름"></td>
-    <td width="48%"><img src="docs/screenshots/mobile/14-wave-battle.webp" alt="적의 예고와 약점, 집중력, 행동 카드가 한 화면에 담긴 전투"></td>
+    <td width="50%"><img src="docs/screenshots/mobile/20-integrated-battle.webp" alt="적의 예고와 성장결 약점, 공유 집중력, 여섯 행동 카드가 한 화면에 담긴 실제 전투"></td>
+    <td width="50%"><img src="docs/screenshots/mobile/24-skill-long-press.webp" alt="스킬 계수와 성장 단계, 상성 배율, 재사용 대기시간을 보여 주는 실제 상세 화면"></td>
   </tr>
   <tr>
-    <td align="center"><strong>탭 두 번이면 한 행동</strong><br><sub>캐릭터를 고르고 카드를 누르면 즉시 실행</sub></td>
-    <td align="center"><strong>읽고 정하는 전투</strong><br><sub>예고·약점·집중력이 확정 전에 전부 보여요</sub></td>
+    <td align="center"><strong>한눈에 읽는 전장</strong><br><sub>적의 예고·약점·집중력·현재 차례를 한곳에</sub></td>
+    <td align="center"><strong>길게 눌러 자세히</strong><br><sub>계수·성장 단계·상성·재사용 대기시간까지</sub></td>
   </tr>
 </table>
 
-자동 지휘와 2배속, 짧은 연출 모드는 화면 위에 항상 있습니다. 바쁜 날에는
-맡기고, 중요한 전투만 직접 지휘해도 됩니다.
+카드 여섯 장의 자리는 전투 내내 바뀌지 않습니다. 사용할 수 없는 스킬은 남은
+턴 수가 바로 표시되고, 약점을 찌르는 카드는 붉은 테두리와 화살표로 알려 줍니다.
+카드를 누르면 별도의 확인창 없이 캐릭터가 움직이고, 효과가 실제 대상에게 닿은
+뒤 다음 대원에게 차례가 넘어갑니다.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/mobile/21-player-skill-contact.gif" alt="새싹 응원 스킬이 적에게 닿아 피해를 주고 수호전을 마치는 실제 플레이 장면"></td>
+    <td width="50%"><img src="docs/screenshots/mobile/22-enemy-skill-contact.gif" alt="아군이 마음 지키기로 대비한 뒤 적의 종잇장 공격을 받아 내는 실제 플레이 장면"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>누르면 바로 행동</strong><br><sub>준비 동작부터 이동·접촉·피격까지 이어져요</sub></td>
+    <td align="center"><strong>예고를 보고 대비</strong><br><sub>방어로 받아 내고 다음 라운드를 준비해요</sub></td>
+  </tr>
+</table>
+
+대원이 모두 행동하면 예고했던 적의 차례가 시작됩니다. 자동 지휘와 2배속,
+짧은 연출 모드는 화면 위에 항상 있으니 바쁜 날에는 맡기고, 중요한 전투만 직접
+지휘해도 됩니다.
 
 ### 무찌르는 게 아니라, 풀어 주는 거예요
 
 길을 막는 상대는 괴물이 아니라 돌보는 손이 모자라 엉켜 버린 서고의 물건들 —
-**엉킴**입니다. 장벽을 다 두드리면 엉킨 장부와 압화는 스르르 풀려 제자리로
-돌아가고, 다음 엉킴이 이어서 나타납니다. 선반 세 칸이 통째로 엉킨 **큰 엉킴**
-스테이지도 있습니다.
-
-<table>
-  <tr>
-    <td width="33%"><img src="docs/screenshots/mobile/18-wave-clear.gif" alt="첫 엉킴이 풀리고 다음 웨이브의 압화 떼가 나타나는 장면"></td>
-    <td width="33%"><img src="docs/screenshots/mobile/15-elite-battle.webp" alt="큰 엉킴 서가 뒤엉킴과 마주한 전투 화면"></td>
-    <td width="33%"><img src="docs/screenshots/mobile/19-tangle-release.gif" alt="마지막 타격에 큰 엉킴이 풀려나는 승리 장면"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>이어지는 웨이브</strong><br><sub>하나를 풀면 다음 엉킴이 나타나요</sub></td>
-    <td align="center"><strong>큰 엉킴</strong><br><sub>더 단단한 매듭은 예고 위력도 달라요</sub></td>
-    <td align="center"><strong>풀려나는 순간</strong><br><sub>사라지는 게 아니라 제자리로 돌아가요</sub></td>
-  </tr>
-</table>
+**엉킴**입니다. 장벽을 다독여 풀어 내면 엉킨 장부와 압화는 제자리로 돌아가고,
+다음 엉킴이 이어서 나타납니다. 선반 세 칸이 통째로 엉킨 **큰 엉킴**도 있지만,
+탐험에 실패해도 캐릭터가 다치거나 사라지는 일은 없습니다.
 
 <table>
   <tr>
@@ -190,7 +194,7 @@
 > 몽그루는 감정 기록과 회고를 돕는 서비스이며, 의료 진단이나 전문 상담을
 > 대신하지 않습니다.
 
-## 현재 구현 범위
+## 몽그루에서 이어지는 하루
 
 | 구분 | 제공 기능 |
 | --- | --- |

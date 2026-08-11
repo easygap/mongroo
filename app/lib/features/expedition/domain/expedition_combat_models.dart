@@ -34,11 +34,15 @@ class ExpeditionBattle {
     required this.party,
     required this.lastExchange,
     required this.battleLog,
+    this.version = 1,
+    this.kelMapVersion = 1,
     this.pendingRound,
     this.enemyKind = 'guardian',
     this.wave,
   });
 
+  final int version;
+  final int kelMapVersion;
   final String status;
   final int round;
   final int maxRounds;
@@ -79,6 +83,8 @@ class ExpeditionBattle {
 
   factory ExpeditionBattle.fromJson(Map<String, dynamic> json) =>
       ExpeditionBattle(
+        version: _combatInt(json['version'], 1),
+        kelMapVersion: _combatInt(json['kel_map_version'], 1),
         status: json['status'] as String? ?? 'active',
         round: _combatInt(json['round'], 1),
         maxRounds: _combatInt(json['max_rounds'], 6),
@@ -294,6 +300,7 @@ class ExpeditionBattleKit {
     required this.uniqueSkills,
     required this.selectedSkills,
     required this.guard,
+    this.kelMapVersion = 1,
     this.level = 1,
     this.rarity = 1,
     this.signatureTier = 1,
@@ -307,6 +314,7 @@ class ExpeditionBattleKit {
   });
 
   final int version;
+  final int kelMapVersion;
   final String affinity;
   final String affinityLabel;
   final ExpeditionBattleAction basic;
@@ -377,6 +385,7 @@ class ExpeditionBattleKit {
 
     return ExpeditionBattleKit(
       version: _combatInt(json['version'], legacySkill.isEmpty ? 4 : 1),
+      kelMapVersion: _combatInt(json['kel_map_version'], 1),
       affinity: json['affinity'] as String? ?? 'insight',
       affinityLabel: json['affinity_label'] as String? ?? '관찰',
       basic: ExpeditionBattleAction.fromJson(
@@ -443,6 +452,7 @@ class ExpeditionBattleAction {
     this.kel,
     this.kelLabel,
     this.kels = const [],
+    this.kelLabels = const [],
     this.readyRound = 0,
     this.fusionVariant,
     this.fusionVfxFamily,
@@ -486,6 +496,7 @@ class ExpeditionBattleAction {
   final String? kel;
   final String? kelLabel;
   final List<String> kels;
+  final List<String> kelLabels;
   final int readyRound;
   final String? fusionVariant;
   final String? fusionVfxFamily;
@@ -542,6 +553,13 @@ class ExpeditionBattleAction {
         kels: json['kels'] is List
             ? (json['kels'] as List).whereType<String>().toList(growable: false)
             : const [],
+        kelLabels: json['kel_labels'] is List
+            ? (json['kel_labels'] as List)
+                .whereType<String>()
+                .toList(growable: false)
+            : json['kel_label'] is String
+                ? [json['kel_label'] as String]
+                : const [],
         readyRound: _combatInt(
           json['ready_round'],
           _combatInt(json['cooldown_until_round']),
@@ -604,6 +622,7 @@ class ExpeditionBattleEvent {
     this.readyRound = 0,
     this.fusionVariant,
     this.fusionVfxFamily,
+    this.kelMapVersion = 1,
   });
 
   final int sequence;
@@ -635,6 +654,7 @@ class ExpeditionBattleEvent {
   final int readyRound;
   final String? fusionVariant;
   final String? fusionVfxFamily;
+  final int kelMapVersion;
 
   bool get isPartyAction => type == 'party_action';
   bool get isEnemyAction => type == 'enemy_action';
@@ -684,6 +704,7 @@ class ExpeditionBattleEvent {
         ),
         fusionVariant: json['fusion_variant'] as String?,
         fusionVfxFamily: json['fusion_vfx_family'] as String?,
+        kelMapVersion: _combatInt(json['kel_map_version'], 1),
         targets: _combatMaps(json['targets'])
             .map(ExpeditionBattleTarget.fromJson)
             .toList(growable: false),

@@ -391,6 +391,9 @@ class _ExpeditionSequentialCommandDockState
       member.kit.actionFor(actionCode);
 
   bool _isWeak(ExpeditionBattleAction action) {
+    if (_battle.version >= 2 && _battle.enemy.weakKel != null) {
+      return action.matchup == 'weak' || action.matchup == 'prism_weak';
+    }
     if (_battle.enemy.weakKel case final weakKel?) {
       return action.matchup == 'weak' || action.kels.contains(weakKel);
     }
@@ -404,8 +407,12 @@ class _ExpeditionSequentialCommandDockState
   }
 
   bool _isResisted(ExpeditionBattleAction action) {
+    if (_battle.version >= 2 && _battle.enemy.weakKel != null) {
+      return !_isWeak(action) && action.matchup == 'resist';
+    }
     if (_battle.enemy.resistKel case final resistKel?) {
-      return action.matchup == 'resist' || action.kels.contains(resistKel);
+      return !_isWeak(action) &&
+          (action.matchup == 'resist' || action.kels.contains(resistKel));
     }
     if (action.matchup == 'resist') return true;
     final resistElement = _battle.enemy.resistElement;
@@ -530,6 +537,19 @@ class _ExpeditionSequentialCommandDockState
         : coefficient.toStringAsFixed(1);
     final tierCoefficient = action.tierPowerBp / 100;
     final matchupCoefficient = action.matchupBp / 100;
+    final matchupMultiplier = (action.matchupBp / 10000).toStringAsFixed(2);
+    final matchupAdjustment =
+        _battle.version >= 2 && _battle.enemy.weakKel != null
+            ? '×$matchupMultiplier'
+            : weaknessHit
+                ? '+7'
+                : '−4';
+    String matchupLabel(String label) {
+      if (resistanceHit) return '↓ $label · 내성 $matchupAdjustment';
+      if (weaknessHit) return '↑ $label · 약점 $matchupAdjustment';
+      return label;
+    }
+
     final metadata = switch (actionCode) {
       'guard' => '방어 +${action.guard} · 집중 +${action.focusDelta}',
       'attack' => '위력 ${action.power} · 집중 +${action.focusDelta}',
@@ -596,11 +616,9 @@ class _ExpeditionSequentialCommandDockState
                         ),
                       if (action.elementLabel case final label?)
                         MongrooTag(
-                          label: resistanceHit
-                              ? '↓ $label · 내성 ×0.60'
-                              : weaknessHit
-                                  ? '↑ $label · 약점 ×1.50'
-                                  : label,
+                          label: action.kelLabels.isEmpty
+                              ? matchupLabel(label)
+                              : label,
                           icon: _dockElementIcon(action.element ?? ''),
                           backgroundColor:
                               _dockElementColor(context, action.element ?? '')
@@ -622,9 +640,9 @@ class _ExpeditionSequentialCommandDockState
                               '단계 ${tierCoefficient.toStringAsFixed(0)}% · 상성 ${matchupCoefficient.toStringAsFixed(0)}%',
                           icon: Icons.calculate_outlined,
                         ),
-                      if (action.kelLabel case final label?)
+                      if (action.kelLabels.isNotEmpty)
                         MongrooTag(
-                          label: label,
+                          label: matchupLabel(action.kelLabels.join(' · ')),
                           icon: Icons.hub_outlined,
                         ),
                       if (action.fusionVariant != null)

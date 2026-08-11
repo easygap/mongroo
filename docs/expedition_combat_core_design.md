@@ -1,7 +1,7 @@
 # 탐험 전투 코어 설계서 — 쿨타임·계수·상성·모션·이펙트
 
-최종 갱신: 2026-08-10
-문서 상태: **D 설계 확정 / C 1차 구현 / 전체 A·Q 미완료**
+최종 갱신: 2026-08-11
+문서 상태: **D 설계 확정 / K1 C 재검증 완료 / 전체 A·Q 미완료**
 (`adventure_100_point_execution_contract.md` 2장 용어)
 관련 코드: `server/app/content/expeditions/combat.py`,
 `server/app/content/expeditions/combat_identity.py`,
@@ -36,6 +36,32 @@
 - `venom_seam`은 공용 안개에서 분리되어 ImageGen 독립 원화 7F runtime을 쓴다.
   나머지 미제작 family fallback, manifest→Dart 자동 생성, 모든 적 의도 catalog화는
   다음 C/A 단계다.
+
+### 2026-08-11 K1 재검증에서 확정한 보완
+
+기존 K1은 현재 카탈로그를 기준으로 한 결 판정은 동작했지만, 장기 운영과 구버전
+호환까지 포함한 완료 조건은 부족했다. 다음 네 결함을 K1 범위에 추가한다.
+
+1. `ELEMENT_KEL`이 바뀌면 진행 중 v2 전투의 대원 kit가 새 매핑으로 다시 계산될 수
+   있었다. 적의 약점·내성은 시작 snapshot인데 행동의 결만 바뀌는 비결정 상태다.
+2. T3 다중 결이 약점과 내성을 함께 포함하면 서버는 약점 우선으로 판정하지만 앱은
+   원시 `kels`를 다시 비교해 약점·내성을 동시에 표시할 수 있었다.
+3. 서버는 `kel_labels`를 보내지만 앱은 단일 `kel_label`만 보존해 T3 융합의 두 결을
+   상세 화면에서 설명하지 못했다.
+4. `COMBAT-KEL-02/03`은 문서에만 있고 대립축 분포와 전체 품종×성장결 kit를 잠그는
+   자동 검증이 없었다.
+
+K1은 아래 원칙으로 닫는다.
+
+- 새 전투는 `kel_map_version`을 시작 상태에 snapshot하고 전투 종료까지 바꾸지 않는다.
+- 결 매핑은 버전별로 append-only 보존한다. 알 수 없는 버전은 현재 매핑으로 조용히
+  대체하지 않고 판정을 중단한다.
+- `weak_kel`을 가진 `battle-state-v2`에서 `matchup`은 서버 권위 값이다. 앱은
+  `kels`로 판정을 다시 하지 않으며, 구버전 또는 결 필드가 없는 초기 수호전에서만
+  원소·능력치 fallback을 쓴다.
+- 다중 결은 중복을 제거한 순서를 보존하고 `kel_labels`도 같은 순서·길이를 가진다.
+- K1은 판정·표시 계약이므로 새 bitmap을 완료 증거로 요구하지 않는다. 결 glyph는
+  기존 코드 기반 아이콘을 쓰고, 래스터 스프라이트는 K5~K8의 모션/VFX gate에서 만든다.
 
 ---
 
@@ -309,6 +335,52 @@ tier 3 고유기는 감정 주원소를 얻어 결이 둘이 된다(기존 동�
 
 내성 결과 약점 결을 동시에 가지면 약점이 이긴다. tier 3 보상이 벌점이 되지
 않게 한다.
+
+### 3.8 K1 결 매핑 버전과 판정 권위
+
+결 매핑은 단순 상수가 아니라 진행 중 전투의 판정을 재현하는 규칙 데이터다.
+`ELEMENT_KEL_BY_VERSION`은 과거 버전을 지우거나 제자리에서 수정하지 않는
+append-only 원본이며, 현재 버전은 `CURRENT_KEL_MAP_VERSION`으로 고른다.
+
+```text
+원소 카탈로그
+  → ELEMENT_KEL_BY_VERSION[kel_map_version]
+  → 전투 시작 snapshot
+  → kit의 kel / kels / kel_labels / matchup
+  → party_action의 kel_map_version / matchup
+  → Flutter 표시
+```
+
+| 상황 | 서버 | 앱 |
+|---|---|---|
+| 신규 KEL `battle-state-v2` | 현재 `kel_map_version`을 상태에 저장 | `battle.version >= 2 && weak_kel != null`이면 `matchup`만 판정 권위로 사용 |
+| 저장 중 v2 전투 | 상태에 저장된 버전의 매핑으로 매번 kit 재구성 | 약점/내성 badge를 동시에 표시하지 않음 |
+| 버전 필드가 없는 기존 v2 전투 | 최초 버전 `1`로 해석 | 서버가 내려준 `matchup` 사용 |
+| `weak_kel`이 없는 초기 v2 수호전 | 기존 4능력치 판정을 유지 | 능력치·원소 fallback으로 표시 |
+| v1 전투 | 당시 원소 정액식·4능력치 fallback 유지 | `weak_element` 또는 `affinity`로만 표시 보조 |
+| 알 수 없는 `kel_map_version` | 명시적 오류로 판정 중단, 운영 로그 기록 | 서버 응답을 임의 보정하지 않고 재시도 안내 |
+
+`kel`은 스킬 원본의 대표 결, `kels`는 T3 융합까지 포함한 판정 후보 목록이다.
+`kel_labels`는 `kels`와 같은 순서·길이여야 한다. 앱 상세 시트는 단일 `kel_label`이
+아니라 `kel_labels` 전체를 보여 주고, `matchup_bp`로 실제 `×1.50`, `×1.30`,
+`×1.00`, `×0.60`을 표시한다.
+
+### 3.9 대립축 분포 validator
+
+12엉킴은 약점·내성 횟수만 균등하면 끝이 아니다. 사용자가 세 대립축을 반복해서
+학습할 수 있도록 다음을 import 시점과 단위 테스트에서 함께 검증한다.
+
+- 각 결은 약점 2회·내성 2회다.
+- 햇살↔달빛, 빗물↔불씨, 별빛↔모아의 **정방향·역방향이 각각 2회**다.
+- 약점과 내성이 같은 결인 엉킴은 0개다.
+- 카탈로그에 등장하는 모든 원소는 정확히 한 결에 속하고 모든 결에 한국어 라벨이 있다.
+- Lv25 기준 모든 품종×성장결의 기본+고유2+선택2에는 최소 두 결이 있으며,
+  `kels`와 `kel_labels`의 길이가 항상 같다.
+
+고정 선택기인 `현장 기록: 되울림`은 먹빛 탄환과 기록 파형을 함께 쓰므로
+`ink + sound`, 즉 `모아결 + 별빛결` 이중 결로 선언한다. 이 계약 덕분에
+학생화분×모아결처럼 품종 고유기와 성장결이 완전히 겹쳐도 kit가 단일 결에
+갇히지 않는다.
 
 ---
 
@@ -694,6 +766,7 @@ anticipation → release → travel → contact → reaction → recovery
 
 ```json
 {
+  "kel_map_version": 1,
   "slot": "unique_1",
   "code": "venom_seam",
   "element": "poison",
@@ -701,6 +774,7 @@ anticipation → release → travel → contact → reaction → recovery
   "kel": "rainy",                        // 신규 — 판정 기준
   "kel_label": "빗물결",                  // 신규
   "kels": ["rainy"],                     // 신규 — tier 3에서 2개
+  "kel_labels": ["빗물결"],               // 신규 — kels와 같은 순서·길이
   "matchup": "weak",                     // 신규 — 현재 적 기준 미리 계산
   "matchup_bp": 15000,                   // 신규
   "power": 38,                           // 상성·효과까지 반영된 예상 최종값
@@ -717,14 +791,18 @@ anticipation → release → travel → contact → reaction → recovery
 
 - `power`는 **현재 적 기준 예상 최종 피해**다. 앱은 이 값을 재계산하지 않는다.
 - `power_neutral`은 상세 시트에서 "중립 25 → 약점 38"을 보여 주기 위한 값이다.
-- `affinity`/`affinity_label`(4능력치)은 **kit에서 제거한다.** 상성 기준이
-  아니게 되므로 남겨 두면 오독을 만든다. 능력치는 캐릭터 화면에만 남는다.
+- `kel_map_version`은 action마다 반복하지 않고 kit 최상위에 한 번 둔다. 위 예시는
+  필드 관계를 함께 보여 주기 위한 축약이다.
+- `affinity`/`affinity_label`(4능력치)은 v5 앱을 위한 **읽기 전용 deprecated alias**다.
+  v6 판정과 새 UI는 읽지 않으며 `combat-kit-v7`에서 제거한다. 즉시 제거하면 저장 중
+  v1 run과 구버전 앱이 깨지므로, 제거 시점을 호환 계약으로 분리한다.
 
 ### 8.2 `battle-state-v2`
 
 ```json
 {
   "version": 2,
+  "kel_map_version": 1,
   "enemy": {
     "weak_kel": "ember",       "weak_kel_label": "불씨결",
     "resist_kel": "rainy",     "resist_kel_label": "빗물결"
@@ -740,6 +818,8 @@ anticipation → release → travel → contact → reaction → recovery
   계약과 모순이다.
 - `weak_element`/`resist_element`는 `weak_kel`/`resist_kel`로 대체한다.
 - `cooldown_until_round` → `ready_round`.
+- `kel_map_version`이 없는 초기 v2 snapshot은 `1`로 읽는다. 그 외 알 수 없는 값은
+  최신 버전으로 추정하지 않는다.
 
 ### 8.3 이벤트
 
@@ -747,6 +827,7 @@ anticipation → release → travel → contact → reaction → recovery
 
 ```json
 {
+  "kel_map_version": 1,
   "kel": "rainy",
   "matchup": "weak",
   "matchup_bp": 15000,
@@ -758,6 +839,8 @@ anticipation → release → travel → contact → reaction → recovery
 ```
 
 `enemy_action` 이벤트에도 `vfx_family`·`motion`을 싣는다(7.4).
+`party_action.kel_map_version`은 리플레이·운영 로그가 당시 판정을 재현하기 위한
+증거이며, 전투 상태의 버전과 다르면 validator가 실패한다.
 
 ---
 
@@ -768,10 +851,12 @@ anticipation → release → travel → contact → reaction → recovery
 | 대상 | 처리 |
 |---|---|
 | `battle-state` v1 (진행 중 전투) | 시작 snapshot 유지 계약에 따라 **끝까지 v1 판정**으로 재생한다. 정액 `+7/−4`와 `cooldown_until_round`를 그대로 쓴다 |
+| `kel_map_version` 없는 초기 v2 전투 | 최초 버전 `1`을 주입해 같은 판정을 재현한다 |
+| 알 수 없는 `kel_map_version` | 최신 매핑으로 추정하지 않고 `EXPEDITION_COMBAT_KEL_MAP_UNSUPPORTED`로 중단한다 |
 | `combat-kit` v5 응답을 읽는 구버전 앱 | `kel` 필드가 없으면 `element`로 결을 역산해 표시한다. 판정은 서버가 하므로 안전하다 |
-| 신규 run | v2/v6로 시작한다 |
+| 신규 run | `battle-state-v2`·`combat-kit-v6`와 현재 `kel_map_version`으로 시작한다 |
 | `weakness_cycle` | 카탈로그에서 제거하지 않고 **읽지 않는다.** v1 재생 경로만 참조한다 |
-| `affinity`(4능력치) | 전투 판정에서 완전히 제거. 탐험 능력치로만 남는다 |
+| `affinity`(4능력치) | KEL 전투 판정에서는 제거한다. v1·`weak_kel` 없는 초기 수호전 호환 경로와 탐험 능력치에만 남는다 |
 | 원소 20종 | 값·이름 그대로 유지. 결 매핑만 추가된다 |
 | `motion_profile` 문자열 27종 | 그대로 유지하고 `archetype`·`phases`를 덧붙인다. 폐기하지 않는다 |
 | Dart frame duration 상수 | manifest v2 도입과 **같은 커밋에서 삭제**한다. 두 원본이 공존하는 기간을 만들지 않는다 |
@@ -828,9 +913,10 @@ anticipation → release → travel → contact → reaction → recovery
 
 | ID | 자동/수동 | 합격 조건 |
 |---|---|---|
-| `COMBAT-KEL-01` | 서버 단위 | 원소 20종이 결 6종에 **전수 매핑**된다. 미매핑 시 import 실패 |
-| `COMBAT-KEL-02` | 서버 단위 | 12엉킴에서 각 결이 약점 2회·내성 2회, 세 대립축이 각 2회 이상 |
-| `COMBAT-KEL-03` | 서버 단위 | 감정 discipline의 주·보조 원소가 같은 결이고, 기본+4스킬 kit가 성장/장착 뒤 최소 2개 결을 갖는다 |
+| `COMBAT-KEL-01` | 서버 단위 | 버전별 원소 20종이 결 6종에 **전수 매핑**되고, 최초·현재 버전이 보존되며 미지 버전은 실패한다 |
+| `COMBAT-KEL-02` | 서버 단위 | 12엉킴에서 각 결이 약점 2회·내성 2회이고, 세 대립축의 정·역방향이 **각각 정확히 2회**다 |
+| `COMBAT-KEL-03` | 서버 단위 | Lv25 품종 10×성장결 6 전수에서 기본+4스킬 kit가 최소 2개 결을 갖고 `kels`·`kel_labels`가 같은 순서·길이다 |
+| `COMBAT-KEL-04` | Flutter 위젯 | KEL v2의 다중 결이 약점·내성을 함께 가져도 서버 `matchup`에 따라 badge 하나만 표시하고 실제 `matchup_bp` 배수를 쓴다 |
 | `COMBAT-SCALE-01` | 서버 단위 | 피해식 6단계 순서와 `round_bp` 반올림이 fixture와 일치 |
 | `COMBAT-SCALE-02` | 서버 단위 | 약점/중립 비가 전 레벨·등급·품종에서 `1.50 ± 0.05` (4.4 반올림 상한) |
 | `COMBAT-CD-01` | 서버 단위 | 전 tier에서 `base_cd >= 1`인 스킬의 `effective_cd >= 1` |
@@ -854,7 +940,7 @@ anticipation → release → travel → contact → reaction → recovery
 
 | 단계 | 상태 | 범위 | 산출물 | 검수 |
 |---|---|---|---|---|
-| **K1** | C 완료 | `ELEMENT_KEL`, validator, kit `kel` 필드 | 서버·앱 | `COMBAT-KEL-01`, UI 파싱 |
+| **K1** | C 재검증 완료 | 버전 고정 매핑, 대립축, 이중 결 kit, 서버 권위 상성 표시 | 서버·앱·설계서 | `COMBAT-KEL-01~04` |
 | **K2** | C 완료 | 6단계 정수 배수식 | `battle-state-v2`, v1 재생 경로 | `COMBAT-SCALE-02` |
 | **K3** | C 완료 | 하한 1, `ready_round`, `tier_bp` | 서버 + 앱 표시 | CD 단위·위젯 |
 | **K4** | C 부분 | 성장지수 장벽 연결; 지역/의도 밴드·시뮬레이터 잔여 | 카탈로그 + 시뮬레이터 | `BALANCE-02~03` 잔여 |
@@ -865,6 +951,17 @@ anticipation → release → travel → contact → reaction → recovery
 
 K1~K4는 판정, K5~K7은 연출 배선, K8은 제작이다. **K5~K7은 아트가 하나도
 없어도 완료할 수 있다.** 배선이 먼저 끝나야 K8이 코드 수정 없이 굴러간다.
+
+### K1 완료 증거 — 2026-08-11
+
+- 신규 전투 상태·kit·행동 이벤트에 동일한 `kel_map_version`이 남는다.
+- 버전 없는 초기 v2는 1로 복원하고, 미지 버전은 명시적 규칙 오류로 중단한다.
+- 12엉킴의 6개 방향 대립축이 각각 2회이며, 60개 품종×성장결 kit를 전수 검증한다.
+- Flutter는 T3 다중 결을 재판정하지 않고 `matchup` 하나와 실제 `matchup_bp`를 표시한다.
+- 서버 K1 회귀 35건과 Flutter 전투 모델·위젯 29건이 통과했다. 전체 회귀도 서버
+  420건·Flutter 289건, Ruff·Flutter 정적 분석까지 모두 통과했다.
+- K1에는 새 래스터 원본이 필요하지 않아 Imagegen 산출물을 완료 증거로 만들지 않았다.
+  실제 스프라이트 제작은 접촉 프레임과 블렌딩 규칙을 검수하는 K5~K8에서 진행한다.
 
 ### 중단 기준
 

@@ -13,15 +13,16 @@ from typing import Any
 from app.content.expeditions.combat_identity import (
     CORE_AFFINITIES as IDENTITY_AFFINITIES,
     CORE_AFFINITY_LABELS as IDENTITY_AFFINITY_LABELS,
+    CURRENT_KEL_MAP_VERSION,
     DAMAGE_TYPE_LABELS,
     EFFECT_POWER_BP,
-    ELEMENT_KEL,
     ELEMENT_LABELS,
     ELEMENT_RUNTIME_EFFECTS,
     EMOTION_DISCIPLINES,
     FUSION_LAYER_PROFILES,
     FIELD_NOTE_SKILL as IDENTITY_FIELD_NOTE_SKILL,
     FORM_COMBAT_SKILLS as IDENTITY_FORM_COMBAT_SKILLS,
+    INITIAL_KEL_MAP_VERSION,
     KEL_LABELS,
     MATCHUP_POWER_BP,
     SPECIES_SECONDARY_SKILLS as IDENTITY_SPECIES_SECONDARY_SKILLS,
@@ -30,6 +31,7 @@ from app.content.expeditions.combat_identity import (
     TIER_POWER_BP,
     basic_scale_bp,
     combat_tier,
+    element_kel_map,
     rarity_scale_bp,
     scaled_power,
 )
@@ -52,6 +54,19 @@ class CombatRuleError(ValueError):
         self.code = code
         self.message = message
         super().__init__(message)
+
+
+def _battle_kel_map_version(state: dict[str, Any]) -> int:
+    raw_version = state.get("kel_map_version", INITIAL_KEL_MAP_VERSION)
+    try:
+        version = int(raw_version)
+        element_kel_map(version)
+    except (TypeError, ValueError) as error:
+        raise CombatRuleError(
+            "EXPEDITION_COMBAT_KEL_MAP_UNSUPPORTED",
+            "저장된 전투 규칙 버전을 불러올 수 없어요. 다시 시도해 주세요.",
+        ) from error
+    return version
 
 
 def _stats(profile: dict[str, Any]) -> dict[str, int]:
@@ -100,9 +115,11 @@ def member_battle_kit(
     current_weakness: str | None = None,
     current_weak_element: str | None = None,
     current_resist_element: str | None = None,
+    kel_map_version: int = CURRENT_KEL_MAP_VERSION,
     member_state: dict[str, Any] | None = None,
     round_number: int = 1,
 ) -> dict[str, Any]:
+    element_kels = element_kel_map(kel_map_version)
     snapshot = profile.get("snapshot", {})
     species_code = snapshot.get("species", {}).get("code", "archive_guide")
     form = snapshot.get("form", "mosaic")
@@ -114,8 +131,8 @@ def member_battle_kit(
     tier = combat_tier(level)
     signature_scale = rarity_scale_bp(level, rarity)
     basic_scale = basic_scale_bp(level, rarity)
-    weak_kel = ELEMENT_KEL.get(str(current_weak_element))
-    resist_kel = ELEMENT_KEL.get(str(current_resist_element))
+    weak_kel = element_kels.get(str(current_weak_element))
+    resist_kel = element_kels.get(str(current_resist_element))
     state_cooldowns = member_state or {}
     cooldowns = state_cooldowns.get("ready_round") or state_cooldowns.get(
         "cooldown_until_round", {}
@@ -139,17 +156,26 @@ def member_battle_kit(
         )
         element = str(skill["element"])
         prism_shifted = skill["effect"] == "prism_shift" and weak_kel is not None
-        skill_kel = str(weak_kel) if prism_shifted else ELEMENT_KEL[element]
+        skill_kel = str(weak_kel) if prism_shifted else element_kels[element]
         kels = [skill_kel]
         elements = [element]
+        secondary_element = skill.get("secondary_element")
+        if secondary_element is not None:
+            secondary_element = str(secondary_element)
+            if secondary_element not in elements:
+                elements.append(secondary_element)
+            secondary_kel = element_kels[secondary_element]
+            if secondary_kel not in kels:
+                kels.append(secondary_kel)
         fusion_profile: dict[str, str] | None = None
         fusion_variant: str | None = None
         if source == "signature" and tier >= 3:
             emotion_element = str(discipline["primary_element"])
             if emotion_element not in elements:
                 elements.append(emotion_element)
-            if form not in kels:
-                kels.append(form)
+            emotion_kel = element_kels[emotion_element]
+            if emotion_kel not in kels:
+                kels.append(emotion_kel)
             fusion_profile = FUSION_LAYER_PROFILES[form]
             fusion_variant = f"{species_code}.{form}.{slot}.t3"
         matchup = _kel_matchup(kels, weak_kel=weak_kel, resist_kel=resist_kel)
@@ -250,13 +276,14 @@ def member_battle_kit(
     )
     basic_element = str(discipline["primary_element"])
     basic_raw_power = 10 + stats[affinity] // 2
-    basic_kel = form if form in KEL_LABELS else "mosaic"
+    basic_kel = element_kels[basic_element]
     basic_matchup = _kel_matchup([basic_kel], weak_kel=weak_kel, resist_kel=resist_kel)
     basic_neutral_power = scaled_power(
         scaled_power(basic_raw_power, basic_scale), TIER_POWER_BP[tier]
     )
     return {
         "version": 6,
+        "kel_map_version": int(kel_map_version),
         "level": level,
         "rarity": rarity,
         "signature_tier": tier,
@@ -322,13 +349,18 @@ def member_battle_kit(
     }
 
 
-def _resolve_waves(encounter: dict[str, Any]) -> list[dict[str, Any]]:
+def _resolve_waves(
+    encounter: dict[str, Any],
+    *,
+    kel_map_version: int,
+) -> list[dict[str, Any]]:
     """웨이브 엉킴 code를 전투 스냅샷용 정의로 펼친다.
 
     battle 상태에 펼친 값을 저장하므로 진행 중 run은 이후 카탈로그 패치의
     영향을 받지 않는다(시작 snapshot 유지 계약).
     """
 
+    element_kels = element_kel_map(kel_map_version)
     waves: list[dict[str, Any]] = []
     for code in encounter.get("waves") or []:
         tangle = tangle_definition(code)
@@ -342,8 +374,8 @@ def _resolve_waves(encounter: dict[str, Any]) -> list[dict[str, Any]]:
                 "weakness_cycle": list(tangle["weakness_cycle"]),
                 "weak_element": weak_element,
                 "resist_element": resist_element,
-                "weak_kel": ELEMENT_KEL[weak_element],
-                "resist_kel": ELEMENT_KEL[resist_element],
+                "weak_kel": element_kels[weak_element],
+                "resist_kel": element_kels[resist_element],
                 "intents": [dict(intent) for intent in tangle["intents"]],
                 "appear_caption": tangle["appear_caption"],
                 "release_caption": tangle["release_caption"],
@@ -383,7 +415,9 @@ def new_guardian_battle(
     encounter: dict[str, Any],
     profiles: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    waves = _resolve_waves(encounter)
+    kel_map_version = CURRENT_KEL_MAP_VERSION
+    element_kels = element_kel_map(kel_map_version)
+    waves = _resolve_waves(encounter, kel_map_version=kel_map_version)
     growth_index, barrier_scale_bp = _party_growth_scale_bp(profiles)
     for wave in waves:
         wave["base_barrier"] = int(wave["barrier"])
@@ -404,6 +438,7 @@ def new_guardian_battle(
         opening_caption = "돌비늘 장부지기가 길을 막았어요."
     return {
         "version": 2,
+        "kel_map_version": kel_map_version,
         "event_code": event_code,
         "status": "active",
         "round": 1,
@@ -420,8 +455,8 @@ def new_guardian_battle(
         "weakness": weakness_cycle[0],
         "weak_element": weak_element,
         "resist_element": resist_element,
-        "weak_kel": ELEMENT_KEL.get(str(weak_element)),
-        "resist_kel": ELEMENT_KEL.get(str(resist_element)),
+        "weak_kel": element_kels.get(str(weak_element)),
+        "resist_kel": element_kels.get(str(resist_element)),
         "intent_index": 0,
         "party": [
             {
@@ -467,6 +502,7 @@ def guardian_battle_payload(
     """직렬화 상태에 이름·스킬·현재 적 의도를 결합한 클라이언트 계약."""
 
     profile_by_id = {int(profile["id"]): profile for profile in profiles}
+    kel_map_version = _battle_kel_map_version(state)
     weakness = state.get("weakness", AFFINITIES[0])
     weak_element = state.get("weak_element")
     resist_element = state.get("resist_element")
@@ -490,6 +526,7 @@ def guardian_battle_payload(
                     current_weakness=weakness,
                     current_weak_element=weak_element,
                     current_resist_element=resist_element,
+                    kel_map_version=kel_map_version,
                     member_state=member_state,
                     round_number=int(state.get("round", 1)),
                 ),
@@ -509,6 +546,7 @@ def guardian_battle_payload(
     ]
     return {
         **copy.deepcopy(state),
+        "kel_map_version": kel_map_version,
         "weakness_label": AFFINITY_LABELS.get(weakness, weakness),
         "enemy_kind": state.get("enemy_kind", "guardian"),
         "enemy": {
@@ -674,11 +712,13 @@ def _apply_member_command(
     focus = int(state.get("focus", 0))
     max_focus = int(state.get("max_focus", 5))
     round_number = int(state.get("round", 1))
+    kel_map_version = _battle_kel_map_version(state)
     kit = member_battle_kit(
         profile,
         current_weakness=weakness,
         current_weak_element=weak_element,
         current_resist_element=resist_element,
+        kel_map_version=kel_map_version,
         member_state=member_state,
         round_number=round_number,
     )
@@ -822,6 +862,7 @@ def _apply_member_command(
         state,
         {
             "type": "party_action",
+            "kel_map_version": kel_map_version,
             "member_id": member_id,
             "actor_name": actor_name,
             "action": action,

@@ -1,4 +1,5 @@
 import itertools
+from collections import Counter
 
 import pytest
 
@@ -13,10 +14,16 @@ from app.content.expeditions.combat import (
     submit_guardian_action,
 )
 from app.content.expeditions.combat_identity import (
+    CURRENT_KEL_MAP_VERSION,
     ELEMENT_KEL,
+    ELEMENT_KEL_BY_VERSION,
     EMOTION_DISCIPLINES,
     FUSION_LAYER_PROFILES,
+    INITIAL_KEL_MAP_VERSION,
+    KEL_OPPOSITES,
     KEL_LABELS,
+    TANGLE_ELEMENT_MATCHUPS,
+    element_kel_map,
     validate_combat_identity_catalog,
 )
 
@@ -708,6 +715,125 @@ def test_all_signature_elements_map_to_six_learnable_growth_kels():
     assert signature_elements <= set(ELEMENT_KEL)
     assert {ELEMENT_KEL[element] for element in signature_elements} <= set(KEL_LABELS)
     assert set(ELEMENT_KEL.values()) == set(KEL_LABELS)
+
+
+def test_kel_map_version_one_is_complete_and_unknown_versions_fail_closed():
+    expected = {
+        "light": "sunny",
+        "nature": "sunny",
+        "water": "rainy",
+        "ice": "rainy",
+        "poison": "rainy",
+        "fire": "ember",
+        "decay": "ember",
+        "wind": "moonlit",
+        "moon": "moonlit",
+        "shadow": "moonlit",
+        "lightning": "sparkling",
+        "sound": "sparkling",
+        "arcane": "sparkling",
+        "heart": "sunny",
+        "steel": "mosaic",
+        "force": "mosaic",
+        "gravity": "mosaic",
+        "ink": "mosaic",
+        "seal": "mosaic",
+        "strike": "ember",
+    }
+
+    assert INITIAL_KEL_MAP_VERSION == 1
+    assert CURRENT_KEL_MAP_VERSION == 1
+    assert dict(ELEMENT_KEL_BY_VERSION[1]) == expected
+    assert dict(element_kel_map(1)) == expected
+    with pytest.raises(ValueError, match="지원하지 않는 결 매핑 버전"):
+        element_kel_map(999)
+
+
+def test_tangle_matchups_repeat_each_directed_opposing_axis_twice():
+    weak_counts = Counter()
+    resist_counts = Counter()
+    axis_counts = Counter()
+    for weak_element, resist_element in TANGLE_ELEMENT_MATCHUPS.values():
+        weak_kel = ELEMENT_KEL[weak_element]
+        resist_kel = ELEMENT_KEL[resist_element]
+        assert KEL_OPPOSITES[weak_kel] == resist_kel
+        weak_counts[weak_kel] += 1
+        resist_counts[resist_kel] += 1
+        axis_counts[(weak_kel, resist_kel)] += 1
+
+    assert weak_counts == Counter({kel: 2 for kel in KEL_LABELS})
+    assert resist_counts == Counter({kel: 2 for kel in KEL_LABELS})
+    assert axis_counts == Counter(
+        {(kel, opposite): 2 for kel, opposite in KEL_OPPOSITES.items()}
+    )
+
+
+def test_every_level_25_species_and_emotion_kit_has_multiple_labeled_kels():
+    stats = {"care": 4, "focus": 5, "courage": 6, "insight": 7}
+    for species, form in itertools.product(
+        sorted(set(SPECIES_SKILLS) - {"archive_guide"}),
+        sorted(EMOTION_DISCIPLINES),
+    ):
+        kit = member_battle_kit(
+            _profile(
+                1,
+                name="결 전수 검수",
+                species=species,
+                form=form,
+                stats=stats,
+                level=25,
+            )
+        )
+        actions = [
+            kit["basic"],
+            *kit["unique_skills"],
+            *kit["selected_skills"],
+        ]
+        all_kels = set()
+        for action in actions:
+            assert len(action["kels"]) == len(action["kel_labels"])
+            assert len(action["kels"]) == len(set(action["kels"]))
+            assert action["kel_labels"] == [KEL_LABELS[kel] for kel in action["kels"]]
+            all_kels.update(action["kels"])
+        assert len(all_kels) >= 2
+
+
+def test_battle_snapshots_kel_map_version_for_payload_and_events(profiles):
+    encounter = _encounter(
+        starting_focus=5,
+        enemy_max_guard=500,
+        weak_element="poison",
+        resist_element="steel",
+    )
+    battle = new_guardian_battle("keeper", encounter, profiles)
+
+    assert battle["kel_map_version"] == CURRENT_KEL_MAP_VERSION
+    payload = guardian_battle_payload(battle, encounter, profiles)
+    assert payload["kel_map_version"] == CURRENT_KEL_MAP_VERSION
+    assert {member["kit"]["kel_map_version"] for member in payload["party"]} == {
+        CURRENT_KEL_MAP_VERSION
+    }
+
+    state = submit_guardian_action(
+        battle,
+        {"member_id": 1, "action": "attack"},
+        encounter,
+        profiles,
+    )
+    assert state["last_exchange"][0]["kel_map_version"] == CURRENT_KEL_MAP_VERSION
+
+    legacy_v2 = dict(battle)
+    legacy_v2.pop("kel_map_version")
+    assert (
+        guardian_battle_payload(legacy_v2, encounter, profiles)["kel_map_version"]
+        == INITIAL_KEL_MAP_VERSION
+    )
+
+    unknown = dict(battle)
+    unknown["kel_map_version"] = 999
+    with pytest.raises(CombatRuleError) as error:
+        guardian_battle_payload(unknown, encounter, profiles)
+    assert error.value.code == "EXPEDITION_COMBAT_KEL_MAP_UNSUPPORTED"
 
 
 def test_signature_growth_uses_level_tier_rarity_curve_and_emotion_fusion():

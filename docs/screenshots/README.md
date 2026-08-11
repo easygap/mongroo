@@ -37,11 +37,11 @@ docs/screenshots/web/
 17-sequential-combat.gif        (v2.0 prototype) 카드 탭 순차 행동 녹화
 18-wave-clear.gif               (v2.0 prototype) 스냅샷 웨이브 교체 녹화
 19-tangle-release.gif           (v2.0 prototype) 절차적 큰 엉킴 풀림 녹화
-20-integrated-battle.webp        (미촬영) v2.2 통합 전장·6아이콘 벨트
-21-player-skill-contact.gif      (미촬영) actor→비행→접촉→피격 플레이어 공격
-22-enemy-skill-contact.gif       (미촬영) 적별 예고→공격→접촉→아군 반응
+20-integrated-battle.webp        v2.2 통합 전장·6아이콘 벨트 실제 화면
+21-player-skill-contact.gif      준비→이동→접촉→피격 플레이어 스킬 실제 녹화
+22-enemy-skill-contact.gif       방어→적 공격→접촉→다음 라운드 실제 녹화
 23-emotion-matchup.webp          (미촬영) 여섯 성장결 약점↑·내성↓와 선택 스킬 벨트
-24-skill-long-press.webp         (미촬영) 평상시 설명 0 → 길게 누르기 peek sheet
+24-skill-long-press.webp         계수·단계·상성·재사용 턴 길게 누르기 실제 화면
 25-imagegen-skill-icons.webp     (미촬영) 102개 도색 아이콘의 128·64·48·32px QA
 26-battle-trail.gif              (미촬영) 접근→조우→전투→풀려남→전진 연속 화면
 27-combat-first-hud.webp         (미촬영) 전장 72~78%·상단 8점 rail·하단 6아이콘 dock
@@ -52,8 +52,10 @@ docs/screenshots/web/
 
 8~10번은 스테이지 개편 이전, 14·15·17~19번은 v2.0 기능 prototype 기록이다.
 v2.2의 통합 전장·6아이콘 벨트·정식 플레이어/적 스프라이트가 아니므로 마케팅·완료
-증빙에 사용하지 않는다. README에는 허브·지도·귀환인 11~13·16만 유지하고 전투는
-v2.2 캡처로 교체한 뒤 다시 싣는다.
+증빙에 사용하지 않는다. README 전투 설명은 출시 후보 Flutter Web 빌드를 360×732
+모바일 뷰포트에서 실행해 촬영한 20~22·24번만 사용한다. 2026-08-11 QA 전용 데이터로
+같은 수호전을 직접 조작했으며, 정지 화면 2장과 입력부터 결과까지 이어지는 GIF 2개에
+콘셉트 HUD나 사후 합성 프레임을 섞지 않았다.
 
 `design-system/concepts/adventure-combat-first-v1/combat-first-visual-target-v1.png`는
 ImageGen으로 만든 배치 기준안이며 실제 앱 캡처가 아니다. 26~30번의 구현 증빙을 대신하거나

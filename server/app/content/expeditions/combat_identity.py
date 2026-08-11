@@ -7,6 +7,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from types import MappingProxyType
 from typing import Any
 
 
@@ -50,30 +52,62 @@ KEL_LABELS = {
     "mosaic": "모아결",
 }
 
+INITIAL_KEL_MAP_VERSION = 1
+CURRENT_KEL_MAP_VERSION = 1
+
 # 원소는 캐릭터의 시각·서사 정체성을 보존하고, 여섯 성장결만 약점·내성을
-# 판정한다. 사용자는 20×20 상성표를 외우지 않아도 독·달·중력 같은 공격을 쓴다.
-ELEMENT_KEL = {
-    "light": "sunny",
-    "nature": "sunny",
-    "water": "rainy",
-    "ice": "rainy",
-    "poison": "rainy",
-    "fire": "ember",
-    "decay": "ember",
-    "wind": "moonlit",
-    "moon": "moonlit",
-    "shadow": "moonlit",
-    "lightning": "sparkling",
-    "sound": "sparkling",
-    "arcane": "sparkling",
-    "heart": "sunny",
-    "steel": "mosaic",
-    "force": "mosaic",
-    "gravity": "mosaic",
-    "ink": "mosaic",
-    "seal": "mosaic",
-    "strike": "ember",
-}
+# 판정한다. 진행 중 전투를 재현할 수 있도록 과거 매핑은 수정·삭제하지 않는다.
+ELEMENT_KEL_BY_VERSION: Mapping[int, Mapping[str, str]] = MappingProxyType(
+    {
+        1: MappingProxyType(
+            {
+                "light": "sunny",
+                "nature": "sunny",
+                "water": "rainy",
+                "ice": "rainy",
+                "poison": "rainy",
+                "fire": "ember",
+                "decay": "ember",
+                "wind": "moonlit",
+                "moon": "moonlit",
+                "shadow": "moonlit",
+                "lightning": "sparkling",
+                "sound": "sparkling",
+                "arcane": "sparkling",
+                "heart": "sunny",
+                "steel": "mosaic",
+                "force": "mosaic",
+                "gravity": "mosaic",
+                "ink": "mosaic",
+                "seal": "mosaic",
+                "strike": "ember",
+            }
+        ),
+    }
+)
+
+# 기존 호출부가 읽는 현재 버전 별칭이다. 새 전투 로직은 버전을 명시해 조회한다.
+ELEMENT_KEL = ELEMENT_KEL_BY_VERSION[CURRENT_KEL_MAP_VERSION]
+
+
+def element_kel_map(version: int | None = None) -> Mapping[str, str]:
+    selected = CURRENT_KEL_MAP_VERSION if version is None else int(version)
+    try:
+        return ELEMENT_KEL_BY_VERSION[selected]
+    except KeyError as error:
+        raise ValueError(f"지원하지 않는 결 매핑 버전입니다: {selected}") from error
+
+
+KEL_OPPOSITES: Mapping[str, str] = MappingProxyType(
+    {
+        "sunny": "moonlit",
+        "moonlit": "sunny",
+        "rainy": "ember",
+        "ember": "rainy",
+        "sparkling": "mosaic",
+        "mosaic": "sparkling",
+    }
+)
 
 TIER_POWER_BP = {1: 10_000, 2: 11_000, 3: 12_200}
 MATCHUP_POWER_BP = {
@@ -138,8 +172,9 @@ def _skill(
     motion_profile: str,
     vfx_family: str,
     tier_names: tuple[str, str, str],
+    secondary_element: str | None = None,
 ) -> dict[str, Any]:
-    return {
+    skill = {
         "code": code,
         "name": name,
         "description": description,
@@ -153,6 +188,9 @@ def _skill(
         "vfx_family": vfx_family,
         "tier_names": list(tier_names),
     }
+    if secondary_element is not None:
+        skill["secondary_element"] = secondary_element
+    return skill
 
 
 # 고유 I: 자주 쓰는 캐릭터 대표기. 고유 II: 더 긴 쿨타임의 결정기/전술기.
@@ -669,22 +707,23 @@ FIELD_NOTE_SKILL = _skill(
     motion_profile="skillbook.echo-script",
     vfx_family="skillbook.field-note-echo",
     tier_names=("현장본", "주석본", "완전 기록"),
+    secondary_element="sound",
 )
 
 
 TANGLE_ELEMENT_MATCHUPS = {
-    "tangled_ledger": ("fire", "light"),
-    "drifting_pressings": ("wind", "water"),
-    "shelf_snarl": ("steel", "lightning"),
+    "tangled_ledger": ("steel", "lightning"),
+    "drifting_pressings": ("wind", "light"),
+    "shelf_snarl": ("fire", "water"),
     "knotted_echo": ("water", "fire"),
     "splashing_droplets": ("lightning", "steel"),
     "bell_knot_swirl": ("light", "wind"),
     "snarled_stardust": ("water", "fire"),
-    "rolling_seedbox": ("fire", "light"),
-    "backwound_clockspring": ("lightning", "wind"),
+    "rolling_seedbox": ("fire", "water"),
+    "backwound_clockspring": ("lightning", "steel"),
     "ring_shard_tangle": ("steel", "lightning"),
-    "scattered_records": ("wind", "water"),
-    "matted_observatory": ("light", "steel"),
+    "scattered_records": ("wind", "light"),
+    "matted_observatory": ("light", "wind"),
 }
 
 
@@ -741,10 +780,19 @@ def validate_combat_identity_catalog() -> None:
         raise ValueError("all twenty signature skill codes must be unique")
     if len({skill["vfx_family"] for skill in all_unique}) != 20:
         raise ValueError("all twenty signature VFX families must be unique")
-    if set(ELEMENT_KEL) != set(ELEMENT_LABELS):
-        raise ValueError("all twenty elements must map to exactly one growth kel")
-    if set(ELEMENT_KEL.values()) != set(KEL_LABELS):
-        raise ValueError("all six growth kels must be represented by element mapping")
+    if CURRENT_KEL_MAP_VERSION not in ELEMENT_KEL_BY_VERSION:
+        raise ValueError("current growth kel map version must exist")
+    if INITIAL_KEL_MAP_VERSION not in ELEMENT_KEL_BY_VERSION:
+        raise ValueError("initial growth kel map version must remain available")
+    for version, mapping in ELEMENT_KEL_BY_VERSION.items():
+        if set(mapping) != set(ELEMENT_LABELS):
+            raise ValueError(
+                f"all twenty elements must map to one growth kel in version {version}"
+            )
+        if set(mapping.values()) != set(KEL_LABELS):
+            raise ValueError(
+                f"all six growth kels must be represented in version {version}"
+            )
 
     if {
         SPECIES_SKILLS["gumiho-pot"]["element"],
@@ -793,13 +841,21 @@ def validate_combat_identity_catalog() -> None:
 
     weak_counts = {element: 0 for element in primary_elements}
     resist_counts = {element: 0 for element in primary_elements}
+    opposite_counts = {(kel, opposite): 0 for kel, opposite in KEL_OPPOSITES.items()}
     for weak, resist in TANGLE_ELEMENT_MATCHUPS.values():
         if weak == resist:
             raise ValueError("weak and resist elements must differ")
         weak_counts[weak] += 1
         resist_counts[resist] += 1
+        weak_kel = ELEMENT_KEL[weak]
+        resist_kel = ELEMENT_KEL[resist]
+        if KEL_OPPOSITES[weak_kel] != resist_kel:
+            raise ValueError("every tangle matchup must follow one opposing kel axis")
+        opposite_counts[(weak_kel, resist_kel)] += 1
     if set(weak_counts.values()) != {2} or set(resist_counts.values()) != {2}:
         raise ValueError("each emotion primary must appear twice as weak and resist")
+    if set(opposite_counts.values()) != {2}:
+        raise ValueError("each directed opposing kel axis must appear exactly twice")
 
 
 validate_combat_identity_catalog()

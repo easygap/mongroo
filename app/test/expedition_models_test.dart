@@ -304,6 +304,11 @@ Map<String, dynamic> _battleSnapshotJson() {
                 ? 'mosaic'
                 : 'sunny',
           ],
+          'kel_labels': [
+            (element ?? (affinity == 'care' ? 'nature' : 'ink')) == 'ink'
+                ? '모아결'
+                : '햇살결',
+          ],
           'damage_type': 'projectile',
           'damage_type_label': '투사체',
           'motion_profile': '$code.motion',
@@ -325,6 +330,7 @@ Map<String, dynamic> _battleSnapshotJson() {
     );
     return {
       'version': 6,
+      'kel_map_version': 1,
       'level': 25,
       'rarity': 1,
       'signature_tier': 3,
@@ -359,6 +365,7 @@ Map<String, dynamic> _battleSnapshotJson() {
         'kel': affinity == 'care' ? 'sunny' : 'moonlit',
         'kel_label': affinity == 'care' ? '햇살결' : '달빛결',
         'kels': [affinity == 'care' ? 'sunny' : 'moonlit'],
+        'kel_labels': [affinity == 'care' ? '햇살결' : '달빛결'],
         'damage_type': 'projectile',
         'damage_type_label': '투사체',
         'motion_profile': 'emotion.basic',
@@ -426,6 +433,8 @@ Map<String, dynamic> _battleSnapshotJson() {
       'damage_target': '탐험대',
     },
     'battle': {
+      'version': 2,
+      'kel_map_version': 1,
       'status': 'active',
       'round': 1,
       'max_rounds': 6,
@@ -498,6 +507,7 @@ Map<String, dynamic> _battleSnapshotJson() {
     {
       'sequence': 0,
       'type': 'party_action',
+      'kel_map_version': 1,
       'member_id': 11,
       'actor_name': '새싹몬',
       'action': 'skill',
@@ -860,6 +870,8 @@ void main() {
     final battle = snapshot.currentEvent!.battle!;
 
     expect(battle.round, 1);
+    expect(battle.version, 2);
+    expect(battle.kelMapVersion, 1);
     expect(battle.enemy.intent.target, 'front');
     expect(battle.enemy.weaknessLabel, '돌봄');
     expect(battle.enemy.weakElementLabel, '빛');
@@ -867,6 +879,7 @@ void main() {
     expect(battle.enemy.weakKelLabel, '햇살결');
     expect(battle.enemy.resistKelLabel, '모아결');
     expect(battle.party.first.kit.level, 25);
+    expect(battle.party.first.kit.kelMapVersion, 1);
     expect(battle.party.first.kit.signatureTier, 3);
     expect(battle.party.first.kit.skill.effect, 'shield_all');
     expect(battle.party.first.kit.skill.elementLabel, '생명');
@@ -874,6 +887,7 @@ void main() {
     expect(battle.party.first.kit.skill.tierPowerBp, 12200);
     expect(battle.party.first.kit.skill.matchupBp, 15000);
     expect(battle.party.first.kit.skill.kelLabel, '햇살결');
+    expect(battle.party.first.kit.skill.kelLabels, ['햇살결']);
     expect(
       battle.party.first.kit.skill.fusionVariant,
       'sprout_cheer.sunny.unique_1.t3',
@@ -886,6 +900,7 @@ void main() {
     expect(battle.party.last.kit.skill.effect, 'study_refund');
     expect(snapshot.lastCombatExchange.single.enemyGuardAfter, 0);
     expect(snapshot.lastCombatExchange.single.weaknessHit, isTrue);
+    expect(snapshot.lastCombatExchange.single.kelMapVersion, 1);
     expect(
       snapshot.lastCombatExchange.single.motionProfile,
       'baby-pot.vine-cast',
@@ -953,7 +968,19 @@ void main() {
   testWidgets('수호전은 순차 명령이 기본이고 카드 독이 집중력·약점을 읽어 준다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 1100));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    final snapshot = ExpeditionSnapshot.fromJson(_battleSnapshotJson());
+    final raw = _battleSnapshotJson();
+    final eventJson = raw['current_event'] as Map<String, dynamic>;
+    final battleJson = eventJson['battle'] as Map<String, dynamic>;
+    final memberJson =
+        (battleJson['party'] as List).first as Map<String, dynamic>;
+    final kitJson = memberJson['kit'] as Map<String, dynamic>;
+    final uniqueSkill =
+        (kitJson['unique_skills'] as List).first as Map<String, dynamic>;
+    // 약점·내성을 함께 가진 T3 기술도 서버의 약점 우선 판정만 표시해야 한다.
+    uniqueSkill['kels'] = ['sunny', 'mosaic'];
+    uniqueSkill['kel_labels'] = ['햇살결', '모아결'];
+    uniqueSkill['matchup_bp'] = 13000;
+    final snapshot = ExpeditionSnapshot.fromJson(raw);
     late _FakeExpeditionController controller;
 
     await tester.pumpWidget(
@@ -1046,10 +1073,10 @@ void main() {
     await tester.pump();
     expect(find.text('캐릭터의 개성을 살린 고유 행동이에요.'), findsOneWidget);
     expect(find.text('T3 · 마음 만개'), findsOneWidget);
-    expect(find.text('↑ 생명 · 약점 ×1.50'), findsOneWidget);
+    expect(find.text('↑ 햇살결 · 모아결 · 약점 ×1.30'), findsOneWidget);
+    expect(find.textContaining('내성 ×'), findsNothing);
     expect(find.text('계수 116%'), findsOneWidget);
-    expect(find.text('단계 122% · 상성 150%'), findsOneWidget);
-    expect(find.text('햇살결'), findsWidgets);
+    expect(find.text('단계 122% · 상성 130%'), findsOneWidget);
     expect(find.text('T3 감정 융합'), findsOneWidget);
     expect(
       find.text('연출 · 캐릭터 고유 VFX 위에 성장결 융합 레이어 적용'),

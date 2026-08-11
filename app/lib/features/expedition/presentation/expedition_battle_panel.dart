@@ -353,6 +353,7 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
       _ => '위력 ${action.power} · 집중 +${action.focusDelta}',
     };
     final effectKey = _effectKeyForAction(action, actionCode);
+    final matchupMultiplier = (action.matchupBp / 10000).toStringAsFixed(2);
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -392,7 +393,7 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
                 const SizedBox(height: 12),
                 MongrooTag(
                   label: weakness
-                      ? '${action.affinityLabel} · 약점 ${action.matchup == 'prism_weak' ? '×1.30' : '×1.50'}'
+                      ? '${action.affinityLabel} · 약점 ×$matchupMultiplier'
                       : action.affinityLabel!,
                   icon: _affinityIcon(action.affinity ?? ''),
                   backgroundColor:
