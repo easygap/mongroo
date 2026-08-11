@@ -674,6 +674,7 @@ void main() {
       'echo_wave',
       'enemy_wave',
       'paper_flurry',
+      'ink_mist',
     ];
 
     for (final effectKey in effectKeys) {
@@ -697,6 +698,8 @@ void main() {
     expect(expeditionCombatEffectFrameForProgress('venom_seam', .5), 4);
     expect(expeditionCombatEffectFrameForProgress('enemy_wave', .5), 4);
     expect(expeditionCombatEffectFrameForProgress('paper_flurry', .5), 4);
+    expect(expeditionCombatEffectFrameCountFor('ink_mist'), 7);
+    expect(expeditionCombatEffectFrameForProgress('ink_mist', .6), 4);
   });
 
   test('서버가 지정한 여섯 motion archetype은 서로 다른 동선을 만든다', () {
@@ -758,6 +761,14 @@ void main() {
         legacyEffectKey: 'insight_arc',
       ).directory,
       'paper-flurry-v1',
+    );
+    expect(
+      resolveExpeditionCombatEffect(
+        vfxFamily: 'tangled-ledger.ink-mist',
+        kelFallbackFamily: 'kel.mosaic',
+        legacyEffectKey: 'ink_mist',
+      ).directory,
+      'ink-mist-v1',
     );
     expect(
       resolveExpeditionCombatEffect(

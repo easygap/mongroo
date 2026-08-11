@@ -166,7 +166,7 @@ def test_weakness_and_guard_change_the_exchange(profiles):
             "name": "달빛이",
             "damage": 0,
             "blocked": 1,
-            "hp_after": 3,
+            "hp_after": 5,
         }
     ]
     assert resolved["round"] == 2
@@ -583,12 +583,12 @@ def test_clearing_a_wave_ends_the_round_and_brings_the_next_tangle(profiles):
     # 웨이브가 풀리면 그 라운드는 끝난다 — 남은 대원 차례도, 적 예고 공격도 없다.
     assert resolved["status"] == "active"
     assert resolved["wave_index"] == 1
-    assert resolved["enemy_guard"] == 45
+    assert resolved["enemy_guard"] == 47
     assert resolved["round"] == 2
     assert resolved["weakness"] == "care"
     assert resolved["pending"] is None
-    # 집중력은 웨이브를 넘어 이어진다. 3 - 스킬 2 + 기본 공격 1 = 2.
-    assert resolved["focus"] == 2
+    # Lv18 보너스 집중력도 웨이브를 넘어 이어진다. 4 - 스킬 2 + 기본 공격 1 = 3.
+    assert resolved["focus"] == 3
     cleared = resolved["last_exchange"][2]
     assert cleared["caption"] == "엉킨 장부가 스르르 풀려 제자리 서가로 돌아갔어요."
     intro = resolved["last_exchange"][3]
@@ -1186,6 +1186,11 @@ def test_all_twenty_four_tangle_intents_have_unique_visual_contracts():
         assert intent["motion"]["archetype"] == intent["archetype"]
         assert len(intent["motion"]["phases"]) == 6
         assert intent["kel_fallback_family"] == f"kel.{intent['kel']}"
+        assert intent["motion"]["impact_shake_px"] == {
+            1: 2.2,
+            2: 3.0,
+            3: 3.8,
+        }[intent["power"]]
 
 
 def test_round_events_snapshot_motion_and_vfx_without_name_branching(profiles):
@@ -1220,3 +1225,24 @@ def test_round_events_snapshot_motion_and_vfx_without_name_branching(profiles):
     assert enemy_event["effect_key"] == "paper_flurry"
     assert enemy_event["vfx_family"] == "tangled-ledger.paper-flurry"
     assert enemy_event["motion"]["archetype"] == "leap"
+
+    guarded = submit_guardian_action(
+        resolved,
+        {"member_id": 1, "action": "guard"},
+        encounter,
+        profiles,
+    )
+    next_round = submit_guardian_action(
+        guarded,
+        {"member_id": 2, "action": "guard"},
+        encounter,
+        profiles,
+    )
+    ink_event = next(
+        event
+        for event in next_round["last_exchange"]
+        if event["type"] == "enemy_action"
+    )
+    assert ink_event["effect_key"] == "ink_mist"
+    assert ink_event["vfx_family"] == "tangled-ledger.ink-mist"
+    assert ink_event["motion"]["archetype"] == "channel"

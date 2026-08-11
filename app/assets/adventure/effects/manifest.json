@@ -197,6 +197,21 @@
       "production_ready": false,
       "source_hash": "7D315AF77A3A61946D682727CF02541A1B610ACC626EE444616D52A554F04F5B",
       "runtime_hash": "1A966C03E49B55FF43F2BAFB60F468CEA4D928AE78C10B4968804D24FC3D062A"
+    },
+    {
+      "family": "tangled-ledger.ink-mist",
+      "effect_keys": ["ink_mist"],
+      "kel": "mosaic",
+      "directory": "ink-mist-v1",
+      "frame_count": 7,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [170, 100, 65, 65, 80, 120, 160],
+      "contact_frame": 4,
+      "pivot": [0.94, 0.58],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "5D6997FE0C57D5BD990916D444E1D65FB59FF25690AC0C0A089A927F51D6ECE0",
+      "runtime_hash": "A293932925E631EE67688FD03B263F29C6BD716D20FF3A709278557656E5D4D5"
     }
   ]
 }

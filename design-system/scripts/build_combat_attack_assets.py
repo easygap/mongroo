@@ -26,6 +26,7 @@ except ImportError as exc:  # pragma: no cover - dependency failure is actionabl
 VFX_V2_ROOT = Path("design-system/concepts/adventure-combat-vfx-v2")
 VFX_V3_ROOT = Path("design-system/concepts/adventure-combat-vfx-v3")
 VFX_V4_ROOT = Path("design-system/concepts/adventure-combat-vfx-v4")
+VFX_V5_ROOT = Path("design-system/concepts/adventure-combat-vfx-v5")
 RUNTIME_ROOT = Path("app/assets/adventure/effects")
 RUNTIME_SIZE = (576, 288)
 QA_CELL_SIZE = (288, 144)
@@ -237,6 +238,47 @@ EFFECT_SPECS = {
         fit_full_source=True,
         validate_magenta_residue=False,
         frame_center_x=(440, 390, 350, 270, 165, 175, 255),
+    ),
+    "ink_mist": EffectSpec(
+        effect_key="ink_mist",
+        runtime_directory="ink-mist-v1",
+        source_directory="ink-mist",
+        concept_root=VFX_V5_ROOT,
+        frame_sources=(
+            "pose-00-anticipation.png",
+            "pose-01-release.png",
+            "pose-02-travel.png",
+            "pose-03-precontact.png",
+            "pose-04-contact.png",
+            "pose-05-reaction.png",
+            "pose-06-recovery.png",
+        ),
+        frame_phases=(
+            "anticipation",
+            "release",
+            "travel",
+            "travel",
+            "contact",
+            "reaction",
+            "recovery",
+        ),
+        # channel 모션의 760ms를 프레임 합과 정확히 맞춘다.
+        frame_durations_ms=(170, 100, 65, 65, 80, 120, 160),
+        origin="tangle_center",
+        target="party_all",
+        release_frame=1,
+        travel_frames=(2, 3),
+        contact_frames=(4,),
+        reaction_frame=5,
+        recovery_frames=(6,),
+        origin_edge=None,
+        origin_tolerance_px=0,
+        min_coverage=0.004,
+        max_coverage=0.38,
+        preprocessed_alpha=True,
+        fit_full_source=True,
+        validate_magenta_residue=False,
+        frame_center_x=(440, 350, 330, 255, 170, 180, 255),
     ),
 }
 
@@ -632,7 +674,9 @@ def main() -> int:
                 )
                 manifest = {
                     "version": (
-                        4
+                        5
+                        if concept_root == VFX_V5_ROOT
+                        else 4
                         if concept_root == VFX_V4_ROOT
                         else 3
                         if concept_root == VFX_V2_ROOT

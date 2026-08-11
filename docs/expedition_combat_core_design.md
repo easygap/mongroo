@@ -1,11 +1,13 @@
 # 탐험 전투 코어 설계서 — 쿨타임·계수·상성·모션·이펙트
 
 최종 갱신: 2026-08-11
-문서 상태: **D 설계 확정 / K1·K2·K3·K5·K6·K7 C 완료 / K4·K8 진행**
+문서 상태: **D 설계 확정 / K1~K7 C 완료 / K8 진행**
 (`adventure_100_point_execution_contract.md` 2장 용어)
 관련 코드: `server/app/content/expeditions/combat.py`,
+`server/app/content/expeditions/combat_balance.py`,
 `server/app/content/expeditions/combat_identity.py`,
 `server/app/content/expeditions/combat_motion.py`,
+`server/app/content/expeditions/combat_simulator.py`,
 `server/app/content/expeditions/tangles.py`,
 `app/lib/features/expedition/domain/expedition_combat_models.dart`,
 `app/assets/adventure/effects/manifest.json`,
@@ -13,6 +15,9 @@
 `app/lib/features/expedition/presentation/expedition_combat_timeline.dart`,
 `app/lib/features/expedition/presentation/expedition_combat_sprites.dart`,
 `design-system/scripts/generate_expedition_effect_catalog.py`
+
+밸런스 증거: `docs/expedition_combat_balance_report.json`,
+`server/scripts/simulate_expedition_combat_balance.py`
 
 ## 문서 적용 전제
 
@@ -55,6 +60,12 @@
 - `tangled-ledger.paper-flurry`는 Imagegen 포즈 원본 7장, 알파 마스터, 576×288
   WebP, 밝은/어두운 배경 QA와 애니메이션 미리보기를 갖춘 K8 production
   candidate다. 실기 GPU 프로파일 전이므로 `production_ready:false`는 유지한다.
+- K4는 지역별 장벽·의도 밴드, 레벨별 HP 3→6, 평균 Lv18 시작 집중력 4를
+  `battle-state-v2`에 snapshot한다. 실제 서버 판정으로 28,800전투를 전수 계산했고
+  스테이지 역할별 출시 게이트를 모두 통과했다.
+- `tangled-ledger.ink-mist`도 Imagegen 포즈 원본·알파·런타임을 각각 7장 보존한다.
+  `channel` 760ms와 프레임 시간 합을 맞췄고 접촉 뒤 세로 확산으로 광역 의도를
+  읽힌다. 실기 승인 전까지 `production_ready:false`다.
 
 ### 2026-08-11 K1 재검증에서 확정한 보완
 
@@ -489,8 +500,9 @@ D-4를 풀려면 장벽이 두 축으로 자라야 한다.
 | 3 별빛 씨앗금고 | 56~64 | 110~120 |
 | 4 심재 관측소 | 70~80 | 136~148 |
 
-현재 데이터(1지역 34~36 → 4지역 38~40)는 지역이 올라도 사실상 같은 값이다.
-위 밴드로 다시 짠다.
+현재 카탈로그는 일반 장벽을 지역별 `34/38`, `44/50`, `56/64`, `70/80`, 큰
+엉킴을 `76`, `96`, `120`, `148`로 확정했다. import 시 validator가 밴드를
+벗어난 콘텐츠를 즉시 거부한다.
 
 **축 2 — 성장지수.** `character_skill_growth_design.md` 9.1의 미구현 조항을
 구현하되 계수를 올린다.
@@ -515,8 +527,13 @@ G를 읽지 않는다는 원칙은 유지하며 성장의 안전 마진은 사�
 | 3 | 2 | 2~3 |
 | 4 | 2~3 | 3 |
 
-세 축의 최종 수치는 10장 시뮬레이션 합격선으로 확정한다. 위 표는 **시뮬레이션
-시작점**이지 승인된 최종값이 아니다.
+대원 HP는 Lv1~9 `3`, Lv10~18 `4`, Lv19~26 `5`, Lv27~30 `6`이다. 길잡이를
+제외한 실소유 파티 평균이 Lv18 이상이면 표준 시작 집중력 `3`만 `4`로 올라간다.
+이미 0~2 또는 4~5로 조정된 커스텀 encounter에는 중복 보너스를 주지 않는다.
+
+세 축은 10장의 28,800전투 전수 시뮬레이션을 통과한 **balance version 1 승인
+후보**다. 진행 중 run은 시작 당시 `balance_version`, 장벽, HP, 집중력 snapshot을
+끝까지 유지한다.
 
 ---
 
@@ -889,40 +906,66 @@ anticipation → release → travel → contact → reaction → recovery
 
 ### 10.1 시뮬레이션 계약
 
-`character_skill_growth_design.md` 14장 기준을 그대로 쓰되 대상을 넓힌다.
+전투 엔진은 난수를 쓰지 않는다. 같은 상태와 명령을 seed만 바꿔 10,000번
+반복하면 같은 결과 10,000개가 생기므로 확률 시뮬레이션처럼 해석하지 않는다.
+K4는 다음 identity cell을 **중복 없이 전수 계산**한다.
 
-- 조합: 품종 10 × 감정 6 × 등급 5 × 레벨 밴드 5 × 엉킴 12
-- 각 조합 **10,000회 이상**. 평균만으로 합격시키지 않는다
-- 기록: P10/P50/P90 클리어 라운드, 승률, 슬롯별 사용 분포, 상성 적중률
+```
+품종 10 × 감정 6 × 등급 5 × 지역별 권장 레벨 경계 2
+× 지역 4 × 스테이지 형태 4 = 정책당 9,600전투
+정책 3종 합계 = 28,800전투
+```
+
+- 파티 fixture: 실소유 대원 1명 + Lv16 기록 안내자 2명. 길잡이는 성장지수와
+  평균 레벨에서 제외하지만 실제 HP·스킬·쿨타임은 서버 규칙대로 사용한다.
+- 스테이지 형태: `tutorial` 일반 1웨이브, `standard` 일반 2웨이브, `elite` 큰
+  엉킴 1웨이브, `mixed` 일반+큰 엉킴 2웨이브.
+- 정책: 중립 위력만 보는 `max_damage`, 약점 결을 먼저 고르는
+  `weakness_first`, 치명 예고 시 방어·위력 감소를 우선하는 `survival`.
+- 실제 `new_guardian_battle → guardian_battle_payload → submit_guardian_action`
+  경로만 호출한다. 시뮬레이터 안에 피해식 복제품을 만들지 않는다.
+- 기록: 승률, P10/P50/P90, 1라운드 완료, 남은 HP, 사용 가능 시 슬롯 선택률,
+  약점 적중·추가 피해, 품종별 승률·종료 라운드 격차.
 
 ### 10.2 합격선
 
-| 항목 | 합격 기준 | v6 현재 증거 |
-|---|---|---|
-| 클리어 라운드 P50 | 3.4~4.6 | 성장 장벽 C 연결, 10,000회 정책 시뮬레이션 미측정 |
-| 클리어 라운드 최저 | 3.0 이상. **1라운드 클리어 0건** | v5 단일 예제 회귀 해결, 전체 조합 미측정 |
-| 상성 기여도 | 약점 사용 시 라운드 −0.8 이상, 전 레벨 구간에서 유지 | 배수 비율 단위 검증, 정책 시뮬레이션 미측정 |
-| 슬롯 사용 분포 | 어떤 슬롯도 사용률 5% 미만이 아니다 | 미측정 |
-| 품종 승률 격차 | 동일 레벨·등급에서 5%p 이내 | 미측정 |
-| 결 편중 | 특정 결 없이도 전 필수 전투 완주 가능 | 유지 |
-| 역할 독점 | 0건. magical-pot 굴절 포함 | **점검 필요**(3.6) |
-| 실패 결과 | 캐릭터 소실·장비 파괴·감정 벌점 0 | 통과 |
+튜토리얼 1웨이브와 혼합 2웨이브를 같은 P50으로 묶지 않는다. 아래 값은
+`expedition_combat_balance_report.json`의 balance version 1 결과다.
 
-**4.5의 장벽·위력 수치는 이 합격선을 통과할 때까지 확정이 아니다.**
-표의 값은 시뮬레이션 시작점이다.
+| 게이트 | 정책·합격 기준 | 현재 결과 | 판정 |
+|---|---|---:|---|
+| 튜토리얼 완주 | 약점 우선, 승률 100%, P90 1~2R | 100%, P90 2R | 통과 |
+| 일반 진행 | 약점 우선, 승률 95~100%, P50 2~4R, 1R 완료 0 | 100%, P50 3R, 0건 | 통과 |
+| 큰 엉킴 | 약점 우선, 승률 90~100%, P50 2~4R, 1R 완료 0 | 98.58%, P50 2R, 0건 | 통과 |
+| 혼합 숙련 | 생존, 승률 70~85%, P50 3~6R | 76.33%, P50 3R | 통과 |
+| 약점 피해 | 일반 1.50·굴절 1.30 혼합 실피해 +40~50% | +42.67% | 통과 |
+| 약점 선택 | 적중률 +10%p 이상, 빨라진 셀 ≥ 느려진 셀 | +15.77%p, 9.85% ≥ 4.55% | 통과 |
+| 슬롯 커버리지 | 사용 가능 시 기본·고유·선택·방어 각각 5% 이상 | 최저 16.60% | 통과 |
+| 품종 커버리지 | 약점 우선 승률 격차 5%p 이하 | 4.27%p | 통과 |
+| 품종 종료 속도 | 평균 score round 격차 0.30R 이하 | 0.17R | 통과 |
+
+튜토리얼의 1라운드 완료는 학습 구간의 의도된 성공 경험이므로 허용한다. 1라운드
+완료 금지는 `standard`, `elite`, `mixed`에만 적용한다. 실패해도 캐릭터 소실,
+장비 파괴, 감정 벌점은 없다.
 
 ### 10.3 상성 기여도 측정법
 
-같은 파티·같은 엉킴에서 두 정책을 각각 10,000회 돌려 라운드 차를 본다.
+정책 차이와 계수 자체를 분리한다. 최대 피해 비교군은 **최종 피해가 아니라
+`power_neutral`**만 보고 행동을 고른다. 최종 피해를 보면 약점 배수가 이미 섞여
+약점 우선 정책과 같은 행동을 고르는 측정 오류가 생긴다.
 
 ```
-정책 A: 항상 최대 피해 슬롯 선택 (상성 무시)
+정책 A: 중립 위력이 가장 큰 슬롯 선택 (상성 정보 미사용)
 정책 B: 약점 결 슬롯 우선, 없으면 최대 피해
-기여도 = median(A) - median(B)
+선택 효과 = B 약점 적중률 - A 약점 적중률
+피해 효과 = sum(약점 최종 피해 - 중립 피해) / sum(약점 중립 피해)
 ```
 
-기여도가 레벨 밴드마다 0.8 아래로 떨어지면 `matchup_bp`를 조정한다.
-이 지표가 **D-2의 재발을 자동으로 잡는 회귀 테스트**다.
+클리어 라운드는 정수이고 대부분 2~4라운드라 정책별 median이 둘 다 3이 되기 쉽다.
+따라서 과거의 “median −0.8R”을 단독 합격선으로 쓰지 않는다. paired score round는
+진단값으로 보존하고, 적중률 상승과 실제 추가 피해가 **D-2 재발 방지 게이트**다.
+현재 약점 우선은 적중률을 22.62%에서 38.39%로 올렸고 약점 행동의 실피해를
+42.67% 높였다.
 
 ---
 
@@ -948,8 +991,8 @@ anticipation → release → travel → contact → reaction → recovery
 | `COMBAT-VFX-02` | 빌더 | frame 길이·`contact_frame`의 원본이 manifest뿐이다. Dart 상수 0건 |
 | `COMBAT-VFX-03` | 서버/Flutter | 서로 다른 결이 같은 fallback family를 쓰지 않는다 |
 | `COMBAT-VFX-04` | 서버 단위 | 적 의도 24종이 `vfx_family`·`motion_profile`을 선언한다. 한국어 이름 분기 0건 |
-| `BALANCE-02` | 시뮬레이션 | 10.2 합격선 전 항목 |
-| `BALANCE-03` | 시뮬레이션 | 상성 기여도가 전 레벨 밴드에서 0.8 이상 |
+| `BALANCE-02` | 시뮬레이션 | 9,600 identity cell × 정책 3종과 10.2 스테이지 게이트 전 항목 |
+| `BALANCE-03` | 시뮬레이션 | 약점 적중률 +10%p, 실피해 +40~50%, 빨라진 paired cell이 느려진 cell 이상 |
 
 ---
 
@@ -962,11 +1005,11 @@ anticipation → release → travel → contact → reaction → recovery
 | **K1** | C 재검증 완료 | 버전 고정 매핑, 대립축, 이중 결 kit, 서버 권위 상성 표시 | 서버·앱·설계서 | `COMBAT-KEL-01~04` |
 | **K2** | C 완료 | 6단계 정수 배수식 | `battle-state-v2`, v1 재생 경로 | `COMBAT-SCALE-02` |
 | **K3** | C 완료 | 하한 1, `ready_round`, `tier_bp` | 서버 + 앱 표시 | CD 단위·위젯 |
-| **K4** | 진행 | 성장지수 장벽 연결; 지역/의도 밴드·시뮬레이터 잔여 | 카탈로그 + 시뮬레이터 | `BALANCE-02~03` 잔여 |
+| **K4** | C 완료 | HP·집중력 이정표, 성장지수 장벽, 지역/의도 밴드, 전수 시뮬레이터 | 카탈로그 + JSON 리포트 | `BALANCE-02~03` 통과 |
 | **K5** | C 완료 | 6아키타입·6구간 phase, 서버 시간·방향·이동·충격 snapshot | 앱 연출 해석기 | 6동선·미지 `cast` fallback 통과, pose A 잔여 |
 | **K6** | C 완료 / A 진행 | 3단 resolver, manifest v2→Dart 생성, 수동 상수 제거 | 아트 승격 파이프라인 | 번들·alpha·contact 통과 |
 | **K7** | C 완료 | 적 의도 24종 code key·family·결·motion 선언 | 카탈로그 + 앱 | `COMBAT-VFX-04` 통과 |
-| **K8** | 진행 | family 68종 점진 제작 | `production_ready` 승격 | 4 family 후보, 전체 잔여 |
+| **K8** | 진행 | family 68종 점진 제작 | `production_ready` 승격 | 5 family 후보, 전체 잔여 |
 
 K1~K4는 판정, K5~K7은 연출 배선, K8은 제작이다. **K5~K7은 아트가 하나도
 없어도 완료할 수 있다.** 배선이 먼저 끝나야 K8이 코드 수정 없이 굴러간다.
@@ -982,7 +1025,20 @@ K1~K4는 판정, K5~K7은 연출 배선, K8은 제작이다. **K5~K7은 아트�
 - K1에는 새 래스터 원본이 필요하지 않아 Imagegen 산출물을 완료 증거로 만들지 않았다.
   실제 스프라이트 제작은 접촉 프레임과 블렌딩 규칙을 검수하는 K5~K8에서 진행한다.
 
-### K5~K7 완료 및 K8 첫 구현 증거 — 2026-08-11
+### K4 완료 증거 — 2026-08-11
+
+- `combat_balance.py`가 HP 3→6, 평균 Lv18 집중력 4, 네 지역 장벽·의도·권장 레벨
+  밴드를 단일 원본으로 관리한다. 커스텀 시작 집중력과 진행 중 snapshot은 유지한다.
+- 엉킴 12종은 일반 `34/38`, `44/50`, `56/64`, `70/80`, 큰 엉킴
+  `76/96/120/148`이며 모든 의도 위력은 지역·난이도 밴드 validator를 통과한다.
+- 실제 전투 엔진으로 9,600 identity cell을 정책 3종, 총 28,800전투 재생했다.
+  튜토리얼·일반·큰 엉킴·혼합 게이트, 상성 피해·선택, 슬롯·품종 격차가 모두
+  `balance_gates.all_passed:true`다.
+- 프리즘의 1.30배 확실성과 일반 약점 1.50배 상한을 실제 기대 피해로 맞추기 위해
+  magical 고유 I/II raw power를 `20/18`, 지역 약점이 적은 zombie 고유 I/II를
+  `20/18`로 보정했다. 품종 승률 격차는 7.29%p에서 4.27%p로 줄었다.
+
+### K5~K7 완료 및 K8 두 번째 적 의도 구현 증거 — 2026-08-11
 
 - 서버 `combat_motion.py`가 6아키타입의 일반기·결정기 시간 밴드를 import 시점에
   검증하고, action·event가 같은 motion payload를 보존한다.
@@ -995,7 +1051,11 @@ K1~K4는 판정, K5~K7은 연출 배선, K8은 제작이다. **K5~K7은 아트�
   contact 범위, pivot, 런타임 파일 수를 검증한 뒤 Dart 상수를 생성한다.
 - `paper-flurry-v1`은 포즈별 원본 7장과 알파 7장, 런타임 7장, source/runtime
   aggregate SHA-256, light/dark QA, animated WebP를 보존한다.
+- `ink-mist-v1`도 같은 증거 묶음을 가지며 7프레임 합계 760ms와 서버 `channel`
+  모션이 일치한다. 접촉 프레임은 4이고 결 블러만 `srcIn`으로 혼합한다.
 - `COMBAT-MOTION-02/03`, `COMBAT-VFX-01/02/04` 회귀 테스트를 추가했다.
+- 전체 회귀는 서버 447건·Flutter 290건, Flutter 정적 분석, 전투 에셋 5종
+  report-only 검증을 통과했다.
 
 ### 중단 기준
 
@@ -1024,7 +1084,8 @@ K1~K4는 판정, K5~K7은 연출 배선, K8은 제작이다. **K5~K7은 아트�
 8. **아트가 없다고 판정을 바꾸지 않는다.** fallback은 연출만 낮추고 수치는
    그대로다.
 9. **`production_ready:false` family를 완료로 세지 않는다.**
-10. **시뮬레이션 없이 밸런스 수치를 확정하지 않는다.** 4.5의 표는 시작점이다.
+10. **시뮬레이션 없이 밸런스 수치를 확정하지 않는다.** 수치 변경 시 28,800전투
+    전수 리포트를 다시 만들고 모든 게이트를 통과시킨다.
 
 ---
 

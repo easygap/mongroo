@@ -5,13 +5,14 @@
 그래서 처치·소멸 문구가 없고 장벽이 0이 되면 원래 물건으로 돌아간다.
 
 지역당 3종(일반 2 + 큰 엉킴 1) × 4지역 = 12종. 아직 열리지 않은 지역의 엉킴도
-여기 함께 정의해 이름·수치·문구의 단일 원본을 유지한다. 예고는 한 번에 1개,
-위력은 1~2로 단순하게 유지한다는 규칙을 어기면 아래 validate가 배포를 막는다.
+여기 함께 정의해 이름·수치·문구의 단일 원본을 유지한다. 예고는 한 번에 1개이고
+위력은 지역·난이도 밴드의 1~3 정수만 쓴다. 아래 validate가 이 범위를 지킨다.
 """
 
 import copy
 from typing import Any
 
+from app.content.expeditions.combat_balance import validate_tangle_balance
 from app.content.expeditions.combat_motion import combat_motion, kel_fallback_family
 
 
@@ -48,7 +49,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "표류 압화 떼",
         "description": "제자리를 잃은 압화가 무리 지어 떠다녀요.",
         "elite": False,
-        "barrier": 36,
+        "barrier": 38,
         "weakness_cycle": ["care", "insight", "focus", "courage"],
         "intents": [
             {
@@ -74,7 +75,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "서가 뒤엉킴",
         "description": "선반과 목록이 통째로 엉켜 큰 매듭이 됐어요.",
         "elite": True,
-        "barrier": 70,
+        "barrier": 76,
         "weakness_cycle": ["courage", "focus", "insight", "care"],
         "intents": [
             {
@@ -101,7 +102,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "매듭진 메아리",
         "description": "주인을 못 찾은 메아리가 서로 엉켜 웅웅거려요.",
         "elite": False,
-        "barrier": 36,
+        "barrier": 44,
         "weakness_cycle": ["focus", "care", "insight", "courage"],
         "intents": [
             {
@@ -109,7 +110,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
                 "name": "겹울림",
                 "telegraph": "겹친 울림이 모두의 귓가로 번져요.",
                 "target": "all",
-                "power": 1,
+                "power": 2,
             },
             {
                 "code": "sharp_note",
@@ -127,7 +128,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "튀는 물방울 떼",
         "description": "물길을 벗어난 물방울들이 신나게 튀어 다녀요.",
         "elite": False,
-        "barrier": 34,
+        "barrier": 50,
         "weakness_cycle": ["courage", "insight", "care", "focus"],
         "intents": [
             {
@@ -135,7 +136,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
                 "name": "물보라",
                 "telegraph": "물방울들이 한꺼번에 튀어 오르려 해요.",
                 "target": "all",
-                "power": 1,
+                "power": 2,
             },
             {
                 "code": "water_pop",
@@ -153,7 +154,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "소용돌이 종매듭",
         "description": "종줄과 소리가 한데 감겨 큰 소용돌이가 됐어요.",
         "elite": True,
-        "barrier": 76,
+        "barrier": 96,
         "weakness_cycle": ["care", "courage", "focus", "insight"],
         "intents": [
             {
@@ -168,7 +169,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
                 "name": "깊은 울림",
                 "telegraph": "낮은 종소리가 바닥을 타고 모두에게 번져요.",
                 "target": "all",
-                "power": 1,
+                "power": 2,
             },
         ],
         "appear_caption": "소용돌이 종매듭이 우물 위에서 크게 감돌기 시작했어요.",
@@ -180,7 +181,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "뒤엉킨 별가루",
         "description": "선반을 벗어난 별가루가 실타래처럼 뭉쳤어요.",
         "elite": False,
-        "barrier": 38,
+        "barrier": 56,
         "weakness_cycle": ["insight", "focus", "care", "courage"],
         "intents": [
             {
@@ -188,14 +189,14 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
                 "name": "별가루 반짝임",
                 "telegraph": "눈부신 가루가 모두의 앞을 가려요.",
                 "target": "all",
-                "power": 1,
+                "power": 2,
             },
             {
                 "code": "dust_lash",
                 "name": "가루 채찍",
                 "telegraph": "가늘게 꼰 별가루가 맨 앞 대원을 향해요.",
                 "target": "front",
-                "power": 1,
+                "power": 2,
             },
         ],
         "appear_caption": "뒤엉킨 별가루가 반짝이며 길목을 메웠어요.",
@@ -206,7 +207,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "구르는 씨앗함",
         "description": "잠에서 덜 깬 씨앗함이 데굴데굴 굴러다녀요.",
         "elite": False,
-        "barrier": 36,
+        "barrier": 64,
         "weakness_cycle": ["care", "courage", "insight", "focus"],
         "intents": [
             {
@@ -214,14 +215,14 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
                 "name": "돌진 구르기",
                 "telegraph": "씨앗함이 맨 앞 대원 쪽으로 구를 준비를 해요.",
                 "target": "front",
-                "power": 1,
+                "power": 2,
             },
             {
                 "code": "seed_scatter",
                 "name": "씨앗 흩뿌리기",
                 "telegraph": "뚜껑 틈으로 씨앗이 모두에게 튀어요.",
                 "target": "all",
-                "power": 1,
+                "power": 2,
             },
         ],
         "appear_caption": "구르는 씨앗함이 덜컹거리며 앞을 가로막았어요.",
@@ -232,7 +233,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "거꾸로 선 시계태엽",
         "description": "발아 시계의 태엽이 거꾸로 감겨 튀어나왔어요.",
         "elite": True,
-        "barrier": 82,
+        "barrier": 120,
         "weakness_cycle": ["focus", "insight", "courage", "care"],
         "intents": [
             {
@@ -240,14 +241,14 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
                 "name": "태엽 튕기기",
                 "telegraph": "감긴 태엽 끝이 맨 앞 대원을 향해 떨려요.",
                 "target": "front",
-                "power": 2,
+                "power": 3,
             },
             {
                 "code": "gear_grind",
                 "name": "톱니 맞물림",
                 "telegraph": "어긋난 톱니 소리가 모두를 짓눌러요.",
                 "target": "all",
-                "power": 1,
+                "power": 2,
             },
         ],
         "appear_caption": "거꾸로 선 시계태엽이 째깍째깍 거슬러 돌기 시작했어요.",
@@ -259,7 +260,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "얽힌 나이테 조각",
         "description": "떨어져 나온 나이테 조각들이 서로 얽혀 굴러요.",
         "elite": False,
-        "barrier": 40,
+        "barrier": 70,
         "weakness_cycle": ["courage", "care", "focus", "insight"],
         "intents": [
             {
@@ -267,14 +268,14 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
                 "name": "나이테 굴리기",
                 "telegraph": "둥근 조각이 맨 앞 대원 쪽으로 기울어요.",
                 "target": "front",
-                "power": 1,
+                "power": 2,
             },
             {
                 "code": "shard_scatter",
                 "name": "조각 흩날리기",
                 "telegraph": "잔조각들이 모두에게 흩어지려 해요.",
                 "target": "all",
-                "power": 1,
+                "power": 3,
             },
         ],
         "appear_caption": "얽힌 나이테 조각이 데구루루 굴러와 길을 막았어요.",
@@ -285,7 +286,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "흩어진 기록 낱장",
         "description": "묶이지 못한 관측 기록이 낱장으로 흩날려요.",
         "elite": False,
-        "barrier": 38,
+        "barrier": 80,
         "weakness_cycle": ["insight", "courage", "care", "focus"],
         "intents": [
             {
@@ -293,14 +294,14 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
                 "name": "낱장 폭풍",
                 "telegraph": "기록 낱장이 모두의 시야를 덮으려 해요.",
                 "target": "all",
-                "power": 1,
+                "power": 3,
             },
             {
                 "code": "paper_cut",
                 "name": "종이 모서리",
                 "telegraph": "빳빳한 모서리가 지친 대원을 스치려 해요.",
                 "target": "lowest",
-                "power": 1,
+                "power": 2,
             },
         ],
         "appear_caption": "흩어진 기록 낱장이 회오리처럼 일어났어요.",
@@ -311,7 +312,7 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
         "name": "헝클어진 관측기",
         "description": "렌즈와 줄자와 기록끈이 한 몸처럼 헝클어졌어요.",
         "elite": True,
-        "barrier": 88,
+        "barrier": 148,
         "weakness_cycle": ["insight", "care", "courage", "focus"],
         "intents": [
             {
@@ -319,14 +320,14 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
                 "name": "렌즈 눈부심",
                 "telegraph": "굴절된 빛이 모두의 눈앞에서 번쩍이려 해요.",
                 "target": "all",
-                "power": 1,
+                "power": 3,
             },
             {
                 "code": "tape_whip",
                 "name": "줄자 휘두르기",
                 "telegraph": "긴 줄자가 맨 앞 대원 쪽으로 풀려 나가요.",
                 "target": "front",
-                "power": 2,
+                "power": 3,
             },
         ],
         "appear_caption": "헝클어진 관측기가 삐걱대며 몸을 일으켰어요.",
@@ -372,6 +373,7 @@ _EFFECT_KEY_BY_KEL = {
     "sparkling": "prism_burst",
     "mosaic": "echo_wave",
 }
+_IMPACT_SHAKE_BY_POWER = {1: 2.2, 2: 3.0, 3: 3.8}
 
 for _tangle in TANGLE_CATALOG.values():
     for _intent in _tangle["intents"]:
@@ -384,8 +386,8 @@ for _tangle in TANGLE_CATALOG.values():
                 "vfx_family": _vfx_family,
                 "kel_fallback_family": kel_fallback_family(_kel),
                 "effect_key": (
-                    "paper_flurry"
-                    if _code == "paper_flurry"
+                    _code
+                    if _code in {"paper_flurry", "ink_mist"}
                     else _EFFECT_KEY_BY_KEL[_kel]
                 ),
                 "motion_profile": _motion_profile,
@@ -394,7 +396,7 @@ for _tangle in TANGLE_CATALOG.values():
                     _motion_profile,
                     archetype=_archetype,
                     facing="left",
-                    impact_shake_px=3.0 if int(_intent["power"]) == 2 else 2.2,
+                    impact_shake_px=_IMPACT_SHAKE_BY_POWER[int(_intent["power"])],
                 ),
             }
         )
@@ -425,8 +427,8 @@ def validate_tangle_catalog() -> list[str]:
             if not isinstance(tangle.get(key), str) or not tangle[key].strip():
                 errors.append(f"{prefix}.{key}: 비어 있지 않은 문장이 필요합니다")
         barrier = tangle.get("barrier")
-        if not isinstance(barrier, int) or not 20 <= barrier <= 100:
-            errors.append(f"{prefix}.barrier: 20~100 사이 정수가 필요합니다")
+        if not isinstance(barrier, int) or not 20 <= barrier <= 160:
+            errors.append(f"{prefix}.barrier: 20~160 사이 정수가 필요합니다")
         cycle = tangle.get("weakness_cycle")
         if (
             not isinstance(cycle, list)
@@ -443,10 +445,8 @@ def validate_tangle_catalog() -> list[str]:
             if intent.get("target") not in {"front", "lowest", "all"}:
                 errors.append(f"{where}.target: front|lowest|all 중 하나여야 합니다")
             power = intent.get("power")
-            max_power = 2 if tangle.get("elite") else 1
-            # 엉킴은 위력 1~2의 단순한 상대다. 큰 엉킴만 2를 쓸 수 있다.
-            if not isinstance(power, int) or not 1 <= power <= max_power:
-                errors.append(f"{where}.power: 1~{max_power} 사이 정수가 필요합니다")
+            if not isinstance(power, int) or not 1 <= power <= 3:
+                errors.append(f"{where}.power: 1~3 사이 정수가 필요합니다")
             for key in ("code", "name", "telegraph"):
                 if not isinstance(intent.get(key), str) or not intent[key].strip():
                     errors.append(f"{where}.{key}: 값이 필요합니다")
@@ -500,4 +500,5 @@ def validate_tangle_catalog() -> list[str]:
     ]
     if len(families) != 24 or len(set(families)) != 24:
         errors.append("tangles.intents: 24개 예고는 서로 다른 VFX family가 필요합니다")
+    errors.extend(validate_tangle_balance(TANGLE_CATALOG))
     return errors

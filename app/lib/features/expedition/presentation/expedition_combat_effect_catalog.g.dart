@@ -252,6 +252,25 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     runtimeHash:
         '1A966C03E49B55FF43F2BAFB60F468CEA4D928AE78C10B4968804D24FC3D062A',
   ),
+  'tangled-ledger.ink-mist': ExpeditionCombatEffectSpec(
+    family: 'tangled-ledger.ink-mist',
+    effectKeys: ['ink_mist'],
+    kel: 'mosaic',
+    directory: 'ink-mist-v1',
+    frameCount: 7,
+    frameWidth: 576,
+    frameHeight: 288,
+    frameDurationsMs: [170, 100, 65, 65, 80, 120, 160],
+    contactFrame: 4,
+    pivotX: 0.94,
+    pivotY: 0.58,
+    anchor: 'tangle_center',
+    productionReady: false,
+    sourceHash:
+        '5D6997FE0C57D5BD990916D444E1D65FB59FF25690AC0C0A089A927F51D6ECE0',
+    runtimeHash:
+        'A293932925E631EE67688FD03B263F29C6BD716D20FF3A709278557656E5D4D5',
+  ),
 };
 
 const Map<String, String> expeditionCombatFamilyByEffectKey = {
@@ -266,4 +285,5 @@ const Map<String, String> expeditionCombatFamilyByEffectKey = {
   'ledger_claw': 'guardian.ledger-claw',
   'enemy_wave': 'guardian.enemy-wave',
   'paper_flurry': 'tangled-ledger.paper-flurry',
+  'ink_mist': 'tangled-ledger.ink-mist',
 };

@@ -10,6 +10,13 @@ from __future__ import annotations
 import copy
 from typing import Any
 
+from app.content.expeditions.combat_balance import (
+    COMBAT_BALANCE_VERSION,
+    combat_hp_for_level,
+    combat_level_from_snapshot,
+    growth_index_for_party,
+    starting_focus_for_party,
+)
 from app.content.expeditions.combat_identity import (
     CORE_AFFINITIES as IDENTITY_AFFINITIES,
     CORE_AFFINITY_LABELS as IDENTITY_AFFINITY_LABELS,
@@ -88,17 +95,6 @@ def _member_affinity(profile: dict[str, Any]) -> str:
     return max(AFFINITIES, key=lambda key: (stats[key], -AFFINITIES.index(key)))
 
 
-def _snapshot_level(snapshot: dict[str, Any]) -> int:
-    if "level" in snapshot:
-        return max(1, min(30, int(snapshot["level"])))
-    # 신규 필드가 없는 저장 run은 당시 열려 있던 슬롯을 잃지 않도록 보수적으로
-    # 복원한다. stage도 없는 단위 테스트/초기 가이드 snapshot은 전 슬롯 호환이다.
-    stage = snapshot.get("stage")
-    if stage is None:
-        return 25
-    return {1: 1, 2: 3, 3: 9, 4: 16, 5: 25}.get(int(stage), 1)
-
-
 def _kel_matchup(
     kels: list[str],
     *,
@@ -131,7 +127,7 @@ def member_battle_kit(
     discipline = EMOTION_DISCIPLINES.get(form, EMOTION_DISCIPLINES["mosaic"])
     affinity = _member_affinity(profile)
     stats = _stats(profile)
-    level = _snapshot_level(snapshot)
+    level = combat_level_from_snapshot(snapshot)
     rarity = max(1, min(5, int(snapshot.get("rarity", 1))))
     tier = combat_tier(level)
     signature_scale = rarity_scale_bp(level, rarity)
@@ -386,6 +382,7 @@ def _resolve_waves(
             {
                 "code": code,
                 "name": tangle["name"],
+                "region_code": tangle["region_code"],
                 "elite": bool(tangle["elite"]),
                 "barrier": int(tangle["barrier"]),
                 "weakness_cycle": list(tangle["weakness_cycle"]),
@@ -402,17 +399,7 @@ def _resolve_waves(
 
 
 def _party_growth_scale_bp(profiles: list[dict[str, Any]]) -> tuple[int, int]:
-    owned_levels = [
-        _snapshot_level(profile.get("snapshot", {}))
-        for profile in profiles
-        if not bool(profile.get("is_guide"))
-    ]
-    if not owned_levels:
-        owned_levels = [1]
-    growth_index = round(
-        sum((level - 1) * 100 / 29 for level in owned_levels) / len(owned_levels)
-    )
-    growth_index = max(0, min(100, growth_index))
+    growth_index = growth_index_for_party(profiles)
     # Lv1~3에서는 계수 반올림으로 플레이어 위력이 아직 오르지 않을 수 있다.
     # 이 구간부터 장벽만 두꺼워지는 역성장을 막고, 이후 90% 구간에서 1.30배까지
     # 선형 보간한다.
@@ -436,6 +423,15 @@ def new_guardian_battle(
     element_kels = element_kel_map(kel_map_version)
     waves = _resolve_waves(encounter, kel_map_version=kel_map_version)
     growth_index, barrier_scale_bp = _party_growth_scale_bp(profiles)
+    max_focus = int(encounter.get("max_focus", 5))
+    configured_focus = int(encounter.get("starting_focus", 3))
+    starting_focus, starting_focus_level_bonus, average_party_level = (
+        starting_focus_for_party(
+            profiles,
+            configured_focus=configured_focus,
+            max_focus=max_focus,
+        )
+    )
     for wave in waves:
         wave["base_barrier"] = int(wave["barrier"])
         wave["barrier"] = scaled_power(int(wave["barrier"]), barrier_scale_bp)
@@ -455,13 +451,17 @@ def new_guardian_battle(
         opening_caption = "돌비늘 장부지기가 길을 막았어요."
     return {
         "version": 2,
+        "balance_version": COMBAT_BALANCE_VERSION,
         "kel_map_version": kel_map_version,
         "event_code": event_code,
         "status": "active",
         "round": 1,
         "max_rounds": int(encounter.get("max_rounds", 6)),
-        "focus": int(encounter.get("starting_focus", 3)),
-        "max_focus": int(encounter.get("max_focus", 5)),
+        "focus": starting_focus,
+        "max_focus": max_focus,
+        "configured_starting_focus": configured_focus,
+        "starting_focus_level_bonus": starting_focus_level_bonus,
+        "average_party_level": average_party_level,
         "enemy_kind": "tangle" if waves else "guardian",
         "waves": waves,
         "wave_index": 0,
@@ -478,8 +478,12 @@ def new_guardian_battle(
         "party": [
             {
                 "member_id": int(profile["id"]),
-                "hp": 3,
-                "max_hp": 3,
+                "hp": combat_hp_for_level(
+                    combat_level_from_snapshot(profile.get("snapshot", {}))
+                ),
+                "max_hp": combat_hp_for_level(
+                    combat_level_from_snapshot(profile.get("snapshot", {}))
+                ),
                 "guard": 0,
                 "cooldown_until_round": {},
                 "ready_round": {},

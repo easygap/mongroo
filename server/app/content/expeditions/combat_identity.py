@@ -255,7 +255,7 @@ SPECIES_SKILLS: dict[str, dict[str, Any]] = {
         "grave_gravity",
         "묘지 중력장",
         "검은 중력으로 장벽을 붙잡고 체력이 한 칸이면 위력이 크게 올라요.",
-        power=18,
+        power=20,
         focus_cost=2,
         cooldown_turns=1,
         effect="last_stand",
@@ -297,7 +297,9 @@ SPECIES_SKILLS: dict[str, dict[str, Any]] = {
         "prism_meteor",
         "프리즘 메테오",
         "마력 운석이 현재 드러난 약점의 속성으로 굴절해 떨어져요.",
-        power=15,
+        # 프리즘 약점은 항상 발동하는 대신 1.30배다. 일반 약점기(1.50배)의
+        # 실제 기대 피해와 맞도록 낮은 배율을 기본 계수에서 보정한다.
+        power=20,
         focus_cost=3,
         cooldown_turns=1,
         effect="prism_shift",
@@ -413,7 +415,8 @@ SPECIES_SECONDARY_SKILLS: dict[str, dict[str, Any]] = {
         "undying_chain",
         "불사의 사슬",
         "쇠락의 사슬이 끊어졌다 되감기며 마지막 체력에서 더 강해져요.",
-        power=16,
+        # 쇠락·중력 결은 현재 지역 약점 표에 적어 중립 운용의 하한을 보장한다.
+        power=18,
         focus_cost=3,
         cooldown_turns=3,
         effect="last_stand",
@@ -455,7 +458,7 @@ SPECIES_SECONDARY_SKILLS: dict[str, dict[str, Any]] = {
         "timefold_comet",
         "시공 접힌 혜성",
         "접힌 시공에서 두 번째 혜성을 불러 현재 약점으로 굴절시켜요.",
-        power=13,
+        power=18,
         focus_cost=4,
         cooldown_turns=3,
         effect="prism_shift",
