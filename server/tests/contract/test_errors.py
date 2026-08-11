@@ -1,3 +1,8 @@
+from pathlib import Path
+
+from alembic.config import Config
+from alembic.script import ScriptDirectory
+
 from app.api.routers.health import EXPECTED_SCHEMA_REVISION
 from app.protect_sensitive_data import PROTECTION_SCHEMA_REVISION
 from tests.conftest import auth_headers, signup
@@ -71,5 +76,12 @@ async def test_health_ready_shape(client):
 
 
 def test_health_tracks_database_head_separately_from_protection_contract():
-    assert EXPECTED_SCHEMA_REVISION == "0030_ai_job_ownership"
+    server_dir = Path(__file__).resolve().parents[2]
+    config = Config(str(server_dir / "alembic.ini"))
+    config.set_main_option("script_location", str(server_dir / "alembic"))
+
+    assert (
+        EXPECTED_SCHEMA_REVISION
+        == ScriptDirectory.from_config(config).get_current_head()
+    )
     assert PROTECTION_SCHEMA_REVISION == "0029_real_data_protection"

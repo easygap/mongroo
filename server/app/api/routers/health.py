@@ -14,7 +14,7 @@ from app.protect_sensitive_data import (
 )
 
 router = APIRouter(tags=["health"])
-EXPECTED_SCHEMA_REVISION = "0030_ai_job_ownership"
+EXPECTED_SCHEMA_REVISION = "0031_stage_progress"
 
 
 @router.get("/health/live")
