@@ -820,6 +820,7 @@ class _ExpeditionSequentialCommandDockState
                           (item) => item.memberId == member.memberId,
                         ),
                         targeted: targeted.contains(member.memberId),
+                        targetKind: battle.enemy.intent.target,
                         onTap: locked
                             ? null
                             : () => _selectMember(member.memberId),
@@ -943,7 +944,11 @@ class _IntentLine extends StatelessWidget {
     );
     final intentSummary = Row(
       children: [
-        Icon(Icons.gps_fixed_rounded, size: 17, color: scheme.error),
+        Icon(
+          expeditionIntentTargetIcon(intent.target),
+          size: 17,
+          color: scheme.error,
+        ),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
@@ -1099,6 +1104,7 @@ class _DockMemberChip extends StatelessWidget {
     required this.acted,
     required this.awaiting,
     required this.targeted,
+    required this.targetKind,
     required this.onTap,
   });
 
@@ -1108,6 +1114,7 @@ class _DockMemberChip extends StatelessWidget {
   final bool acted;
   final bool awaiting;
   final bool targeted;
+  final String targetKind;
   final VoidCallback? onTap;
 
   @override
@@ -1186,7 +1193,7 @@ class _DockMemberChip extends StatelessWidget {
                       ),
                       if (targeted)
                         Icon(
-                          Icons.gps_fixed_rounded,
+                          expeditionIntentTargetIcon(targetKind),
                           size: 13,
                           color: scheme.error,
                         )

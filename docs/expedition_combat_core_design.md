@@ -1009,7 +1009,7 @@ K4는 다음 identity cell을 **중복 없이 전수 계산**한다.
 | **K5** | C 완료 | 6아키타입·6구간 phase, 서버 시간·방향·이동·충격 snapshot | 앱 연출 해석기 | 6동선·미지 `cast` fallback 통과, pose A 잔여 |
 | **K6** | C 완료 / A 진행 | 3단 resolver, manifest v2→Dart 생성, 수동 상수 제거 | 아트 승격 파이프라인 | 번들·alpha·contact 통과 |
 | **K7** | C 완료 | 적 의도 24종 code key·family·결·motion 선언 | 카탈로그 + 앱 | `COMBAT-VFX-04` 통과 |
-| **K8** | 진행 | family 68종 점진 제작 | `production_ready` 승격 | 5 family 후보, 전체 잔여 |
+| **K8** | 진행 | family 68종 점진 제작 | `production_ready` 승격 | 6 family 후보, 전체 잔여 |
 
 K1~K4는 판정, K5~K7은 연출 배선, K8은 제작이다. **K5~K7은 아트가 하나도
 없어도 완료할 수 있다.** 배선이 먼저 끝나야 K8이 코드 수정 없이 굴러간다.
@@ -1038,7 +1038,7 @@ K1~K4는 판정, K5~K7은 연출 배선, K8은 제작이다. **K5~K7은 아트�
   magical 고유 I/II raw power를 `20/18`, 지역 약점이 적은 zombie 고유 I/II를
   `20/18`로 보정했다. 품종 승률 격차는 7.29%p에서 4.27%p로 줄었다.
 
-### K5~K7 완료 및 K8 두 번째 적 의도 구현 증거 — 2026-08-11
+### K5~K7 완료 및 K8 세 번째 적 의도 구현 증거 — 2026-08-11
 
 - 서버 `combat_motion.py`가 6아키타입의 일반기·결정기 시간 밴드를 import 시점에
   검증하고, action·event가 같은 motion payload를 보존한다.
@@ -1053,8 +1053,15 @@ K1~K4는 판정, K5~K7은 연출 배선, K8은 제작이다. **K5~K7은 아트�
   aggregate SHA-256, light/dark QA, animated WebP를 보존한다.
 - `ink-mist-v1`도 같은 증거 묶음을 가지며 7프레임 합계 760ms와 서버 `channel`
   모션이 일치한다. 접촉 프레임은 4이고 결 블러만 `srcIn`으로 혼합한다.
+- `petal-dart-v1`은 압화 원본·알파·런타임 각 7장과 720ms `draw` 모션을 연결한다.
+  `lowest_actor` 접촉 프레임은 4이며, 실제 최저 체력 대원만 받는 서버 이벤트를
+  회귀 테스트한다. 이로써 전용 적 공격 후보가 `front/all/lowest`를 각각 한 번 이상
+  포함한다.
+- 전투 무대와 두 지휘 UI는 대상 계약을 색만으로 구분하지 않는다. 앞열은 겹화살표,
+  전체는 동심원, 최저 체력은 조준점이며 저감 모션에서도 정지 형태와 대상 문구를
+  보존한다.
 - `COMBAT-MOTION-02/03`, `COMBAT-VFX-01/02/04` 회귀 테스트를 추가했다.
-- 전체 회귀는 서버 447건·Flutter 290건, Flutter 정적 분석, 전투 에셋 5종
+- 전체 회귀는 서버 448건·Flutter 291건, Flutter 정적 분석, 전투 에셋 6종
   report-only 검증을 통과했다.
 
 ### 중단 기준

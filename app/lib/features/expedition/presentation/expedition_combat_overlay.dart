@@ -452,6 +452,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                       child: _GuardianIntentLayer(
                         ambient: _ambientController,
                         reduceMotion: reduceMotion,
+                        target: battle?.enemy.intent.target ?? 'front',
                       ),
                     ),
                   if (cue != null)
@@ -999,10 +1000,12 @@ class _GuardianIntentLayer extends StatelessWidget {
   const _GuardianIntentLayer({
     required this.ambient,
     required this.reduceMotion,
+    required this.target,
   });
 
   final Animation<double> ambient;
   final bool reduceMotion;
+  final String target;
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
@@ -1012,6 +1015,7 @@ class _GuardianIntentLayer extends StatelessWidget {
             painter: ExpeditionGuardianIntentPainter(
               phase: ambient.value,
               reduceMotion: reduceMotion,
+              target: target,
             ),
           ),
         ),

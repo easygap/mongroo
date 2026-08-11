@@ -435,6 +435,8 @@ family 수를 맞추기 위해 같은 프레임을 복사하고 색만 바꾸지
   금지한다.
 - reduced motion은 마지막 형태를 120ms 이하로 fade하고 경로·결과 문구를 즉시
   표시한다. 의미 있는 정보는 particle 궤적에만 넣지 않는다.
+- 적 대상 `front|all|lowest`는 색과 무관하게 각각 겹화살표·동심원·조준점 형태와
+  대상 문구를 함께 쓴다. reduced motion에서는 맥동만 멈추고 형태를 삭제하지 않는다.
 - 공격 본체 alpha bbox와 target hitbox가 처음 겹치는 프레임이 서버 결과 적용·SFX·
   햅틱·피해 숫자의 단일 `contact`다. 먼저 HP가 줄거나 뒤늦게 맞는 소리가 나면 실패다.
 
@@ -458,6 +460,18 @@ light/dark QA는 `concepts/adventure-combat-vfx-v2/`에 있다. 같은 절차로
    낸다. 단순 초록 곡선, blur trail, particle spray는 덩굴 본체를 대신할 수 없다.
 5. 390×844 실제 전장에서 1×·2×·짧은 연출·reduced motion 영상을 승인한 뒤에만
    나머지 61 공격 family를 시작한다.
+
+#### 7.3.2 적 대상 계약 세로 슬라이스
+
+2026-08-11 기준 적 전용 후보는 `paper-flurry-v1(front)`, `ink-mist-v1(all)`,
+`petal-dart-v1(lowest)` 세 가지다. 셋은 동일한 576×288 런타임 캔버스와
+manifest contact 규칙을 쓰되, 재질·실루엣·대상 형태를 공유하지 않는다.
+
+`petal-dart-v1`은 압화 포즈별 Imagegen 원본 7장, 알파 마스터 7장, 런타임 7장을
+보존한다. `tangle_center → lowest_actor`로 이동하고 04번 프레임의 작은 압화 별에서만
+접촉한다. 원화 RGB 위에 `ember` 색 전체를 덮지 않고, 낮은 불투명도의 `srcIn` 블러
+레이어만 더한다. 세 대상 유형 중 하나라도 실제 서버 대상과 UI 형태가 다르면 후보
+전체를 승격하지 않는다.
 
 ### 7.4 이펙트 모양 언어
 

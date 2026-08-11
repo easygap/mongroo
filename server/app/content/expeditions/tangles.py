@@ -387,7 +387,7 @@ for _tangle in TANGLE_CATALOG.values():
                 "kel_fallback_family": kel_fallback_family(_kel),
                 "effect_key": (
                     _code
-                    if _code in {"paper_flurry", "ink_mist"}
+                    if _code in {"paper_flurry", "ink_mist", "petal_dart"}
                     else _EFFECT_KEY_BY_KEL[_kel]
                 ),
                 "motion_profile": _motion_profile,
@@ -492,7 +492,9 @@ def validate_tangle_catalog() -> list[str]:
         for intent in tangle["intents"]
     }
     if intent_codes != set(TANGLE_INTENT_PRESENTATION):
-        errors.append("tangles.intents: 24개 표현 카탈로그와 예고 코드가 일치해야 합니다")
+        errors.append(
+            "tangles.intents: 24개 표현 카탈로그와 예고 코드가 일치해야 합니다"
+        )
     families = [
         str(intent["vfx_family"])
         for tangle in TANGLE_CATALOG.values()

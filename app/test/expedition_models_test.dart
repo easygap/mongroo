@@ -11,6 +11,7 @@ import 'package:mongroo/features/expedition/presentation/expedition_action_cue.d
 import 'package:mongroo/features/expedition/presentation/expedition_battle_dock.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_overlay.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_effect_catalog.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_combat_effects.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_sprites.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_timeline.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_scene.dart';
@@ -675,6 +676,7 @@ void main() {
       'enemy_wave',
       'paper_flurry',
       'ink_mist',
+      'petal_dart',
     ];
 
     for (final effectKey in effectKeys) {
@@ -700,6 +702,8 @@ void main() {
     expect(expeditionCombatEffectFrameForProgress('paper_flurry', .5), 4);
     expect(expeditionCombatEffectFrameCountFor('ink_mist'), 7);
     expect(expeditionCombatEffectFrameForProgress('ink_mist', .6), 4);
+    expect(expeditionCombatEffectFrameCountFor('petal_dart'), 7);
+    expect(expeditionCombatEffectFrameForProgress('petal_dart', .6), 4);
   });
 
   test('서버가 지정한 여섯 motion archetype은 서로 다른 동선을 만든다', () {
@@ -772,6 +776,14 @@ void main() {
     );
     expect(
       resolveExpeditionCombatEffect(
+        vfxFamily: 'drifting-pressings.petal-dart',
+        kelFallbackFamily: 'kel.ember',
+        legacyEffectKey: 'petal_dart',
+      ).directory,
+      'petal-dart-v1',
+    );
+    expect(
+      resolveExpeditionCombatEffect(
         vfxFamily: 'not-yet-produced',
         kelFallbackFamily: 'kel.rainy',
         legacyEffectKey: 'ember_arc',
@@ -789,6 +801,27 @@ void main() {
       resolveExpeditionCombatEffect(vfxFamily: 'not-yet-produced').family,
       'fallback.echo-wave',
     );
+  });
+
+  test('앞열·전체·최저 체력 예고는 색 없이도 서로 다른 형태를 쓴다', () {
+    final icons = {
+      expeditionIntentTargetIcon('front'),
+      expeditionIntentTargetIcon('all'),
+      expeditionIntentTargetIcon('lowest'),
+    };
+    expect(icons, hasLength(3));
+
+    const front = ExpeditionGuardianIntentPainter(
+      phase: .5,
+      reduceMotion: true,
+      target: 'front',
+    );
+    const lowest = ExpeditionGuardianIntentPainter(
+      phase: .5,
+      reduceMotion: true,
+      target: 'lowest',
+    );
+    expect(lowest.shouldRepaint(front), isTrue);
   });
 
   test('장부 발톱 적 이벤트는 전용 contact sprite와 같은 판정 시점을 쓴다', () {

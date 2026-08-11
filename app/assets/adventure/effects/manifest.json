@@ -212,6 +212,21 @@
       "production_ready": false,
       "source_hash": "5D6997FE0C57D5BD990916D444E1D65FB59FF25690AC0C0A089A927F51D6ECE0",
       "runtime_hash": "A293932925E631EE67688FD03B263F29C6BD716D20FF3A709278557656E5D4D5"
+    },
+    {
+      "family": "drifting-pressings.petal-dart",
+      "effect_keys": ["petal_dart"],
+      "kel": "ember",
+      "directory": "petal-dart-v1",
+      "frame_count": 7,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [140, 100, 75, 75, 70, 100, 160],
+      "contact_frame": 4,
+      "pivot": [0.94, 0.58],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "07043847B4917BEBE87F0975D6D408E2E9890C0F2D46620298BB50E381602755",
+      "runtime_hash": "A9B22813EE8F2508B4E87CAA0DE8ED4B4A9CDFB3B874F48B41EB19BDD3BC2BC7"
     }
   ]
 }

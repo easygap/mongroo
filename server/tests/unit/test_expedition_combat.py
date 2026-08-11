@@ -1175,22 +1175,36 @@ def test_six_motion_archetypes_expose_complete_phase_contracts():
 
 def test_all_twenty_four_tangle_intents_have_unique_visual_contracts():
     intents = [
-        intent
-        for tangle in TANGLE_CATALOG.values()
-        for intent in tangle["intents"]
+        intent for tangle in TANGLE_CATALOG.values() for intent in tangle["intents"]
     ]
     assert validate_tangle_catalog() == []
     assert len(intents) == len(TANGLE_INTENT_PRESENTATION) == 24
     assert len({intent["vfx_family"] for intent in intents}) == 24
+    exact_intents = [
+        intent for intent in intents if intent["effect_key"] == intent["code"]
+    ]
+    assert {intent["code"] for intent in exact_intents} == {
+        "paper_flurry",
+        "ink_mist",
+        "petal_dart",
+    }
+    assert {intent["target"] for intent in exact_intents} == {
+        "front",
+        "all",
+        "lowest",
+    }
     for intent in intents:
         assert intent["motion"]["archetype"] == intent["archetype"]
         assert len(intent["motion"]["phases"]) == 6
         assert intent["kel_fallback_family"] == f"kel.{intent['kel']}"
-        assert intent["motion"]["impact_shake_px"] == {
-            1: 2.2,
-            2: 3.0,
-            3: 3.8,
-        }[intent["power"]]
+        assert (
+            intent["motion"]["impact_shake_px"]
+            == {
+                1: 2.2,
+                2: 3.0,
+                3: 3.8,
+            }[intent["power"]]
+        )
 
 
 def test_round_events_snapshot_motion_and_vfx_without_name_branching(profiles):
@@ -1246,3 +1260,47 @@ def test_round_events_snapshot_motion_and_vfx_without_name_branching(profiles):
     assert ink_event["effect_key"] == "ink_mist"
     assert ink_event["vfx_family"] == "tangled-ledger.ink-mist"
     assert ink_event["motion"]["archetype"] == "channel"
+
+
+def test_petal_dart_targets_the_lowest_member_with_its_exact_effect(profiles):
+    encounter = _encounter(
+        waves=["drifting_pressings"],
+        starting_focus=5,
+        enemy_max_guard=500,
+    )
+    battle = new_guardian_battle("petal-dart-stage", encounter, profiles)
+    battle["party"][1]["hp"] = 1
+
+    first_round = submit_guardian_action(
+        battle,
+        {"member_id": 1, "action": "guard"},
+        encounter,
+        profiles,
+    )
+    first_round = submit_guardian_action(
+        first_round,
+        {"member_id": 2, "action": "guard"},
+        encounter,
+        profiles,
+    )
+    second_round = submit_guardian_action(
+        first_round,
+        {"member_id": 1, "action": "guard"},
+        encounter,
+        profiles,
+    )
+    second_round = submit_guardian_action(
+        second_round,
+        {"member_id": 2, "action": "guard"},
+        encounter,
+        profiles,
+    )
+    event = next(
+        item for item in second_round["last_exchange"] if item["type"] == "enemy_action"
+    )
+
+    assert event["effect_key"] == "petal_dart"
+    assert event["vfx_family"] == "drifting-pressings.petal-dart"
+    assert event["motion"]["archetype"] == "draw"
+    assert event["motion"]["total_ms"] == 720
+    assert [target["member_id"] for target in event["targets"]] == [2]

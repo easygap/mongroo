@@ -562,7 +562,11 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
               child: Row(
                 children: [
-                  Icon(Icons.gps_fixed_rounded, size: 17, color: scheme.error),
+                  Icon(
+                    expeditionIntentTargetIcon(battle.enemy.intent.target),
+                    size: 17,
+                    color: scheme.error,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -600,6 +604,7 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
                       order: index + 1,
                       selected: _order[index] == _selectedMemberId,
                       targeted: targeted.contains(_order[index]),
+                      targetKind: battle.enemy.intent.target,
                       action: _actionFor(
                         _member(_order[index]),
                         _commands[_order[index]] ?? 'attack',
@@ -805,6 +810,7 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
               order: index + 1,
               selected: _order[index] == _selectedMemberId,
               targeted: targeted.contains(_order[index]),
+              targetKind: _battle.enemy.intent.target,
               action: _actionFor(
                 _member(_order[index]),
                 _commands[_order[index]] ?? 'attack',
@@ -935,6 +941,7 @@ class _CompactBattleMemberCard extends StatelessWidget {
     required this.order,
     required this.selected,
     required this.targeted,
+    required this.targetKind,
     required this.action,
     required this.actionCode,
     required this.canMoveUp,
@@ -949,6 +956,7 @@ class _CompactBattleMemberCard extends StatelessWidget {
   final int order;
   final bool selected;
   final bool targeted;
+  final String targetKind;
   final ExpeditionBattleAction action;
   final String actionCode;
   final bool canMoveUp;
@@ -1019,7 +1027,7 @@ class _CompactBattleMemberCard extends StatelessWidget {
                           ),
                           if (targeted)
                             Icon(
-                              Icons.gps_fixed_rounded,
+                              expeditionIntentTargetIcon(targetKind),
                               size: 14,
                               color: scheme.error,
                             ),
@@ -1436,6 +1444,7 @@ class _BattleMemberOrderCard extends StatelessWidget {
     required this.order,
     required this.selected,
     required this.targeted,
+    required this.targetKind,
     required this.action,
     required this.actionCode,
     required this.canMoveUp,
@@ -1449,6 +1458,7 @@ class _BattleMemberOrderCard extends StatelessWidget {
   final int order;
   final bool selected;
   final bool targeted;
+  final String targetKind;
   final ExpeditionBattleAction action;
   final String actionCode;
   final bool canMoveUp;
@@ -1514,7 +1524,7 @@ class _BattleMemberOrderCard extends StatelessWidget {
                           if (targeted) ...[
                             const SizedBox(width: 4),
                             Icon(
-                              Icons.gps_fixed_rounded,
+                              expeditionIntentTargetIcon(targetKind),
                               size: 16,
                               color: scheme.error,
                             ),

@@ -27,6 +27,7 @@ VFX_V2_ROOT = Path("design-system/concepts/adventure-combat-vfx-v2")
 VFX_V3_ROOT = Path("design-system/concepts/adventure-combat-vfx-v3")
 VFX_V4_ROOT = Path("design-system/concepts/adventure-combat-vfx-v4")
 VFX_V5_ROOT = Path("design-system/concepts/adventure-combat-vfx-v5")
+VFX_V6_ROOT = Path("design-system/concepts/adventure-combat-vfx-v6")
 RUNTIME_ROOT = Path("app/assets/adventure/effects")
 RUNTIME_SIZE = (576, 288)
 QA_CELL_SIZE = (288, 144)
@@ -279,6 +280,47 @@ EFFECT_SPECS = {
         fit_full_source=True,
         validate_magenta_residue=False,
         frame_center_x=(440, 350, 330, 255, 170, 180, 255),
+    ),
+    "petal_dart": EffectSpec(
+        effect_key="petal_dart",
+        runtime_directory="petal-dart-v1",
+        source_directory="petal-dart",
+        concept_root=VFX_V6_ROOT,
+        frame_sources=(
+            "pose-00-anticipation.png",
+            "pose-01-release.png",
+            "pose-02-travel.png",
+            "pose-03-precontact.png",
+            "pose-04-contact.png",
+            "pose-05-reaction.png",
+            "pose-06-recovery.png",
+        ),
+        frame_phases=(
+            "anticipation",
+            "release",
+            "travel",
+            "travel",
+            "contact",
+            "reaction",
+            "recovery",
+        ),
+        # draw 모션의 720ms를 프레임 합과 정확히 맞춘다.
+        frame_durations_ms=(140, 100, 75, 75, 70, 100, 160),
+        origin="tangle_center",
+        target="lowest_actor",
+        release_frame=1,
+        travel_frames=(2, 3),
+        contact_frames=(4,),
+        reaction_frame=5,
+        recovery_frames=(6,),
+        origin_edge=None,
+        origin_tolerance_px=0,
+        min_coverage=0.004,
+        max_coverage=0.40,
+        preprocessed_alpha=True,
+        fit_full_source=True,
+        validate_magenta_residue=False,
+        frame_center_x=(440, 400, 335, 260, 165, 180, 255),
     ),
 }
 
@@ -674,7 +716,9 @@ def main() -> int:
                 )
                 manifest = {
                     "version": (
-                        5
+                        6
+                        if concept_root == VFX_V6_ROOT
+                        else 5
                         if concept_root == VFX_V5_ROOT
                         else 4
                         if concept_root == VFX_V4_ROOT

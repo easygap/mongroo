@@ -271,6 +271,25 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     runtimeHash:
         'A293932925E631EE67688FD03B263F29C6BD716D20FF3A709278557656E5D4D5',
   ),
+  'drifting-pressings.petal-dart': ExpeditionCombatEffectSpec(
+    family: 'drifting-pressings.petal-dart',
+    effectKeys: ['petal_dart'],
+    kel: 'ember',
+    directory: 'petal-dart-v1',
+    frameCount: 7,
+    frameWidth: 576,
+    frameHeight: 288,
+    frameDurationsMs: [140, 100, 75, 75, 70, 100, 160],
+    contactFrame: 4,
+    pivotX: 0.94,
+    pivotY: 0.58,
+    anchor: 'tangle_center',
+    productionReady: false,
+    sourceHash:
+        '07043847B4917BEBE87F0975D6D408E2E9890C0F2D46620298BB50E381602755',
+    runtimeHash:
+        'A9B22813EE8F2508B4E87CAA0DE8ED4B4A9CDFB3B874F48B41EB19BDD3BC2BC7',
+  ),
 };
 
 const Map<String, String> expeditionCombatFamilyByEffectKey = {
@@ -286,4 +305,5 @@ const Map<String, String> expeditionCombatFamilyByEffectKey = {
   'enemy_wave': 'guardian.enemy-wave',
   'paper_flurry': 'tangled-ledger.paper-flurry',
   'ink_mist': 'tangled-ledger.ink-mist',
+  'petal_dart': 'drifting-pressings.petal-dart',
 };

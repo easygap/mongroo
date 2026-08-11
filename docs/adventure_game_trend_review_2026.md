@@ -1,6 +1,6 @@
 # 2026 게임 트렌드 기반 모험·전투 구성 검증
 
-최종 조사: 2026-08-10 KST
+최종 조사: 2026-08-11 KST
 상태: 제품 방향·세로 슬라이스·운영 우선순위의 근거 문서
 적용 범위: 기본 모험, 수호전, 캐릭터 성장, 스킬 UI, 전투 에셋, 탐험 콘텐츠 운영
 상위 불변식: 마음 일기 중심, 감정 비우대, 무손실, 무확률 핵심 성장, 비FOMO
@@ -30,7 +30,7 @@
 
 ## 1. 조사 방법과 근거 등급
 
-2026-08-10에 공개 접근할 수 있고 게시 주체와 날짜를 확인할 수 있는 자료를 사용했다.
+2026-08-11에 공개 접근할 수 있고 게시 주체와 날짜를 확인할 수 있는 자료를 사용했다.
 시장 전체 자료는 공개 시차가 있으므로 2026년 7월에 공개된 H1 지표와 5월 월간 순위가
 가장 최신인 항목이 있다. 이를 8월 10일 실시간 매출 순위라고 표현하지 않는다. 게임 사례는
 7월 공식 업데이트와 8월 4일 출시 자료까지 확인했다.
@@ -113,6 +113,22 @@
 - [Apple Design Awards 2026](https://www.apple.com/uk/newsroom/2026/06/apple-reveals-winners-of-the-2026-apple-design-awards/)
 - [Apple Developer — Games](https://developer.apple.com/games/get-started/)
 - [Apple Human Interface Guidelines — Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility/)
+
+### 3.4 8월 11일 전투 연출 재검증
+
+| 최신 확인 내용 | 설계에 반영한 기준 | 이번 구현 |
+|---|---|---|
+| Arknights: Endfield는 공격·스킬 모션, 적 피격 반응, 적 공격 준비 예고를 각각 개선했고 2026-07-11 업데이트에서는 스킬 타기팅·잠금·보조 선택 우선순위를 분리했다. | 공격 원화의 화려함과 별개로 `누가 맞는가`, `언제 닿는가`, `맞은 뒤 무엇이 변하는가`를 독립 출시 gate로 둔다. | 세 번째 전용 적 공격을 `lowest` 계약으로 만들고 실제 최저 체력 대원 이벤트까지 회귀 테스트한다. |
+| Riot의 VFX 가독성 원칙은 투사체가 정지 화면에서도 진행 방향을 보여야 하고, 효과 크기는 실제 전술 중요도와 맞아야 하며, 불필요한 시각 소음을 줄여야 한다고 정리한다. | 단일 대상 위력 1 공격은 화면을 덮는 폭발 대신 방향성이 강한 작은 본체와 제한된 접촉 반응을 쓴다. | `꽃잎 살촉`을 왼쪽 삼각형 실루엣, 작은 접촉 별, 제한된 꽃잎 파편으로 제작한다. |
+| Apple 접근성 선언은 핵심 정보를 색 외의 모양·문자로도 구분하고, Reduced Motion에서도 의미 있는 상태 변화는 제거하지 말고 정지 강조·fade 등으로 보존하도록 요구한다. | `front/all/lowest`는 색을 공유해도 각각 `겹화살표/동심원/조준점` 형태와 텍스트를 함께 쓴다. 저감 모션은 맥동만 멈추고 형태와 접촉 프레임을 남긴다. | 전투 무대 painter와 두 지휘 UI가 같은 target 형태 함수를 사용하고 VoiceOver용 대상 문구를 유지한다. |
+
+근거:
+
+- [Arknights: Endfield DEV Comm//02](https://endfield.gryphline.com/en-us/news/1340)
+- [Arknights: Endfield Homecoming DEV Comm](https://endfield.gryphline.com/en-us/news/7017)
+- [Riot Games — Clarity in League](https://www.leagueoflegends.com/en-us/news/dev/clarity-in-league/)
+- [Apple — Accessibility declarations](https://developer.apple.com/documentation/appstoreconnectapi/configuring-accessibility-declarations)
+- [Apple — Reduced Motion evaluation criteria](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/reduced-motion-evaluation-criteria)
 
 ## 4. 몽그루의 2026 목표 구성
 
