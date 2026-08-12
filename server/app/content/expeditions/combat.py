@@ -62,6 +62,18 @@ SPECIES_SECONDARY_SKILLS = IDENTITY_SPECIES_SECONDARY_SKILLS
 FORM_COMBAT_SKILLS = IDENTITY_FORM_COMBAT_SKILLS
 FIELD_NOTE_SKILL = IDENTITY_FIELD_NOTE_SKILL
 
+PRISM_SHIFT_EFFECTS = frozenset({"prism_shift", "runway_reversal"})
+SIGNATURE_RUNTIME_EFFECTS = frozenset(
+    {
+        "patina_parry",
+        "golden_seam",
+        "softpaw_rush",
+        "den_guardian_roar",
+        "patchwork_relay",
+        "runway_reversal",
+    }
+)
+
 
 class CombatRuleError(ValueError):
     """클라이언트가 복구 가능한 전투 명령 오류."""
@@ -163,11 +175,11 @@ def member_battle_kit(
         skill = dict(definition)
         skill_affinity = (
             current_weakness
-            if skill["effect"] == "prism_shift" and current_weakness in AFFINITIES
+            if skill["effect"] in PRISM_SHIFT_EFFECTS and current_weakness in AFFINITIES
             else affinity
         )
         element = str(skill["element"])
-        prism_shifted = skill["effect"] == "prism_shift" and weak_kel is not None
+        prism_shifted = skill["effect"] in PRISM_SHIFT_EFFECTS and weak_kel is not None
         skill_kel = str(weak_kel) if prism_shifted else element_kels[element]
         kels = [skill_kel]
         elements = [element]
@@ -280,7 +292,11 @@ def member_battle_kit(
             "emotion_vfx_primary": emotion_palette["primary"],
             "emotion_vfx_secondary": emotion_palette["secondary"],
             "damage_type_label": DAMAGE_TYPE_LABELS[skill["damage_type"]],
-            "effect_key": ELEMENT_RUNTIME_EFFECTS[element],
+            "effect_key": (
+                str(skill["effect"])
+                if skill["effect"] in SIGNATURE_RUNTIME_EFFECTS
+                else ELEMENT_RUNTIME_EFFECTS[element]
+            ),
             "kel_fallback_family": kel_fallback_family(skill_kel),
             "motion": combat_motion(
                 str(skill["motion_profile"]),
@@ -330,7 +346,7 @@ def member_battle_kit(
         scaled_power(basic_raw_power, basic_scale), TIER_POWER_BP[tier]
     )
     return {
-        "version": 7,
+        "version": 8,
         "kel_map_version": int(kel_map_version),
         "level": level,
         "rarity": rarity,
@@ -1174,6 +1190,57 @@ def _apply_member_command(
             pending["enemy_vulnerability_bp"] = max(
                 int(pending.get("enemy_vulnerability_bp", 10_000)),
                 int(effect_values.get("enemy_vulnerability_bp", 10_000)),
+            )
+        elif effect == "patina_parry":
+            member_state["guard"] = int(member_state["guard"]) + int(
+                effect_values.get("self_guard", 0)
+            )
+            pending["intent_power_delta"] = int(
+                pending.get("intent_power_delta", 0)
+            ) + int(effect_values.get("intent_power_delta", 0))
+        elif effect == "golden_seam":
+            living = _living_party(state)
+            if living:
+                target = min(
+                    living, key=lambda item: (int(item["hp"]), item["member_id"])
+                )
+                target["hp"] = min(
+                    int(target["max_hp"]),
+                    int(target["hp"]) + int(effect_values.get("heal_lowest", 0)),
+                )
+                for ally in living:
+                    ally["guard"] = int(ally["guard"]) + int(
+                        effect_values.get("party_guard", 0)
+                    )
+            focus = min(max_focus, focus + int(effect_values.get("focus_refund", 0)))
+        elif effect == "softpaw_rush":
+            pending["enemy_vulnerability_bp"] = max(
+                int(pending.get("enemy_vulnerability_bp", 10_000)),
+                int(effect_values.get("enemy_vulnerability_bp", 10_000)),
+            )
+            member_state["guard"] = int(member_state["guard"]) + int(
+                effect_values.get("self_guard", 0)
+            )
+        elif effect == "den_guardian_roar":
+            for target in _living_party(state):
+                target["guard"] = int(target["guard"]) + int(
+                    effect_values.get("party_guard", 0)
+                )
+            pending["party_power_bp"] = max(
+                int(pending.get("party_power_bp", 10_000)),
+                int(effect_values.get("party_power_bp", 10_000)),
+            )
+            focus = min(max_focus, focus + int(effect_values.get("focus_refund", 0)))
+        elif effect == "patchwork_relay":
+            pending["party_power_bp"] = max(
+                int(pending.get("party_power_bp", 10_000)),
+                int(effect_values.get("party_power_bp", 10_000)),
+            )
+            focus = min(max_focus, focus + int(effect_values.get("focus_refund", 0)))
+        elif effect == "runway_reversal":
+            pending["party_power_bp"] = max(
+                int(pending.get("party_power_bp", 10_000)),
+                int(effect_values.get("party_power_bp", 10_000)),
             )
         if action != "attack":
             cooldown_turns = int(action_data.get("cooldown_turns", 0))

@@ -13,9 +13,9 @@ from app.content.expeditions.combat_balance import COMBAT_BALANCE_VERSION
 def test_exact_matrix_covers_all_identity_and_stage_cells_once():
     cases = list(simulation_cases())
 
-    assert len(cases) == 11_520
+    assert len(cases) == 14_400
     assert len({case.key for case in cases}) == len(cases)
-    assert len({case.species for case in cases}) == 12
+    assert len({case.species for case in cases}) == 15
     assert len({case.form for case in cases}) == 6
     assert {case.rarity for case in cases} == {1, 2, 3, 4, 5}
     assert len({case.region_code for case in cases}) == 4
@@ -86,10 +86,7 @@ def test_checked_in_full_balance_report_passes_every_release_gate():
 
     assert report["engine"] == "deterministic-exact-enumeration"
     assert report["combat_balance_version"] == COMBAT_BALANCE_VERSION
-    assert report["dimensions"]["cases_per_policy"] == 11_520
-    assert report["dimensions"]["total_battles"] == 34_560
+    assert report["dimensions"]["cases_per_policy"] == 14_400
+    assert report["dimensions"]["total_battles"] == 43_200
     assert report["balance_gates"]["all_passed"] is True
-    assert all(
-        check["pass"]
-        for check in report["balance_gates"]["checks"].values()
-    )
+    assert all(check["pass"] for check in report["balance_gates"]["checks"].values())

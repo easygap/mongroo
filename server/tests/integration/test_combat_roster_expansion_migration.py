@@ -63,6 +63,18 @@ def test_combat_roster_migration_links_characters_growth_and_existing_owners(
                 ORDER BY price_seeds
                 """
             ).fetchall()
+            expansion_rows = connection.execute(
+                """
+                SELECT code, price_seeds, rarity, asset_manifest
+                FROM items
+                WHERE code IN (
+                    'character_restorer_pot',
+                    'character_marten_pot',
+                    'character_gal_pot'
+                )
+                ORDER BY price_seeds
+                """
+            ).fetchall()
             linked_character_manifests = [
                 json.loads(row[0])
                 for row in connection.execute(
@@ -87,11 +99,11 @@ def test_combat_roster_migration_links_characters_growth_and_existing_owners(
                 "SELECT version_num FROM alembic_version"
             ).fetchone()[0]
 
-        assert revision == "0033_premium_story_v6"
-        assert len(species_rows) == 12
+        assert revision == "0034_character_expansion_v7"
+        assert len(species_rows) == 15
         assert {row[0] for row in species_rows} >= {"maestro-pot", "nurse-pot"}
         assert all(
-            json.loads(row[3])["combat"]["kit_version"] == 7 for row in species_rows
+            json.loads(row[3])["combat"]["kit_version"] == 8 for row in species_rows
         )
         assert [(row[0], row[1], row[2]) for row in premium_rows] == [
             ("character_maestro_pot", 240, 5),
@@ -101,15 +113,26 @@ def test_combat_roster_migration_links_characters_growth_and_existing_owners(
             "미드나잇 레조넌스",
             "순백 트리아주",
         ]
+        assert [(row[0], row[1], row[2]) for row in expansion_rows] == [
+            ("character_marten_pot", 170, 4),
+            ("character_restorer_pot", 260, 5),
+            ("character_gal_pot", 320, 5),
+        ]
+        expansion_manifests = [json.loads(row[3]) for row in expansion_rows]
+        assert [
+            manifest["base_outfit"]["name"] for manifest in expansion_manifests
+        ] == [
+            "잎길 탐험 하네스",
+            "블루그레이 복원 워크웨어",
+            "코랄 란제리 워크 스트리트",
+        ]
+        assert all(manifest["asset_version"] == 7 for manifest in expansion_manifests)
         premium_manifests = [json.loads(row[3]) for row in premium_rows]
         assert all(manifest["asset_version"] == 6 for manifest in premium_manifests)
         assert [
-            manifest["visual_story"]["shape_language"]
-            for manifest in premium_manifests
+            manifest["visual_story"]["shape_language"] for manifest in premium_manifests
         ] == ["sharp_angles", "soft_curves"]
-        assert premium_manifests[0]["visual_story"]["hair"] == (
-            "ink_violet_blunt_bob"
-        )
+        assert premium_manifests[0]["visual_story"]["hair"] == ("ink_violet_blunt_bob")
         assert premium_manifests[1]["visual_story"]["hair"] == (
             "pearl_champagne_long_wave"
         )

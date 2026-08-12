@@ -54,6 +54,9 @@ const Map<String, String> gardenBundledAssetKeyPaths = {
   'characters/student-pot': 'assets/characters/student-pot-v2.webp',
   'characters/nurse-pot': 'assets/characters/nurse-pot-v6.webp',
   'characters/maestro-pot': 'assets/characters/maestro-pot-v6.webp',
+  'characters/restorer-pot': 'assets/characters/restorer-pot-v7.webp',
+  'characters/marten-pot': 'assets/characters/marten-pot-v7.webp',
+  'characters/gal-pot': 'assets/characters/gal-pot-v7.webp',
 };
 
 /// `asset_key`가 없는 응답은 상품 코드로 찾는다.
@@ -88,6 +91,9 @@ const Map<String, String> gardenBundledItemCodePaths = {
   'species_sunflower': 'assets/species/sunflower-seed.webp',
   'character_nurse_pot': 'assets/characters/nurse-pot-v6.webp',
   'character_maestro_pot': 'assets/characters/maestro-pot-v6.webp',
+  'character_restorer_pot': 'assets/characters/restorer-pot-v7.webp',
+  'character_marten_pot': 'assets/characters/marten-pot-v7.webp',
+  'character_gal_pot': 'assets/characters/gal-pot-v7.webp',
 };
 
 String? gardenVisualAssetPath(ShopItem item) {
@@ -619,6 +625,9 @@ Duration _motionDuration(String motionKey) => switch (motionKey) {
       'student_adjust' => const Duration(milliseconds: 2800),
       'nurse_breathe' => const Duration(milliseconds: 3400),
       'maestro_cue' => const Duration(milliseconds: 3000),
+      'restorer_settle' => const Duration(milliseconds: 3600),
+      'marten_scout' => const Duration(milliseconds: 2200),
+      'gal_style_step' => const Duration(milliseconds: 2400),
       _ => const Duration(milliseconds: 2400),
     };
 
@@ -685,6 +694,23 @@ _CharacterPose _characterPose(String motionKey, double progress) {
         rotation: wave * .012,
         scaleX: 1 + math.max(0, softWave) * .008,
       ),
+    'restorer_settle' => _CharacterPose(
+        x: wave * .8,
+        rotation: wave * .005,
+        scaleY: 1 + softWave * .004,
+      ),
+    'marten_scout' => _CharacterPose(
+        x: wave * 2.6,
+        y: -math.max(0, wave) * 2.4,
+        rotation: wave * .018,
+        scaleX: 1 + math.max(0, -softWave) * .012,
+      ),
+    'gal_style_step' => _CharacterPose(
+        x: wave * 1.7,
+        y: -math.max(0, softWave) * 1.6,
+        rotation: wave * .014,
+        scaleX: 1 + softWave * .007,
+      ),
     _ => _CharacterPose(
         y: wave * 3.5,
         rotation: wave * 0.015,
@@ -707,6 +733,9 @@ bool _supportsTapMotion(String motionKey) => const {
       'student_adjust',
       'nurse_breathe',
       'maestro_cue',
+      'restorer_settle',
+      'marten_scout',
+      'gal_style_step',
     }.contains(motionKey);
 
 _CharacterPose _tapPose(String motionKey, double progress) {
@@ -785,6 +814,26 @@ _CharacterPose _tapPose(String motionKey, double progress) {
         x: 2.4 * oscillation * envelope,
         rotation: -.025 * oscillation * envelope,
         scaleX: 1 + .016 * envelope,
+      ),
+    'restorer_settle' => _CharacterPose(
+        x: 2.2 * oscillation * envelope,
+        y: -2 * envelope,
+        rotation: -.018 * oscillation * envelope,
+        scaleX: 1 + .012 * envelope,
+      ),
+    'marten_scout' => _CharacterPose(
+        x: 9 * oscillation * envelope,
+        y: -5 * envelope,
+        rotation: .045 * oscillation * envelope,
+        scaleX: 1 + .025 * envelope,
+        scaleY: 1 - .018 * envelope,
+      ),
+    'gal_style_step' => _CharacterPose(
+        x: 4 * oscillation * envelope,
+        y: -4 * envelope,
+        rotation: .055 * oscillation * envelope,
+        scaleX: 1 + .02 * envelope,
+        scaleY: 1 + .02 * envelope,
       ),
     _ => const _CharacterPose(),
   };

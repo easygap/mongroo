@@ -67,6 +67,9 @@ MOTION_ARCHETYPE_BY_PROFILE = {
     "student-pot.formula-write": "cast",
     "nurse-pot.triage-step": "cast",
     "maestro-pot.downbeat": "draw",
+    "restorer-pot.patina-brace": "brace",
+    "marten-pot.softpaw-rush": "dash",
+    "gal-pot.patchwork-step": "cast",
     "archive-guide.lantern-cast": "cast",
     # 캐릭터 고유 II
     "baby-pot.root-embrace": "channel",
@@ -81,6 +84,9 @@ MOTION_ARCHETYPE_BY_PROFILE = {
     "student-pot.seal-rewrite": "brace",
     "nurse-pot.white-oath": "channel",
     "maestro-pot.silent-coda": "channel",
+    "restorer-pot.golden-seam": "channel",
+    "marten-pot.den-roar": "channel",
+    "gal-pot.runway-reversal": "cast",
     "archive-guide.archive-seal": "brace",
     # 감정 성장기·공용 행동
     "emotion.open-radiant": "cast",

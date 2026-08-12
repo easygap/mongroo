@@ -677,6 +677,23 @@ void main() {
     }
   });
 
+  testWidgets('신규 캐릭터 3종의 고유 스킬 아이콘을 번들에서 읽는다', (tester) async {
+    const assets = <String>[
+      'assets/adventure/skill-icons/restorer-pot/patina-parry-v1.webp',
+      'assets/adventure/skill-icons/restorer-pot/golden-seam-v1.webp',
+      'assets/adventure/skill-icons/marten-pot/softpaw-rush-v1.webp',
+      'assets/adventure/skill-icons/marten-pot/den-guardian-roar-v1.webp',
+      'assets/adventure/skill-icons/gal-pot/patchwork-relay-v1.webp',
+      'assets/adventure/skill-icons/gal-pot/runway-reversal-v1.webp',
+    ];
+
+    for (final asset in assets) {
+      final data = await rootBundle.load(asset);
+      expect(data.lengthInBytes, greaterThan(5000), reason: asset);
+      expect(_webpCanvasSize(data), (width: 256, height: 256), reason: asset);
+    }
+  });
+
   testWidgets('플레이어와 몬스터 공격을 효과별 투명 스프라이트로 읽는다', (tester) async {
     const effectKeys = [
       'care_vines',
@@ -824,6 +841,24 @@ void main() {
         kelFallbackFamily: 'kel.sparkling',
       ).totalDurationMs,
       760,
+    );
+    expect(
+      resolveExpeditionCombatEffect(
+        vfxFamily: 'restorer-pot.patina-parry',
+      ).directory,
+      'patina-parry-v1',
+    );
+    expect(
+      resolveExpeditionCombatEffect(
+        vfxFamily: 'marten-pot.den-guardian-roar',
+      ).directory,
+      'den-guardian-roar-v1',
+    );
+    expect(
+      resolveExpeditionCombatEffect(
+        vfxFamily: 'gal-pot.runway-reversal',
+      ).directory,
+      'runway-reversal-v1',
     );
     expect(
       resolveExpeditionCombatEffect(

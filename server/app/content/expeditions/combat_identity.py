@@ -182,7 +182,12 @@ COMBAT_ROLE_PROFILES: dict[str, dict[str, Any]] = {
     "aloof-pot": _role("steady_controller", "안정 제어", (9, 9, 5, 10), (4, 3, 2, 4)),
     "student-pot": _role("focus_engine", "집중 순환", (7, 7, 9, 9), (2, 3, 4, 4)),
     "nurse-pot": _role("premium_healer", "백의 수호", (8, 11, 14, 8), (3, 4, 5, 3)),
-    "maestro-pot": _role("resonance_director", "공명 지휘", (9, 8, 11, 14), (3, 3, 4, 5)),
+    "maestro-pot": _role(
+        "resonance_director", "공명 지휘", (9, 8, 11, 14), (3, 3, 4, 5)
+    ),
+    "restorer-pot": _role("patina_warden", "금빛 복원", (10, 11, 10, 11), (3, 4, 3, 4)),
+    "marten-pot": _role("trail_vanguard", "발자국 전위", (8, 7, 5, 8), (3, 3, 2, 3)),
+    "gal-pot": _role("runway_catalyst", "스타일 촉매", (13, 11, 12, 10), (5, 4, 4, 4)),
     "archive_guide": _role("archive_support", "기록 지원", (6, 9, 9, 8), (2, 3, 3, 3)),
 }
 
@@ -421,6 +426,51 @@ SPECIES_SKILLS: dict[str, dict[str, Any]] = {
         vfx_family="maestro-pot.golden-downbeat",
         tier_names=("첫박", "겹박", "완전 공명"),
     ),
+    "restorer-pot": _skill(
+        "patina_parry",
+        "파티나 패리",
+        "금빛 균열선을 손끝으로 짚어 충격을 흘리고 수호자의 다음 위력을 낮춰요.",
+        power=13,
+        focus_cost=3,
+        cooldown_turns=2,
+        effect="patina_parry",
+        element="steel",
+        secondary_element="light",
+        damage_type="control",
+        motion_profile="restorer-pot.patina-brace",
+        vfx_family="restorer-pot.patina-parry",
+        tier_names=("묵은빛", "겹막이", "황혼 반전"),
+    ),
+    "marten-pot": _skill(
+        "softpaw_rush",
+        "포실발 급습",
+        "바람을 타고 달려 장벽의 빈틈을 표시하고 뒤따르는 공격이 더 깊게 파고들게 해요.",
+        power=12,
+        focus_cost=2,
+        cooldown_turns=1,
+        effect="softpaw_rush",
+        element="wind",
+        secondary_element="strike",
+        damage_type="strike",
+        motion_profile="marten-pot.softpaw-rush",
+        vfx_family="marten-pot.softpaw-rush",
+        tier_names=("첫 발자국", "추적 표식", "귀소 본능"),
+    ),
+    "gal-pot": _skill(
+        "patchwork_relay",
+        "패치워크 릴레이",
+        "서로 다른 천 조각의 리듬을 연결해 뒤이어 행동하는 동료의 위력을 끌어올려요.",
+        power=18,
+        focus_cost=2,
+        cooldown_turns=1,
+        effect="patchwork_relay",
+        element="lightning",
+        secondary_element="heart",
+        damage_type="support",
+        motion_profile="gal-pot.patchwork-step",
+        vfx_family="gal-pot.patchwork-relay",
+        tier_names=("첫 조각", "커스텀 링크", "우리만의 룩"),
+    ),
     "archive_guide": _skill(
         "archive_lantern",
         "기록 등불",
@@ -610,6 +660,51 @@ SPECIES_SECONDARY_SKILLS: dict[str, dict[str, Any]] = {
         vfx_family="maestro-pot.silent-coda",
         tier_names=("쉼표", "무음 악장", "절대 종지"),
     ),
+    "restorer-pot": _skill(
+        "golden_seam",
+        "금빛 이음새",
+        "갈라진 기억을 금빛 선으로 이어 가장 지친 동료를 회복하고 모두를 보호해요.",
+        power=11,
+        focus_cost=5,
+        cooldown_turns=5,
+        effect="golden_seam",
+        element="light",
+        secondary_element="steel",
+        damage_type="support",
+        motion_profile="restorer-pot.golden-seam",
+        vfx_family="restorer-pot.golden-seam",
+        tier_names=("한 줄 봉합", "겹선 복원", "금빛 계승"),
+    ),
+    "marten-pot": _skill(
+        "den_guardian_roar",
+        "둥지지기 포효",
+        "낮고 단단한 포효로 동료를 감싸고 다음 공격에 함께 달려들 힘을 나눠요.",
+        power=13,
+        focus_cost=4,
+        cooldown_turns=4,
+        effect="den_guardian_roar",
+        element="nature",
+        secondary_element="sound",
+        damage_type="support",
+        motion_profile="marten-pot.den-roar",
+        vfx_family="marten-pot.den-guardian-roar",
+        tier_names=("귀가 신호", "무리의 원", "둥지 수호령"),
+    ),
+    "gal-pot": _skill(
+        "runway_reversal",
+        "런웨이 리버설",
+        "전장의 약점색에 맞춰 공격의 결을 즉시 뒤집고 동료의 다음 움직임까지 살려요.",
+        power=18,
+        focus_cost=4,
+        cooldown_turns=4,
+        effect="runway_reversal",
+        element="light",
+        secondary_element="lightning",
+        damage_type="magic",
+        motion_profile="gal-pot.runway-reversal",
+        vfx_family="gal-pot.runway-reversal",
+        tier_names=("룩 체인지", "리버스 워크", "프리즘 피날레"),
+    ),
     "archive_guide": _skill(
         "archive_seal",
         "기록 봉인",
@@ -686,7 +781,7 @@ EMOTION_DISCIPLINES: dict[str, dict[str, Any]] = {
 }
 
 # T3 고유기는 캐릭터 고유 family를 교체하지 않고 이 감정층을 두 번째 레이어로
-# 합성한다. 실제 variant key는 species × form × unique slot으로 만들어 12×6×2
+# 합성한다. 실제 variant key는 species × form × unique slot으로 만들어 15×6×2
 # 조합을 데이터에서 구분한다. production_ready는 해당 레이어의 실기 QA 뒤에만
 # 별도 manifest에서 승격한다.
 FUSION_LAYER_PROFILES: dict[str, dict[str, str]] = {
@@ -918,11 +1013,7 @@ def combat_effect_values(
     if effect == "guard_self":
         return {"self_guard": (2, 3, 4)[safe_tier - 1]}
     if effect == "weaken_intent":
-        return {
-            "intent_power_delta": -min(
-                3, (1, 1, 2)[safe_tier - 1] + control_bonus
-            )
-        }
+        return {"intent_power_delta": -min(3, (1, 1, 2)[safe_tier - 1] + control_bonus)}
     if effect == "study_refund":
         return {"focus_refund": (2, 2, 3)[safe_tier - 1]}
     if effect == "triage_heal":
@@ -946,11 +1037,46 @@ def combat_effect_values(
         }
     if effect == "silent_coda":
         return {
-            "intent_power_delta": -min(
-                3, (1, 1, 2)[safe_tier - 1] + control_bonus
-            ),
+            "intent_power_delta": -min(3, (1, 1, 2)[safe_tier - 1] + control_bonus),
             "enemy_vulnerability_bp": (11_000, 11_750, 12_750)[safe_tier - 1]
             + control_bonus * 250,
+        }
+    if effect == "patina_parry":
+        return {
+            "self_guard": (0, 1, 2)[safe_tier - 1],
+            "intent_power_delta": (-min(2, 1 + control_bonus) if safe_tier >= 3 else 0),
+        }
+    if effect == "golden_seam":
+        return {
+            "heal_lowest": (1, 1, 2)[safe_tier - 1] + support_bonus,
+            "party_guard": (0, 1, 1)[safe_tier - 1] + support_bonus,
+            "focus_refund": 1 if safe_tier >= 3 else 0,
+        }
+    if effect == "softpaw_rush":
+        return {
+            # 저레벨부터 길잡이 두 명의 후속타까지 증폭하면 초반 엘리트가
+            # 한 라운드에 끝난다. 취약 표식은 T3 성장 보상으로만 연다.
+            "enemy_vulnerability_bp": (10_000, 10_000, 10_800)[safe_tier - 1]
+            + control_bonus * 200,
+            "self_guard": (0, 1, 1)[safe_tier - 1],
+        }
+    if effect == "den_guardian_roar":
+        return {
+            "party_guard": (1, 1, 2)[safe_tier - 1] + support_bonus,
+            "party_power_bp": (10_500, 11_000, 11_750)[safe_tier - 1]
+            + support_bonus * 150,
+            "focus_refund": 1 if safe_tier >= 3 else 0,
+        }
+    if effect == "patchwork_relay":
+        return {
+            "party_power_bp": (10_800, 11_400, 12_300)[safe_tier - 1]
+            + support_bonus * 200,
+            "focus_refund": 1 if safe_tier >= 2 else 0,
+        }
+    if effect == "runway_reversal":
+        return {
+            "party_power_bp": (11_000, 11_750, 12_750)[safe_tier - 1]
+            + support_bonus * 200,
         }
     return {}
 
@@ -1017,8 +1143,8 @@ def validate_combat_identity_catalog() -> None:
     user_species = set(SPECIES_SKILLS) - {"archive_guide"}
     if user_species != set(SPECIES_SECONDARY_SKILLS) - {"archive_guide"}:
         raise ValueError("unique I/II species coverage mismatch")
-    if len(user_species) != 12:
-        raise ValueError("exactly twelve playable species are required")
+    if len(user_species) != 15:
+        raise ValueError("exactly fifteen playable species are required")
     if user_species | {"archive_guide"} != set(COMBAT_ROLE_PROFILES):
         raise ValueError("every playable species and guide needs one combat role")
 
@@ -1026,10 +1152,10 @@ def validate_combat_identity_catalog() -> None:
         *(SPECIES_SKILLS[code] for code in sorted(user_species)),
         *(SPECIES_SECONDARY_SKILLS[code] for code in sorted(user_species)),
     ]
-    if len({skill["code"] for skill in all_unique}) != 24:
-        raise ValueError("all twenty-four signature skill codes must be unique")
-    if len({skill["vfx_family"] for skill in all_unique}) != 24:
-        raise ValueError("all twenty-four signature VFX families must be unique")
+    if len({skill["code"] for skill in all_unique}) != 30:
+        raise ValueError("all thirty signature skill codes must be unique")
+    if len({skill["vfx_family"] for skill in all_unique}) != 30:
+        raise ValueError("all thirty signature VFX families must be unique")
     if CURRENT_KEL_MAP_VERSION not in ELEMENT_KEL_BY_VERSION:
         raise ValueError("current growth kel map version must exist")
     if INITIAL_KEL_MAP_VERSION not in ELEMENT_KEL_BY_VERSION:

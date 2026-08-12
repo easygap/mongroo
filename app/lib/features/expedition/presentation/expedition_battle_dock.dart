@@ -1650,6 +1650,18 @@ const _dockSkillIconAssets = <String, String>{
   'golden_downbeat':
       'assets/adventure/skill-icons/maestro-pot/golden-downbeat-v1.webp',
   'silent_coda': 'assets/adventure/skill-icons/maestro-pot/silent-coda-v1.webp',
+  'patina_parry':
+      'assets/adventure/skill-icons/restorer-pot/patina-parry-v1.webp',
+  'golden_seam':
+      'assets/adventure/skill-icons/restorer-pot/golden-seam-v1.webp',
+  'softpaw_rush':
+      'assets/adventure/skill-icons/marten-pot/softpaw-rush-v1.webp',
+  'den_guardian_roar':
+      'assets/adventure/skill-icons/marten-pot/den-guardian-roar-v1.webp',
+  'patchwork_relay':
+      'assets/adventure/skill-icons/gal-pot/patchwork-relay-v1.webp',
+  'runway_reversal':
+      'assets/adventure/skill-icons/gal-pot/runway-reversal-v1.webp',
 };
 
 Color _dockAffinityColor(BuildContext context, String affinity) {

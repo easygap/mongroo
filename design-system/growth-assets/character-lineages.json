@@ -1,5 +1,5 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "art_family": "character-lineage-25d",
   "asset_contract": {
     "per_lineage": 37,
@@ -20,6 +20,12 @@
     "adult_v3_count": 12,
     "legacy_adult_count": 132,
     "resolver_order": ["v4-state", "v3", "v2", "route", "phase", "vector"]
+    ,
+    "v7_lineages": 3,
+    "v7_per_lineage": 29,
+    "v7_total": 87,
+    "v7_pattern": "assets/plants/{slug}-25d-{phase}-{form}.webp",
+    "catalog_total": 457
   },
   "stage_mapping": {
     "seed": "씨앗",
@@ -316,6 +322,99 @@
         "moonlit": "달빛 천문 학생회장",
         "sparkling": "별씨앗 현장학습 대장",
         "mosaic": "여러 마음 기록 보관자"
+      }
+    },
+    {
+      "slug": "restorer-pot",
+      "name": "에단",
+      "identity": "40세 남성 복원사, 날렵한 얼굴과 넓은 어깨, 블루그레이 워크 셔츠와 차콜 세미플레어 팬츠",
+      "art_direction": {
+        "appeal_focus": "seasoned handsome middle-aged man",
+        "skin_tone": "21N neutral ivory",
+        "age_progression": ["seed", "boy 8", "teen boy 15", "man 28", "man 40"]
+      },
+      "motion": {
+        "idle_key": "restorer_settle",
+        "tap_reaction": "shirt cuff settle and grounded nod",
+        "secondary": ["belt line settle", "quiet half-smile"]
+      },
+      "expressions": {
+        "sunny": "눈가가 편안해지는 따뜻한 미소",
+        "rainy": "흔적을 오래 살피는 낮은 시선",
+        "ember": "금빛 균열선을 짚는 결심",
+        "moonlit": "균열의 방향을 읽는 신중한 눈",
+        "sparkling": "새 이음새를 발견한 잔잔한 놀람",
+        "mosaic": "수리 순서를 재는 노련한 표정"
+      },
+      "routes": {
+        "sunny": "햇빛 금선 복원사",
+        "rainy": "빗물 도자 기록가",
+        "ember": "불씨 황동 수선공",
+        "moonlit": "달빛 균열 감정사",
+        "sparkling": "별가루 유리 복원사",
+        "mosaic": "다색 기억 수석 복원사"
+      }
+    },
+    {
+      "slug": "marten-pot",
+      "name": "모루",
+      "identity": "네 발로 움직이는 밤색 장모 숲담비, 구름 같은 볼·가슴 털과 굵은 꼬리, 짧은 탐험 하네스",
+      "art_direction": {
+        "appeal_focus": "cute animal-forward forest marten",
+        "skin_tone": "not applicable",
+        "age_progression": ["seed", "cub 3m", "juvenile 9m", "young 2y", "guardian 5y"]
+      },
+      "motion": {
+        "idle_key": "marten_scout",
+        "tap_reaction": "short four-paw scout hop",
+        "secondary": ["ear swivel", "tail balance"]
+      },
+      "expressions": {
+        "sunny": "꼬리를 높이 든 반가운 눈",
+        "rainy": "냄새를 따라 낮아진 주둥이",
+        "ember": "앞발을 딛는 용감한 경계",
+        "moonlit": "귀를 세운 야간 정찰",
+        "sparkling": "큰 귀가 쫑긋 선 발견",
+        "mosaic": "발자국을 비교하는 고개 기울임"
+      },
+      "routes": {
+        "sunny": "햇살 둥지 길잡이",
+        "rainy": "물비늘 냄새 추적자",
+        "ember": "불씨발 돌격 담비",
+        "moonlit": "달그늘 숲 정찰대",
+        "sparkling": "별발자국 전령",
+        "mosaic": "여섯 냄새 둥지지기"
+      }
+    },
+    {
+      "slug": "gal-pot",
+      "name": "리아",
+      "identity": "허니 베이지 레이어드 헤어, 코랄·차콜 레이스 패션 브라톱, 아이보리 워크 셔츠와 차콜 플리츠 스코트",
+      "art_direction": {
+        "appeal_focus": "2026 self-expressive light gyaru",
+        "skin_tone": "19N/21N ivory",
+        "prop_policy": "empty hands, no cosmetics or mirror"
+      },
+      "motion": {
+        "idle_key": "gal_style_step",
+        "tap_reaction": "small balanced step and friendly nod",
+        "secondary": ["work-shirt hem settle", "direct friendly grin"]
+      },
+      "expressions": {
+        "sunny": "친구를 끌어당기는 환한 미소",
+        "rainy": "좋아하는 색을 지켜 주는 다정한 눈",
+        "ember": "정면을 보는 자신감 있는 캣아이",
+        "moonlit": "다음 조합을 떠올리는 옆눈",
+        "sparkling": "새 룩이 맞아떨어진 반짝이는 놀람",
+        "mosaic": "천 조각의 균형을 재는 집중"
+      },
+      "routes": {
+        "sunny": "햇살 패치워크 메이커",
+        "rainy": "블루 레이어 스트리트 디자이너",
+        "ember": "코랄 러시 스타일러",
+        "moonlit": "모노톤 나이트 워커",
+        "sparkling": "프리즘 커스텀 러너",
+        "mosaic": "다색 릴레이 디렉터"
       }
     }
   ]

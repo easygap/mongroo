@@ -1,0 +1,382 @@
+{
+  "version": 7,
+  "source_policy": "one reviewed generated master per character stage sheet and skill strip",
+  "code_generated_character_pixels": false,
+  "code_generated_effect_pixels": false,
+  "style_reference_assets": [
+    "app/assets/characters/handsome-pot-v2.webp",
+    "app/assets/characters/magical-pot-v2.webp",
+    "app/assets/characters/student-pot-v2.webp",
+    "app/assets/characters/nurse-pot-v6.webp",
+    "app/assets/characters/aloof-pot-v2.webp",
+    "design-system/concepts/character-redesign-v6/character-style-identity-v6.webp"
+  ],
+  "visual_qa": {
+    "overview": "design-system\\concepts\\character-expansion-v7\\qa\\character-expansion-v7-overview.webp",
+    "style_consistency": "design-system\\concepts\\character-expansion-v7\\qa\\character-expansion-v7-style-consistency.webp"
+  },
+  "emotion_blend": {
+    "forms": [
+      "sunny",
+      "rainy",
+      "ember",
+      "moonlit",
+      "sparkling",
+      "mosaic"
+    ],
+    "inside_weight_range": [
+      0.025,
+      0.08
+    ],
+    "edge_width_px": 2
+  },
+  "growth": [
+    {
+      "slug": "restorer-pot",
+      "name": "에단",
+      "outfit_key": "bluegray-restorer-workwear",
+      "asset_count": 31,
+      "source_sha256": {
+        "restorer-pot-growth.png": "F57F04A492BDAD7C5F3B589D6A42949ECE5E68F9029C09D0FDB9A977871B7D22",
+        "restorer-pot-full-bloom.png": "B131C831F389F5C38F8D0808BA2E5D52A379533D7BEADC001D5061DA5988F07B"
+      },
+      "runtime_sha256": {
+        "restorer-pot-25d-seed.webp": "CCCD582C799FADEA453B9C93872308C31AA11E8AD8D78002078EF3A699D61157",
+        "restorer-pot-25d-sprout.webp": "036BA958E775BAB550E8C898B4B4A7C90011CEA2D0ADEB2624BD0F881B7DE421",
+        "restorer-pot-25d-sprout-sunny.webp": "C7B66B65B9A48523B049A6ABC4D9E02AC3DF25FE2065CFA9F11860E8A68386D8",
+        "restorer-pot-25d-sprout-rainy.webp": "2ABC6C934B6EE3CF5A256654DD4B998B435FAF8C2F76808EB7AE27F024E663F1",
+        "restorer-pot-25d-sprout-ember.webp": "14AEEBA095C8FA62BE4F746559546EF8E20E5A20B1E4AF95ED00F0BEFCCD63BB",
+        "restorer-pot-25d-sprout-moonlit.webp": "A18E6DCAC8EA614F79B02F5190DA609B70A8603312FA88F63EF2149A1B5CFBA6",
+        "restorer-pot-25d-sprout-sparkling.webp": "2E9D37831FD23F99D35473F1F73165B2F9B76063ABEC8B985FB843ED1963FDC1",
+        "restorer-pot-25d-sprout-mosaic.webp": "7E28E760C8F962D0F89AAA922E536D8757B462A2D920114F42B14E8180E4654C",
+        "restorer-pot-25d-branching.webp": "EE59DA88E86EF59ECB312E6F6646D1F7C84BBED9E4A18EDE7044A00CFBD0C11C",
+        "restorer-pot-25d-branching-sunny.webp": "EAEE7C5272E100E69864BDF9F522CBC82BA333DD05DE331549B120645D354723",
+        "restorer-pot-25d-branching-rainy.webp": "EAB5C8FCA14892A862B295FD0D2FE8C523ADC309FB829C9B9602103AE68C552B",
+        "restorer-pot-25d-branching-ember.webp": "1DCD7200632D22D05AC72AF99778F75D55F31F5DDF72737456FC3CE8F06BB5E1",
+        "restorer-pot-25d-branching-moonlit.webp": "3D8D6AB9FDB82430C127AFAEFC0C19B25331B0CD39BCA1849E4CAF69962D3D94",
+        "restorer-pot-25d-branching-sparkling.webp": "2276CA01575336760A10D2DBBCD6282CCAD604180390D38C6E413494CFC6BB10",
+        "restorer-pot-25d-branching-mosaic.webp": "7622E489807629317F378F8001D6F4ED86B274CFA794E105D02D1972505DD08D",
+        "restorer-pot-25d-bloom.webp": "3271AE5F5AABC8C483D75F1CC380545059E44189018A85B2E3855A6A57343691",
+        "restorer-pot-25d-bloom-sunny.webp": "5B02A3E8FE29C5ADCBFF9D3635FCE3B51785771E659280EABCB3BF3CE2DC8F55",
+        "restorer-pot-25d-bloom-rainy.webp": "DAE4374A4BBB82C5AAD63A3CA6C38DB906357A84AAA3CAB3A0068F515DADCE0E",
+        "restorer-pot-25d-bloom-ember.webp": "BC32A49A5064AB1FEFC6938DFB522B6279EE6E7130EC5DAC27D028C30774E2E9",
+        "restorer-pot-25d-bloom-moonlit.webp": "05552C25B5C3AEB5FD7BC091B70A55C29C01280C3FBA9C9FAA15E4FD63E56255",
+        "restorer-pot-25d-bloom-sparkling.webp": "BB6F4EFC964F59AADF2F233C4FFBD78A3C817650BFC9DF24B18FC34D08700283",
+        "restorer-pot-25d-bloom-mosaic.webp": "6AAA8D55F06558702DBA2B08A0EA30B27507317F091A3B6994C8876CF62CADEE",
+        "restorer-pot-25d-full-bloom.webp": "7B9962287C2B57B863B7E134CB2C2115984FFC6A5B5E55452ACE80AFD4AA9389",
+        "restorer-pot-25d-full-bloom-sunny.webp": "77E4606FD746A73D878D6F584063F7D5DFBDDCFE3A32740632F0C9CAE00FDFD9",
+        "restorer-pot-25d-full-bloom-rainy.webp": "6812DE1D8BC5D160960A38B57F4E42E632E53F2FC2296310D724D27EDC0E09A6",
+        "restorer-pot-25d-full-bloom-ember.webp": "466EA7DD50A16CD4470C664356A05A59A73AAE5CA2174824E49CA0F40F8C729B",
+        "restorer-pot-25d-full-bloom-moonlit.webp": "D7C4B30AE8C714BE567A881ABB24AE2BFFA1B2CE90DE3843E7E3BE457272D9F9",
+        "restorer-pot-25d-full-bloom-sparkling.webp": "E0F7B4006E22C89BE488424DA078D03140BD08536C50BA783C743ADFC26DFF53",
+        "restorer-pot-25d-full-bloom-mosaic.webp": "B4D9464947673782B98F28607589EB43441FA78EDF79D6849C408428B8392589",
+        "restorer-pot-v7.webp": "7B9962287C2B57B863B7E134CB2C2115984FFC6A5B5E55452ACE80AFD4AA9389",
+        "bluegray-restorer-workwear.webp": "18804B216CDD44318837272AB4D202C75F7DCA4C1219099554264E3E0EE6BF7E"
+      }
+    },
+    {
+      "slug": "marten-pot",
+      "name": "모루",
+      "outfit_key": "leaf-trail-harness",
+      "asset_count": 31,
+      "source_sha256": {
+        "marten-pot-growth.png": "A7ACD23749E33EF8E20389B8E742EC9C0C30C46FA587FE7D3830AD234A937BFD",
+        "marten-pot-full-bloom.png": "93B151519F7F313517A5571BE08F6CABF64FACC6910382F8D61A4C1CDA535230"
+      },
+      "runtime_sha256": {
+        "marten-pot-25d-seed.webp": "50C635A0358D4297CA8B5F22B3FB58DBCCDBC0B5344A2AEFF8FA2E8029F26C2A",
+        "marten-pot-25d-sprout.webp": "59C234250E80EA6E93086800A122DF50C2C205D7F3E6EE96A1CED3077BF2AF58",
+        "marten-pot-25d-sprout-sunny.webp": "6DAEB6AE81B5E3891459894FB4002A5517699168E2D782F1786CFDB550661F37",
+        "marten-pot-25d-sprout-rainy.webp": "8C395F8CE29549E4D5ED9106B841EBC39FF509361975867B1A4433741873A115",
+        "marten-pot-25d-sprout-ember.webp": "A27F6472AFF5FBBCA3AA8431E7AE86B2B4B08933E5FECC6A5FF1F36BA8507700",
+        "marten-pot-25d-sprout-moonlit.webp": "0E51A3EAE9E1A87B48702C8C333BB556CAE299948D50471371AA2B05F05D2016",
+        "marten-pot-25d-sprout-sparkling.webp": "FD67D2E3AE12CD413066CD922C8C259F71C2D6DD753F3413D33331B2B76963FE",
+        "marten-pot-25d-sprout-mosaic.webp": "D11D7BA90646F5ECFBA718CD19D58A6604D798F22CB37B79000682E98A515229",
+        "marten-pot-25d-branching.webp": "337562CB02E825A1BF4CE8F979FE05A3B3C818AC4FD82ED5E99B06D7FBD08028",
+        "marten-pot-25d-branching-sunny.webp": "91644E3C96C011925837D2E50D8F70DFC2997CB220CD030466CA0B2BD9493048",
+        "marten-pot-25d-branching-rainy.webp": "3DEF7457627A121FCB5B9931D0B532A5C9E324C7168F993EB19ED8ACA21EBA2B",
+        "marten-pot-25d-branching-ember.webp": "FCA04FA4950CB7AF6C705732AF4D396C02B114B5EFAAC745129007E67DC76CED",
+        "marten-pot-25d-branching-moonlit.webp": "2AAE854F969E94FEE4223A28DDEF62E33D59567EEFCA9984CFBBA641BA7842DA",
+        "marten-pot-25d-branching-sparkling.webp": "5B56D2DA654C0741F482C7FBD90135F9B8B88A7FD5F5A50FA25640575F71D67F",
+        "marten-pot-25d-branching-mosaic.webp": "D3BCDC039F48667AF9DF1DFC30042A825A129B81222F68C1A0B800EE281FAFBA",
+        "marten-pot-25d-bloom.webp": "65ED1CBB37558C3E18C54AF5361365D688928A4115E9793A4C375714B4E89E17",
+        "marten-pot-25d-bloom-sunny.webp": "48FDEC86915BC36505FC2BABFD2785EA8624610C34499FD146181FA10262F50D",
+        "marten-pot-25d-bloom-rainy.webp": "F1B30C154BE07932C1FBC7060EF1623E8BE92AFDB13EFA8652FDD73423B3490F",
+        "marten-pot-25d-bloom-ember.webp": "2FACC6E1545F723368294DA7E5CFCA150311FA19937113E4ECE25E2D84E601A3",
+        "marten-pot-25d-bloom-moonlit.webp": "CB145FCC0117E267097C41595E2DB3E99A43D384396C0E49F688F92AADD28968",
+        "marten-pot-25d-bloom-sparkling.webp": "1A4F770FF1FF905420E02692F6FB36033F3B22C1E0F28772674DFF575437F56E",
+        "marten-pot-25d-bloom-mosaic.webp": "AD472FE231890B71389143336405EE58D9FB5780891E04A4329B658ACCFC39C6",
+        "marten-pot-25d-full-bloom.webp": "1E491C9A1E6228C2F5DD36C2F51A694132AB60E4F54FBC73C1382DDFD2E71BC0",
+        "marten-pot-25d-full-bloom-sunny.webp": "46634DE9F7645B336920F32BC337854953CF8E7DAAE2F8616EFA660C06E3CB2E",
+        "marten-pot-25d-full-bloom-rainy.webp": "D76384CA78EE6B04D99ABB2419E3330E8644B3CE6ECA992AF0A6C91AE599A4FC",
+        "marten-pot-25d-full-bloom-ember.webp": "B5299590CC17B68545620790565AA6F106ECD4F4F6CC889D7CE3BCE55F37375B",
+        "marten-pot-25d-full-bloom-moonlit.webp": "BD5D73B185D0F83179C5EC02CECDE7EF997147832341D20E3FD5A54BC424191C",
+        "marten-pot-25d-full-bloom-sparkling.webp": "A52F6DD3BCE7BE30906F625962CF01BC07B560A11C296C29E4274DB92995699B",
+        "marten-pot-25d-full-bloom-mosaic.webp": "CA391F5E0F6F17F8B51B665F62969C4DA463C74D603ACF7FEF33824CCCAE1701",
+        "marten-pot-v7.webp": "1E491C9A1E6228C2F5DD36C2F51A694132AB60E4F54FBC73C1382DDFD2E71BC0",
+        "leaf-trail-harness.webp": "F59AB7D1DFD54B26DCCF6DAE9468400E8C03EA2F0B03E4EA80FB25B19583AF8E"
+      }
+    },
+    {
+      "slug": "gal-pot",
+      "name": "리아",
+      "outfit_key": "coral-lingerie-work",
+      "asset_count": 31,
+      "source_sha256": {
+        "gal-pot-growth.png": "0B7FA4BC7948604DDFA32044EC0A121A4575028FDF6C51B24F78DD1197C1CD18",
+        "gal-pot-full-bloom.png": "A56B5194E3073A11BA756E6B9978A795D5A340D62E3075302B2E13E25CE668FA"
+      },
+      "runtime_sha256": {
+        "gal-pot-25d-seed.webp": "B59B731012F0C68D1FF91F432DF2E49C218BB9FFF8CED42F2FDCA743BC360AFB",
+        "gal-pot-25d-sprout.webp": "C660FFECCF1E37C6269B9D7B8EF1366EC10438400D3B4E542CC5D70043FC2E57",
+        "gal-pot-25d-sprout-sunny.webp": "4C4CBD385536F4DE2FB68BEE6E6AAFA016E2EDE21E77F8068F1AF9494AF5F8F9",
+        "gal-pot-25d-sprout-rainy.webp": "6B6CD98F8195FC5646E53D92EA3473FFF8C140CF724E3A09E5E9192254688A9C",
+        "gal-pot-25d-sprout-ember.webp": "8721A918D477462FC7EC83E930DC38535C161A456ED98D07CB605AEFFF1EBD39",
+        "gal-pot-25d-sprout-moonlit.webp": "56F057A41603A4DD860E612507C14F79754E516FA5171714A9ED9D88B4B99B3D",
+        "gal-pot-25d-sprout-sparkling.webp": "B0080F7C72ED8557FD991B9FCF78B2133338F8CADA24BD6C2D2176593DF19A02",
+        "gal-pot-25d-sprout-mosaic.webp": "31DA1632026AA2459C1F6A2DDB0D05CCB13DD4827437DD25B3BE97DFF277300E",
+        "gal-pot-25d-branching.webp": "CB095DC593646A3CE629ECBE5E195E2E7CAB463A9DE863FA24241769F14271ED",
+        "gal-pot-25d-branching-sunny.webp": "EB682D5C5317AE0AE4689C8CB2C697E2801353FAEBC70FAB22E13BB913BC5852",
+        "gal-pot-25d-branching-rainy.webp": "F7F91BDA00138DA27862968FC383873D00994AE5D8C998ECB190C7E929A70D23",
+        "gal-pot-25d-branching-ember.webp": "872B04D7A6AF394106D6DCF3F3801D8900F179207789576081C9AB0D77765A2F",
+        "gal-pot-25d-branching-moonlit.webp": "13130185CC920201019A765C3B6B08724A30D0FEFBA2914299B4AC90060E228E",
+        "gal-pot-25d-branching-sparkling.webp": "08972BA80D9A5D1D427979A6361CDE4B13047FF3F27C8000E60540920E7C2EB4",
+        "gal-pot-25d-branching-mosaic.webp": "3155ACF35AB7FA4350F835B9D6897069F0410C6B4CFB8EE1B829E58E66918939",
+        "gal-pot-25d-bloom.webp": "46CDD22370CEB5CA1715EF69B2C737158BE1AAEA7F9A2A972CDA0F2D00E5EBD0",
+        "gal-pot-25d-bloom-sunny.webp": "A17C4B9211E4D96A7E96598C901F408C9591472CC3F9434857E3A2542A5C9333",
+        "gal-pot-25d-bloom-rainy.webp": "CFB66BD39115EE477C3E0BA292D6F1F7480C8CAFA9C988FBB52D238D592022E0",
+        "gal-pot-25d-bloom-ember.webp": "9F9F1EBDA14372DC0F6C877C04285046A3FA16A011899B56E1C4B09C47A38151",
+        "gal-pot-25d-bloom-moonlit.webp": "B09E0E1A2E96F396BA6A07A1D14E5D8A20E254DD668AD8F1D4C94876F87BB9C6",
+        "gal-pot-25d-bloom-sparkling.webp": "6E413024118ECDD822AED6BF8764FC1CB3F8F01FD8B7B255ABCCD9DE1A926150",
+        "gal-pot-25d-bloom-mosaic.webp": "F66D8FC669B97A3682988531A8E78F104524710AA37350568F4D8FEEE322488D",
+        "gal-pot-25d-full-bloom.webp": "34DA61A427AC67812FCADBA9DE84F5BBBCD4AA658E7DC7EAF582DC1B7E99A83E",
+        "gal-pot-25d-full-bloom-sunny.webp": "E4A4FC72C37F35E6AA61052A4BF61ED7EB772AD0CB15AC8A6619476B830F5625",
+        "gal-pot-25d-full-bloom-rainy.webp": "6E4D0DC1F47AE62F5B72C3BB05CCB3B8A5D4D63442053A6355291956B21782FF",
+        "gal-pot-25d-full-bloom-ember.webp": "DCD3D4792F4504DEE6BDDADB3A1619F8A70005FA760891BC3E1D21D2E1714BDB",
+        "gal-pot-25d-full-bloom-moonlit.webp": "7A7DFE6E192BF2A984406C9537D68FCDA89D2BB9702D80F4579BFEF43A01192D",
+        "gal-pot-25d-full-bloom-sparkling.webp": "0C27EDFEC63BC2E5AADFDDD4C6259BDE192A7D0BA2939A27CD3CE0268EF8DD45",
+        "gal-pot-25d-full-bloom-mosaic.webp": "74CA68F3ABF7F99D02641ADD21E338143928F590FCD3AF297ED20A6DA209A222",
+        "gal-pot-v7.webp": "34DA61A427AC67812FCADBA9DE84F5BBBCD4AA658E7DC7EAF582DC1B7E99A83E",
+        "coral-lingerie-work.webp": "3A330976FC6E55F96A483E2C655CE499AAAB69A373C50EAC3E9407E7FCC32135"
+      }
+    }
+  ],
+  "effects": {
+    "patina-parry": {
+      "effect_key": "patina_parry",
+      "source": "design-system\\concepts\\character-expansion-v7\\skill-sheets\\sources\\patina-parry-chroma.png",
+      "alpha": "design-system\\concepts\\character-expansion-v7\\skill-sheets\\alpha\\patina-parry.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\patina-parry-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\patina-parry-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\patina-parry-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\patina-parry-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\patina-parry-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\patina-parry-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\patina-parry-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\restorer-pot\\patina-parry-v1.webp",
+      "source_sha256": "7596DCE316800098464850A3ECE31E659217B368EE82CC5C95D695CC6E415D42",
+      "runtime_sha256": "AD2FDDCCFBD518910B17353523F123C41FE4B372E7A6827666F87E8E427B1064",
+      "frame_phases": [
+        "anticipation",
+        "release",
+        "travel",
+        "precontact",
+        "contact",
+        "reaction",
+        "recovery"
+      ],
+      "frame_durations_ms": [
+        120,
+        100,
+        100,
+        80,
+        130,
+        80,
+        90
+      ],
+      "production_ready": true
+    },
+    "golden-seam": {
+      "effect_key": "golden_seam",
+      "source": "design-system\\concepts\\character-expansion-v7\\skill-sheets\\sources\\golden-seam-chroma.png",
+      "alpha": "design-system\\concepts\\character-expansion-v7\\skill-sheets\\alpha\\golden-seam.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\golden-seam-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\golden-seam-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\golden-seam-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\golden-seam-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\golden-seam-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\golden-seam-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\golden-seam-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\restorer-pot\\golden-seam-v1.webp",
+      "source_sha256": "DE9B54E5EC6A8B84AFC39AF77F9FE384ECCE60B3D79B44A5797AECA6492D07A1",
+      "runtime_sha256": "71853B1BB5F99C7913AFD5AB6EEAA46D9EAE8E333084968B4A9D9EDD40BE0638",
+      "frame_phases": [
+        "anticipation",
+        "release",
+        "travel",
+        "precontact",
+        "contact",
+        "reaction",
+        "recovery"
+      ],
+      "frame_durations_ms": [
+        170,
+        100,
+        65,
+        65,
+        80,
+        120,
+        160
+      ],
+      "production_ready": true
+    },
+    "softpaw-rush": {
+      "effect_key": "softpaw_rush",
+      "source": "design-system\\concepts\\character-expansion-v7\\skill-sheets\\sources\\softpaw-rush-chroma.png",
+      "alpha": "design-system\\concepts\\character-expansion-v7\\skill-sheets\\alpha\\softpaw-rush.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\softpaw-rush-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\softpaw-rush-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\softpaw-rush-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\softpaw-rush-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\softpaw-rush-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\softpaw-rush-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\softpaw-rush-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\marten-pot\\softpaw-rush-v1.webp",
+      "source_sha256": "BB125F0DD5877541C8B8B090423265D3E6DD3F06BA1B40DD6A651AC50259C11D",
+      "runtime_sha256": "321D387726189D07852A50B12DBAE9F80AC2EDC436E95BA4E5285B692E7AA4A8",
+      "frame_phases": [
+        "anticipation",
+        "release",
+        "travel",
+        "precontact",
+        "contact",
+        "reaction",
+        "recovery"
+      ],
+      "frame_durations_ms": [
+        100,
+        90,
+        110,
+        110,
+        70,
+        180,
+        200
+      ],
+      "production_ready": true
+    },
+    "den-guardian-roar": {
+      "effect_key": "den_guardian_roar",
+      "source": "design-system\\concepts\\character-expansion-v7\\skill-sheets\\sources\\den-guardian-roar-chroma.png",
+      "alpha": "design-system\\concepts\\character-expansion-v7\\skill-sheets\\alpha\\den-guardian-roar.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\den-guardian-roar-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\den-guardian-roar-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\den-guardian-roar-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\den-guardian-roar-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\den-guardian-roar-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\den-guardian-roar-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\den-guardian-roar-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\marten-pot\\den-guardian-roar-v1.webp",
+      "source_sha256": "F005235E66B44A974CDBA167602E35544217619E0EBDAAD680647F4B5F49926B",
+      "runtime_sha256": "C469835D7603F590184DD452D79B282035D67583839492EF2B2AABF63ED762EE",
+      "frame_phases": [
+        "anticipation",
+        "release",
+        "travel",
+        "precontact",
+        "contact",
+        "reaction",
+        "recovery"
+      ],
+      "frame_durations_ms": [
+        170,
+        100,
+        65,
+        65,
+        80,
+        120,
+        160
+      ],
+      "production_ready": true
+    },
+    "patchwork-relay": {
+      "effect_key": "patchwork_relay",
+      "source": "design-system\\concepts\\character-expansion-v7\\skill-sheets\\sources\\patchwork-relay-chroma.png",
+      "alpha": "design-system\\concepts\\character-expansion-v7\\skill-sheets\\alpha\\patchwork-relay.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\patchwork-relay-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\patchwork-relay-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\patchwork-relay-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\patchwork-relay-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\patchwork-relay-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\patchwork-relay-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\patchwork-relay-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\gal-pot\\patchwork-relay-v1.webp",
+      "source_sha256": "2A32E6F3D2ED36871BE1F4EAE6C74AAE4942F66A7389B57675593A6F340F2E13",
+      "runtime_sha256": "607A6CA671F5DA61F821279FD60AFD2A6ACD6577F78489F38569078E42EBD8FF",
+      "frame_phases": [
+        "anticipation",
+        "release",
+        "travel",
+        "precontact",
+        "contact",
+        "reaction",
+        "recovery"
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        160
+      ],
+      "production_ready": true
+    },
+    "runway-reversal": {
+      "effect_key": "runway_reversal",
+      "source": "design-system\\concepts\\character-expansion-v7\\skill-sheets\\sources\\runway-reversal-chroma.png",
+      "alpha": "design-system\\concepts\\character-expansion-v7\\skill-sheets\\alpha\\runway-reversal.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\runway-reversal-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\runway-reversal-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\runway-reversal-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\runway-reversal-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\runway-reversal-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\runway-reversal-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\runway-reversal-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\gal-pot\\runway-reversal-v1.webp",
+      "source_sha256": "7E1B62DE4CBE1D9CEC6218ADEDFF5F06D5EEB17AAC2B0660A4C7C197060F219B",
+      "runtime_sha256": "616D323B7412C5D8B0702F9BE0DE9A8EBE423BBCADF827B240BFA5DD8F359462",
+      "frame_phases": [
+        "anticipation",
+        "release",
+        "travel",
+        "precontact",
+        "contact",
+        "reaction",
+        "recovery"
+      ],
+      "frame_durations_ms": [
+        170,
+        100,
+        65,
+        65,
+        80,
+        120,
+        160
+      ],
+      "production_ready": true
+    }
+  }
+}

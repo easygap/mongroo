@@ -35,7 +35,7 @@ POLICIES: tuple[PolicyCode, ...] = (
     "weakness_first",
     "survival",
 )
-PREMIUM_SPECIES = frozenset({"maestro-pot", "nurse-pot"})
+PREMIUM_SPECIES = frozenset({"gal-pot", "maestro-pot", "nurse-pot", "restorer-pot"})
 SLOT_ORDER = {
     "attack": 0,
     "selected_1": 1,
@@ -321,7 +321,7 @@ def _choose_action(
         weakeners = [
             candidate
             for candidate in candidates
-            if candidate.get("effect") == "weaken_intent"
+            if candidate.get("effect") in {"patina_parry", "weaken_intent"}
         ]
         if intent_power >= 2 and weakeners:
             choice = max(
@@ -336,7 +336,12 @@ def _choose_action(
             candidate
             for candidate in candidates
             if candidate.get("effect")
-            in {"heal_lowest", "triage_heal", "white_garden_oath"}
+            in {
+                "golden_seam",
+                "heal_lowest",
+                "triage_heal",
+                "white_garden_oath",
+            }
         ]
         if missing_hp >= 2 and healers:
             choice = max(
@@ -723,7 +728,7 @@ def _balance_gates(report: Mapping[str, Any]) -> dict[str, Any]:
                 ),
             },
             "target": (
-                "기본 10종 승률 격차 5%p 이하, 세렌은 최단 공략, "
+                "기본·접근형 11종 승률 격차 5%p 이하, 세렌은 최단 공략, "
                 "백화는 최고 생존 잔여 체력, 프리미엄 생존 승률은 기본 평균 이상"
             ),
         },

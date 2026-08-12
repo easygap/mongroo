@@ -497,6 +497,65 @@ void main() {
     expect(maestro.motionKey, 'maestro_cue');
   });
 
+  test('신규 성장 캐릭터 v7 이미지와 구매 포함 복장을 노출한다', () {
+    ShopItem character({
+      required String slug,
+      required String outfit,
+      required String motionKey,
+    }) =>
+        ShopItem.fromJson({
+          'id': slug.hashCode,
+          'code': 'character_${slug.replaceAll('-', '_')}',
+          'type': 'main_character',
+          'name': slug,
+          'price_seeds': 320,
+          'rarity': 5,
+          'asset_manifest': {
+            'asset_key': 'characters/$slug',
+            'asset_version': 7,
+            'species_code': slug,
+            'motion_key': motionKey,
+            'base_outfit': {
+              'key': outfit,
+              'name': outfit,
+              'included_with_character': true,
+            },
+          },
+        });
+
+    final characters = [
+      character(
+        slug: 'restorer-pot',
+        outfit: '블루그레이 복원 워크웨어',
+        motionKey: 'restorer_settle',
+      ),
+      character(
+        slug: 'marten-pot',
+        outfit: '잎길 탐험 하네스',
+        motionKey: 'marten_scout',
+      ),
+      character(
+        slug: 'gal-pot',
+        outfit: '코랄 란제리 워크 스트리트',
+        motionKey: 'gal_style_step',
+      ),
+    ];
+
+    expect(
+      characters.map((item) => item.bundledCharacterAssetPath),
+      [
+        'assets/characters/restorer-pot-v7.webp',
+        'assets/characters/marten-pot-v7.webp',
+        'assets/characters/gal-pot-v7.webp',
+      ],
+    );
+    expect(characters.every((item) => item.includesBaseOutfit), isTrue);
+    expect(
+      characters.map((item) => item.motionKey),
+      ['restorer_settle', 'marten_scout', 'gal_style_step'],
+    );
+  });
+
   test('캐릭터 기본 소개와 대사는 성격별로 구분된다', () {
     const expected = <String, List<String>>{
       'baby-pot': ['쪽쪽이를 문 호기심쟁이 막내', '뽀또! 새싹 하나 더 찾았어!'],

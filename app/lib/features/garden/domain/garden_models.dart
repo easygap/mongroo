@@ -23,6 +23,12 @@ const _v6CharacterSlugs = {
   'maestro-pot',
 };
 
+const _v7CharacterSlugs = {
+  'restorer-pot',
+  'marten-pot',
+  'gal-pot',
+};
+
 int gardenInt(Object? value, [int fallback = 0]) => switch (value) {
       int number => number,
       num number => number.toInt(),
@@ -300,13 +306,15 @@ class ShopItem {
       return bundledAssetPath;
     }
     final slug = key.substring(key.indexOf('/') + 1);
-    final version = _v6CharacterSlugs.contains(slug)
-        ? '-v6'
-        : _v3CharacterSlugs.contains(slug)
-            ? '-v3'
-            : _v2CharacterSlugs.contains(slug)
-                ? '-v2'
-                : '';
+    final version = _v7CharacterSlugs.contains(slug)
+        ? '-v7'
+        : _v6CharacterSlugs.contains(slug)
+            ? '-v6'
+            : _v3CharacterSlugs.contains(slug)
+                ? '-v3'
+                : _v2CharacterSlugs.contains(slug)
+                    ? '-v2'
+                    : '';
     return 'assets/characters/$slug$version.webp';
   }
 
@@ -373,6 +381,9 @@ class ShopItem {
     if (identity.contains('student')) return 'student_adjust';
     if (identity.contains('nurse')) return 'nurse_breathe';
     if (identity.contains('maestro')) return 'maestro_cue';
+    if (identity.contains('restorer')) return 'restorer_settle';
+    if (identity.contains('marten')) return 'marten_scout';
+    if (identity.contains('gal')) return 'gal_style_step';
     if (identity.contains('dewdrop')) return 'dewdrop_bob';
     if (identity.contains('star')) return 'star_hop';
     if (identity.contains('bunny')) return 'bunny_bounce';
@@ -397,6 +408,9 @@ class ShopItem {
     if (identity.contains('student')) return '수첩부터 펴는 원칙주의 학생회장';
     if (identity.contains('nurse')) return '모두의 생명선을 지키는 성숙한 백의 수호사';
     if (identity.contains('maestro')) return '전장의 박자를 바꾸는 냉정한 공명 지휘자';
+    if (identity.contains('restorer')) return '상처의 흔적까지 이어 주는 중년 복원사';
+    if (identity.contains('marten')) return '발자국과 체온으로 길을 기억하는 숲담비';
+    if (identity.contains('gal')) return '좋아하는 마음을 전투복으로 엮는 스타일 메이커';
     if (identity.contains('dewdrop')) return '잎 목도리를 두른 물방울 탐험가';
     if (identity.contains('star')) return '길을 먼저 밝히는 별 모양 씨앗';
     if (identity.contains('bunny')) return '씨앗 가방을 멘 잎귀 토끼';
@@ -427,6 +441,9 @@ class ShopItem {
       return '괜찮아. 누구도 혼자 쓰러지게 두지 않아.';
     }
     if (identity.contains('maestro')) return '승리할 박자는 내가 정할게.';
+    if (identity.contains('restorer')) return '흔적은 지우지 않아. 다시 이어 주지.';
+    if (identity.contains('marten')) return '모루가 먼저 가. 이 냄새, 집으로 이어져!';
+    if (identity.contains('gal')) return '좋아하는 걸 숨기지 마. 그게 오늘 제일 강해.';
     if (identity.contains('dewdrop')) return '이슬길은 내가 먼저 살펴볼게!';
     if (identity.contains('star')) return '반짝! 이쪽 길이야.';
     if (identity.contains('bunny')) return '새 씨앗 냄새가 나. 따라와!';

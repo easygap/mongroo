@@ -245,12 +245,15 @@ def test_payload_exposes_every_species_unique_manual_skill(profiles):
         "student-pot",
         "maestro-pot",
         "nurse-pot",
+        "restorer-pot",
+        "marten-pot",
+        "gal-pot",
     }
     assert expected_species <= set(SPECIES_SKILLS)
     assert expected_species <= set(SPECIES_SECONDARY_SKILLS)
-    assert len({SPECIES_SKILLS[code]["code"] for code in expected_species}) == 12
+    assert len({SPECIES_SKILLS[code]["code"] for code in expected_species}) == 15
     assert (
-        len({SPECIES_SECONDARY_SKILLS[code]["code"] for code in expected_species}) == 12
+        len({SPECIES_SECONDARY_SKILLS[code]["code"] for code in expected_species}) == 15
     )
 
     payload = guardian_battle_payload(
@@ -271,7 +274,7 @@ def test_payload_exposes_every_species_unique_manual_skill(profiles):
     assert action["motion_profile"] == "ninja-pot.venom-draw"
 
 
-def test_combat_kit_v7_exposes_and_resolves_all_six_fixed_slots(profiles):
+def test_combat_kit_v8_exposes_and_resolves_all_six_fixed_slots(profiles):
     encounter = _encounter(starting_focus=5, enemy_max_guard=500)
     payload = guardian_battle_payload(
         new_guardian_battle("keeper", encounter, profiles),
@@ -279,7 +282,7 @@ def test_combat_kit_v7_exposes_and_resolves_all_six_fixed_slots(profiles):
         profiles,
     )
     kit = payload["party"][0]["kit"]
-    assert kit["version"] == 7
+    assert kit["version"] == 8
     assert [skill["slot"] for skill in kit["unique_skills"]] == [
         "unique_1",
         "unique_2",
@@ -942,7 +945,7 @@ def test_all_character_emotion_t3_fusion_variants_are_unique_and_complete():
             assert skill["fusion_production_ready"] is False
             variants.add(skill["fusion_variant"])
 
-    assert len(variants) == 12 * 6 * 2
+    assert len(variants) == 15 * 6 * 2
 
 
 @pytest.mark.parametrize("level", [3, 16, 30])
@@ -1039,12 +1042,12 @@ def test_tier_power_keeps_signature_cooldown_floor_and_level_unlocks_slots():
     assert level_3["selected_skills"][1]["available"] is False
 
 
-def test_all_twelve_characters_have_distinct_roles_and_growth_stats():
+def test_all_fifteen_characters_have_distinct_roles_and_growth_stats():
     playable_species = set(SPECIES_SKILLS) - {"archive_guide"}
 
-    assert len(playable_species) == 12
+    assert len(playable_species) == 15
     assert playable_species <= set(COMBAT_ROLE_PROFILES)
-    assert len({COMBAT_ROLE_PROFILES[code]["code"] for code in playable_species}) == 12
+    assert len({COMBAT_ROLE_PROFILES[code]["code"] for code in playable_species}) == 15
 
     for species in playable_species:
         starter = character_combat_stats(
@@ -1068,6 +1071,201 @@ def test_all_twelve_characters_have_distinct_roles_and_growth_stats():
         assert all(
             grown["values"][key] >= starter["values"][key] for key in starter["values"]
         )
+
+
+def test_restorer_reduces_intent_and_repairs_the_party():
+    stats = {"care": 6, "focus": 6, "courage": 6, "insight": 7}
+    restorer_profiles = [
+        _profile(
+            1,
+            name="에단",
+            species="restorer-pot",
+            form="mosaic",
+            stats=stats,
+            level=25,
+            rarity=5,
+        ),
+        _profile(
+            2,
+            name="길잡이",
+            species="archive_guide",
+            form="mosaic",
+            stats=stats,
+            level=25,
+        ),
+    ]
+    encounter = _encounter(starting_focus=5, enemy_max_guard=2_000)
+    battle = new_guardian_battle("restorer-mechanics", encounter, restorer_profiles)
+    battle["party"][1]["hp"] -= 2
+
+    parry = submit_guardian_action(
+        battle,
+        {"member_id": 1, "action": "unique_1"},
+        encounter,
+        restorer_profiles,
+    )
+    assert parry["party"][0]["guard"] >= 2
+    assert parry["pending"]["intent_power_delta"] <= -2
+    assert parry["last_exchange"][0]["effect_key"] == "patina_parry"
+
+    repaired_start = new_guardian_battle(
+        "restorer-repair", encounter, restorer_profiles
+    )
+    repaired_start["party"][1]["hp"] -= 2
+    repaired = submit_guardian_action(
+        repaired_start,
+        {"member_id": 1, "action": "unique_2"},
+        encounter,
+        restorer_profiles,
+    )
+    assert repaired["party"][1]["hp"] == repaired["party"][1]["max_hp"]
+    assert all(member["guard"] > 0 for member in repaired["party"])
+    assert repaired["focus"] == 1
+
+
+def test_restorer_defense_mechanics_open_by_growth_tier():
+    stats = {"care": 6, "focus": 6, "courage": 6, "insight": 7}
+
+    def unique_effects(level: int) -> tuple[dict, dict]:
+        kit = member_battle_kit(
+            _profile(
+                1,
+                name="에단",
+                species="restorer-pot",
+                form="mosaic",
+                stats=stats,
+                level=level,
+                rarity=5,
+            )
+        )
+        return tuple(skill["effect_values"] for skill in kit["unique_skills"])
+
+    tier_1_parry, tier_1_seam = unique_effects(3)
+    tier_2_parry, tier_2_seam = unique_effects(16)
+    tier_3_parry, tier_3_seam = unique_effects(25)
+
+    assert tier_1_parry == {"self_guard": 0, "intent_power_delta": 0}
+    assert tier_2_parry["self_guard"] == 1
+    assert tier_2_parry["intent_power_delta"] == 0
+    assert tier_3_parry["self_guard"] == 2
+    assert tier_3_parry["intent_power_delta"] < 0
+    assert tier_1_seam["party_guard"] == 0
+    assert tier_2_seam["party_guard"] >= 1
+    assert tier_3_seam["heal_lowest"] > tier_2_seam["heal_lowest"]
+    assert tier_3_seam["focus_refund"] == 1
+
+
+def test_marten_marks_enemy_and_guards_the_den():
+    stats = {"care": 5, "focus": 6, "courage": 7, "insight": 6}
+    marten_profiles = [
+        _profile(
+            1,
+            name="모루",
+            species="marten-pot",
+            form="moonlit",
+            stats=stats,
+            level=25,
+            rarity=4,
+        ),
+        _profile(
+            2,
+            name="길잡이",
+            species="archive_guide",
+            form="mosaic",
+            stats=stats,
+            level=25,
+        ),
+    ]
+    encounter = _encounter(starting_focus=5, enemy_max_guard=2_000)
+    marked = submit_guardian_action(
+        new_guardian_battle("marten-mark", encounter, marten_profiles),
+        {"member_id": 1, "action": "unique_1"},
+        encounter,
+        marten_profiles,
+    )
+    assert marked["pending"]["enemy_vulnerability_bp"] >= 10_800
+    assert marked["party"][0]["guard"] >= 1
+
+    guarded = submit_guardian_action(
+        new_guardian_battle("marten-den", encounter, marten_profiles),
+        {"member_id": 1, "action": "unique_2"},
+        encounter,
+        marten_profiles,
+    )
+    assert guarded["pending"]["party_power_bp"] > 10_000
+    assert all(member["guard"] > 0 for member in guarded["party"])
+
+
+def test_marten_mark_opens_only_after_high_level_growth():
+    stats = {"care": 5, "focus": 6, "courage": 7, "insight": 6}
+
+    def rush_effects(level: int) -> dict:
+        kit = member_battle_kit(
+            _profile(
+                1,
+                name="모루",
+                species="marten-pot",
+                form="moonlit",
+                stats=stats,
+                level=level,
+                rarity=4,
+            )
+        )
+        return kit["unique_skills"][0]["effect_values"]
+
+    tier_1 = rush_effects(3)
+    tier_2 = rush_effects(16)
+    tier_3 = rush_effects(25)
+
+    assert tier_1 == {"enemy_vulnerability_bp": 10_000, "self_guard": 0}
+    assert tier_2 == {"enemy_vulnerability_bp": 10_000, "self_guard": 1}
+    assert tier_3["enemy_vulnerability_bp"] >= 10_800
+    assert tier_3["self_guard"] == 1
+
+
+def test_gal_relay_rewards_order_and_runway_adapts_to_weakness():
+    stats = {"care": 6, "focus": 7, "courage": 6, "insight": 6}
+    gal_profiles = [
+        _profile(
+            1,
+            name="리아",
+            species="gal-pot",
+            form="sparkling",
+            stats=stats,
+            level=25,
+            rarity=5,
+        ),
+        _profile(
+            2,
+            name="길잡이",
+            species="archive_guide",
+            form="mosaic",
+            stats=stats,
+            level=25,
+        ),
+    ]
+    encounter = _encounter(starting_focus=5, enemy_max_guard=2_000)
+    relay = submit_guardian_action(
+        new_guardian_battle("gal-relay", encounter, gal_profiles),
+        {"member_id": 1, "action": "unique_1"},
+        encounter,
+        gal_profiles,
+    )
+    assert relay["pending"]["party_power_bp"] >= 12_300
+    assert relay["focus"] == 4
+    assert relay["last_exchange"][0]["effect_key"] == "patchwork_relay"
+
+    kit = member_battle_kit(
+        gal_profiles[0],
+        current_weakness="courage",
+        current_weak_element="water",
+        current_resist_element="light",
+    )
+    reversal = kit["unique_skills"][1]
+    assert reversal["prism_shifted"] is True
+    assert reversal["matchup"] == "weak"
+    assert reversal["affinity"] == "courage"
+    assert reversal["effect_key"] == "runway_reversal"
 
 
 def test_white_garden_oath_revives_and_protects_a_downed_ally():
