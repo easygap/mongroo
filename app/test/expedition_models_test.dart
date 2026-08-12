@@ -799,6 +799,34 @@ void main() {
     );
     expect(
       resolveExpeditionCombatEffect(
+        vfxFamily: 'nurse-pot.triage-bloom',
+        kelFallbackFamily: 'kel.sunny',
+      ).directory,
+      'triage-bloom-v1',
+    );
+    expect(
+      resolveExpeditionCombatEffect(
+        vfxFamily: 'nurse-pot.white-garden-oath',
+        kelFallbackFamily: 'kel.sunny',
+      ).totalDurationMs,
+      760,
+    );
+    expect(
+      resolveExpeditionCombatEffect(
+        vfxFamily: 'maestro-pot.golden-downbeat',
+        kelFallbackFamily: 'kel.sparkling',
+      ).directory,
+      'golden-downbeat-v1',
+    );
+    expect(
+      resolveExpeditionCombatEffect(
+        vfxFamily: 'maestro-pot.silent-coda',
+        kelFallbackFamily: 'kel.sparkling',
+      ).totalDurationMs,
+      760,
+    );
+    expect(
+      resolveExpeditionCombatEffect(
         vfxFamily: 'not-yet-produced',
         kelFallbackFamily: 'kel.rainy',
         legacyEffectKey: 'ember_arc',

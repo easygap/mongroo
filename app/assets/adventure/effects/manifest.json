@@ -227,6 +227,66 @@
       "production_ready": false,
       "source_hash": "07043847B4917BEBE87F0975D6D408E2E9890C0F2D46620298BB50E381602755",
       "runtime_hash": "A9B22813EE8F2508B4E87CAA0DE8ED4B4A9CDFB3B874F48B41EB19BDD3BC2BC7"
+    },
+    {
+      "family": "nurse-pot.triage-bloom",
+      "effect_keys": ["triage_bloom"],
+      "kel": "sunny",
+      "directory": "triage-bloom-v1",
+      "frame_count": 7,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [150, 110, 90, 90, 80, 100, 160],
+      "contact_frame": 4,
+      "pivot": [0.08, 0.68],
+      "anchor": "actor_hand_r",
+      "production_ready": false,
+      "source_hash": "CEC846465122B7896A04BAAF5719DB877ED485738CD0FB6A94FDF0152C18DEDC",
+      "runtime_hash": "D977E7A550CFE88800314363A6A3E9A8AE9A0ECD39264CE57092188B4F2D535E"
+    },
+    {
+      "family": "nurse-pot.white-garden-oath",
+      "effect_keys": ["white_garden_oath"],
+      "kel": "sunny",
+      "directory": "white-garden-oath-v1",
+      "frame_count": 7,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [170, 100, 65, 65, 80, 120, 160],
+      "contact_frame": 4,
+      "pivot": [0.5, 0.5],
+      "anchor": "stage_center",
+      "production_ready": false,
+      "source_hash": "302AA70D2595BA9BBAFD5E9381B0062BF1C425F2C02D171B9646EAFC1877447D",
+      "runtime_hash": "DE98354D32BF21B71A5B9BC2C528D2457039FBDDC4E8657101C916E6423D9113"
+    },
+    {
+      "family": "maestro-pot.golden-downbeat",
+      "effect_keys": ["golden_downbeat"],
+      "kel": "sparkling",
+      "directory": "golden-downbeat-v1",
+      "frame_count": 7,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [140, 100, 75, 75, 70, 100, 160],
+      "contact_frame": 4,
+      "pivot": [0.08, 0.68],
+      "anchor": "actor_hand_r",
+      "production_ready": false,
+      "source_hash": "A206CFBE9E94848EEF8FA94BEEEA4A9C1EEFE47397B47A49E4F98D69C387FBEA",
+      "runtime_hash": "B7ACEACC21BEAAA25791DF41AA0895BEA7AAD9B618C5286F60BE325F1FD0550A"
+    },
+    {
+      "family": "maestro-pot.silent-coda",
+      "effect_keys": ["silent_coda"],
+      "kel": "sparkling",
+      "directory": "silent-coda-v1",
+      "frame_count": 7,
+      "frame_size": [576, 288],
+      "frame_durations_ms": [170, 100, 65, 65, 80, 120, 160],
+      "contact_frame": 4,
+      "pivot": [0.08, 0.68],
+      "anchor": "actor_hand_r",
+      "production_ready": false,
+      "source_hash": "4442B3207A400C2DF2D83FCF3548F2F67F6B9E97EDAF3F88A29AEB975F48610F",
+      "runtime_hash": "777169FFFC2A64EA2AAB7B3A283FC94D1CE24F8C2ABF2B6F2241A566D12747C1"
     }
   ]
 }

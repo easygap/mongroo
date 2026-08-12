@@ -55,6 +55,10 @@ flutter:
     - assets/adventure/effects/paper-flurry-v1/
     - assets/adventure/effects/ink-mist-v1/
     - assets/adventure/effects/petal-dart-v1/
+    - assets/adventure/effects/triage-bloom-v1/
+    - assets/adventure/effects/white-garden-oath-v1/
+    - assets/adventure/effects/golden-downbeat-v1/
+    - assets/adventure/effects/silent-coda-v1/
     - assets/adventure/skill-icons/baby-pot/
     - assets/adventure/skill-icons/gumiho-pot/
     - assets/adventure/skill-icons/ninja-pot/

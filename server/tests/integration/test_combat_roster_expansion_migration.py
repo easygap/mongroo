@@ -87,7 +87,7 @@ def test_combat_roster_migration_links_characters_growth_and_existing_owners(
                 "SELECT version_num FROM alembic_version"
             ).fetchone()[0]
 
-        assert revision == "0032_combat_roster"
+        assert revision == "0033_premium_story_v6"
         assert len(species_rows) == 12
         assert {row[0] for row in species_rows} >= {"maestro-pot", "nurse-pot"}
         assert all(
@@ -101,6 +101,18 @@ def test_combat_roster_migration_links_characters_growth_and_existing_owners(
             "미드나잇 레조넌스",
             "순백 트리아주",
         ]
+        premium_manifests = [json.loads(row[3]) for row in premium_rows]
+        assert all(manifest["asset_version"] == 6 for manifest in premium_manifests)
+        assert [
+            manifest["visual_story"]["shape_language"]
+            for manifest in premium_manifests
+        ] == ["sharp_angles", "soft_curves"]
+        assert premium_manifests[0]["visual_story"]["hair"] == (
+            "ink_violet_blunt_bob"
+        )
+        assert premium_manifests[1]["visual_story"]["hair"] == (
+            "pearl_champagne_long_wave"
+        )
         assert all(
             manifest.get("species_code") for manifest in linked_character_manifests
         )

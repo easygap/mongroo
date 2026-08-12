@@ -18,7 +18,7 @@ const _v3CharacterSlugs = {
   'gumiho-pot',
 };
 
-const _v4CharacterSlugs = {
+const _v6CharacterSlugs = {
   'nurse-pot',
   'maestro-pot',
 };
@@ -300,8 +300,8 @@ class ShopItem {
       return bundledAssetPath;
     }
     final slug = key.substring(key.indexOf('/') + 1);
-    final version = _v4CharacterSlugs.contains(slug)
-        ? '-v4'
+    final version = _v6CharacterSlugs.contains(slug)
+        ? '-v6'
         : _v3CharacterSlugs.contains(slug)
             ? '-v3'
             : _v2CharacterSlugs.contains(slug)

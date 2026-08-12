@@ -290,6 +290,82 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     runtimeHash:
         'A9B22813EE8F2508B4E87CAA0DE8ED4B4A9CDFB3B874F48B41EB19BDD3BC2BC7',
   ),
+  'nurse-pot.triage-bloom': ExpeditionCombatEffectSpec(
+    family: 'nurse-pot.triage-bloom',
+    effectKeys: ['triage_bloom'],
+    kel: 'sunny',
+    directory: 'triage-bloom-v1',
+    frameCount: 7,
+    frameWidth: 576,
+    frameHeight: 288,
+    frameDurationsMs: [150, 110, 90, 90, 80, 100, 160],
+    contactFrame: 4,
+    pivotX: 0.08,
+    pivotY: 0.68,
+    anchor: 'actor_hand_r',
+    productionReady: false,
+    sourceHash:
+        'CEC846465122B7896A04BAAF5719DB877ED485738CD0FB6A94FDF0152C18DEDC',
+    runtimeHash:
+        'D977E7A550CFE88800314363A6A3E9A8AE9A0ECD39264CE57092188B4F2D535E',
+  ),
+  'nurse-pot.white-garden-oath': ExpeditionCombatEffectSpec(
+    family: 'nurse-pot.white-garden-oath',
+    effectKeys: ['white_garden_oath'],
+    kel: 'sunny',
+    directory: 'white-garden-oath-v1',
+    frameCount: 7,
+    frameWidth: 576,
+    frameHeight: 288,
+    frameDurationsMs: [170, 100, 65, 65, 80, 120, 160],
+    contactFrame: 4,
+    pivotX: 0.5,
+    pivotY: 0.5,
+    anchor: 'stage_center',
+    productionReady: false,
+    sourceHash:
+        '302AA70D2595BA9BBAFD5E9381B0062BF1C425F2C02D171B9646EAFC1877447D',
+    runtimeHash:
+        'DE98354D32BF21B71A5B9BC2C528D2457039FBDDC4E8657101C916E6423D9113',
+  ),
+  'maestro-pot.golden-downbeat': ExpeditionCombatEffectSpec(
+    family: 'maestro-pot.golden-downbeat',
+    effectKeys: ['golden_downbeat'],
+    kel: 'sparkling',
+    directory: 'golden-downbeat-v1',
+    frameCount: 7,
+    frameWidth: 576,
+    frameHeight: 288,
+    frameDurationsMs: [140, 100, 75, 75, 70, 100, 160],
+    contactFrame: 4,
+    pivotX: 0.08,
+    pivotY: 0.68,
+    anchor: 'actor_hand_r',
+    productionReady: false,
+    sourceHash:
+        'A206CFBE9E94848EEF8FA94BEEEA4A9C1EEFE47397B47A49E4F98D69C387FBEA',
+    runtimeHash:
+        'B7ACEACC21BEAAA25791DF41AA0895BEA7AAD9B618C5286F60BE325F1FD0550A',
+  ),
+  'maestro-pot.silent-coda': ExpeditionCombatEffectSpec(
+    family: 'maestro-pot.silent-coda',
+    effectKeys: ['silent_coda'],
+    kel: 'sparkling',
+    directory: 'silent-coda-v1',
+    frameCount: 7,
+    frameWidth: 576,
+    frameHeight: 288,
+    frameDurationsMs: [170, 100, 65, 65, 80, 120, 160],
+    contactFrame: 4,
+    pivotX: 0.08,
+    pivotY: 0.68,
+    anchor: 'actor_hand_r',
+    productionReady: false,
+    sourceHash:
+        '4442B3207A400C2DF2D83FCF3548F2F67F6B9E97EDAF3F88A29AEB975F48610F',
+    runtimeHash:
+        '777169FFFC2A64EA2AAB7B3A283FC94D1CE24F8C2ABF2B6F2241A566D12747C1',
+  ),
 };
 
 const Map<String, String> expeditionCombatFamilyByEffectKey = {
@@ -306,4 +382,8 @@ const Map<String, String> expeditionCombatFamilyByEffectKey = {
   'paper_flurry': 'tangled-ledger.paper-flurry',
   'ink_mist': 'tangled-ledger.ink-mist',
   'petal_dart': 'drifting-pressings.petal-dart',
+  'triage_bloom': 'nurse-pot.triage-bloom',
+  'white_garden_oath': 'nurse-pot.white-garden-oath',
+  'golden_downbeat': 'maestro-pot.golden-downbeat',
+  'silent_coda': 'maestro-pot.silent-coda',
 };

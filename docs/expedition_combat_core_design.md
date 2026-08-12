@@ -1030,7 +1030,7 @@ K4는 다음 identity cell을 **중복 없이 전수 계산**한다.
 | **K5** | C 완료 | 6아키타입·6구간 phase, 서버 시간·방향·이동·충격 snapshot | 앱 연출 해석기 | 6동선·미지 `cast` fallback 통과, pose A 잔여 |
 | **K6** | C 완료 / A 진행 | 3단 resolver, manifest v2→Dart 생성, 수동 상수 제거 | 아트 승격 파이프라인 | 번들·alpha·contact 통과 |
 | **K7** | C 완료 | 적 의도 24종 code key·family·결·motion 선언 | 카탈로그 + 앱 | `COMBAT-VFX-04` 통과 |
-| **K8** | 진행 | family 68종 점진 제작 | `production_ready` 승격 | 6 family 후보, 전체 잔여 |
+| **K8** | 진행 | family 68종 점진 제작 | `production_ready` 승격 | 10 family 후보, 전체 잔여 |
 
 K1~K4는 판정, K5~K7은 연출 배선, K8은 제작이다. **K5~K7은 아트가 하나도
 없어도 완료할 수 있다.** 배선이 먼저 끝나야 K8이 코드 수정 없이 굴러간다.
@@ -1084,6 +1084,18 @@ K1~K4는 판정, K5~K7은 연출 배선, K8은 제작이다. **K5~K7은 아트�
 - `COMBAT-MOTION-02/03`, `COMBAT-VFX-01/02/04` 회귀 테스트를 추가했다.
 - 전체 회귀는 서버 448건·Flutter 291건, Flutter 정적 분석, 전투 에셋 6종
   report-only 검증을 통과했다.
+
+### K8 프리미엄 지원가 전용 연출 추가 — 2026-08-12
+
+- 백화의 `응급 개화`·`백의정원 선서`, 세렌의 `황금 첫박`·`침묵의 코다`를
+  각 7프레임 전용 family로 연결했다. 28장 모두 포즈별 원본과 투명 알파,
+  576×288 런타임 WebP, light/dark QA, 애니메이션 미리보기를 보존한다.
+- 일반 `cast` 780ms, `draw` 720ms, `channel` 760ms 계약에 프레임 합을 맞췄고
+  실제 판정이 발생하는 contact frame은 네 family 모두 4다.
+- 감정 색은 원본을 덮지 않고 런타임의 낮은 농도 `srcIn` 보조층으로 합성한다.
+  실제 기기 성능·접촉 검수 전이므로 `production_ready:false`를 유지한다.
+- 플레이어 고유 스킬 전용 후보는 2종에서 6종으로 늘었다. 나머지 고유 스킬은
+  서로 다른 family 계약을 유지한 채 성장결 fallback으로 재생된다.
 
 ### 중단 기준
 

@@ -71,8 +71,8 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="app/assets/characters/nurse-pot-v4.webp" alt="순백 트리아주 복장의 백의 수호사 백화"></td>
-    <td width="50%"><img src="app/assets/characters/maestro-pot-v4.webp" alt="미드나잇 레조넌스 복장의 공명 지휘자 세렌"></td>
+    <td width="50%"><img src="app/assets/characters/nurse-pot-v6.webp" alt="순백 트리아주 복장의 백의 수호사 백화"></td>
+    <td width="50%"><img src="app/assets/characters/maestro-pot-v6.webp" alt="미드나잇 레조넌스 복장의 공명 지휘자 세렌"></td>
   </tr>
   <tr>
     <td align="center"><strong>백의 수호사 백화</strong><br><sub>치료와 보호, 성장 후에는 쓰러진 동료의 생명선까지 다시 이어요</sub></td>
@@ -82,7 +82,8 @@
 
 백화의 `순백 트리아주`, 세렌의 `미드나잇 레조넌스`는 캐릭터를 만날 때 함께
 열리는 전용 기본 복장입니다. 큰 장식과 과한 반짝임 대신 각자의 역할이 읽히는 색과
-실루엣에 집중했습니다.
+실루엣에 집중했습니다. 백화는 끊어진 생명선을 다시 잇는 백색 정원의 수호사,
+세렌은 위험한 감정 소음을 한 박자 끊어 다음 행동을 여는 야상 공명홀의 지휘자입니다.
 
 ## 회원가입 전에 먼저 만나 보세요
 

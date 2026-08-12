@@ -52,8 +52,8 @@ const Map<String, String> gardenBundledAssetKeyPaths = {
   'characters/magical-pot': 'assets/characters/magical-pot-v2.webp',
   'characters/aloof-pot': 'assets/characters/aloof-pot-v2.webp',
   'characters/student-pot': 'assets/characters/student-pot-v2.webp',
-  'characters/nurse-pot': 'assets/characters/nurse-pot-v4.webp',
-  'characters/maestro-pot': 'assets/characters/maestro-pot-v4.webp',
+  'characters/nurse-pot': 'assets/characters/nurse-pot-v6.webp',
+  'characters/maestro-pot': 'assets/characters/maestro-pot-v6.webp',
 };
 
 /// `asset_key`가 없는 응답은 상품 코드로 찾는다.
@@ -86,8 +86,8 @@ const Map<String, String> gardenBundledItemCodePaths = {
   'companion_bunny': 'assets/companions/fluffy-bunny.webp',
   'species_cactus': 'assets/species/cactus-seed.webp',
   'species_sunflower': 'assets/species/sunflower-seed.webp',
-  'character_nurse_pot': 'assets/characters/nurse-pot-v4.webp',
-  'character_maestro_pot': 'assets/characters/maestro-pot-v4.webp',
+  'character_nurse_pot': 'assets/characters/nurse-pot-v6.webp',
+  'character_maestro_pot': 'assets/characters/maestro-pot-v6.webp',
 };
 
 String? gardenVisualAssetPath(ShopItem item) {

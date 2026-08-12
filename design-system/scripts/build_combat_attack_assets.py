@@ -28,6 +28,7 @@ VFX_V3_ROOT = Path("design-system/concepts/adventure-combat-vfx-v3")
 VFX_V4_ROOT = Path("design-system/concepts/adventure-combat-vfx-v4")
 VFX_V5_ROOT = Path("design-system/concepts/adventure-combat-vfx-v5")
 VFX_V6_ROOT = Path("design-system/concepts/adventure-combat-vfx-v6")
+VFX_V7_ROOT = Path("design-system/concepts/adventure-signature-vfx-v7")
 RUNTIME_ROOT = Path("app/assets/adventure/effects")
 RUNTIME_SIZE = (576, 288)
 QA_CELL_SIZE = (288, 144)
@@ -321,6 +322,166 @@ EFFECT_SPECS = {
         fit_full_source=True,
         validate_magenta_residue=False,
         frame_center_x=(440, 400, 335, 260, 165, 180, 255),
+    ),
+    "triage_bloom": EffectSpec(
+        effect_key="triage_bloom",
+        runtime_directory="triage-bloom-v1",
+        source_directory="triage-bloom",
+        concept_root=VFX_V7_ROOT,
+        frame_sources=(
+            "pose-00-anticipation.png",
+            "pose-01-release.png",
+            "pose-02-travel.png",
+            "pose-03-precontact.png",
+            "pose-04-contact.png",
+            "pose-05-reaction.png",
+            "pose-06-recovery.png",
+        ),
+        frame_phases=(
+            "anticipation",
+            "release",
+            "travel",
+            "travel",
+            "contact",
+            "reaction",
+            "recovery",
+        ),
+        # cast 모션 780ms에 맞춰 이동 구간 180ms를 두 프레임으로 나눈다.
+        frame_durations_ms=(150, 110, 90, 90, 80, 100, 160),
+        origin="actor_hand_r",
+        target="lowest_actor",
+        release_frame=1,
+        travel_frames=(2, 3),
+        contact_frames=(4,),
+        reaction_frame=5,
+        recovery_frames=(6,),
+        origin_edge=None,
+        origin_tolerance_px=0,
+        min_coverage=0.0003,
+        max_coverage=0.55,
+        preprocessed_alpha=True,
+        fit_full_source=True,
+        validate_magenta_residue=False,
+    ),
+    "white_garden_oath": EffectSpec(
+        effect_key="white_garden_oath",
+        runtime_directory="white-garden-oath-v1",
+        source_directory="white-garden-oath",
+        concept_root=VFX_V7_ROOT,
+        frame_sources=(
+            "pose-00-anticipation.png",
+            "pose-01-release.png",
+            "pose-02-travel.png",
+            "pose-03-precontact.png",
+            "pose-04-contact.png",
+            "pose-05-reaction.png",
+            "pose-06-recovery.png",
+        ),
+        frame_phases=(
+            "anticipation",
+            "release",
+            "travel",
+            "travel",
+            "contact",
+            "reaction",
+            "recovery",
+        ),
+        # channel 모션 760ms와 동일한 호흡으로 전원 회복·보호를 펼친다.
+        frame_durations_ms=(170, 100, 65, 65, 80, 120, 160),
+        origin="actor_hand_r",
+        target="party_all",
+        release_frame=1,
+        travel_frames=(2, 3),
+        contact_frames=(4,),
+        reaction_frame=5,
+        recovery_frames=(6,),
+        origin_edge=None,
+        origin_tolerance_px=0,
+        min_coverage=0.0003,
+        max_coverage=0.55,
+        preprocessed_alpha=True,
+        fit_full_source=True,
+        validate_magenta_residue=False,
+    ),
+    "golden_downbeat": EffectSpec(
+        effect_key="golden_downbeat",
+        runtime_directory="golden-downbeat-v1",
+        source_directory="golden-downbeat",
+        concept_root=VFX_V7_ROOT,
+        frame_sources=(
+            "pose-00-anticipation.png",
+            "pose-01-release.png",
+            "pose-02-travel.png",
+            "pose-03-precontact.png",
+            "pose-04-contact.png",
+            "pose-05-reaction.png",
+            "pose-06-recovery.png",
+        ),
+        frame_phases=(
+            "anticipation",
+            "release",
+            "travel",
+            "travel",
+            "contact",
+            "reaction",
+            "recovery",
+        ),
+        # draw 모션의 720ms에 지휘봉 예비 동작과 첫박 접촉을 맞춘다.
+        frame_durations_ms=(140, 100, 75, 75, 70, 100, 160),
+        origin="actor_hand_r",
+        target="guardian_center",
+        release_frame=1,
+        travel_frames=(2, 3),
+        contact_frames=(4,),
+        reaction_frame=5,
+        recovery_frames=(6,),
+        origin_edge=None,
+        origin_tolerance_px=0,
+        min_coverage=0.0003,
+        max_coverage=0.55,
+        preprocessed_alpha=True,
+        fit_full_source=True,
+        validate_magenta_residue=False,
+    ),
+    "silent_coda": EffectSpec(
+        effect_key="silent_coda",
+        runtime_directory="silent-coda-v1",
+        source_directory="silent-coda",
+        concept_root=VFX_V7_ROOT,
+        frame_sources=(
+            "pose-00-anticipation.png",
+            "pose-01-release.png",
+            "pose-02-travel.png",
+            "pose-03-precontact.png",
+            "pose-04-contact.png",
+            "pose-05-reaction.png",
+            "pose-06-recovery.png",
+        ),
+        frame_phases=(
+            "anticipation",
+            "release",
+            "travel",
+            "travel",
+            "contact",
+            "reaction",
+            "recovery",
+        ),
+        # channel 모션 760ms의 마지막 박자에 적 약화 판정을 동기화한다.
+        frame_durations_ms=(170, 100, 65, 65, 80, 120, 160),
+        origin="actor_hand_r",
+        target="guardian_center",
+        release_frame=1,
+        travel_frames=(2, 3),
+        contact_frames=(4,),
+        reaction_frame=5,
+        recovery_frames=(6,),
+        origin_edge=None,
+        origin_tolerance_px=0,
+        min_coverage=0.0003,
+        max_coverage=0.55,
+        preprocessed_alpha=True,
+        fit_full_source=True,
+        validate_magenta_residue=False,
     ),
 }
 
@@ -716,7 +877,9 @@ def main() -> int:
                 )
                 manifest = {
                     "version": (
-                        6
+                        7
+                        if concept_root == VFX_V7_ROOT
+                        else 6
                         if concept_root == VFX_V6_ROOT
                         else 5
                         if concept_root == VFX_V5_ROOT

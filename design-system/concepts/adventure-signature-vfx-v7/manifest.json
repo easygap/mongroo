@@ -1,0 +1,871 @@
+{
+  "version": 7,
+  "source_policy": "one reviewed ImageGen source per visible pose",
+  "code_generated_attack_pixels": false,
+  "effects": {
+    "triage_bloom": {
+      "effect_key": "triage_bloom",
+      "runtime_directory": "triage-bloom-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "origin": "actor_hand_r",
+      "target": "lowest_actor",
+      "release_frame": 1,
+      "travel_frames": [
+        2,
+        3
+      ],
+      "contact_frames": [
+        4
+      ],
+      "reaction_frame": 5,
+      "recovery_frames": [
+        6
+      ],
+      "production_candidate": true,
+      "production_ready": false,
+      "alpha_source": "imagegen_skill_remove_chroma_key",
+      "source_sha256": {
+        "pose-00-anticipation-chroma.png": "8067E3B93EFFE74C325B8C4D7D76A0FD34FF782EDF74C877A4CD589480D56A2B",
+        "pose-01-release-chroma.png": "52A9A9F814A704D005A43C2FE16A031B61F07FB3B2509719A461DD4A0549898B",
+        "pose-02-travel-chroma.png": "7C69DC78E01562A2B082011E1E34E66E644E62186CDAE4BF56AB3A17992FD20C",
+        "pose-03-precontact-chroma.png": "DFCB3AFEC8705B6B07B40E0573DA3AD1E3A24B0E2D16155DCECAD7631F2A1940",
+        "pose-04-contact-chroma.png": "3A06EF65CF41783480BADBF22D26337637585A211CC2C89325AE36D12663AA21",
+        "pose-05-reaction-chroma.png": "B14C5660C428F472CCBD5B9AF7B4FC6DD021B13E825A85FC3196167CDA77A760",
+        "pose-06-recovery-chroma.png": "EF7F608DA18395C8B94E00852D247FD0A55D0DFA6D3595EC7DEB58A7B7EA008A"
+      },
+      "alpha_sha256": {
+        "pose-00-anticipation.png": "93C5C3C657866357B3B675A0C086CC90034F3F3EF04860BB07AFB6F90F67E835",
+        "pose-01-release.png": "D0B781DB32CAA58120BB9518E1F66A986AA9A2018BDF3E251BD774D70304A521",
+        "pose-02-travel.png": "4AAE4FADF5F92437BFDDCDC82A3799C226DB673439D99D412540D0BB0BEF3BA7",
+        "pose-03-precontact.png": "6AB7F34F9442F962A7222635AD60ABBF45F7A9BD47B959C3C081994B06BC6704",
+        "pose-04-contact.png": "C9638BB47B6DD1A79F8BC6E592B072165BE9A525994D442E2D0336CBB6D58B9A",
+        "pose-05-reaction.png": "E7B6516F30F952CA649CF24DD068FC447FBEAAE65438C78298634321CABC3E59",
+        "pose-06-recovery.png": "25CEE21FCC16BB84246C9723ACD12861118ECA6E5660F09D4B71475C75C9F9BF"
+      },
+      "runtime_sha256": {
+        "frame-00.webp": "560676B52C8C0D16CF08E5C0EB26350C621146056601924F27B1952242E6689A",
+        "frame-01.webp": "37B293CA47408123BF7B3B086E29618B903DEE31581431DF33159576FA5FE499",
+        "frame-02.webp": "11CEC2EBDA878C5B7AA81C9C21184AF56645D2D85646A201E66195E9910A5125",
+        "frame-03.webp": "0104A4F2DEDC124D78F49421A95F7DB18DE4AFAAD958DFCC9ED9B9812B9490C3",
+        "frame-04.webp": "2B57FDC2A0EE01AAED6F05BF95F7932124D21D6A6094B2679C59CD6A0CBD8373",
+        "frame-05.webp": "9F79D686D3DE32BE969339EB76D2DCE2B68272FB71DA885664F1D7436097248B",
+        "frame-06.webp": "3C083402B6B76A0A23B93EB3299E7CA4706B9FFE97F56F095446F95C36E33E94"
+      },
+      "frames": [
+        {
+          "index": 0,
+          "phase": "anticipation",
+          "duration_ms": 150,
+          "source_size": [
+            1693,
+            929
+          ],
+          "source_crop": [
+            0,
+            0,
+            1693,
+            929
+          ],
+          "bbox": [
+            85,
+            136,
+            208,
+            174
+          ],
+          "coverage": 0.0118,
+          "magenta_residue": 0
+        },
+        {
+          "index": 1,
+          "phase": "release",
+          "duration_ms": 110,
+          "source_size": [
+            1693,
+            929
+          ],
+          "source_crop": [
+            0,
+            0,
+            1693,
+            929
+          ],
+          "bbox": [
+            65,
+            124,
+            487,
+            182
+          ],
+          "coverage": 0.0382,
+          "magenta_residue": 0
+        },
+        {
+          "index": 2,
+          "phase": "travel",
+          "duration_ms": 90,
+          "source_size": [
+            1693,
+            929
+          ],
+          "source_crop": [
+            0,
+            0,
+            1693,
+            929
+          ],
+          "bbox": [
+            135,
+            96,
+            489,
+            190
+          ],
+          "coverage": 0.0389,
+          "magenta_residue": 0
+        },
+        {
+          "index": 3,
+          "phase": "travel",
+          "duration_ms": 90,
+          "source_size": [
+            1693,
+            929
+          ],
+          "source_crop": [
+            0,
+            0,
+            1693,
+            929
+          ],
+          "bbox": [
+            95,
+            118,
+            480,
+            179
+          ],
+          "coverage": 0.0306,
+          "magenta_residue": 0
+        },
+        {
+          "index": 4,
+          "phase": "contact",
+          "duration_ms": 80,
+          "source_size": [
+            1692,
+            929
+          ],
+          "source_crop": [
+            0,
+            0,
+            1692,
+            929
+          ],
+          "bbox": [
+            99,
+            117,
+            453,
+            179
+          ],
+          "coverage": 0.0226,
+          "magenta_residue": 0
+        },
+        {
+          "index": 5,
+          "phase": "reaction",
+          "duration_ms": 100,
+          "source_size": [
+            1693,
+            929
+          ],
+          "source_crop": [
+            0,
+            0,
+            1693,
+            929
+          ],
+          "bbox": [
+            354,
+            128,
+            453,
+            178
+          ],
+          "coverage": 0.0075,
+          "magenta_residue": 0
+        },
+        {
+          "index": 6,
+          "phase": "recovery",
+          "duration_ms": 160,
+          "source_size": [
+            1693,
+            929
+          ],
+          "source_crop": [
+            0,
+            0,
+            1693,
+            929
+          ],
+          "bbox": [
+            385,
+            140,
+            444,
+            171
+          ],
+          "coverage": 0.0028,
+          "magenta_residue": 0
+        }
+      ]
+    },
+    "white_garden_oath": {
+      "effect_key": "white_garden_oath",
+      "runtime_directory": "white-garden-oath-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "origin": "actor_hand_r",
+      "target": "party_all",
+      "release_frame": 1,
+      "travel_frames": [
+        2,
+        3
+      ],
+      "contact_frames": [
+        4
+      ],
+      "reaction_frame": 5,
+      "recovery_frames": [
+        6
+      ],
+      "production_candidate": true,
+      "production_ready": false,
+      "alpha_source": "imagegen_skill_remove_chroma_key",
+      "source_sha256": {
+        "pose-00-anticipation-chroma.png": "0BE3EC733697520C5451BC7AA88C5D02A0065A3EE4DC3DFAED32D9D5B3993DAC",
+        "pose-01-release-chroma.png": "ECB21F1B233A66B28B28B9EDA97541C7616D72F911D71BAD15CAB448F5754A73",
+        "pose-02-travel-chroma.png": "B68C64B66B6678CCA91BC8342D4690660AE61913B6BD702521ADBF59A389162A",
+        "pose-03-precontact-chroma.png": "F0541A20DD3A696CD63B7F82E039446748679C1E6E97A6EEF3585E30F9493412",
+        "pose-04-contact-chroma.png": "FC26422EA5FFF2C1C546D05FF54497E14D2595FCD058B22AC041BBE7FD483516",
+        "pose-05-reaction-chroma.png": "780D98FBF98D068A56C0A0263905ADC5D8E32751152CEA76C8523EFE55711707",
+        "pose-06-recovery-chroma.png": "A8845ECA474DC52D707EC16E65117D85EF24CC8FBC1A260F42CC3A74B4A9A27A"
+      },
+      "alpha_sha256": {
+        "pose-00-anticipation.png": "9E4C37381B01D019EAD78DDD88BFAA59B6136F129CAD0FA8719910CD15C927AA",
+        "pose-01-release.png": "FC927F21F244972F7108B55ED9F572BED9F4B68F361EA4B19600ABE69B624F99",
+        "pose-02-travel.png": "E1BB536F46650B03327576290A5ACD3B34D4D942D59373BD1AF03224061566B9",
+        "pose-03-precontact.png": "22A99A6A4B5C2B8651E026E76D05997A208E35149DCAFC3E0FE08B4DEF285C4D",
+        "pose-04-contact.png": "F100CE4007A983F3A15C5261FF226879989FF25BF1FB12B66D3EA1860C8E3627",
+        "pose-05-reaction.png": "E1DB1DC5A18787E47F6E1555774496F1452EB4D6BC9AD12BB652C40E6A1B64C8",
+        "pose-06-recovery.png": "96B5F0990381DE37363CDE5561E4FC1C7FF9559944E7D388A55EB036D76B0D16"
+      },
+      "runtime_sha256": {
+        "frame-00.webp": "7A67FE16DE004E8B2D3A9764980BAABB6AD15BB292CA498F808E4AB4FC814EC3",
+        "frame-01.webp": "8A6EB9FC056867B795EB4FD187B84F465E0E1D1A4038ACF52673AC47ABFA96F7",
+        "frame-02.webp": "91BF40148ED72B952F67F148CAA117E5CE1F67BF8C345897D53F3873B5DA4E14",
+        "frame-03.webp": "1F0212BCC300A282D91ECD33E963DB293D6FA7343471E877F29DCF560D994260",
+        "frame-04.webp": "9E4672D21989D6FBC045056EC6D4988E04B391358D2864FE811AE20411C3A0CF",
+        "frame-05.webp": "98BEFEE95F05D6B28627159A8A93359DEEE670505F0254C8EE344FFA202FBB57",
+        "frame-06.webp": "0DAEC311FFC1FEB62A90CD57020DB57D15D7ED67279631455CD1C6B595201801"
+      },
+      "frames": [
+        {
+          "index": 0,
+          "phase": "anticipation",
+          "duration_ms": 170,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            91,
+            68,
+            198,
+            229
+          ],
+          "coverage": 0.0622,
+          "magenta_residue": 0
+        },
+        {
+          "index": 1,
+          "phase": "release",
+          "duration_ms": 100,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            76,
+            76,
+            339,
+            214
+          ],
+          "coverage": 0.0588,
+          "magenta_residue": 0
+        },
+        {
+          "index": 2,
+          "phase": "travel",
+          "duration_ms": 65,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            72,
+            77,
+            506,
+            224
+          ],
+          "coverage": 0.0779,
+          "magenta_residue": 0
+        },
+        {
+          "index": 3,
+          "phase": "travel",
+          "duration_ms": 65,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            74,
+            83,
+            507,
+            225
+          ],
+          "coverage": 0.0793,
+          "magenta_residue": 0
+        },
+        {
+          "index": 4,
+          "phase": "contact",
+          "duration_ms": 80,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            73,
+            83,
+            507,
+            225
+          ],
+          "coverage": 0.0847,
+          "magenta_residue": 0
+        },
+        {
+          "index": 5,
+          "phase": "reaction",
+          "duration_ms": 120,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            61,
+            79,
+            506,
+            211
+          ],
+          "coverage": 0.1313,
+          "magenta_residue": 0
+        },
+        {
+          "index": 6,
+          "phase": "recovery",
+          "duration_ms": 160,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            77,
+            78,
+            446,
+            199
+          ],
+          "coverage": 0.0751,
+          "magenta_residue": 0
+        }
+      ]
+    },
+    "golden_downbeat": {
+      "effect_key": "golden_downbeat",
+      "runtime_directory": "golden-downbeat-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "origin": "actor_hand_r",
+      "target": "guardian_center",
+      "release_frame": 1,
+      "travel_frames": [
+        2,
+        3
+      ],
+      "contact_frames": [
+        4
+      ],
+      "reaction_frame": 5,
+      "recovery_frames": [
+        6
+      ],
+      "production_candidate": true,
+      "production_ready": false,
+      "alpha_source": "imagegen_skill_remove_chroma_key",
+      "source_sha256": {
+        "pose-00-anticipation-chroma.png": "0AB691CFA18389E7D432BC60AC5B971E4B513E50995C580052B5C347946335CC",
+        "pose-01-release-chroma.png": "48944E0E4D94CF1B51EAD54814D95FD95E239C3F7524D1F1B76FE32203DC9EFF",
+        "pose-02-travel-chroma.png": "8533F828E901E81CF8A0200D6291149A18C58799D53BD5EF0F0CADF09621B07E",
+        "pose-03-precontact-chroma.png": "8BB7B70A695403AB0940BF519D530B4D0B212CBB29AE4DFC92ED571EC1F6E90A",
+        "pose-04-contact-chroma.png": "9A0C42669EB5F151582136E39EF4B3041E681F3794B20A1FEEE4EC39C0AAA02E",
+        "pose-05-reaction-chroma.png": "A8FDDD32F2529845C22C8C40A68B7FE570DFA4FFA0C3D88C144F5E42F87B5157",
+        "pose-06-recovery-chroma.png": "DD6AE3AF9680B5129E13031D4ADF12BBD26BF2CDF78DA5169ECDE00928BC1940"
+      },
+      "alpha_sha256": {
+        "pose-00-anticipation.png": "89DEB9845650F3F88D386CDF50DF4C00D5A397693C051319D9F397C9B773DFCD",
+        "pose-01-release.png": "FFF129F3F715978532CA5915B25A809571393B562EAB8168FCCD48E8354BB361",
+        "pose-02-travel.png": "CBD9123A7C486274EE2A548EA804B6387F11FF7BF97B30BFB3355F22E593DF77",
+        "pose-03-precontact.png": "10087F7DE0199FF66C41952C2844C376A0DDB94820B71656B14119394FBF2899",
+        "pose-04-contact.png": "7AFC669B4947B86A9C25AE7F88D0F1C3C4D323B550EAA078AB9DDE465F3057F3",
+        "pose-05-reaction.png": "16153FEE103957E73324D14294F3314EF9694507DE89284D1A397BCE9CCBE51C",
+        "pose-06-recovery.png": "34F1828ADEEA6F0FD8FEA60616ADEBFD1517CDFAF56F1A97E8577ACAD1EA5668"
+      },
+      "runtime_sha256": {
+        "frame-00.webp": "1CE695FE0CDAF0A375DA6257048C7C49560678044691B2EBF70CBBE40A8513DE",
+        "frame-01.webp": "4F84D1AEC909D67E44BA8F023BBE2544282B7D53B0FC187E030E3460CC23FDD5",
+        "frame-02.webp": "40808B9F5F552F09D6039E025A70FFAF976AE5CFBBC5382F389805922C169F0C",
+        "frame-03.webp": "16BAD380BBB61A6BC12177D412657084003C13F5AC55008DD758426E43913BA4",
+        "frame-04.webp": "DA740AADAC639FD8F222E1C2BF20125321C7C3E62802760F98B913A0932C9523",
+        "frame-05.webp": "9B9B27A6D1524AA3FA0F30773E5AE24EED0CBD60027AAF8817C4E37CD72CE127",
+        "frame-06.webp": "AC2ED64F86C2AED209D7CDB87407F7B4E7352F8DB2167BA95753EBF3ADEB8106"
+      },
+      "frames": [
+        {
+          "index": 0,
+          "phase": "anticipation",
+          "duration_ms": 140,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            71,
+            116,
+            233,
+            214
+          ],
+          "coverage": 0.0188,
+          "magenta_residue": 0
+        },
+        {
+          "index": 1,
+          "phase": "release",
+          "duration_ms": 100,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            92,
+            71,
+            298,
+            209
+          ],
+          "coverage": 0.0278,
+          "magenta_residue": 1
+        },
+        {
+          "index": 2,
+          "phase": "travel",
+          "duration_ms": 75,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            89,
+            79,
+            453,
+            210
+          ],
+          "coverage": 0.0563,
+          "magenta_residue": 5
+        },
+        {
+          "index": 3,
+          "phase": "travel",
+          "duration_ms": 75,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            87,
+            71,
+            478,
+            210
+          ],
+          "coverage": 0.0415,
+          "magenta_residue": 3
+        },
+        {
+          "index": 4,
+          "phase": "contact",
+          "duration_ms": 70,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            87,
+            35,
+            459,
+            259
+          ],
+          "coverage": 0.0466,
+          "magenta_residue": 2
+        },
+        {
+          "index": 5,
+          "phase": "reaction",
+          "duration_ms": 100,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            87,
+            77,
+            522,
+            222
+          ],
+          "coverage": 0.0341,
+          "magenta_residue": 10
+        },
+        {
+          "index": 6,
+          "phase": "recovery",
+          "duration_ms": 160,
+          "source_size": [
+            1672,
+            941
+          ],
+          "source_crop": [
+            0,
+            0,
+            1672,
+            941
+          ],
+          "bbox": [
+            100,
+            88,
+            495,
+            205
+          ],
+          "coverage": 0.0088,
+          "magenta_residue": 0
+        }
+      ]
+    },
+    "silent_coda": {
+      "effect_key": "silent_coda",
+      "runtime_directory": "silent-coda-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "origin": "actor_hand_r",
+      "target": "guardian_center",
+      "release_frame": 1,
+      "travel_frames": [
+        2,
+        3
+      ],
+      "contact_frames": [
+        4
+      ],
+      "reaction_frame": 5,
+      "recovery_frames": [
+        6
+      ],
+      "production_candidate": true,
+      "production_ready": false,
+      "alpha_source": "imagegen_skill_remove_chroma_key",
+      "source_sha256": {
+        "pose-00-anticipation-chroma.png": "CFD9B5F960C9DE69BA7CA1C3C1BE7BA047F4C1CAA43BB74DA21AF1AE02BB443D",
+        "pose-01-release-chroma.png": "58E87FED951EA7542D877D1E5C6BC1287ABA500863DC485F9AF887B4CA3924AF",
+        "pose-02-travel-chroma.png": "E9651867AB9E675D4F9212983A81C8D7F0ACC082B896DD466F684199DFEE61AA",
+        "pose-03-precontact-chroma.png": "EF3F17F5F9C751955176E508CAD413059233727EC9F2B01547F64228311A5B76",
+        "pose-04-contact-chroma.png": "E576C390633FD3D133D401C30199266CCC10B4C498AC924A2E9F3359BE31C37F",
+        "pose-05-reaction-chroma.png": "709237F152C41A0888362959A1B9AC2E0A647F2E20D184F761BE9B06445B0073",
+        "pose-06-recovery-chroma.png": "02855FFDC25FD826E21FEF505A95C4C932C766BECD48B1BD1EFD67E0B7DA0B78"
+      },
+      "alpha_sha256": {
+        "pose-00-anticipation.png": "03FEA5ED88A49603218D388340562DCA8354A528A433A30CB4B92A61C1918152",
+        "pose-01-release.png": "8AC5C0E713C6004E624053AC2668C58F1E756965694E797ACAF1D190F0782383",
+        "pose-02-travel.png": "F2E24F59ADCCE300A9E86257ABFFB141A52FB2851291C0E609992ADF6E3CB9EF",
+        "pose-03-precontact.png": "D13F6125A1CC314B94D3906AD0A5EFCB014938D6FE2516AD0DE71E090B8B3EE9",
+        "pose-04-contact.png": "513DFDC8E137431A2C9C4D92541935FEB7E9EF0F24ADB7C7372277A3CF65BAE8",
+        "pose-05-reaction.png": "9F5F77DFDBB8B139A1BF55382CE4E9392101D7B6621A9E2EF51BC76C57E98B18",
+        "pose-06-recovery.png": "5C7947B1877205B994888DD7927B46EE4FD60E8AFF533A9531BD39AA943859B9"
+      },
+      "runtime_sha256": {
+        "frame-00.webp": "41DB48A554EE6EBD48DF7CC2A785CB520077532FF7898338FD19D78F19201FA1",
+        "frame-01.webp": "C9039AD71E6E509ADC6F60D8DF8AC0065EBC595CD10033945D03E2F79E9FE71C",
+        "frame-02.webp": "17904ACBE2C2D1A034CDCE199C04A43DF90F14A2F51257B962A3955ACEBF68A3",
+        "frame-03.webp": "FBB0F4477DF3BFD0E6F55042039091F53EB12F0AF99EFA3B853244B47253728A",
+        "frame-04.webp": "EC19765FC95AD3B1470C112DF65F40100EF22CD1277B098DD82C3B423CF91679",
+        "frame-05.webp": "11FB68603CBBBBD7BAC51247B9B6F09B84D2CA32770DFC4B53B182C2ABC7A78F",
+        "frame-06.webp": "75F9E3883E3D195CCC371AE2953453CD953D6F485271CC6B23FBB2891D5B222E"
+      },
+      "frames": [
+        {
+          "index": 0,
+          "phase": "anticipation",
+          "duration_ms": 170,
+          "source_size": [
+            1774,
+            887
+          ],
+          "source_crop": [
+            0,
+            0,
+            1774,
+            887
+          ],
+          "bbox": [
+            53,
+            77,
+            177,
+            207
+          ],
+          "coverage": 0.0306,
+          "magenta_residue": 0
+        },
+        {
+          "index": 1,
+          "phase": "release",
+          "duration_ms": 100,
+          "source_size": [
+            1774,
+            887
+          ],
+          "source_crop": [
+            0,
+            0,
+            1774,
+            887
+          ],
+          "bbox": [
+            52,
+            74,
+            197,
+            208
+          ],
+          "coverage": 0.0308,
+          "magenta_residue": 0
+        },
+        {
+          "index": 2,
+          "phase": "travel",
+          "duration_ms": 65,
+          "source_size": [
+            1774,
+            887
+          ],
+          "source_crop": [
+            0,
+            0,
+            1774,
+            887
+          ],
+          "bbox": [
+            52,
+            75,
+            533,
+            208
+          ],
+          "coverage": 0.0542,
+          "magenta_residue": 4
+        },
+        {
+          "index": 3,
+          "phase": "travel",
+          "duration_ms": 65,
+          "source_size": [
+            1774,
+            887
+          ],
+          "source_crop": [
+            0,
+            0,
+            1774,
+            887
+          ],
+          "bbox": [
+            46,
+            75,
+            527,
+            209
+          ],
+          "coverage": 0.0376,
+          "magenta_residue": 61
+        },
+        {
+          "index": 4,
+          "phase": "contact",
+          "duration_ms": 80,
+          "source_size": [
+            1774,
+            887
+          ],
+          "source_crop": [
+            0,
+            0,
+            1774,
+            887
+          ],
+          "bbox": [
+            46,
+            75,
+            486,
+            209
+          ],
+          "coverage": 0.0379,
+          "magenta_residue": 147
+        },
+        {
+          "index": 5,
+          "phase": "reaction",
+          "duration_ms": 120,
+          "source_size": [
+            1774,
+            887
+          ],
+          "source_crop": [
+            0,
+            0,
+            1774,
+            887
+          ],
+          "bbox": [
+            377,
+            75,
+            486,
+            232
+          ],
+          "coverage": 0.027,
+          "magenta_residue": 116
+        },
+        {
+          "index": 6,
+          "phase": "recovery",
+          "duration_ms": 160,
+          "source_size": [
+            1774,
+            887
+          ],
+          "source_crop": [
+            0,
+            0,
+            1774,
+            887
+          ],
+          "bbox": [
+            396,
+            107,
+            458,
+            198
+          ],
+          "coverage": 0.0076,
+          "magenta_residue": 29
+        }
+      ]
+    }
+  }
+}

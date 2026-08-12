@@ -446,7 +446,7 @@ void main() {
     expect(tsundere.motionKey, 'tsundere_turn_away');
   });
 
-  test('프리미엄 지원가 v4 이미지와 구매 포함 복장을 노출한다', () {
+  test('프리미엄 지원가 v6 이미지와 구매 포함 복장을 노출한다', () {
     ShopItem premium({
       required String slug,
       required String outfit,
@@ -484,9 +484,9 @@ void main() {
     );
 
     expect(
-        nurse.bundledCharacterAssetPath, 'assets/characters/nurse-pot-v4.webp');
+        nurse.bundledCharacterAssetPath, 'assets/characters/nurse-pot-v6.webp');
     expect(maestro.bundledCharacterAssetPath,
-        'assets/characters/maestro-pot-v4.webp');
+        'assets/characters/maestro-pot-v6.webp');
     expect(nurse.growthSpeciesCode, 'nurse-pot');
     expect(maestro.growthSpeciesCode, 'maestro-pot');
     expect(nurse.baseOutfitName, '순백 트리아주');
