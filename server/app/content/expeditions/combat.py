@@ -51,8 +51,12 @@ from app.content.expeditions.combat_motion import (
     kel_fallback_family,
     present_intent,
 )
-from app.content.expeditions.tangles import tangle_definition
+from app.content.expeditions.tangles import CONTACT_MATERIALS, tangle_definition
 
+
+# 전용 재질이 없는 구형 수호자에게 쓸 안전 기본값. 단단한 무언가에 닿았다는
+# 사실만 전하고 재질을 과장하지 않는다.
+DEFAULT_CONTACT_MATERIAL = "stone"
 
 # 캐릭터, 감정 성장, 레벨/희귀도 계수의 단일 원본은 combat_identity.py다.
 AFFINITIES = IDENTITY_AFFINITIES
@@ -63,16 +67,6 @@ FORM_COMBAT_SKILLS = IDENTITY_FORM_COMBAT_SKILLS
 FIELD_NOTE_SKILL = IDENTITY_FIELD_NOTE_SKILL
 
 PRISM_SHIFT_EFFECTS = frozenset({"prism_shift", "runway_reversal"})
-SIGNATURE_RUNTIME_EFFECTS = frozenset(
-    {
-        "patina_parry",
-        "golden_seam",
-        "softpaw_rush",
-        "den_guardian_roar",
-        "patchwork_relay",
-        "runway_reversal",
-    }
-)
 
 
 class CombatRuleError(ValueError):
@@ -230,7 +224,10 @@ def member_battle_kit(
             effect_bp = EFFECT_POWER_BP["last_stand"]
         ready_round = int(cooldowns.get(str(skill["code"]), 0))
         effect_values = combat_effect_values(
-            str(skill["effect"]), tier=tier, combat_stats=combat_stats
+            str(skill["effect"]),
+            tier=tier,
+            combat_stats=combat_stats,
+            skill_code=str(skill["code"]),
         )
         vfx_intensity = (0.86, 1.0, 1.14)[tier - 1]
         audio_layer = ("light", "full", "signature")[tier - 1]
@@ -277,7 +274,7 @@ def member_battle_kit(
                 if fusion_profile is not None
                 else None
             ),
-            "fusion_production_ready": False if fusion_profile is not None else None,
+            "fusion_production_ready": True if fusion_profile is not None else None,
             "prism_shifted": prism_shifted,
             "presentation_tier": tier,
             "vfx_intensity": vfx_intensity,
@@ -293,8 +290,8 @@ def member_battle_kit(
             "emotion_vfx_secondary": emotion_palette["secondary"],
             "damage_type_label": DAMAGE_TYPE_LABELS[skill["damage_type"]],
             "effect_key": (
-                str(skill["effect"])
-                if skill["effect"] in SIGNATURE_RUNTIME_EFFECTS
+                str(skill["code"])
+                if source == "signature"
                 else ELEMENT_RUNTIME_EFFECTS[element]
             ),
             "kel_fallback_family": kel_fallback_family(skill_kel),
@@ -463,6 +460,7 @@ def _resolve_waves(
                 "weak_kel": element_kels[weak_element],
                 "resist_kel": element_kels[resist_element],
                 "intents": [dict(intent) for intent in tangle["intents"]],
+                "contact_material": tangle["contact_material"],
                 "appear_caption": tangle["appear_caption"],
                 "release_caption": tangle["release_caption"],
             }
@@ -566,7 +564,7 @@ def _advance_boss_phase(state: dict[str, Any]) -> list[dict[str, Any]]:
                     "phase_count": len(phases),
                     "phase_code": phase.get("code", f"phase_{index + 1}"),
                     "phase_name": phase.get("name", f"{index + 1}페이즈"),
-                    "effect_key": "prism_burst",
+                    "effect_key": "boss_phase_break",
                     "vfx_family": "guardian.phase-break",
                     "presentation_tier": min(3, index + 1),
                     "audio_layer": "signature" if index + 1 >= 3 else "full",
@@ -606,6 +604,23 @@ def _current_wave(state: dict[str, Any]) -> dict[str, Any] | None:
     waves = state.get("waves") or []
     index = int(state.get("wave_index", 0))
     return waves[index] if 0 <= index < len(waves) else None
+
+
+def target_contact_material(state: dict[str, Any]) -> str:
+    """우리 공격이 닿는 대상의 재질. 접촉 프레임의 소리를 고르는 값이다.
+
+    엉킴 웨이브가 있으면 그 몸체 재질을, 구형 수호자 전투에는 전투 생성 때
+    스냅샷한 값을 쓴다. 저장 중인 run이 카탈로그 변경에 흔들리지 않도록
+    상태에 기록한 값을 우선한다.
+    """
+
+    wave = _current_wave(state)
+    if wave is not None and wave.get("contact_material") in CONTACT_MATERIALS:
+        return str(wave["contact_material"])
+    material = state.get("contact_material")
+    if material in CONTACT_MATERIALS:
+        return str(material)
+    return DEFAULT_CONTACT_MATERIAL
 
 
 def new_guardian_battle(
@@ -667,6 +682,11 @@ def new_guardian_battle(
         "starting_focus_level_bonus": starting_focus_level_bonus,
         "average_party_level": average_party_level,
         "enemy_kind": "tangle" if waves else "guardian",
+        "contact_material": (
+            encounter.get("contact_material")
+            if encounter.get("contact_material") in CONTACT_MATERIALS
+            else DEFAULT_CONTACT_MATERIAL
+        ),
         "waves": waves,
         "wave_index": 0,
         "boss_phases": boss_phases,
@@ -796,6 +816,9 @@ def guardian_battle_payload(
         **copy.deepcopy(state),
         "kel_map_version": kel_map_version,
         "weakness_label": AFFINITY_LABELS.get(weakness, weakness),
+        # 지역 BGM을 고를 값. 엉킴 전투에서는 현재 웨이브의 지역이고, 웨이브가
+        # 없는 구형 수호자에는 없다(앱이 첫 지역 곡으로 떨어진다).
+        "region_code": (wave or {}).get("region_code"),
         "enemy_kind": state.get("enemy_kind", "guardian"),
         "enemy": {
             "name": (wave["name"] if wave else encounter.get("enemy_name", "수호자")),
@@ -1242,6 +1265,96 @@ def _apply_member_command(
                 int(pending.get("party_power_bp", 10_000)),
                 int(effect_values.get("party_power_bp", 10_000)),
             )
+        # 레벨 성장 기믹은 effect 종류와 독립된 공통 키로 정규화한다. 고유기
+        # 전용 처리와 중복되지 않고, 서버 이벤트·상세 UI에도 같은 수치가 남는다.
+        focus = min(
+            max_focus,
+            focus + int(effect_values.get("tier_focus_refund", 0)),
+        )
+        member_state["guard"] = int(member_state["guard"]) + int(
+            effect_values.get("tier_self_guard", 0)
+        )
+        member_state["hp"] = min(
+            int(member_state["max_hp"]),
+            int(member_state["hp"]) + int(effect_values.get("tier_self_heal", 0)),
+        )
+        for target in _living_party(state):
+            target["guard"] = int(target["guard"]) + int(
+                effect_values.get("tier_party_guard", 0)
+            )
+        pending["party_power_bp"] = max(
+            int(pending.get("party_power_bp", 10_000)),
+            int(effect_values.get("tier_party_power_bp", 10_000)),
+        )
+        pending["enemy_vulnerability_bp"] = max(
+            int(pending.get("enemy_vulnerability_bp", 10_000)),
+            int(effect_values.get("tier_enemy_vulnerability_bp", 10_000)),
+        )
+        pending["intent_power_delta"] = int(pending.get("intent_power_delta", 0)) + int(
+            effect_values.get("tier_intent_power_delta", 0)
+        )
+        if weakness_hit:
+            focus = min(
+                max_focus,
+                focus + int(effect_values.get("tier_focus_refund_on_weakness", 0)),
+            )
+            member_state["guard"] = int(member_state["guard"]) + int(
+                effect_values.get("tier_self_guard_on_weakness", 0)
+            )
+            pending["party_power_bp"] = max(
+                int(pending.get("party_power_bp", 10_000)),
+                int(effect_values.get("tier_party_power_bp_on_weakness", 10_000)),
+            )
+            pending["enemy_vulnerability_bp"] = max(
+                int(pending.get("enemy_vulnerability_bp", 10_000)),
+                int(
+                    effect_values.get("tier_enemy_vulnerability_bp_on_weakness", 10_000)
+                ),
+            )
+        else:
+            member_state["guard"] = int(member_state["guard"]) + int(
+                effect_values.get("tier_self_guard_on_nonweak", 0)
+            )
+            pending["intent_power_delta"] = int(
+                pending.get("intent_power_delta", 0)
+            ) + int(effect_values.get("tier_intent_power_delta_on_nonweak", 0))
+        if resistance_hit:
+            focus = min(
+                max_focus,
+                focus + int(effect_values.get("tier_focus_refund_on_resist", 0)),
+            )
+            member_state["guard"] = int(member_state["guard"]) + int(
+                effect_values.get("tier_self_guard_on_resist", 0)
+            )
+        critical = int(member_state["hp"]) <= max(
+            1, (int(member_state["max_hp"]) + 2) // 3
+        )
+        if critical:
+            member_state["guard"] = int(member_state["guard"]) + int(
+                effect_values.get("tier_self_guard_when_critical", 0)
+            )
+            member_state["hp"] = min(
+                int(member_state["max_hp"]),
+                int(member_state["hp"])
+                + int(effect_values.get("tier_self_heal_when_critical", 0)),
+            )
+            pending["intent_power_delta"] = int(
+                pending.get("intent_power_delta", 0)
+            ) + int(effect_values.get("tier_intent_power_delta_when_critical", 0))
+        if any(
+            int(target["hp"]) < int(target["max_hp"]) for target in _living_party(state)
+        ):
+            focus = min(
+                max_focus,
+                focus
+                + int(effect_values.get("tier_focus_refund_when_ally_wounded", 0)),
+            )
+        if damage == enemy_before:
+            focus = min(
+                max_focus,
+                focus
+                + int(effect_values.get("tier_focus_refund_on_exact_finisher", 0)),
+            )
         if action != "attack":
             cooldown_turns = int(action_data.get("cooldown_turns", 0))
             if cooldown_turns > 0:
@@ -1279,6 +1392,10 @@ def _apply_member_command(
             "motion": motion,
             "vfx_family": vfx_family,
             "kel_fallback_family": kel_fallback,
+            # 지키기는 우리 쪽에서 받아 내는 소리라 대상 재질을 쓰지 않는다.
+            "contact_material": (
+                "guard" if action == "guard" else target_contact_material(state)
+            ),
             "element": action_element,
             "elements": action_elements,
             "kel": action_kel,
@@ -1362,6 +1479,7 @@ def _finalize_round(
                 "vfx_family": intent["vfx_family"],
                 "kel": intent["kel"],
                 "kel_fallback_family": intent["kel_fallback_family"],
+                "contact_material": intent["contact_material"],
                 "kel_map_version": _battle_kel_map_version(state),
                 "enemy_guard_before": int(state["enemy_guard"]),
                 "enemy_guard_after": int(state["enemy_guard"]),
@@ -1420,6 +1538,9 @@ def _enemy_cleared_events(state: dict[str, Any]) -> list[dict[str, Any]]:
                 {
                     "type": "wave_cleared",
                     "wave_index": int(state["wave_index"]),
+                    # 풀려남 cadence는 지역마다 다른 두 음이다. 앱이 지도 문맥
+                    # 없이도 고를 수 있게 이벤트에 지역을 함께 실어 보낸다.
+                    "region_code": wave.get("region_code"),
                     "caption": wave["release_caption"],
                 },
             )
@@ -1456,12 +1577,16 @@ def _enemy_cleared_events(state: dict[str, Any]) -> list[dict[str, Any]]:
         if wave is not None
         else "수호 장벽이 부서지고 장부지기가 길을 열었어요!"
     )
+    region_code = (wave or {}).get("region_code")
     return [
         _push_event(
             state,
             {
                 "type": "outcome",
                 "outcome": "victory",
+                # 엉킴 전투에서만 풀려남 cadence를 고를 지역이 있다. 구형 수호자
+                # 응답에는 없던 키를 새로 만들지 않는다.
+                **({"region_code": region_code} if region_code else {}),
                 "caption": caption,
             },
         )

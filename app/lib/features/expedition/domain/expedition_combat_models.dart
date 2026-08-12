@@ -56,6 +56,7 @@ class ExpeditionBattle {
     this.enemyKind = 'guardian',
     this.wave,
     this.bossPhase,
+    this.regionCode,
   });
 
   final int version;
@@ -81,6 +82,10 @@ class ExpeditionBattle {
 
   /// 3페이즈 보스의 현재 봉인 상태. 일반 수호전과 엉킴에는 없다.
   final ExpeditionBattleBossPhase? bossPhase;
+
+  /// 이 전투가 벌어지는 지역. 지역마다 다른 BGM을 고르는 값이며 웨이브가 없는
+  /// 구버전 수호전 응답에는 없다.
+  final String? regionCode;
 
   bool get isTangle => enemyKind == 'tangle';
 
@@ -128,6 +133,7 @@ class ExpeditionBattle {
               )
             : null,
         enemyKind: json['enemy_kind'] as String? ?? 'guardian',
+        regionCode: json['region_code'] as String?,
         wave: json['wave'] is Map<String, dynamic>
             ? ExpeditionBattleWave.fromJson(
                 json['wave'] as Map<String, dynamic>,
@@ -291,6 +297,7 @@ class ExpeditionBattleIntent {
     this.motionProfile,
     this.motion,
     this.kel,
+    this.contactMaterial,
   });
 
   final String code;
@@ -304,6 +311,10 @@ class ExpeditionBattleIntent {
   final String? motionProfile;
   final ExpeditionCombatMotion? motion;
   final String? kel;
+
+  /// 이 예고가 날려 보내는 물건의 재질. 예고 preview 소리를 고르는 값이며
+  /// 실제로 닿는 순간의 접촉음과 같은 재질이라 귀로 예상이 맞는지 확인된다.
+  final String? contactMaterial;
 
   String get targetLabel => switch (target) {
         'all' => '탐험대 전체',
@@ -324,6 +335,7 @@ class ExpeditionBattleIntent {
         motionProfile: json['motion_profile'] as String?,
         motion: ExpeditionCombatMotion.fromNullableJson(json['motion']),
         kel: json['kel'] as String?,
+        contactMaterial: json['contact_material'] as String?,
       );
 }
 
@@ -846,6 +858,11 @@ class ExpeditionBattleEvent {
     this.cameraProfile = 'steady',
     this.emotionVfxPrimary,
     this.emotionVfxSecondary,
+    this.phaseIndex = 0,
+    this.phaseCount = 0,
+    this.phaseName,
+    this.contactMaterial,
+    this.regionCode,
   });
 
   final int sequence;
@@ -889,9 +906,26 @@ class ExpeditionBattleEvent {
   final String cameraProfile;
   final String? emotionVfxPrimary;
   final String? emotionVfxSecondary;
+  final int phaseIndex;
+  final int phaseCount;
+  final String? phaseName;
+
+  /// 접촉 프레임에서 어떤 재질 소리를 낼지 — 서버가 판정한 값이다.
+  /// `leaf|paper|water|wood|stone|guard` 중 하나이며, 구버전 응답에는 없다.
+  final String? contactMaterial;
+
+  /// 풀려남 cadence를 고를 지역. 엉킴이 풀린 이벤트에만 실려 온다.
+  final String? regionCode;
 
   bool get isPartyAction => type == 'party_action';
   bool get isEnemyAction => type == 'enemy_action';
+  bool get isBossPhase => type == 'boss_phase';
+
+  /// 엉킴 하나가 제자리로 돌아간 순간. 다음 엉킴 등장 전 한 번만 울린다.
+  bool get isWaveCleared => type == 'wave_cleared';
+
+  /// 마지막 엉킴까지 풀려 전투가 끝난 순간.
+  bool get isVictoryOutcome => type == 'outcome' && outcome == 'victory';
 
   factory ExpeditionBattleEvent.fromJson(Map<String, dynamic> json) =>
       ExpeditionBattleEvent(
@@ -950,6 +984,11 @@ class ExpeditionBattleEvent {
         cameraProfile: json['camera_profile'] as String? ?? 'steady',
         emotionVfxPrimary: json['emotion_vfx_primary'] as String?,
         emotionVfxSecondary: json['emotion_vfx_secondary'] as String?,
+        phaseIndex: _combatInt(json['phase_index']),
+        phaseCount: _combatInt(json['phase_count']),
+        phaseName: json['phase_name'] as String?,
+        contactMaterial: json['contact_material'] as String?,
+        regionCode: json['region_code'] as String?,
         targets: _combatMaps(json['targets'])
             .map(ExpeditionBattleTarget.fromJson)
             .toList(growable: false),

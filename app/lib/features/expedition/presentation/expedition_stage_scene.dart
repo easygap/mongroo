@@ -127,6 +127,7 @@ class _ImmersiveStageScene extends ConsumerWidget {
                           children: [
                             ExpeditionEncounterStage(
                               encounter: null,
+                              regionCode: expedition.region.code,
                               actor: actor,
                               party: expedition.party,
                               cue: state.actionCue,
@@ -240,7 +241,8 @@ class _ImmersiveStageScene extends ConsumerWidget {
 
 /// 장면 위 말풍선. 사건 본문은 90자 계약을 따르므로 한 덩이면 충분하다.
 class _SceneSpeechBubble extends StatelessWidget {
-  const _SceneSpeechBubble({super.key, required this.title, required this.text});
+  const _SceneSpeechBubble(
+      {super.key, required this.title, required this.text});
 
   final String title;
   final String text;
@@ -404,9 +406,7 @@ class _StageChoiceCard extends StatelessWidget {
               const SizedBox(height: 10),
               if (detail != null)
                 Text(
-                  detail.safe
-                      ? '판정 없이 안전하게 진행돼요. 잃는 것도 없어요.'
-                      : detail.label,
+                  detail.safe ? '판정 없이 안전하게 진행돼요. 잃는 것도 없어요.' : detail.label,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               if (!choice.safe) ...[

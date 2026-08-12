@@ -12,6 +12,7 @@ import '../../../core/theme/mongroo_ui.dart';
 import '../../home/domain/plant.dart';
 import '../../home/presentation/plant_view.dart';
 import '../domain/expedition_models.dart';
+import 'expedition_combat_audio.dart';
 import 'expedition_combat_effects.dart';
 import 'expedition_combat_sprites.dart';
 import 'expedition_controller.dart';
@@ -44,7 +45,7 @@ class ExpeditionBattleSettings {
     this.autoMode = ExpeditionAutoMode.off,
     this.pace = 1,
     this.shortEffects = false,
-    this.audioEnabled = true,
+    this.audioMode = ExpeditionAudioMode.all,
   });
 
   final ExpeditionAutoMode autoMode;
@@ -55,20 +56,32 @@ class ExpeditionBattleSettings {
   /// 짧은 연출 모드. 시동·여운을 줄이되 판정 정보는 유지한다.
   final bool shortEffects;
 
-  /// 전투 BGM과 효과음을 함께 끈다. 판정 정보는 시각·촉각으로 그대로 남는다.
-  final bool audioEnabled;
+  /// 음악·효과음 조합. 어느 단계에서도 판정 정보는 시각·촉각으로 남는다.
+  final ExpeditionAudioMode audioMode;
+
+  bool get musicEnabled => audioMode == ExpeditionAudioMode.all;
+  bool get sfxEnabled => audioMode != ExpeditionAudioMode.muted;
+
+  /// 소리가 하나라도 나는지 — 기존 단일 토글 호출부가 읽는 값이다.
+  bool get audioEnabled => audioMode != ExpeditionAudioMode.muted;
+
+  String get audioLabel => switch (audioMode) {
+        ExpeditionAudioMode.all => '음악·효과음',
+        ExpeditionAudioMode.sfxOnly => '효과음만',
+        ExpeditionAudioMode.muted => '소리 꺼짐',
+      };
 
   ExpeditionBattleSettings copyWith({
     ExpeditionAutoMode? autoMode,
     int? pace,
     bool? shortEffects,
-    bool? audioEnabled,
+    ExpeditionAudioMode? audioMode,
   }) =>
       ExpeditionBattleSettings(
         autoMode: autoMode ?? this.autoMode,
         pace: pace ?? this.pace,
         shortEffects: shortEffects ?? this.shortEffects,
-        audioEnabled: audioEnabled ?? this.audioEnabled,
+        audioMode: audioMode ?? this.audioMode,
       );
 }
 
@@ -98,8 +111,16 @@ class ExpeditionBattleSettingsNotifier
   void toggleShortEffects() =>
       state = state.copyWith(shortEffects: !state.shortEffects);
 
-  void toggleAudio() =>
-      state = state.copyWith(audioEnabled: !state.audioEnabled);
+  /// 음악·효과음 → 효과음만 → 소리 꺼짐 순으로 돈다.
+  void cycleAudioMode() {
+    state = state.copyWith(
+      audioMode: switch (state.audioMode) {
+        ExpeditionAudioMode.all => ExpeditionAudioMode.sfxOnly,
+        ExpeditionAudioMode.sfxOnly => ExpeditionAudioMode.muted,
+        ExpeditionAudioMode.muted => ExpeditionAudioMode.all,
+      },
+    );
+  }
 }
 
 /// 전투 표준 장비(AUTO·배속·짧은 연출) 상태. 앱 세션 동안 유지된다.
@@ -256,21 +277,25 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
                   ),
                   const SizedBox(width: 6),
                   Semantics(
-                    label: '전투 소리 ${settings.audioEnabled ? '켜짐' : '꺼짐'}',
+                    label: '전투 소리 ${settings.audioLabel}, 눌러서 다음 단계',
                     child: SizedBox(
                       height: 44,
                       child: FilterChip(
                         key: const ValueKey('seq-dock-audio'),
                         selected: settings.audioEnabled,
-                        onSelected: (_) => notifier.toggleAudio(),
+                        onSelected: (_) => notifier.cycleAudioMode(),
                         avatar: Icon(
-                          settings.audioEnabled
-                              ? Icons.volume_up_outlined
-                              : Icons.volume_off_outlined,
+                          switch (settings.audioMode) {
+                            ExpeditionAudioMode.all => Icons.volume_up_outlined,
+                            ExpeditionAudioMode.sfxOnly =>
+                              Icons.music_off_outlined,
+                            ExpeditionAudioMode.muted =>
+                              Icons.volume_off_outlined,
+                          },
                           size: 16,
                         ),
                         visualDensity: VisualDensity.compact,
-                        label: const Text('소리'),
+                        label: Text(settings.audioLabel),
                       ),
                     ),
                   ),
@@ -1633,6 +1658,22 @@ Color _dockActionColor(BuildContext context, String action) {
 const _dockSkillIconAssets = <String, String>{
   'sprout_cheer': 'assets/adventure/skill-icons/baby-pot/sprout-cheer-v1.webp',
   'root_embrace': 'assets/adventure/skill-icons/baby-pot/root-embrace-v1.webp',
+  'command_blade':
+      'assets/adventure/skill-icons/handsome-pot/command-blade-v1.webp',
+  'command_crescendo':
+      'assets/adventure/skill-icons/handsome-pot/command-crescendo-v1.webp',
+  'heart_spotlight':
+      'assets/adventure/skill-icons/pretty-pot/heart-spotlight-v1.webp',
+  'ribbon_encore':
+      'assets/adventure/skill-icons/pretty-pot/ribbon-encore-v1.webp',
+  'blazing_counter':
+      'assets/adventure/skill-icons/tsundere-pot/blazing-counter-v1.webp',
+  'iron_uppercut':
+      'assets/adventure/skill-icons/tsundere-pot/iron-uppercut-v1.webp',
+  'grave_gravity':
+      'assets/adventure/skill-icons/zombie-pot/grave-gravity-v1.webp',
+  'undying_chain':
+      'assets/adventure/skill-icons/zombie-pot/undying-chain-v1.webp',
   'sunny_warmth_share':
       'assets/adventure/skill-icons/baby-pot/sunny-warmth-share-v1.webp',
   'field_note_echo':
@@ -1644,6 +1685,18 @@ const _dockSkillIconAssets = <String, String>{
   'venom_seam': 'assets/adventure/skill-icons/ninja-pot/venom-seam-v1.webp',
   'shadow_execution':
       'assets/adventure/skill-icons/ninja-pot/shadow-execution-v1.webp',
+  'prism_meteor':
+      'assets/adventure/skill-icons/magical-pot/prism-meteor-v1.webp',
+  'timefold_comet':
+      'assets/adventure/skill-icons/magical-pot/timefold-comet-v1.webp',
+  'absolute_zero_read':
+      'assets/adventure/skill-icons/aloof-pot/absolute-zero-read-v1.webp',
+  'steel_verdict':
+      'assets/adventure/skill-icons/aloof-pot/steel-verdict-v1.webp',
+  'ink_formula_burst':
+      'assets/adventure/skill-icons/student-pot/ink-formula-burst-v1.webp',
+  'seal_rewrite':
+      'assets/adventure/skill-icons/student-pot/seal-rewrite-v1.webp',
   'triage_bloom': 'assets/adventure/skill-icons/nurse-pot/triage-bloom-v1.webp',
   'white_garden_oath':
       'assets/adventure/skill-icons/nurse-pot/white-garden-oath-v1.webp',

@@ -26,18 +26,20 @@ class ExpeditionEncounterStage extends StatefulWidget {
     super.key,
     required this.encounter,
     this.battle,
+    this.regionCode,
     required this.actor,
     this.party = const [],
     required this.cue,
     required this.onCueCompleted,
     this.paceScale = 1.0,
     this.shortEffects = false,
-    this.audioEnabled = true,
+    this.audioMode = ExpeditionAudioMode.all,
     this.bottomHudInset = 0,
   });
 
   final ExpeditionEncounter? encounter;
   final ExpeditionBattle? battle;
+  final String? regionCode;
   final ExpeditionMember? actor;
   final List<ExpeditionMember> party;
   final ExpeditionActionCue? cue;
@@ -51,8 +53,10 @@ class ExpeditionEncounterStage extends StatefulWidget {
   /// 승패)는 전부 유지한다. `disableAnimations` 접근성 설정과는 독립이다.
   final bool shortEffects;
 
-  /// 사용자가 끄면 BGM과 SFX만 멈추고 시각·촉각 판정은 유지한다.
-  final bool audioEnabled;
+  /// 음악·효과음 단계. 어느 단계에서도 시각·촉각 판정은 그대로 남는다.
+  final ExpeditionAudioMode audioMode;
+
+  bool get audioEnabled => audioMode != ExpeditionAudioMode.muted;
 
   /// 전장을 줄이지 않고 가장자리 명령 HUD가 차지하는 하단 영역만 피한다.
   final double bottomHudInset;
@@ -63,7 +67,7 @@ class ExpeditionEncounterStage extends StatefulWidget {
 }
 
 class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _actionController;
   late final AnimationController _ambientController;
   late final ExpeditionCombatAudio _audio;
@@ -71,6 +75,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   int? _playingCueId;
   double _previousProgress = 0;
   String? _precacheSignature;
+  String? _telegraphSignature;
   bool _effectStartsPrecached = false;
 
   @override
@@ -83,7 +88,26 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
       vsync: this,
       duration: const Duration(milliseconds: 3600),
     );
-    _audio = ExpeditionCombatAudio(enabled: widget.audioEnabled);
+    _audio = ExpeditionCombatAudio(
+      musicEnabled: widget.audioMode == ExpeditionAudioMode.all,
+      sfxEnabled: widget.audioEnabled,
+    );
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  /// 앱이 뒤로 가면 음악을 300ms 동안 줄여 멈추고, 복귀하면 같은 재생 위치에서
+  /// 500ms에 걸쳐 돌아온다. 다른 앱의 소리를 갑자기 자르지 않기 위해서다.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        unawaited(_audio.handleAppResumed());
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        unawaited(_audio.handleAppPaused());
+    }
   }
 
   /// 배속·짧은 연출을 하나의 시간 배율로 합친다. 승리·패배 프레임은
@@ -137,33 +161,70 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     } else if (!_ambientController.isAnimating) {
       _ambientController.repeat();
     }
+    _playTelegraphIfNeeded();
     _playCueIfNeeded();
   }
 
   @override
   void didUpdateWidget(covariant ExpeditionEncounterStage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.audioEnabled != widget.audioEnabled) {
-      unawaited(_audio.setEnabled(widget.audioEnabled));
+    if (oldWidget.audioMode != widget.audioMode) {
+      unawaited(_applyAudioMode());
     }
     if (oldWidget.battle?.enemyKind != widget.battle?.enemyKind ||
+        oldWidget.battle?.regionCode != widget.battle?.regionCode ||
+        oldWidget.regionCode != widget.regionCode ||
         oldWidget.encounter?.kind != widget.encounter?.kind) {
       _syncMusic();
     }
+    _playTelegraphIfNeeded();
     if (oldWidget.cue?.id != widget.cue?.id) {
       _playCueIfNeeded();
     }
   }
 
+  Future<void> _applyAudioMode() async {
+    await _audio.setChannels(
+      music: widget.audioMode == ExpeditionAudioMode.all,
+      sfx: widget.audioEnabled,
+    );
+    if (!mounted) return;
+    // 효과음만으로 입장한 경우에는 아직 재개할 BGM 상태가 없다. 채널 전환이
+    // 끝난 뒤 현재 전장 stem을 새로 동기화해야 음악을 켠 즉시 재생된다.
+    _syncMusic();
+    _playTelegraphIfNeeded();
+  }
+
+  /// 새 예고가 걸리면 무엇이 날아올지 짧게 들려준다.
+  ///
+  /// 예고는 화면을 보지 않아도 다음 선택을 정할 수 있게 하는 정보라 라운드마다
+  /// 한 번만, 접촉음보다 조용하게 낸다. 예고에는 촉각을 쓰지 않는다 —
+  /// 사용자가 조작하지 않은 순간에 진동을 만들지 않기 위해서다.
+  void _playTelegraphIfNeeded() {
+    final battle = widget.battle;
+    if (battle == null || !widget.audioEnabled) return;
+    // 연출이 도는 동안에는 접촉 결과가 우선이라 예고를 겹치지 않는다.
+    if (widget.cue != null) return;
+    final signature = '${battle.round}:${battle.enemy.intent.code}';
+    if (signature == _telegraphSignature) return;
+    _telegraphSignature = signature;
+    unawaited(_audio.playTelegraph(battle.enemy.intent.contactMaterial));
+  }
+
   void _syncMusic() {
-    if (!widget.audioEnabled) return;
+    if (widget.audioMode != ExpeditionAudioMode.all) return;
     final state = widget.battle?.enemyKind == 'guardian' ||
             widget.encounter?.kind == 'guardian'
         ? ExpeditionMusicState.guardian
         : widget.battle != null
             ? ExpeditionMusicState.combat
-            : null;
-    if (state != null) unawaited(_audio.playMusic(state));
+            : ExpeditionMusicState.base;
+    final regionCode = widget.regionCode ?? widget.battle?.regionCode;
+    // 지역마다 다른 곡을 쓴다. 지역을 모르는 구버전 응답은 첫 지역 곡으로
+    // 떨어지므로 무음이 되지 않는다.
+    unawaited(
+      _audio.playMusic(state, regionCode: regionCode),
+    );
   }
 
   int _guardianCacheWidth(BuildContext context) {
@@ -215,7 +276,8 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
 
   Future<void> _precacheCueEffects(ExpeditionActionCue cue) async {
     final effects = {
-      if (cue.playsPartyAttack) cue.partyEffect,
+      if (cue.playsPartyEffect) cue.partyEffect,
+      if (cue.playsPartyEffect && cue.fusionEffect != null) cue.fusionEffect!,
       if (cue.playsEnemyAttack) cue.enemyEffect,
     };
     await Future.wait<void>([
@@ -250,21 +312,18 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                     ? _scaled(ExpeditionCombatTimeline.guardianDuration)
                     : _scaled(ExpeditionCombatTimeline.skillDuration);
     _actionController.forward(from: 0);
-    if (cue.isCombatRound) {
-      if (!cue.playsEnemyAttack && cue.effectKey != 'safe_guard') {
+    if (cue.isBossPhase) {
+      unawaited(_audio.playBossPhaseBreak());
+    } else if (cue.isCombatRound) {
+      if (cue.playsEnemyAttack) {
+        // 적이 무엇을 날리는지 행동 시작에 먼저 들려주고, 실제 충돌음은
+        // contact frame까지 미룬다. 두 소리를 분리해야 예고가 판정 정보가 된다.
+        unawaited(_audio.playTelegraph(cue.contactMaterial));
+      } else if (cue.effectKey != 'safe_guard') {
         unawaited(
           _audio.playSkillTier(
             tier: cue.presentationTier,
             ultimate: cue.cameraProfile == 'ultimate',
-          ),
-        );
-      } else {
-        unawaited(
-          _audio.play(
-            cue.effectKey == 'safe_guard'
-                ? ExpeditionCombatSound.guard
-                : ExpeditionCombatSound.enemy,
-            volume: cue.playsEnemyAttack ? .64 : .48,
           ),
         );
       }
@@ -283,14 +342,25 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
         _previousProgress < partyContact &&
         progress >= partyContact) {
       HapticFeedback.lightImpact();
+      // 우리 공격이 엉킴 몸체에 닿는 순간 — 무엇에 닿았는지를 재질로 들려준다.
       unawaited(
-        _audio.play(
-          cue.weaknessHit
-              ? ExpeditionCombatSound.weakness
-              : ExpeditionCombatSound.hit,
+        _audio.playContact(
+          material: cue.contactMaterial,
+          weakness: cue.weaknessHit,
           volume: cue.weaknessHit ? .78 : .66,
         ),
       );
+      // 이 타격으로 엉킴이 풀렸다면 접촉음이 지나간 뒤 두 음을 얹는다.
+      // 무찌른 소리가 아니라 제자리로 돌아가는 소리라 팡파르를 쓰지 않는다.
+      final releaseRegion = cue.releaseRegionCode;
+      if (releaseRegion != null) {
+        unawaited(
+          Future<void>.delayed(
+            const Duration(milliseconds: 320),
+            () => _audio.playRelease(releaseRegion),
+          ),
+        );
+      }
     }
     if (cue.isTerminalCombatOutcome &&
         _previousProgress < .86 &&
@@ -300,32 +370,43 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
       } else {
         HapticFeedback.heavyImpact();
       }
-      unawaited(
-        _audio.play(
-          cue.combatResult == 'victory'
-              ? ExpeditionCombatSound.victory
-              : ExpeditionCombatSound.defeat,
-          volume: .82,
-        ),
-      );
+      // 엉킴 전투는 contact 뒤 예약한 지역별 풀려남 cadence가 결과음 역할을 한다.
+      // 수호자 승리와 패배만 기존 판정음을 사용해 짧은 소리가 겹치지 않게 한다.
+      if (cue.releaseRegionCode == null || cue.combatResult != 'victory') {
+        unawaited(
+          _audio.play(
+            cue.combatResult == 'victory'
+                ? ExpeditionCombatSound.victory
+                : ExpeditionCombatSound.defeat,
+            volume: .82,
+          ),
+        );
+      }
     }
     final enemyContact = ExpeditionCombatTimeline.enemyContactProgress(cue);
     if (cue.playsEnemyAttack &&
         _previousProgress < enemyContact &&
         progress >= enemyContact) {
-      if ((cue.combat?.counterDamage ?? 0) > 0) {
-        HapticFeedback.mediumImpact();
-        unawaited(_audio.play(ExpeditionCombatSound.hit, volume: .76));
-      } else {
+      final blocked = (cue.combat?.counterDamage ?? 0) == 0;
+      if (blocked) {
         HapticFeedback.selectionClick();
-        unawaited(_audio.play(ExpeditionCombatSound.guard, volume: .58));
+      } else {
+        HapticFeedback.mediumImpact();
       }
+      // 맞은 순간은 날아온 물건의 재질, 받아 낸 순간은 우리 방어의 소리다.
+      unawaited(
+        _audio.playContact(
+          material: cue.enemyContactMaterial,
+          volume: blocked ? .58 : .76,
+        ),
+      );
     }
     _previousProgress = progress;
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _holdTimer?.cancel();
     _actionController.dispose();
     _ambientController.dispose();
@@ -373,15 +454,17 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
         ? '$enemyName 조우. $currentTelegraph'
         : cue.isTerminalCombatOutcome
             ? cue.outcome ?? '수호전이 끝났어요.'
-            : cue.isCombatRound && cue.playsEnemyAttack
-                ? '${cue.actorName}의 ${cue.title}. '
-                    '${combat!.damageTarget}에 '
-                    '${combat.counterDamage > 0 ? '${combat.counterDamage} 피해.' : '피해를 막았어요.'}'
-                : cue.isGuardianExchange
+            : cue.isBossPhase
+                ? '${cue.actorName}의 ${cue.title}. ${cue.outcome ?? ''}'
+                : cue.isCombatRound && cue.playsEnemyAttack
                     ? '${cue.actorName}의 ${cue.title}. '
-                        '${combat!.enemyName} 수호 장벽에 ${combat.guardDamage} 피해. '
-                        '${cue.playsEnemyAttack ? combat.counterDamage > 0 ? '${combat.damageTarget} ${combat.counterDamage} 피해.' : '반격 방어.' : ''}'
-                    : '${cue.actorName}이 ${cue.title} 스킬을 사용했어요.';
+                        '${combat!.damageTarget}에 '
+                        '${combat.counterDamage > 0 ? '${combat.counterDamage} 피해.' : '피해를 막았어요.'}'
+                    : cue.isGuardianExchange
+                        ? '${cue.actorName}의 ${cue.title}. '
+                            '${combat!.enemyName} 수호 장벽에 ${combat.guardDamage} 피해. '
+                            '${cue.playsEnemyAttack ? combat.counterDamage > 0 ? '${combat.damageTarget} ${combat.counterDamage} 피해.' : '반격 방어.' : ''}'
+                        : '${cue.actorName}이 ${cue.title} 스킬을 사용했어요.';
 
     return Positioned.fill(
       child: Semantics(
@@ -437,7 +520,8 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                         enemyElite: battle?.enemy.elite ?? false,
                       ),
                     ),
-                  if (cue != null || widget.actor != null)
+                  if ((cue != null && !cue.isBossPhase) ||
+                      (cue == null && widget.actor != null))
                     Positioned(
                       left: size.width * .035,
                       bottom: actorBottom + widget.bottomHudInset,

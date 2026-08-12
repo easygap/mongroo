@@ -9,6 +9,7 @@ import 'package:mongroo/features/expedition/domain/expedition_models.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_controller.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_action_cue.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_battle_dock.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_combat_audio.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_overlay.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_effect_catalog.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_effects.dart';
@@ -637,6 +638,25 @@ void main() {
       'assets/adventure/sfx/combat-guard.wav',
       'assets/adventure/sfx/combat-victory.wav',
       'assets/adventure/sfx/combat-defeat.wav',
+      'assets/adventure/sfx/skill-tier-light.wav',
+      'assets/adventure/sfx/skill-tier-full.wav',
+      'assets/adventure/sfx/skill-tier-signature.wav',
+      'assets/adventure/sfx/boss-phase-break.wav',
+      'assets/adventure/sfx/contact-leaf.wav',
+      'assets/adventure/sfx/contact-paper.wav',
+      'assets/adventure/sfx/contact-water.wav',
+      'assets/adventure/sfx/contact-wood.wav',
+      'assets/adventure/sfx/contact-stone.wav',
+      'assets/adventure/sfx/contact-guard.wav',
+      'assets/adventure/sfx/telegraph-leaf.wav',
+      'assets/adventure/sfx/telegraph-paper.wav',
+      'assets/adventure/sfx/telegraph-water.wav',
+      'assets/adventure/sfx/telegraph-wood.wav',
+      'assets/adventure/sfx/telegraph-stone.wav',
+      'assets/adventure/sfx/release-moss-archive.wav',
+      'assets/adventure/sfx/release-echo-well.wav',
+      'assets/adventure/sfx/release-starlight-seed-vault.wav',
+      'assets/adventure/sfx/release-heartwood-observatory.wav',
     ];
 
     for (final asset in assets) {
@@ -645,6 +665,21 @@ void main() {
       expect(data.getUint32(0, Endian.big), 0x52494646, reason: '$asset RIFF');
       expect(data.getUint32(8, Endian.big), 0x57415645, reason: '$asset WAVE');
     }
+  });
+
+  test('전투 재질·예고·지역 해방음을 서버 코드에 맞춰 고른다', () {
+    expect(expeditionContactSound('paper'), ExpeditionCombatSound.contactPaper);
+    expect(expeditionContactSound('guard'), ExpeditionCombatSound.contactGuard);
+    expect(expeditionContactSound('unknown'), isNull);
+    expect(
+      expeditionTelegraphSound('water'),
+      ExpeditionCombatSound.telegraphWater,
+    );
+    expect(expeditionTelegraphSound('guard'), isNull);
+    expect(
+      expeditionReleaseSound('heartwood_observatory'),
+      ExpeditionCombatSound.releaseHeartwoodObservatory,
+    );
   });
 
   testWidgets('구미호와 닌자의 비식물 고유 스킬 아이콘을 번들에서 읽는다', (tester) async {
@@ -658,7 +693,9 @@ void main() {
     for (final asset in assets) {
       final data = await rootBundle.load(asset);
       expect(data.lengthInBytes, greaterThan(1800), reason: asset);
-      expect(_webpCanvasSize(data), (width: 128, height: 128), reason: asset);
+      final size = _webpCanvasSize(data);
+      expect(size.width, size.height, reason: '$asset 정사각형');
+      expect(size.width, greaterThanOrEqualTo(128), reason: '$asset 2배수');
     }
   });
 
@@ -2242,5 +2279,247 @@ void main() {
     expect(find.text('다음: 스킬 보기'), findsOneWidget);
     expect(find.byTooltip('현재 조작 도움말 다시 보기'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+  testWidgets('접촉·예고는 모노, 풀려남 cadence는 스테레오로 납품된다', (tester) async {
+    // 접촉과 예고는 화면 위치를 따라 좌우로 흔들리면 안 되는 판정 소리라
+    // 모노 16bit로 고정한다.
+    const monoAssets = <String>[
+      'assets/adventure/sfx/contact-leaf.wav',
+      'assets/adventure/sfx/contact-paper.wav',
+      'assets/adventure/sfx/contact-water.wav',
+      'assets/adventure/sfx/contact-wood.wav',
+      'assets/adventure/sfx/contact-stone.wav',
+      'assets/adventure/sfx/contact-guard.wav',
+      'assets/adventure/sfx/telegraph-leaf.wav',
+      'assets/adventure/sfx/telegraph-paper.wav',
+      'assets/adventure/sfx/telegraph-water.wav',
+      'assets/adventure/sfx/telegraph-wood.wav',
+      'assets/adventure/sfx/telegraph-stone.wav',
+    ];
+    for (final asset in monoAssets) {
+      final data = await rootBundle.load(asset);
+      expect(data.getUint16(22, Endian.little), 1, reason: '$asset 모노');
+      expect(data.getUint16(34, Endian.little), 16, reason: '$asset 16bit');
+    }
+
+    // 풀려남 cadence는 두 음이 좌우로 벌어져 정리되므로 스테레오다.
+    const releaseAssets = <String>[
+      'assets/adventure/sfx/release-moss-archive.wav',
+      'assets/adventure/sfx/release-echo-well.wav',
+      'assets/adventure/sfx/release-starlight-seed-vault.wav',
+      'assets/adventure/sfx/release-heartwood-observatory.wav',
+    ];
+    for (final asset in releaseAssets) {
+      final data = await rootBundle.load(asset);
+      expect(data.getUint16(22, Endian.little), 2, reason: '$asset 스테레오');
+    }
+  });
+
+  test('서버 재질 값이 여섯 접촉음으로 정확히 갈린다', () {
+    const materials = ['leaf', 'paper', 'water', 'wood', 'stone', 'guard'];
+    final sounds = materials.map(expeditionContactSound).toList();
+    expect(sounds.contains(null), isFalse);
+    expect(sounds.toSet().length, 6, reason: '한 소리를 두 재질이 나눠 쓰면 안 된다');
+    // 모르는 값과 구버전 응답은 재질을 지어내지 않고 공용 타격음으로 떨어진다.
+    expect(expeditionContactSound(null), isNull);
+    expect(expeditionContactSound('metal'), isNull);
+    // 예고는 적이 만드는 소리라 방어 재질에는 예고가 없다.
+    expect(expeditionTelegraphSound('guard'), isNull);
+    expect(
+      materials.take(5).map(expeditionTelegraphSound).toSet().length,
+      5,
+    );
+  });
+
+  test('풀려남 cadence는 지역마다 다르고 모르는 지역은 첫 지역으로 떨어진다', () {
+    const regions = [
+      'moss_archive',
+      'echo_well',
+      'starlight_seed_vault',
+      'heartwood_observatory',
+    ];
+    expect(regions.map(expeditionReleaseSound).toSet().length, 4);
+    expect(
+      expeditionReleaseSound(null),
+      ExpeditionCombatSound.releaseMossArchive,
+    );
+    expect(
+      expeditionReleaseSound('unknown_region'),
+      ExpeditionCombatSound.releaseMossArchive,
+    );
+  });
+
+  test('전투 이벤트가 접촉 재질과 풀려남 지역을 그대로 읽는다', () {
+    final party = ExpeditionBattleEvent.fromJson(const {
+      'type': 'party_action',
+      'caption': '장벽 4 피해.',
+      'contact_material': 'paper',
+    });
+    expect(party.contactMaterial, 'paper');
+    expect(party.isWaveCleared, isFalse);
+
+    final cleared = ExpeditionBattleEvent.fromJson(const {
+      'type': 'wave_cleared',
+      'caption': '엉킨 장부가 스르르 풀렸어요.',
+      'region_code': 'echo_well',
+    });
+    expect(cleared.isWaveCleared, isTrue);
+    expect(cleared.regionCode, 'echo_well');
+
+    // 구버전 응답에는 두 값이 없다. 파싱이 깨지지 않아야 한다.
+    final legacy = ExpeditionBattleEvent.fromJson(const {
+      'type': 'enemy_action',
+      'caption': '공격이 밀려왔어요.',
+    });
+    expect(legacy.contactMaterial, isNull);
+    expect(legacy.regionCode, isNull);
+  });
+
+  test('소리 설정은 음악·효과음 → 효과음만 → 꺼짐 순으로 돈다', () {
+    const all = ExpeditionBattleSettings();
+    expect(all.audioMode, ExpeditionAudioMode.all);
+    expect(all.musicEnabled, isTrue);
+    expect(all.sfxEnabled, isTrue);
+
+    final sfxOnly = all.copyWith(audioMode: ExpeditionAudioMode.sfxOnly);
+    expect(sfxOnly.musicEnabled, isFalse);
+    expect(sfxOnly.sfxEnabled, isTrue);
+    expect(sfxOnly.audioEnabled, isTrue);
+
+    final muted = all.copyWith(audioMode: ExpeditionAudioMode.muted);
+    expect(muted.musicEnabled, isFalse);
+    expect(muted.sfxEnabled, isFalse);
+    expect(muted.audioEnabled, isFalse);
+
+    expect(
+      {all.audioLabel, sfxOnly.audioLabel, muted.audioLabel}.length,
+      3,
+      reason: '세 단계가 각각 다른 문구로 읽혀야 한다',
+    );
+  });
+
+  test('막아 낸 적 공격은 날아온 재질이 아니라 방어 소리로 들린다', () {
+    ExpeditionActionCue enemyCue({required int counterDamage}) =>
+        ExpeditionActionCue(
+          id: 41,
+          kind: ExpeditionActionCueKind.combatEnemy,
+          actorName: '엉킨 장부 뭉치',
+          actorId: 11,
+          speciesCode: 'baby-pot',
+          speciesName: '새싹몬',
+          stage: 2,
+          form: 'sunny',
+          title: '종잇장 회오리',
+          effectKey: 'paper_flurry',
+          outcome: '낱장들이 몰려왔어요.',
+          contactMaterial: 'paper',
+          combat: ExpeditionCombatFeedback(
+            kind: 'guardian',
+            enemyName: '엉킨 장부 뭉치',
+            enemyMaxGuard: 34,
+            enemyGuardBefore: 34,
+            enemyGuardAfter: 34,
+            guardDamage: 0,
+            attackName: '종잇장 회오리',
+            telegraph: '낱장들이 몰려가요.',
+            damageTarget: '새싹몬',
+            counterDamage: counterDamage,
+            counterResult: counterDamage > 0 ? 'hit' : 'guarded',
+            effectKey: 'paper_flurry',
+          ),
+        );
+
+    expect(enemyCue(counterDamage: 2).enemyContactMaterial, 'paper');
+    expect(enemyCue(counterDamage: 0).enemyContactMaterial, 'guard');
+    expect(
+      expeditionContactSound(enemyCue(counterDamage: 0).enemyContactMaterial),
+      ExpeditionCombatSound.contactGuard,
+    );
+  });
+
+  testWidgets('네 지역의 12개 BGM을 앱 번들에서 읽는다', (tester) async {
+    const slugs = <String>[
+      'moss-archive',
+      'echo-well',
+      'starlight-seed-vault',
+      'heartwood-observatory',
+    ];
+    for (final slug in slugs) {
+      for (final state in const ['base', 'combat', 'guardian']) {
+        final asset = 'assets/adventure/music/$slug-$state.m4a';
+        final data = await rootBundle.load(asset);
+        expect(data.lengthInBytes, greaterThan(100000), reason: asset);
+        // ISO base media file — 4바이트 크기 뒤에 'ftyp' 상자가 온다.
+        expect(data.getUint32(4, Endian.big), 0x66747970,
+            reason: '$asset ftyp');
+      }
+    }
+  });
+
+  test('지역마다 다른 BGM 경로를 고르고 모르는 지역은 첫 지역으로 떨어진다', () {
+    expect(
+      ExpeditionCombatAudio.musicPath('echo_well', ExpeditionMusicState.base),
+      'adventure/music/echo-well-base.m4a',
+    );
+    expect(
+      ExpeditionCombatAudio.musicPath(
+        'heartwood_observatory',
+        ExpeditionMusicState.guardian,
+      ),
+      'adventure/music/heartwood-observatory-guardian.m4a',
+    );
+
+    const regions = [
+      'moss_archive',
+      'echo_well',
+      'starlight_seed_vault',
+      'heartwood_observatory',
+    ];
+    final paths = <String>{
+      for (final region in regions)
+        for (final state in ExpeditionMusicState.values)
+          ExpeditionCombatAudio.musicPath(region, state),
+    };
+    expect(paths.length, 12, reason: '지역 4 × 상태 3이 모두 다른 파일이어야 한다');
+
+    // 지역을 모르는 구버전 응답도 무음이 되지 않는다.
+    expect(
+      ExpeditionCombatAudio.musicPath(null, ExpeditionMusicState.combat),
+      'adventure/music/moss-archive-combat.m4a',
+    );
+    expect(
+      ExpeditionCombatAudio.musicPath('unknown', ExpeditionMusicState.base),
+      'adventure/music/moss-archive-base.m4a',
+    );
+  });
+
+  test('전투 응답의 지역 코드를 읽어 BGM 선택에 넘긴다', () {
+    final battle = ExpeditionBattle.fromJson(const {
+      'status': 'active',
+      'enemy_kind': 'tangle',
+      'region_code': 'starlight_seed_vault',
+      'enemy': {'name': '뒤엉킨 별가루'},
+      'party': <Map<String, dynamic>>[],
+      'last_exchange': <Map<String, dynamic>>[],
+      'battle_log': <String>[],
+    });
+    expect(battle.regionCode, 'starlight_seed_vault');
+    expect(
+      ExpeditionCombatAudio.musicPath(
+        battle.regionCode,
+        ExpeditionMusicState.combat,
+      ),
+      'adventure/music/starlight-seed-vault-combat.m4a',
+    );
+
+    // 웨이브가 없는 구버전 수호전 응답에는 지역이 없다.
+    final legacy = ExpeditionBattle.fromJson(const {
+      'status': 'active',
+      'enemy': {'name': '돌비늘 장부지기'},
+      'party': <Map<String, dynamic>>[],
+      'last_exchange': <Map<String, dynamic>>[],
+      'battle_log': <String>[],
+    });
+    expect(legacy.regionCode, isNull);
   });
 }

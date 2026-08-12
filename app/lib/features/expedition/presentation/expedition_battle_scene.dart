@@ -57,7 +57,7 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
           cue: state.actionCue,
           paceScale: settings.pace.toDouble(),
           shortEffects: settings.shortEffects,
-          audioEnabled: settings.audioEnabled,
+          audioMode: settings.audioMode,
           bottomHudInset: compactHud ? mobileDockHeight - 12 : 0,
           onCueCompleted:
               ref.read(expeditionControllerProvider.notifier).clearActionCue,
@@ -142,7 +142,7 @@ class _ImmersiveBattleStage extends StatelessWidget {
     required this.cue,
     required this.paceScale,
     required this.shortEffects,
-    required this.audioEnabled,
+    required this.audioMode,
     required this.bottomHudInset,
     required this.onCueCompleted,
   });
@@ -153,7 +153,7 @@ class _ImmersiveBattleStage extends StatelessWidget {
   final ExpeditionActionCue? cue;
   final double paceScale;
   final bool shortEffects;
-  final bool audioEnabled;
+  final ExpeditionAudioMode audioMode;
   final double bottomHudInset;
   final VoidCallback onCueCompleted;
 
@@ -173,12 +173,13 @@ class _ImmersiveBattleStage extends StatelessWidget {
         child: ExpeditionEncounterStage(
           encounter: expedition.currentEvent?.encounter,
           battle: battle,
+          regionCode: expedition.region.code,
           actor: actor,
           party: expedition.party,
           cue: cue,
           paceScale: paceScale,
           shortEffects: shortEffects,
-          audioEnabled: audioEnabled,
+          audioMode: audioMode,
           bottomHudInset: bottomHudInset,
           onCueCompleted: onCueCompleted,
         ),

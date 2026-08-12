@@ -1,9 +1,22 @@
 {
   "asset_key": "moss_archive_adaptive_music_v1",
+  "region_code": "moss_archive",
+  "region_name": "이끼 낀 기억서고",
   "authorship": "original deterministic synthesis; no external samples",
   "bpm": 60,
+  "beats_per_loop": 16,
   "loop_seconds": 16.0,
   "shared_motif": "C-G-A-E, four-note Garden Return motif",
+  "notes": [
+    "C4",
+    "G3",
+    "A3",
+    "E4",
+    "D4",
+    "A3",
+    "G3",
+    "C4"
+  ],
   "files": [
     {
       "state": "base",
@@ -25,7 +38,7 @@
       "master_bit_depth": 24,
       "target_lufs": -19,
       "master_sha256": "038e0d97e2feabd6cf6973c6a9b2e590e67acd98a563ad25e77bb01f834a7fa0",
-      "runtime_sha256": "50e46d8ae63646af6e4548e709feffc30a76eeb061e04b0b2d94c3ae0d334d6d"
+      "runtime_sha256": "b1bda3c535deb00e6879d28617120674bdcb79f93c42ce7c69dc4470b3a22823"
     },
     {
       "state": "guardian",
@@ -36,7 +49,7 @@
       "master_bit_depth": 24,
       "target_lufs": -18,
       "master_sha256": "acd10225bb40963fab5edd73072d6c6f9070243310b41a4f7abe1519f8a14c79",
-      "runtime_sha256": "ebd1b30381fa6b5289ccdd4e5001ad8b99d796ec016bae69306eafd27dfe5a9a"
+      "runtime_sha256": "6eaefb5ea660bc079800dd7f7f0e310fdd08bf5b6146924e7b151106c6cc13a8"
     }
   ]
 }

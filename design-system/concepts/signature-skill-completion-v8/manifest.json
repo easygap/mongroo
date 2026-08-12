@@ -1,0 +1,395 @@
+{
+  "version": "signature-skill-completion-v8",
+  "source": "Imagegen built-in with existing Mood Pot VFX references",
+  "frame_phases": [
+    "anticipation",
+    "release",
+    "travel",
+    "precontact",
+    "contact",
+    "reaction",
+    "recovery"
+  ],
+  "skills": [
+    {
+      "code": "root_embrace",
+      "species": "baby-pot",
+      "family": "baby-pot.root-embrace",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\support-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\support-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\root-embrace-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\root-embrace-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\root-embrace-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\root-embrace-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\root-embrace-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\root-embrace-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\root-embrace-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\baby-pot\\root-embrace-v1.webp",
+      "source_sha256": "946B8EC10E7B7BE1C123952142935364283D9CF0E0113E7ADAD2E91B8EFB1AA7",
+      "runtime_sha256": "16F13CC66FADDC34EE0824B140566523AE1656C114445856B6110E3A1D84B85B",
+      "production_ready": true
+    },
+    {
+      "code": "heart_spotlight",
+      "species": "pretty-pot",
+      "family": "pretty-pot.heart-spotlight",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\support-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\support-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\heart-spotlight-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\heart-spotlight-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\heart-spotlight-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\heart-spotlight-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\heart-spotlight-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\heart-spotlight-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\heart-spotlight-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\pretty-pot\\heart-spotlight-v1.webp",
+      "source_sha256": "946B8EC10E7B7BE1C123952142935364283D9CF0E0113E7ADAD2E91B8EFB1AA7",
+      "runtime_sha256": "F7AF6AAC9C3E73BEC1AD628F1E2A4DDFCADBD0D6983744B5330BB98FE7DCB7DC",
+      "production_ready": true
+    },
+    {
+      "code": "ribbon_encore",
+      "species": "pretty-pot",
+      "family": "pretty-pot.ribbon-encore",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\support-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\support-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\ribbon-encore-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\ribbon-encore-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\ribbon-encore-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\ribbon-encore-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\ribbon-encore-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\ribbon-encore-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\ribbon-encore-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\pretty-pot\\ribbon-encore-v1.webp",
+      "source_sha256": "946B8EC10E7B7BE1C123952142935364283D9CF0E0113E7ADAD2E91B8EFB1AA7",
+      "runtime_sha256": "2BA75A518B20927CE30D17401378D8E22E5D131A4C33ED5D4DC3844B564D2D43",
+      "production_ready": true
+    },
+    {
+      "code": "command_blade",
+      "species": "handsome-pot",
+      "family": "handsome-pot.command-blade",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\martial-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\martial-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\command-blade-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\command-blade-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\command-blade-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\command-blade-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\command-blade-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\command-blade-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\command-blade-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\handsome-pot\\command-blade-v1.webp",
+      "source_sha256": "D56128C80ADB2A5C45BB2138691AD9ECD0B4DEC8577F6835094CAE31EDE0535D",
+      "runtime_sha256": "08FCD60DEED3C9707C63CCDD4AB1B61136B891FF6BB8FCB6C6C4987EF8E88538",
+      "production_ready": true
+    },
+    {
+      "code": "command_crescendo",
+      "species": "handsome-pot",
+      "family": "handsome-pot.command-crescendo",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\martial-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\martial-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\command-crescendo-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\command-crescendo-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\command-crescendo-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\command-crescendo-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\command-crescendo-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\command-crescendo-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\command-crescendo-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\handsome-pot\\command-crescendo-v1.webp",
+      "source_sha256": "D56128C80ADB2A5C45BB2138691AD9ECD0B4DEC8577F6835094CAE31EDE0535D",
+      "runtime_sha256": "FAC3BEFAB401DDE0DE416584DD9E556CECD0CAAC4B54FDD834AFDF628CD07F47",
+      "production_ready": true
+    },
+    {
+      "code": "iron_uppercut",
+      "species": "tsundere-pot",
+      "family": "tsundere-pot.iron-uppercut",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\martial-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\martial-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\iron-uppercut-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\iron-uppercut-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\iron-uppercut-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\iron-uppercut-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\iron-uppercut-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\iron-uppercut-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\iron-uppercut-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\tsundere-pot\\iron-uppercut-v1.webp",
+      "source_sha256": "D56128C80ADB2A5C45BB2138691AD9ECD0B4DEC8577F6835094CAE31EDE0535D",
+      "runtime_sha256": "E5D3D587A2BF6DD844D7FB5441FF5EA865FE06A739503F308303DA4E4D412F47",
+      "production_ready": true
+    },
+    {
+      "code": "grave_gravity",
+      "species": "zombie-pot",
+      "family": "zombie-pot.grave-gravity",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\dark-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\dark-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\grave-gravity-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\grave-gravity-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\grave-gravity-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\grave-gravity-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\grave-gravity-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\grave-gravity-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\grave-gravity-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\zombie-pot\\grave-gravity-v1.webp",
+      "source_sha256": "BD97F393C81AA6A47BEFF9B4863FC15AF1F1361BE30F4DFA7716CD141FBBAD1A",
+      "runtime_sha256": "237A75A0FE153A316459CBE7F8A188B0AD51C8DAEF3B4CFF183EF550B65DBB60",
+      "production_ready": true
+    },
+    {
+      "code": "undying_chain",
+      "species": "zombie-pot",
+      "family": "zombie-pot.undying-chain",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\dark-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\dark-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\undying-chain-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\undying-chain-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\undying-chain-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\undying-chain-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\undying-chain-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\undying-chain-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\undying-chain-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\zombie-pot\\undying-chain-v1.webp",
+      "source_sha256": "BD97F393C81AA6A47BEFF9B4863FC15AF1F1361BE30F4DFA7716CD141FBBAD1A",
+      "runtime_sha256": "65E2D9EAFC26CB478F5E3CC1D70E0047B8FA3C14EFD6133D4F324AE45DFBE651",
+      "production_ready": true
+    },
+    {
+      "code": "shadow_execution",
+      "species": "ninja-pot",
+      "family": "ninja-pot.shadow-execution",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\dark-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\dark-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\shadow-execution-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\shadow-execution-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\shadow-execution-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\shadow-execution-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\shadow-execution-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\shadow-execution-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\shadow-execution-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\ninja-pot\\shadow-execution-v1.webp",
+      "source_sha256": "BD97F393C81AA6A47BEFF9B4863FC15AF1F1361BE30F4DFA7716CD141FBBAD1A",
+      "runtime_sha256": "B08E15782962C3DB259BE72F25C29D24F6409F5505B45DD5FB80CBFF9A491E74",
+      "production_ready": true
+    },
+    {
+      "code": "heart_moon_charm",
+      "species": "gumiho-pot",
+      "family": "gumiho-pot.heart-moon-charm",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\mystic-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\mystic-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\heart-moon-charm-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\heart-moon-charm-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\heart-moon-charm-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\heart-moon-charm-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\heart-moon-charm-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\heart-moon-charm-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\heart-moon-charm-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\gumiho-pot\\heart-moon-charm-v1.webp",
+      "source_sha256": "1AED26BB094C3A48218CB47BA7D8142043747B173BE08D594765675B422C791F",
+      "runtime_sha256": "71C17AA65BEE20647A5023AACD0A7E55349C80B6C82A624D43A696DB3EF87FD0",
+      "production_ready": true
+    },
+    {
+      "code": "nine_tail_eclipse",
+      "species": "gumiho-pot",
+      "family": "gumiho-pot.nine-tail-eclipse",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\mystic-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\mystic-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\nine-tail-eclipse-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\nine-tail-eclipse-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\nine-tail-eclipse-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\nine-tail-eclipse-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\nine-tail-eclipse-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\nine-tail-eclipse-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\nine-tail-eclipse-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\gumiho-pot\\nine-tail-eclipse-v1.webp",
+      "source_sha256": "1AED26BB094C3A48218CB47BA7D8142043747B173BE08D594765675B422C791F",
+      "runtime_sha256": "FF37354C9B4624F5AFFB5096DBA4281D0BC18971358AF1423BE4A2D55899C22E",
+      "production_ready": true
+    },
+    {
+      "code": "prism_meteor",
+      "species": "magical-pot",
+      "family": "magical-pot.prism-meteor",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\mystic-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\mystic-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\prism-meteor-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\prism-meteor-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\prism-meteor-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\prism-meteor-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\prism-meteor-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\prism-meteor-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\prism-meteor-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\magical-pot\\prism-meteor-v1.webp",
+      "source_sha256": "1AED26BB094C3A48218CB47BA7D8142043747B173BE08D594765675B422C791F",
+      "runtime_sha256": "DF04E3E5A3F8B01BDD599F8B860FFCF90B03206372FFAB2CDE8DB57444B7BBC2",
+      "production_ready": true
+    },
+    {
+      "code": "timefold_comet",
+      "species": "magical-pot",
+      "family": "magical-pot.timefold-comet",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\arcane-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\arcane-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\timefold-comet-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\timefold-comet-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\timefold-comet-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\timefold-comet-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\timefold-comet-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\timefold-comet-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\timefold-comet-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\magical-pot\\timefold-comet-v1.webp",
+      "source_sha256": "67BB94B8D92DB24F3C24B02BBAAD5C83010F5F40160B26990155CAAB3E2D4511",
+      "runtime_sha256": "878E3697462ED71E8322D2EB34D226BA1E9F994D5EA403F457FB1A3F6A6F38BA",
+      "production_ready": true
+    },
+    {
+      "code": "ink_formula_burst",
+      "species": "student-pot",
+      "family": "student-pot.ink-formula",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\arcane-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\arcane-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\ink-formula-burst-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\ink-formula-burst-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\ink-formula-burst-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\ink-formula-burst-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\ink-formula-burst-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\ink-formula-burst-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\ink-formula-burst-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\student-pot\\ink-formula-burst-v1.webp",
+      "source_sha256": "67BB94B8D92DB24F3C24B02BBAAD5C83010F5F40160B26990155CAAB3E2D4511",
+      "runtime_sha256": "BCFC8F55C9BDE2CD20415BCEFFA0036117831727D50C7E20CBF1A12A91B1B29D",
+      "production_ready": true
+    },
+    {
+      "code": "seal_rewrite",
+      "species": "student-pot",
+      "family": "student-pot.seal-rewrite",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\arcane-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\arcane-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\seal-rewrite-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\seal-rewrite-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\seal-rewrite-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\seal-rewrite-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\seal-rewrite-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\seal-rewrite-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\seal-rewrite-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\student-pot\\seal-rewrite-v1.webp",
+      "source_sha256": "67BB94B8D92DB24F3C24B02BBAAD5C83010F5F40160B26990155CAAB3E2D4511",
+      "runtime_sha256": "68DBF88CE53843CA21A3DD21E0BD6C82B3B8BDAB1312C4817F5B3A22D43C2296",
+      "production_ready": true
+    },
+    {
+      "code": "absolute_zero_read",
+      "species": "aloof-pot",
+      "family": "aloof-pot.absolute-zero",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\control-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\control-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\absolute-zero-read-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\absolute-zero-read-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\absolute-zero-read-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\absolute-zero-read-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\absolute-zero-read-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\absolute-zero-read-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\absolute-zero-read-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\aloof-pot\\absolute-zero-read-v1.webp",
+      "source_sha256": "CD755422985DA6C3404496614FA3FD10BECF9EB984421A6C0690AE3CA45F228E",
+      "runtime_sha256": "5132B921B0DEFDE8DB8BA03FBC464569D44E6756DF99D25CD749EA014B216E6A",
+      "production_ready": true
+    },
+    {
+      "code": "steel_verdict",
+      "species": "aloof-pot",
+      "family": "aloof-pot.steel-verdict",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\control-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\control-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\steel-verdict-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\steel-verdict-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\steel-verdict-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\steel-verdict-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\steel-verdict-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\steel-verdict-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\steel-verdict-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\aloof-pot\\steel-verdict-v1.webp",
+      "source_sha256": "CD755422985DA6C3404496614FA3FD10BECF9EB984421A6C0690AE3CA45F228E",
+      "runtime_sha256": "406AF55EE6D4D2C67CDC02AB1BF51AE258C76C028E57078AB565841C6ECCBED6",
+      "production_ready": true
+    },
+    {
+      "code": "blazing_counter",
+      "species": "tsundere-pot",
+      "family": "tsundere-pot.blazing-counter",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\control-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\control-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\blazing-counter-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\blazing-counter-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\blazing-counter-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\blazing-counter-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\blazing-counter-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\blazing-counter-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\blazing-counter-v1\\frame-06.webp"
+      ],
+      "icon": "app\\assets\\adventure\\skill-icons\\tsundere-pot\\blazing-counter-v1.webp",
+      "source_sha256": "CD755422985DA6C3404496614FA3FD10BECF9EB984421A6C0690AE3CA45F228E",
+      "runtime_sha256": "F61D1D1C759BF03247D93403EA816CAC5EC4062140D701FAA49CBE613C3FF41D",
+      "production_ready": true
+    },
+    {
+      "code": "boss_phase_break",
+      "species": "guardian",
+      "family": "guardian.phase-break",
+      "source": "design-system\\concepts\\signature-skill-completion-v8\\sources\\boss-phase-break-chroma.png",
+      "alpha": "design-system\\concepts\\signature-skill-completion-v8\\alpha\\boss-phase-break-alpha.png",
+      "frames": [
+        "app\\assets\\adventure\\effects\\boss-phase-break-v1\\frame-00.webp",
+        "app\\assets\\adventure\\effects\\boss-phase-break-v1\\frame-01.webp",
+        "app\\assets\\adventure\\effects\\boss-phase-break-v1\\frame-02.webp",
+        "app\\assets\\adventure\\effects\\boss-phase-break-v1\\frame-03.webp",
+        "app\\assets\\adventure\\effects\\boss-phase-break-v1\\frame-04.webp",
+        "app\\assets\\adventure\\effects\\boss-phase-break-v1\\frame-05.webp",
+        "app\\assets\\adventure\\effects\\boss-phase-break-v1\\frame-06.webp"
+      ],
+      "icon": null,
+      "source_sha256": "6FF48989F29B49B5B324D0446BA72ACBB7F97E0EEEA98D78C21A5AA55B689298",
+      "runtime_sha256": "62102B5A77CCC6EFA5B50CC131875F998B0362DB4547B87DA4120E3AB59BA377",
+      "production_ready": true
+    }
+  ]
+}

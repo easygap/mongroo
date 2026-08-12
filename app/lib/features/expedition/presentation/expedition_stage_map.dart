@@ -842,8 +842,7 @@ class _StageDetailSheet extends ConsumerWidget {
     WidgetRef ref,
     ExpeditionStageStory story,
   ) async {
-    final audioEnabled =
-        ref.read(expeditionBattleSettingsProvider).audioEnabled;
+    final sfxEnabled = ref.read(expeditionBattleSettingsProvider).sfxEnabled;
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => Dialog(
@@ -858,7 +857,7 @@ class _StageDetailSheet extends ConsumerWidget {
               children: [
                 _StageStoryRevealCard(
                   story: story,
-                  audioEnabled: audioEnabled,
+                  audioEnabled: sfxEnabled,
                   replay: true,
                 ),
                 const SizedBox(height: 8),

@@ -336,6 +336,58 @@ TANGLE_CATALOG: dict[str, dict[str, Any]] = {
 }
 
 
+# 접촉 재질 — `design-system/ADVENTURE_AUDIO.md`의 `contact-{재질}` 6종 중
+# guard를 뺀 5종이다. guard는 엉킴이 아니라 우리 쪽 방어가 만드는 소리라
+# 카탈로그가 아니라 앱이 방어 결과에서 고른다. 색·이름이 아니라 "무엇에 닿았나"를
+# 귀로 구분하게 하는 값이므로 VFX family와 별개로 관리한다.
+CONTACT_MATERIALS = ("leaf", "paper", "water", "wood", "stone")
+
+# 엉킴 몸체의 재질 — 우리 공격이 닿는 대상이다.
+TANGLE_CONTACT_MATERIAL: dict[str, str] = {
+    "tangled_ledger": "paper",
+    "drifting_pressings": "leaf",
+    "shelf_snarl": "wood",
+    "knotted_echo": "water",
+    "splashing_droplets": "water",
+    "bell_knot_swirl": "stone",
+    "snarled_stardust": "leaf",
+    "rolling_seedbox": "wood",
+    "backwound_clockspring": "stone",
+    "ring_shard_tangle": "wood",
+    "scattered_records": "paper",
+    "matted_observatory": "stone",
+}
+
+# 예고의 재질 — 적 공격이 대원에게 닿을 때 나는 소리다. 같은 엉킴이라도 예고마다
+# 날아오는 물건이 달라 몸체 재질과 다를 수 있다.
+TANGLE_INTENT_CONTACT_MATERIAL: dict[str, str] = {
+    "paper_flurry": "paper",
+    "ink_mist": "water",
+    "petal_gust": "leaf",
+    "petal_dart": "leaf",
+    "shelf_sweep": "wood",
+    "catalogue_rain": "paper",
+    "echo_ring": "stone",
+    "sharp_note": "stone",
+    "splash_wave": "water",
+    "water_pop": "water",
+    "bell_spin": "wood",
+    "deep_toll": "stone",
+    "dust_flare": "leaf",
+    "dust_lash": "leaf",
+    "box_roll": "wood",
+    "seed_scatter": "wood",
+    "spring_snap": "stone",
+    "gear_grind": "stone",
+    "ring_spin": "wood",
+    "shard_scatter": "wood",
+    "page_storm": "paper",
+    "paper_cut": "paper",
+    "lens_glare": "stone",
+    "tape_whip": "paper",
+}
+
+
 # 각 예고는 이름과 무관하게 고유 VFX와 모션 원형을 가진다. 전용 스프라이트가
 # 준비되기 전까지는 kel_fallback_family가 같은 재질의 검증된 공용 연출을 고른다.
 TANGLE_INTENT_PRESENTATION: dict[str, tuple[str, str, str]] = {
@@ -375,9 +427,11 @@ _EFFECT_KEY_BY_KEL = {
 }
 _IMPACT_SHAKE_BY_POWER = {1: 2.2, 2: 3.0, 3: 3.8}
 
-for _tangle in TANGLE_CATALOG.values():
+for _tangle_code, _tangle in TANGLE_CATALOG.items():
+    _tangle["contact_material"] = TANGLE_CONTACT_MATERIAL[_tangle_code]
     for _intent in _tangle["intents"]:
         _code = str(_intent["code"])
+        _intent["contact_material"] = TANGLE_INTENT_CONTACT_MATERIAL[_code]
         _kel, _archetype, _vfx_family = TANGLE_INTENT_PRESENTATION[_code]
         _motion_profile = f"tangle.{_code.replace('_', '-')}"
         _intent.update(
@@ -429,6 +483,10 @@ def validate_tangle_catalog() -> list[str]:
         barrier = tangle.get("barrier")
         if not isinstance(barrier, int) or not 20 <= barrier <= 160:
             errors.append(f"{prefix}.barrier: 20~160 사이 정수가 필요합니다")
+        if tangle.get("contact_material") not in CONTACT_MATERIALS:
+            errors.append(
+                f"{prefix}.contact_material: {'|'.join(CONTACT_MATERIALS)} 중 하나여야 합니다"
+            )
         cycle = tangle.get("weakness_cycle")
         if (
             not isinstance(cycle, list)
@@ -469,6 +527,11 @@ def validate_tangle_catalog() -> list[str]:
                 "leap",
             }:
                 errors.append(f"{where}.archetype: 지원하지 않는 모션 원형입니다")
+            if intent.get("contact_material") not in CONTACT_MATERIALS:
+                errors.append(
+                    f"{where}.contact_material: "
+                    f"{'|'.join(CONTACT_MATERIALS)} 중 하나여야 합니다"
+                )
             motion = intent.get("motion")
             if not isinstance(motion, dict) or len(motion.get("phases", [])) != 6:
                 errors.append(f"{where}.motion: 6구간 모션 계약이 필요합니다")

@@ -523,12 +523,38 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
       if (enemy == null) return const [];
       final cues = <ExpeditionActionCue>[];
       final actionEvents = result.lastCombatExchange
-          .where((event) => event.isPartyAction || event.isEnemyAction)
+          .where(
+            (event) =>
+                event.isPartyAction || event.isEnemyAction || event.isBossPhase,
+          )
           .toList(growable: false);
       final terminal = result.lastCombatExchange
           .where((event) => event.type == 'outcome')
           .lastOrNull;
+      // 엉킴이 풀리면 그 라운드는 거기서 끝나므로, 마지막 행동이 곧 풀어 준
+      // 행동이다. 그 연출이 끝난 뒤 지역별 두 음 cadence를 한 번 얹는다.
+      final released = result.lastCombatExchange
+          .where(
+            (event) =>
+                event.isWaveCleared ||
+                (event.isVictoryOutcome && event.regionCode != null),
+          )
+          .lastOrNull;
       for (final (index, event) in actionEvents.indexed) {
+        if (event.isBossPhase) {
+          final member = previousExpedition.party.firstOrNull;
+          if (member != null) {
+            cues.add(
+              ExpeditionActionCue.bossPhase(
+                id: ++_cueSequence,
+                event: event,
+                member: member,
+                enemy: enemy,
+              ),
+            );
+          }
+          continue;
+        }
         final memberId = event.memberId ?? event.targets.firstOrNull?.memberId;
         final member = previousExpedition.party
             .where((item) => item.id == memberId)
@@ -544,6 +570,8 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
                 index == actionEvents.length - 1 ? terminal?.outcome : null,
             terminalCaption:
                 index == actionEvents.length - 1 ? terminal?.caption : null,
+            releaseRegionCode:
+                index == actionEvents.length - 1 ? released?.regionCode : null,
           ),
         );
       }

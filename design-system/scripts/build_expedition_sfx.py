@@ -39,8 +39,7 @@ def _tone(
         frequency = start_hz + (end_hz - start_hz) * progress
         phase += math.tau * frequency / SAMPLE_RATE
         value = sum(
-            gain * math.sin(phase * multiplier)
-            for multiplier, gain in harmonics
+            gain * math.sin(phase * multiplier) for multiplier, gain in harmonics
         )
         samples.append(value * _envelope(index, total))
     return samples
@@ -64,8 +63,7 @@ def _mix(*tracks: tuple[list[float], float, float]) -> list[float]:
     """(samples, gain, start_seconds) 트랙을 하나로 합친다."""
 
     total = max(
-        round(start * SAMPLE_RATE) + len(samples)
-        for samples, _, start in tracks
+        round(start * SAMPLE_RATE) + len(samples) for samples, _, start in tracks
     )
     output = [0.0] * total
     for samples, gain, start in tracks:
@@ -104,6 +102,26 @@ def build(output_root: Path) -> None:
             (_tone(0.20, 650, 900, harmonics=((1, 1), (2, 0.12))), 0.7, 0),
             (_tone(0.22, 880, 1180, harmonics=((1, 1), (2, 0.1))), 0.55, 0.07),
             (_tone(0.20, 1100, 1450), 0.4, 0.15),
+        ),
+        "skill-tier-light.wav": _mix(
+            (_tone(0.13, 510, 700, harmonics=((1, 1), (2, 0.10))), 0.58, 0),
+            (_noise(0.055, seed=131, decay=6.0), 0.12, 0),
+        ),
+        "skill-tier-full.wav": _mix(
+            (_tone(0.20, 420, 720, harmonics=((1, 1), (2, 0.16))), 0.62, 0),
+            (_tone(0.17, 690, 960, harmonics=((1, 1), (1.5, 0.10))), 0.38, 0.055),
+            (_noise(0.10, seed=137, decay=5.0), 0.16, 0),
+        ),
+        "skill-tier-signature.wav": _mix(
+            (_tone(0.30, 310, 690, harmonics=((1, 1), (2, 0.18))), 0.60, 0),
+            (_tone(0.30, 690, 1180, harmonics=((1, 1), (1.5, 0.10))), 0.45, 0.065),
+            (_tone(0.22, 1020, 1480), 0.28, 0.16),
+            (_noise(0.16, seed=149, decay=4.8), 0.18, 0.015),
+        ),
+        "boss-phase-break.wav": _mix(
+            (_tone(0.38, 210, 92, harmonics=((1, 1), (1.5, 0.18))), 0.58, 0),
+            (_noise(0.22, seed=157, decay=3.8), 0.42, 0.02),
+            (_tone(0.36, 520, 940, harmonics=((1, 1), (2, 0.08))), 0.36, 0.13),
         ),
         "combat-enemy.wav": _mix(
             (_tone(0.34, 118, 72, harmonics=((1, 1), (1.5, 0.22))), 0.82, 0),

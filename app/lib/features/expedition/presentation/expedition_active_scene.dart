@@ -292,6 +292,7 @@ class _CurrentLocationScene extends ConsumerWidget {
                     ExpeditionEncounterStage(
                       encounter: expedition.currentEvent?.encounter,
                       battle: expedition.currentEvent?.battle,
+                      regionCode: expedition.region.code,
                       actor: expedition.party
                               .where((member) =>
                                   member.id ==

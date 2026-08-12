@@ -27,10 +27,10 @@ abstract final class ExpeditionCombatTimeline {
 
   /// 적 공격 스프라이트와 피격 피드백이 같은 접촉 프레임을 공유하는 구간이다.
   static double enemyEffectStart(ExpeditionActionCue cue) =>
-      cue.playsPartyAttack ? .52 : .24;
+      cue.playsPartyEffect ? .52 : .24;
 
   static double enemyEffectEnd(ExpeditionActionCue cue) =>
-      cue.playsPartyAttack ? .91 : .94;
+      cue.playsPartyEffect ? .91 : .94;
 
   static const double partyEffectStart = .03;
   static const double partyEffectEnd = .58;

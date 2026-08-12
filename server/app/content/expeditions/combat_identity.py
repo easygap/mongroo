@@ -191,8 +191,8 @@ COMBAT_ROLE_PROFILES: dict[str, dict[str, Any]] = {
     "archive_guide": _role("archive_support", "기록 지원", (6, 9, 9, 8), (2, 3, 3, 3)),
 }
 
-# 아직 전용 스프라이트 계열이 없는 기술이 사용하는 시각 시제품이다.
-# vfx_family는 반드시 고유하며 effect_key는 런타임 대체값일 뿐 출시 에셋 이름이 아니다.
+# 고유 family 조회가 실패한 선택 스킬·레거시 저장본만 사용하는 결별 fallback이다.
+# 30개 캐릭터 고유기는 각자의 code와 전용 production family를 우선 사용한다.
 ELEMENT_RUNTIME_EFFECTS = {
     "nature": "care_vines",
     "light": "prism_burst",
@@ -787,32 +787,32 @@ EMOTION_DISCIPLINES: dict[str, dict[str, Any]] = {
 FUSION_LAYER_PROFILES: dict[str, dict[str, str]] = {
     "sunny": {
         "name": "햇살 심광층",
-        "vfx_family": "emotion-fusion.sunny-radiance",
+        "vfx_family": "kel.sunny",
         "contact_material": "금빛 심광과 하트 광륜",
     },
     "rainy": {
         "name": "빗물 빙류층",
-        "vfx_family": "emotion-fusion.rainy-frost-tide",
+        "vfx_family": "kel.rainy",
         "contact_material": "물막과 얇은 결빙 파편",
     },
     "ember": {
         "name": "불씨 투혼층",
-        "vfx_family": "emotion-fusion.ember-impact-flame",
+        "vfx_family": "kel.ember",
         "contact_material": "압축 화염과 격투 충격륜",
     },
     "moonlit": {
         "name": "달그늘 폭풍층",
-        "vfx_family": "emotion-fusion.moonlit-gale",
+        "vfx_family": "kel.moonlit",
         "contact_material": "초승달 바람과 긴 고독 잔광",
     },
     "sparkling": {
         "name": "별빛 전격층",
-        "vfx_family": "emotion-fusion.sparkling-voltage",
+        "vfx_family": "kel.sparkling",
         "contact_material": "번개 가지와 짧은 음파 고리",
     },
     "mosaic": {
         "name": "무채 강철층",
-        "vfx_family": "emotion-fusion.mosaic-steel-force",
+        "vfx_family": "kel.mosaic",
         "contact_material": "강철 편린과 안정 역장",
     },
 }
@@ -995,90 +995,189 @@ def combat_effect_values(
     *,
     tier: int,
     combat_stats: Mapping[str, int],
+    skill_code: str | None = None,
 ) -> dict[str, int]:
     """티어가 오를 때 단순 피해가 아닌 실제 기믹 수치를 확장한다."""
 
     safe_tier = max(1, min(3, int(tier)))
     support_bonus = max(0, (int(combat_stats.get("support", 0)) - 14) // 8)
     control_bonus = max(0, (int(combat_stats.get("control", 0)) - 14) // 9)
+    values: dict[str, int]
     if effect == "shield_all":
-        return {"party_guard": (1, 1, 2)[safe_tier - 1] + support_bonus}
-    if effect == "focus_refund":
-        return {"focus_refund": (1, 1, 2)[safe_tier - 1]}
-    if effect == "heal_lowest":
-        return {
+        values = {"party_guard": (1, 1, 2)[safe_tier - 1] + support_bonus}
+    elif effect == "focus_refund":
+        values = {"focus_refund": (1, 1, 2)[safe_tier - 1]}
+    elif effect == "heal_lowest":
+        values = {
             "heal_lowest": (1, 2, 2)[safe_tier - 1] + support_bonus,
             "target_guard": 1 if safe_tier >= 3 else 0,
         }
-    if effect == "guard_self":
-        return {"self_guard": (2, 3, 4)[safe_tier - 1]}
-    if effect == "weaken_intent":
-        return {"intent_power_delta": -min(3, (1, 1, 2)[safe_tier - 1] + control_bonus)}
-    if effect == "study_refund":
-        return {"focus_refund": (2, 2, 3)[safe_tier - 1]}
-    if effect == "triage_heal":
-        return {
+    elif effect == "guard_self":
+        values = {"self_guard": (2, 3, 4)[safe_tier - 1]}
+    elif effect == "weaken_intent":
+        values = {
+            "intent_power_delta": -min(3, (1, 1, 2)[safe_tier - 1] + control_bonus)
+        }
+    elif effect == "study_refund":
+        values = {"focus_refund": (2, 2, 3)[safe_tier - 1]}
+    elif effect == "triage_heal":
+        values = {
             "heal_lowest": (2, 2, 3)[safe_tier - 1] + support_bonus,
             "target_guard": (0, 1, 2)[safe_tier - 1],
         }
-    if effect == "white_garden_oath":
-        return {
+    elif effect == "white_garden_oath":
+        values = {
             "heal_lowest": 2 + support_bonus if safe_tier == 1 else 0,
             "heal_all": (0, 1, 2)[safe_tier - 1] + support_bonus,
             "party_guard": (1, 1, 2)[safe_tier - 1] + support_bonus,
             "revive_count": 1 if safe_tier >= 3 else 0,
             "revive_hp": 1 if safe_tier >= 3 else 0,
         }
-    if effect == "resonance_boost":
-        return {
+    elif effect == "resonance_boost":
+        values = {
             "party_power_bp": (11_000, 11_500, 12_200)[safe_tier - 1]
             + support_bonus * 200,
             "focus_refund": 1 if safe_tier >= 2 else 0,
         }
-    if effect == "silent_coda":
-        return {
+    elif effect == "silent_coda":
+        values = {
             "intent_power_delta": -min(3, (1, 1, 2)[safe_tier - 1] + control_bonus),
             "enemy_vulnerability_bp": (11_000, 11_750, 12_750)[safe_tier - 1]
             + control_bonus * 250,
         }
-    if effect == "patina_parry":
-        return {
+    elif effect == "patina_parry":
+        values = {
             "self_guard": (0, 1, 2)[safe_tier - 1],
             "intent_power_delta": (-min(2, 1 + control_bonus) if safe_tier >= 3 else 0),
         }
-    if effect == "golden_seam":
-        return {
+    elif effect == "golden_seam":
+        values = {
             "heal_lowest": (1, 1, 2)[safe_tier - 1] + support_bonus,
             "party_guard": (0, 1, 1)[safe_tier - 1] + support_bonus,
             "focus_refund": 1 if safe_tier >= 3 else 0,
         }
-    if effect == "softpaw_rush":
-        return {
+    elif effect == "softpaw_rush":
+        values = {
             # 저레벨부터 길잡이 두 명의 후속타까지 증폭하면 초반 엘리트가
             # 한 라운드에 끝난다. 취약 표식은 T3 성장 보상으로만 연다.
             "enemy_vulnerability_bp": (10_000, 10_000, 10_800)[safe_tier - 1]
             + control_bonus * 200,
             "self_guard": (0, 1, 1)[safe_tier - 1],
         }
-    if effect == "den_guardian_roar":
-        return {
+    elif effect == "den_guardian_roar":
+        values = {
             "party_guard": (1, 1, 2)[safe_tier - 1] + support_bonus,
             "party_power_bp": (10_500, 11_000, 11_750)[safe_tier - 1]
             + support_bonus * 150,
             "focus_refund": 1 if safe_tier >= 3 else 0,
         }
-    if effect == "patchwork_relay":
-        return {
+    elif effect == "patchwork_relay":
+        values = {
             "party_power_bp": (10_800, 11_400, 12_300)[safe_tier - 1]
             + support_bonus * 200,
             "focus_refund": 1 if safe_tier >= 2 else 0,
         }
-    if effect == "runway_reversal":
-        return {
+    elif effect == "runway_reversal":
+        values = {
             "party_power_bp": (11_000, 11_750, 12_750)[safe_tier - 1]
             + support_bonus * 200,
         }
-    return {}
+    else:
+        values = {}
+
+    # T2/T3은 피해 계수만 오르지 않는다. 각 고유기의 서사를 전투 순서·생존·
+    # 약점 운용으로 번역한 보너스이며, 공통 effect 처리 뒤 한 번만 적용한다.
+    tier_gimmicks: Mapping[
+        str, tuple[Mapping[str, int], Mapping[str, int], Mapping[str, int]]
+    ] = {
+        "sprout_cheer": (
+            {},
+            {"tier_focus_refund_when_ally_wounded": 1},
+            {"tier_focus_refund_when_ally_wounded": 1},
+        ),
+        "command_blade": (
+            {},
+            {"tier_self_guard_on_weakness": 1},
+            {"tier_self_guard_on_weakness": 1},
+        ),
+        "iron_uppercut": (
+            {},
+            {"tier_focus_refund_on_exact_finisher": 1},
+            {"tier_focus_refund_on_exact_finisher": 2},
+        ),
+        "grave_gravity": (
+            {},
+            {"tier_intent_power_delta_when_critical": -1},
+            {
+                "tier_intent_power_delta_when_critical": -1,
+                "tier_self_heal_when_critical": 1,
+            },
+        ),
+        "undying_chain": (
+            {},
+            {"tier_self_guard_when_critical": 1},
+            {
+                "tier_self_guard_when_critical": 1,
+                "tier_self_heal_when_critical": 1,
+            },
+        ),
+        "heart_moon_charm": (
+            {},
+            {"tier_focus_refund_on_resist": 1},
+            {"tier_focus_refund_on_resist": 1, "tier_self_guard_on_resist": 1},
+        ),
+        "nine_tail_eclipse": (
+            {},
+            {"tier_focus_refund_on_resist": 1},
+            {"tier_focus_refund_on_resist": 1, "tier_self_guard_on_resist": 1},
+        ),
+        "venom_seam": (
+            {},
+            {"tier_self_guard_on_weakness": 1},
+            {
+                "tier_self_guard_on_weakness": 1,
+                "tier_enemy_vulnerability_bp_on_weakness": 10_500,
+            },
+        ),
+        "shadow_execution": (
+            {},
+            {"tier_enemy_vulnerability_bp_on_weakness": 10_300},
+            {"tier_enemy_vulnerability_bp_on_weakness": 10_300},
+        ),
+        "prism_meteor": (
+            {},
+            {"tier_focus_refund_on_exact_finisher": 1},
+            {"tier_focus_refund_on_exact_finisher": 2},
+        ),
+        "timefold_comet": (
+            {},
+            {"tier_focus_refund_on_exact_finisher": 1},
+            {"tier_focus_refund_on_exact_finisher": 2},
+        ),
+        "absolute_zero_read": (
+            {},
+            {"tier_focus_refund_on_resist": 1},
+            {"tier_focus_refund_on_resist": 1, "tier_self_guard_on_resist": 1},
+        ),
+        "steel_verdict": (
+            {},
+            {"tier_focus_refund_on_resist": 1},
+            {"tier_focus_refund_on_resist": 1, "tier_self_guard_on_resist": 1},
+        ),
+        "ink_formula_burst": (
+            {},
+            {"tier_focus_refund_on_exact_finisher": 1},
+            {"tier_focus_refund_on_exact_finisher": 2},
+        ),
+        "seal_rewrite": (
+            {},
+            {"tier_focus_refund_on_exact_finisher": 1},
+            {"tier_focus_refund_on_exact_finisher": 2},
+        ),
+    }
+    if skill_code in tier_gimmicks:
+        values.update(tier_gimmicks[str(skill_code)][safe_tier - 1])
+    return values
 
 
 def combat_effect_summary(effect: str, values: Mapping[str, int]) -> str:
@@ -1093,6 +1192,19 @@ def combat_effect_summary(effect: str, values: Mapping[str, int]) -> str:
         "heal_all": "전원 회복",
         "focus_refund": "집중 회복",
         "revive_count": "긴급 소생",
+        "tier_party_guard": "성장 전원 보호",
+        "tier_self_guard": "성장 자신 보호",
+        "tier_self_heal": "성장 자가 회복",
+        "tier_focus_refund": "성장 집중 회복",
+        "tier_focus_refund_on_weakness": "약점 집중 회복",
+        "tier_focus_refund_on_resist": "내성 집중 회복",
+        "tier_focus_refund_on_exact_finisher": "정밀 마무리 집중 회복",
+        "tier_focus_refund_when_ally_wounded": "위기 집중 회복",
+        "tier_self_guard_on_weakness": "약점 보호",
+        "tier_self_guard_on_nonweak": "간파 보호",
+        "tier_self_guard_on_resist": "내성 간파 보호",
+        "tier_self_guard_when_critical": "최후 보호",
+        "tier_self_heal_when_critical": "최후 회복",
     }
     for key, label in labels.items():
         value = int(values.get(key, 0))
@@ -1107,6 +1219,31 @@ def combat_effect_summary(effect: str, values: Mapping[str, int]) -> str:
     vulnerability_bp = int(values.get("enemy_vulnerability_bp", 10_000))
     if vulnerability_bp > 10_000:
         parts.append(f"받는 피해 +{(vulnerability_bp - 10_000) / 100:.1f}%")
+    tier_intent = int(values.get("tier_intent_power_delta", 0))
+    if tier_intent < 0:
+        parts.append(f"성장 적 위력 {tier_intent}")
+    tier_party_power = int(values.get("tier_party_power_bp", 10_000))
+    if tier_party_power > 10_000:
+        parts.append(f"성장 후속 위력 +{(tier_party_power - 10_000) / 100:.0f}%")
+    tier_vulnerability = int(values.get("tier_enemy_vulnerability_bp", 10_000))
+    if tier_vulnerability > 10_000:
+        parts.append(f"성장 받는 피해 +{(tier_vulnerability - 10_000) / 100:.0f}%")
+    conditional_vulnerability = int(
+        values.get("tier_enemy_vulnerability_bp_on_weakness", 10_000)
+    )
+    if conditional_vulnerability > 10_000:
+        parts.append(
+            f"약점 후속 피해 +{(conditional_vulnerability - 10_000) / 100:.0f}%"
+        )
+    conditional_party_power = int(values.get("tier_party_power_bp_on_weakness", 10_000))
+    if conditional_party_power > 10_000:
+        parts.append(f"약점 후속 위력 +{(conditional_party_power - 10_000) / 100:.0f}%")
+    conditional_intent = min(
+        int(values.get("tier_intent_power_delta_on_nonweak", 0)),
+        int(values.get("tier_intent_power_delta_when_critical", 0)),
+    )
+    if conditional_intent < 0:
+        parts.append(f"조건부 적 위력 {conditional_intent}")
     return " · ".join(parts) if parts else effect.replace("_", " ")
 
 

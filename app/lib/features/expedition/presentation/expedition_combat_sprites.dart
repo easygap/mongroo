@@ -61,7 +61,7 @@ class ExpeditionCombatSpriteLayer extends StatelessWidget {
           builder: (context, _) {
             final progress = action.value;
             final children = <Widget>[];
-            if (cue.playsPartyAttack) {
+            if (cue.playsPartyEffect) {
               children.add(
                 _EffectSequence(
                   key: const ValueKey('combat-party-effect-sequence'),
@@ -75,6 +75,26 @@ class ExpeditionCombatSpriteLayer extends StatelessWidget {
                   intensity: cue.vfxIntensity,
                 ),
               );
+              final fusion = cue.fusionEffect;
+              if (fusion != null &&
+                  cue.presentationTier >= 3 &&
+                  !cue.isBossPhase) {
+                children.add(
+                  _EffectSequence(
+                    key: const ValueKey('combat-emotion-fusion-sequence'),
+                    effect: fusion,
+                    progress: progress,
+                    start: ExpeditionCombatTimeline.partyEffectStart + .035,
+                    end: ExpeditionCombatTimeline.partyEffectEnd + .025,
+                    reduceMotion: reduceMotion,
+                    tint: _combatHexColor(cue.emotionVfxSecondary),
+                    secondaryTint: _combatHexColor(cue.emotionVfxPrimary),
+                    intensity: 1.08,
+                    opacityScale: .26,
+                    scale: 1.04,
+                  ),
+                );
+              }
             }
             if (cue.playsEnemyAttack) {
               children.add(
@@ -106,6 +126,8 @@ class _EffectSequence extends StatelessWidget {
     required this.intensity,
     this.tint,
     this.secondaryTint,
+    this.opacityScale = 1,
+    this.scale = 1,
   });
 
   final ExpeditionCombatEffectSpec effect;
@@ -116,6 +138,8 @@ class _EffectSequence extends StatelessWidget {
   final double intensity;
   final Color? tint;
   final Color? secondaryTint;
+  final double opacityScale;
+  final double scale;
 
   @override
   Widget build(BuildContext context) {
@@ -145,9 +169,9 @@ class _EffectSequence extends StatelessWidget {
     );
     final safeIntensity = intensity.clamp(.8, 1.2).toDouble();
     return Transform.scale(
-      scale: 1 + (safeIntensity - 1) * .08,
+      scale: scale * (1 + (safeIntensity - 1) * .08),
       child: Opacity(
-        opacity: edgeOpacity.clamp(0.0, 1.0),
+        opacity: (edgeOpacity * opacityScale).clamp(0.0, 1.0),
         child: Stack(
           fit: StackFit.expand,
           children: [

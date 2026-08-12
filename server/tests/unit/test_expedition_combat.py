@@ -34,6 +34,7 @@ from app.content.expeditions.combat_motion import (
     combat_motion,
 )
 from app.content.expeditions.tangles import (
+    CONTACT_MATERIALS,
     TANGLE_CATALOG,
     TANGLE_INTENT_PRESENTATION,
     tangle_definition,
@@ -942,7 +943,7 @@ def test_all_character_emotion_t3_fusion_variants_are_unique_and_complete():
             assert (
                 skill["fusion_vfx_family"] == FUSION_LAYER_PROFILES[form]["vfx_family"]
             )
-            assert skill["fusion_production_ready"] is False
+            assert skill["fusion_production_ready"] is True
             variants.add(skill["fusion_variant"])
 
     assert len(variants) == 15 * 6 * 2
@@ -1513,6 +1514,8 @@ def test_guardian_boss_changes_affinity_intent_and_staging_across_three_phases(
     assert phase_three["weak_element"] == "poison"
     assert phase_event["presentation_tier"] == 3
     assert phase_event["audio_layer"] == "signature"
+    assert phase_event["effect_key"] == "boss_phase_break"
+    assert phase_event["vfx_family"] == "guardian.phase-break"
 
 
 def test_server_cooldown_blocks_next_round_then_releases():
@@ -1797,3 +1800,139 @@ def test_petal_dart_targets_the_lowest_member_with_its_exact_effect(profiles):
     assert event["motion"]["archetype"] == "draw"
     assert event["motion"]["total_ms"] == 720
     assert [target["member_id"] for target in event["targets"]] == [2]
+
+
+def test_every_tangle_and_intent_declares_a_contact_material():
+    """접촉 재질은 12엉킴 몸체와 24예고에 빠짐없이 있고 여섯 값만 쓴다.
+
+    소리로 `무엇에 닿았는가`를 구분하게 하는 값이라, 한 지역이 한 재질로만
+    채워지면 귀로 구분할 것이 없어진다. 지역마다 최소 두 재질을 요구한다.
+    """
+
+    assert validate_tangle_catalog() == []
+    bodies = {
+        code: tangle["contact_material"] for code, tangle in TANGLE_CATALOG.items()
+    }
+    intents = [
+        intent["contact_material"]
+        for tangle in TANGLE_CATALOG.values()
+        for intent in tangle["intents"]
+    ]
+    assert len(bodies) == 12
+    assert len(intents) == 24
+    assert set(bodies.values()) <= set(CONTACT_MATERIALS)
+    assert set(intents) <= set(CONTACT_MATERIALS)
+    # 여섯 재질 중 guard를 뺀 다섯이 실제로 모두 쓰인다.
+    assert set(intents) == set(CONTACT_MATERIALS)
+
+    by_region: dict[str, set[str]] = {}
+    for code, tangle in TANGLE_CATALOG.items():
+        materials = by_region.setdefault(str(tangle["region_code"]), set())
+        materials.add(bodies[code])
+        materials.update(intent["contact_material"] for intent in tangle["intents"])
+    assert len(by_region) == 4
+    for region, materials in by_region.items():
+        assert len(materials) >= 2, (
+            f"{region}: 재질이 하나뿐이면 귀로 구분할 수 없습니다"
+        )
+
+
+def test_contact_material_rides_party_enemy_and_guard_events(profiles):
+    """앱이 접촉 프레임에서 고를 재질이 이벤트마다 실려 온다."""
+
+    encounter = _encounter(
+        waves=["tangled_ledger"],
+        starting_focus=5,
+        enemy_max_guard=500,
+    )
+    battle = new_guardian_battle("contact-material-stage", encounter, profiles)
+    attacked = submit_guardian_action(
+        battle,
+        {"member_id": 1, "action": "attack"},
+        encounter,
+        profiles,
+    )
+    party_event = attacked["last_exchange"][0]
+    # 우리 공격은 엉킨 장부 뭉치에 닿으므로 종이다.
+    assert party_event["contact_material"] == "paper"
+
+    guarded = submit_guardian_action(
+        attacked,
+        {"member_id": 2, "action": "guard"},
+        encounter,
+        profiles,
+    )
+    guard_event = next(
+        event
+        for event in guarded["last_exchange"]
+        if event["type"] == "party_action" and event["action"] == "guard"
+    )
+    # 지키기는 대상 재질이 아니라 받아 낸 우리 쪽 소리다.
+    assert guard_event["contact_material"] == "guard"
+
+    enemy_event = next(
+        event for event in guarded["last_exchange"] if event["type"] == "enemy_action"
+    )
+    assert enemy_event["contact_material"] == "paper"
+
+
+def test_legacy_guardian_events_still_carry_a_safe_contact_material(profiles):
+    """웨이브가 없는 구형 수호자도 재질 없이 조용해지지 않는다."""
+
+    encounter = _encounter(starting_focus=5)
+    battle = new_guardian_battle("legacy-guardian", encounter, profiles)
+    resolved = submit_guardian_action(
+        battle,
+        {"member_id": 1, "action": "attack"},
+        encounter,
+        profiles,
+    )
+    assert resolved["last_exchange"][0]["contact_material"] in CONTACT_MATERIALS
+    resolved = submit_guardian_action(
+        resolved,
+        {"member_id": 2, "action": "attack"},
+        encounter,
+        profiles,
+    )
+    enemy_event = next(
+        event for event in resolved["last_exchange"] if event["type"] == "enemy_action"
+    )
+    # 장부 발톱은 종이 재질로 승격된다.
+    assert enemy_event["contact_material"] == "paper"
+
+
+def test_wave_release_reports_the_region_for_its_release_cadence(profiles):
+    """엉킴이 풀린 이벤트가 지역을 알려 줘야 앱이 지역별 두 음을 고를 수 있다."""
+
+    encounter = _encounter(
+        waves=["tangled_ledger", "drifting_pressings"],
+        starting_focus=5,
+    )
+    battle = new_guardian_battle("release-cadence-stage", encounter, profiles)
+    battle["enemy_guard"] = 1
+    resolved = submit_guardian_action(
+        battle,
+        {"member_id": 1, "action": "attack"},
+        encounter,
+        profiles,
+    )
+    cleared = next(
+        event for event in resolved["last_exchange"] if event["type"] == "wave_cleared"
+    )
+    assert cleared["region_code"] == "moss_archive"
+    assert "풀려" in cleared["caption"]
+
+
+def test_battle_payload_reports_the_region_for_its_bgm(profiles):
+    """앱이 지역 곡을 고를 수 있게 전투 응답이 지역을 알려 준다."""
+
+    encounter = _encounter(waves=["knotted_echo"], starting_focus=5)
+    battle = new_guardian_battle("echo-well-stage", encounter, profiles)
+    payload = guardian_battle_payload(battle, encounter, profiles)
+    assert payload["region_code"] == "echo_well"
+
+    # 웨이브가 없는 구형 수호전에는 지역이 없다. 앱이 첫 지역 곡으로 떨어진다.
+    legacy = new_guardian_battle("legacy", _encounter(), profiles)
+    assert (
+        guardian_battle_payload(legacy, _encounter(), profiles)["region_code"] is None
+    )

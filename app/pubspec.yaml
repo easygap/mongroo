@@ -65,6 +65,25 @@ flutter:
     - assets/adventure/effects/den-guardian-roar-v1/
     - assets/adventure/effects/patchwork-relay-v1/
     - assets/adventure/effects/runway-reversal-v1/
+    - assets/adventure/effects/root-embrace-v1/
+    - assets/adventure/effects/heart-spotlight-v1/
+    - assets/adventure/effects/ribbon-encore-v1/
+    - assets/adventure/effects/command-blade-v1/
+    - assets/adventure/effects/command-crescendo-v1/
+    - assets/adventure/effects/iron-uppercut-v1/
+    - assets/adventure/effects/grave-gravity-v1/
+    - assets/adventure/effects/undying-chain-v1/
+    - assets/adventure/effects/shadow-execution-v1/
+    - assets/adventure/effects/heart-moon-charm-v1/
+    - assets/adventure/effects/nine-tail-eclipse-v1/
+    - assets/adventure/effects/prism-meteor-v1/
+    - assets/adventure/effects/timefold-comet-v1/
+    - assets/adventure/effects/ink-formula-burst-v1/
+    - assets/adventure/effects/seal-rewrite-v1/
+    - assets/adventure/effects/absolute-zero-read-v1/
+    - assets/adventure/effects/steel-verdict-v1/
+    - assets/adventure/effects/blazing-counter-v1/
+    - assets/adventure/effects/boss-phase-break-v1/
     - assets/adventure/skill-icons/baby-pot/
     - assets/adventure/skill-icons/gumiho-pot/
     - assets/adventure/skill-icons/ninja-pot/
@@ -73,6 +92,13 @@ flutter:
     - assets/adventure/skill-icons/restorer-pot/
     - assets/adventure/skill-icons/marten-pot/
     - assets/adventure/skill-icons/gal-pot/
+    - assets/adventure/skill-icons/handsome-pot/
+    - assets/adventure/skill-icons/pretty-pot/
+    - assets/adventure/skill-icons/tsundere-pot/
+    - assets/adventure/skill-icons/zombie-pot/
+    - assets/adventure/skill-icons/magical-pot/
+    - assets/adventure/skill-icons/aloof-pot/
+    - assets/adventure/skill-icons/student-pot/
     - assets/adventure/sfx/
     - assets/adventure/music/
     - assets/adventure/story/archive-postcard-reveal-v1/

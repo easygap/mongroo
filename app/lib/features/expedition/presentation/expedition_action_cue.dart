@@ -6,6 +6,7 @@ enum ExpeditionActionCueKind {
   resolution,
   combatParty,
   combatEnemy,
+  bossPhase,
 }
 
 class ExpeditionActionCue {
@@ -29,12 +30,15 @@ class ExpeditionActionCue {
     this.motion,
     this.vfxFamily,
     this.kelFallbackFamily,
+    this.fusionVfxFamily,
     this.presentationTier = 1,
     this.vfxIntensity = .86,
     this.audioLayer = 'light',
     this.cameraProfile = 'steady',
     this.emotionVfxPrimary,
     this.emotionVfxSecondary,
+    this.contactMaterial,
+    this.releaseRegionCode,
   });
 
   final int id;
@@ -56,6 +60,7 @@ class ExpeditionActionCue {
   final ExpeditionCombatMotion? motion;
   final String? vfxFamily;
   final String? kelFallbackFamily;
+  final String? fusionVfxFamily;
   final int presentationTier;
   final double vfxIntensity;
   final String audioLayer;
@@ -63,13 +68,25 @@ class ExpeditionActionCue {
   final String? emotionVfxPrimary;
   final String? emotionVfxSecondary;
 
+  /// 접촉 프레임에서 어떤 재질이 부딪히는지. 서버가 판정한 값이며 구버전
+  /// 응답에서는 `null`이라 기존 공용 타격음으로 떨어진다.
+  final String? contactMaterial;
+
+  /// 이 행동으로 엉킴 하나가 풀려 제자리로 돌아갔다면 그 지역 코드다.
+  /// 연출이 끝난 뒤 지역별 두 음 풀려남 cadence를 한 번 재생한다.
+  final String? releaseRegionCode;
+
   bool get isGuardianExchange => combat?.kind == 'guardian';
   bool get isCombatRound =>
       kind == ExpeditionActionCueKind.combatParty ||
-      kind == ExpeditionActionCueKind.combatEnemy;
+      kind == ExpeditionActionCueKind.combatEnemy ||
+      kind == ExpeditionActionCueKind.bossPhase;
+  bool get isBossPhase => kind == ExpeditionActionCueKind.bossPhase;
   bool get playsPartyAttack =>
       kind != ExpeditionActionCueKind.combatEnemy &&
+      kind != ExpeditionActionCueKind.bossPhase &&
       combat?.counterResult != 'calmed';
+  bool get playsPartyEffect => playsPartyAttack || isBossPhase;
   bool get playsEnemyAttack =>
       kind == ExpeditionActionCueKind.combatEnemy ||
       (kind == ExpeditionActionCueKind.resolution && isGuardianExchange);
@@ -78,6 +95,9 @@ class ExpeditionActionCue {
         kelFallbackFamily: kelFallbackFamily,
         legacyEffectKey: effectKey,
       );
+  ExpeditionCombatEffectSpec? get fusionEffect => fusionVfxFamily == null
+      ? null
+      : resolveExpeditionCombatEffect(vfxFamily: fusionVfxFamily);
   ExpeditionCombatEffectSpec get enemyEffect =>
       kind == ExpeditionActionCueKind.combatEnemy
           ? resolveExpeditionCombatEffect(
@@ -91,6 +111,13 @@ class ExpeditionActionCue {
             );
   String get enemyEffectKey =>
       enemyEffect.effectKeys.firstOrNull ?? 'enemy_wave';
+
+  /// 적 공격이 대원에게 닿는 순간의 재질.
+  ///
+  /// 받아 냈다면 날아온 물건이 아니라 우리 방어가 내는 소리라 `guard`다. 눈을
+  /// 떼고 있어도 `맞았다`와 `막았다`가 서로 다른 소리로 구분돼야 한다.
+  String? get enemyContactMaterial =>
+      (combat?.counterDamage ?? 0) > 0 ? contactMaterial : 'guard';
 
   bool get dealsGuardianDamage =>
       playsPartyAttack && (combat?.guardDamage ?? 0) > 0;
@@ -145,6 +172,7 @@ class ExpeditionActionCue {
     required ExpeditionBattleEnemy enemy,
     String? terminalResult,
     String? terminalCaption,
+    String? releaseRegionCode,
   }) {
     final enemyAction = event.isEnemyAction;
     final target = event.targets.firstOrNull;
@@ -188,14 +216,60 @@ class ExpeditionActionCue {
       motion: event.motion,
       vfxFamily: event.vfxFamily,
       kelFallbackFamily: event.kelFallbackFamily,
+      fusionVfxFamily: event.fusionVfxFamily,
       presentationTier: event.presentationTier,
       vfxIntensity: event.vfxIntensity,
       audioLayer: event.audioLayer,
       cameraProfile: event.cameraProfile,
       emotionVfxPrimary: event.emotionVfxPrimary,
       emotionVfxSecondary: event.emotionVfxSecondary,
+      contactMaterial: event.contactMaterial,
+      releaseRegionCode: releaseRegionCode,
     );
   }
+
+  factory ExpeditionActionCue.bossPhase({
+    required int id,
+    required ExpeditionBattleEvent event,
+    required ExpeditionMember member,
+    required ExpeditionBattleEnemy enemy,
+  }) =>
+      ExpeditionActionCue(
+        id: id,
+        kind: ExpeditionActionCueKind.bossPhase,
+        actorName: enemy.name,
+        actorId: member.id,
+        speciesCode: member.speciesCode,
+        speciesName: member.speciesName,
+        stage: member.stage,
+        form: member.form,
+        outfitKey: member.outfitKey,
+        title: event.phaseName ?? '봉인 자세 전환',
+        effectKey: event.effectKey ?? 'boss_phase_break',
+        outcome: event.caption,
+        combat: ExpeditionCombatFeedback(
+          kind: 'guardian',
+          enemyName: enemy.name,
+          enemyMaxGuard: enemy.maxGuard,
+          enemyGuardBefore: enemy.guard,
+          enemyGuardAfter: enemy.guard,
+          guardDamage: 0,
+          attackName: event.phaseName ?? '봉인 자세 전환',
+          telegraph: event.caption,
+          damageTarget: '',
+          counterDamage: 0,
+          counterResult: 'phase',
+          effectKey: event.effectKey ?? 'boss_phase_break',
+        ),
+        motionProfile: event.motionProfile,
+        motion: event.motion,
+        vfxFamily: event.vfxFamily,
+        kelFallbackFamily: event.kelFallbackFamily,
+        presentationTier: event.presentationTier,
+        vfxIntensity: event.vfxIntensity,
+        audioLayer: event.audioLayer,
+        cameraProfile: 'ultimate',
+      );
 }
 
 String _skillEffectKey(ExpeditionMember member, ExpeditionSkill skill) {

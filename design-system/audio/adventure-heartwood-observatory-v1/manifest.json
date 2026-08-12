@@ -1,0 +1,53 @@
+{
+  "asset_key": "heartwood_observatory_adaptive_music_v1",
+  "region_code": "heartwood_observatory",
+  "region_name": "마음나무 관측실",
+  "authorship": "original deterministic synthesis; no external samples",
+  "bpm": 56.25,
+  "beats_per_loop": 15,
+  "loop_seconds": 16.0,
+  "shared_motif": "C-G-A-E, four-note Garden Return motif",
+  "notes": [
+    "C4",
+    "G3",
+    "A3",
+    "E4",
+    "D4",
+    "G3"
+  ],
+  "files": [
+    {
+      "state": "base",
+      "master": "design-system/audio/adventure-heartwood-observatory-v1/heartwood-observatory-base-master.wav",
+      "runtime": "app/assets/adventure/music/heartwood-observatory-base.m4a",
+      "duration_seconds": 16.0,
+      "sample_rate": 48000,
+      "master_bit_depth": 24,
+      "target_lufs": -20,
+      "master_sha256": "a49325e17c866e691c6914e7ff7445b40973e0386b09f749c142f70a284f32ac",
+      "runtime_sha256": "3f2dff008dd060ba1768e6d12353787660370f78a3a303125d1090af5ffb8bed"
+    },
+    {
+      "state": "combat",
+      "master": "design-system/audio/adventure-heartwood-observatory-v1/heartwood-observatory-combat-master.wav",
+      "runtime": "app/assets/adventure/music/heartwood-observatory-combat.m4a",
+      "duration_seconds": 16.0,
+      "sample_rate": 48000,
+      "master_bit_depth": 24,
+      "target_lufs": -19,
+      "master_sha256": "b07aba9cd4ef33496e24c958b2dde925ae846ab0baa8cc70646f81c9b8b37914",
+      "runtime_sha256": "8e7baba41e76ef4e3ec370f95b245cc49e8197a1657a36f1fdf6bba2ac68408d"
+    },
+    {
+      "state": "guardian",
+      "master": "design-system/audio/adventure-heartwood-observatory-v1/heartwood-observatory-guardian-master.wav",
+      "runtime": "app/assets/adventure/music/heartwood-observatory-guardian.m4a",
+      "duration_seconds": 16.0,
+      "sample_rate": 48000,
+      "master_bit_depth": 24,
+      "target_lufs": -18,
+      "master_sha256": "d6001b3ca98514a6a82c5d576873812373727437254a7a5dd77dfe433d8884e1",
+      "runtime_sha256": "6b7ad53111061a228c76a09beb60c0fdb2dfd13564349dc31fcbbb7a37e1bc1b"
+    }
+  ]
+}

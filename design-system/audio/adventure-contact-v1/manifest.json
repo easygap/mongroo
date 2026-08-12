@@ -1,0 +1,160 @@
+{
+  "asset_key": "expedition_contact_audio_v1",
+  "authorship": "original deterministic synthesis; no external samples",
+  "method": "modal synthesis (damped sine modes) + band-limited noise excitation",
+  "sample_rate": 44100,
+  "bit_depth": 16,
+  "shared_motif_tail": [
+    "A",
+    "E"
+  ],
+  "files": [
+    {
+      "role": "contact",
+      "key": "leaf",
+      "path": "app/assets/adventure/sfx/contact-leaf.wav",
+      "channels": 1,
+      "duration_ms": 155,
+      "window_rms": 0.15,
+      "sha256": "07AC955370661B829387CAF07DB77DDE6399BB3A976D6AD75C81B0FA8E0FE2BF"
+    },
+    {
+      "role": "contact",
+      "key": "paper",
+      "path": "app/assets/adventure/sfx/contact-paper.wav",
+      "channels": 1,
+      "duration_ms": 110,
+      "window_rms": 0.10633,
+      "sha256": "783B0EF04AE0453219E46F32D2D1171BFCEA04E76ECA3FB37E19111B2598C9DA"
+    },
+    {
+      "role": "contact",
+      "key": "water",
+      "path": "app/assets/adventure/sfx/contact-water.wav",
+      "channels": 1,
+      "duration_ms": 220,
+      "window_rms": 0.15,
+      "sha256": "BA4547B3F0FFC178BA5ABE590CF46803C10FE66476A73F8234C6E98CDBE9998E"
+    },
+    {
+      "role": "contact",
+      "key": "wood",
+      "path": "app/assets/adventure/sfx/contact-wood.wav",
+      "channels": 1,
+      "duration_ms": 300,
+      "window_rms": 0.15,
+      "sha256": "DD68C60B8B9AC8C09F76949658A7A033AADB32875B73E37CF03B6388C8C50C83"
+    },
+    {
+      "role": "contact",
+      "key": "stone",
+      "path": "app/assets/adventure/sfx/contact-stone.wav",
+      "channels": 1,
+      "duration_ms": 200,
+      "window_rms": 0.15,
+      "sha256": "DA034740ADF022ACD85E1D1B2901976EAD4020372473FBEA22FE211D80ED2118"
+    },
+    {
+      "role": "contact",
+      "key": "guard",
+      "path": "app/assets/adventure/sfx/contact-guard.wav",
+      "channels": 1,
+      "duration_ms": 200,
+      "window_rms": 0.15,
+      "sha256": "5A38AF4E7CF03C8ECA462D79C5E6B9B2A596C1F7B2EFE149F74E25362002534F"
+    },
+    {
+      "role": "telegraph",
+      "key": "paper",
+      "path": "app/assets/adventure/sfx/telegraph-paper.wav",
+      "channels": 1,
+      "duration_ms": 115,
+      "window_rms": 0.052,
+      "sha256": "E34ABDF9BC25461DDEAFFED0EAA1301BDF336E1218A3C3FE9C24495AAA090FAE"
+    },
+    {
+      "role": "telegraph",
+      "key": "leaf",
+      "path": "app/assets/adventure/sfx/telegraph-leaf.wav",
+      "channels": 1,
+      "duration_ms": 115,
+      "window_rms": 0.052,
+      "sha256": "5DB869FF1C0CA6F940F23C8036F927436D3E8BA7E6B9347CB0E1EBC7459D3CDA"
+    },
+    {
+      "role": "telegraph",
+      "key": "water",
+      "path": "app/assets/adventure/sfx/telegraph-water.wav",
+      "channels": 1,
+      "duration_ms": 115,
+      "window_rms": 0.052,
+      "sha256": "227F3DE6E66C148910196453AE558625824824F5B75A33DA2C88FB86C7A336D8"
+    },
+    {
+      "role": "telegraph",
+      "key": "wood",
+      "path": "app/assets/adventure/sfx/telegraph-wood.wav",
+      "channels": 1,
+      "duration_ms": 115,
+      "window_rms": 0.052,
+      "sha256": "7D457D000BB7EEF2E0F0B2901680C4667B682EFC942127DA266B80661FD64CCB"
+    },
+    {
+      "role": "telegraph",
+      "key": "stone",
+      "path": "app/assets/adventure/sfx/telegraph-stone.wav",
+      "channels": 1,
+      "duration_ms": 115,
+      "window_rms": 0.052,
+      "sha256": "F2629F4B95AADE9A735320243FF4B08FFAD340F75E553080ED0EEF3AFC255A3A"
+    },
+    {
+      "role": "release",
+      "key": "moss_archive",
+      "path": "app/assets/adventure/sfx/release-moss-archive.wav",
+      "channels": 2,
+      "duration_ms": 1050,
+      "notes": [
+        "A3",
+        "E4"
+      ],
+      "sha256": "0EA907988E4344D54F7D4481F3D4ED4ED33436FC019C18A8D9E04F9CDE3DB3AE"
+    },
+    {
+      "role": "release",
+      "key": "echo_well",
+      "path": "app/assets/adventure/sfx/release-echo-well.wav",
+      "channels": 2,
+      "duration_ms": 1100,
+      "notes": [
+        "A4",
+        "E4"
+      ],
+      "sha256": "3832B489BDD042ABBED6468D981965CEE5C7CBF048990F89A98885C70FF09F0F"
+    },
+    {
+      "role": "release",
+      "key": "starlight_seed_vault",
+      "path": "app/assets/adventure/sfx/release-starlight-seed-vault.wav",
+      "channels": 2,
+      "duration_ms": 1050,
+      "notes": [
+        "A4",
+        "E5"
+      ],
+      "sha256": "4E3958CAE8B7227EAE72DAE83D522703B9CC71FCE9CA064922BB5CF8EFBE0C73"
+    },
+    {
+      "role": "release",
+      "key": "heartwood_observatory",
+      "path": "app/assets/adventure/sfx/release-heartwood-observatory.wav",
+      "channels": 2,
+      "duration_ms": 1250,
+      "notes": [
+        "A3",
+        "E4"
+      ],
+      "sha256": "5BDB3FD8BFDF38AB746C8B9FA39A463A68600CA595D8237A6AC0C8F1E99B02C1"
+    }
+  ]
+}
