@@ -28,6 +28,11 @@ from app.models.game import (
     UserSpeciesUnlock,
 )
 from app.models.mood import MoodEntry
+from app.models.skill_book import (
+    PlantSkillLoadout,
+    PlantSkillMastery,
+    UserSkillBook,
+)
 from app.models.ops import AiJob, DataProtectionState, IdempotencyKey, WorkerHeartbeat
 from app.models.plant import Plant, PlantSpecies
 from app.models.report import Report
@@ -75,4 +80,7 @@ __all__ = [
     "PlantAdventureBond",
     "UserRegionProgress",
     "PlantRegionFamiliarity",
+    "UserSkillBook",
+    "PlantSkillLoadout",
+    "PlantSkillMastery",
 ]

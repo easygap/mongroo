@@ -15,6 +15,7 @@ import math
 import random
 import shutil
 import subprocess
+import tempfile
 import wave
 from array import array
 from pathlib import Path
@@ -579,7 +580,13 @@ def _validate_regions() -> None:
             raise ValueError(f"수호자 타점 {hits}개가 loop를 고르게 나누지 않는다")
 
 
-def build_region(code: str, master_root: Path, runtime_root: Path) -> dict:
+def build_region(
+    code: str,
+    master_root: Path,
+    runtime_root: Path,
+    *,
+    encode_runtime: bool = True,
+) -> dict:
     region = REGIONS[code]
     slug = str(region["slug"])
     base_left, base_right = _base_score(region)
@@ -596,7 +603,8 @@ def build_region(code: str, master_root: Path, runtime_root: Path) -> dict:
         master = master_root / f"{slug}-{state}-master.wav"
         runtime = runtime_root / f"{slug}-{state}.m4a"
         _write_pcm24(master, left, right)
-        _runtime_encode(master, runtime, target_lufs)
+        if encode_runtime:
+            _runtime_encode(master, runtime, target_lufs)
         files.append(
             {
                 "state": state,
@@ -607,7 +615,7 @@ def build_region(code: str, master_root: Path, runtime_root: Path) -> dict:
                 "master_bit_depth": 24,
                 "target_lufs": target_lufs,
                 "master_sha256": _sha256(master),
-                "runtime_sha256": _sha256(runtime),
+                "runtime_sha256": _sha256(runtime) if runtime.exists() else None,
             }
         )
     manifest = {
@@ -637,6 +645,51 @@ def build(master_root: Path, runtime_root: Path) -> dict:
     return build_region("moss_archive", master_root, runtime_root)
 
 
+def _region_master_root(code: str) -> Path:
+    return Path(f"design-system/audio/adventure-{REGIONS[code]['slug']}-v1")
+
+
+def check_masters(codes: list[str]) -> list[str]:
+    """마스터 WAV를 다시 만들어 manifest에 적힌 sha256과 대조한다.
+
+    마스터는 저장소에 두지 않는다. 합성이 결정론적이라 언제든 같은 바이트로
+    되살아나고, manifest의 `master_sha256`이 그 사실을 증명하는 기록이기
+    때문이다. 이 함수가 그 계약을 실제로 검사한다 — 빌더를 고쳤는데 산출이
+    달라졌다면 여기서 잡힌다.
+
+    검사는 임시 폴더에만 쓰고 런타임 M4A는 다시 인코딩하지 않는다.
+    """
+
+    problems: list[str] = []
+    for code in codes:
+        manifest_path = _region_master_root(code) / "manifest.json"
+        if not manifest_path.exists():
+            problems.append(f"{code}: manifest.json이 없어 대조할 기록이 없습니다")
+            continue
+        recorded = json.loads(manifest_path.read_text(encoding="utf-8"))
+        expected = {
+            str(entry["state"]): str(entry["master_sha256"])
+            for entry in recorded.get("files", [])
+        }
+        with tempfile.TemporaryDirectory() as scratch:
+            rebuilt = build_region(
+                code,
+                Path(scratch),
+                Path(scratch),
+                encode_runtime=False,
+            )
+        for entry in rebuilt["files"]:
+            state = str(entry["state"])
+            if state not in expected:
+                problems.append(f"{code}/{state}: manifest에 기록이 없습니다")
+            elif entry["master_sha256"] != expected[state]:
+                problems.append(
+                    f"{code}/{state}: 다시 만든 마스터가 기록과 다릅니다 "
+                    f"({entry['master_sha256'][:12]} != {expected[state][:12]})"
+                )
+    return problems
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -655,14 +708,29 @@ def main() -> None:
         type=Path,
         default=Path("app/assets/adventure/music"),
     )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="아무것도 쓰지 않고 마스터를 다시 만들어 manifest의 sha256과 대조한다",
+    )
     args = parser.parse_args()
     _validate_regions()
     codes = list(REGIONS) if args.region == "all" else [args.region]
+
+    if args.check:
+        problems = check_masters(codes)
+        print(
+            json.dumps(
+                {"regions": codes, "problems": problems, "ok": not problems},
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        raise SystemExit(1 if problems else 0)
+
     manifests = []
     for code in codes:
-        master_root = args.master_root or Path(
-            f"design-system/audio/adventure-{REGIONS[code]['slug']}-v1"
-        )
+        master_root = args.master_root or _region_master_root(code)
         manifests.append(build_region(code, master_root, args.runtime_root))
     print(json.dumps(manifests, ensure_ascii=False, indent=2))
 

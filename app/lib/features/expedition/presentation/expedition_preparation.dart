@@ -431,6 +431,16 @@ class _RosterTile extends StatelessWidget {
                   '최고 ${item.stats.values.fold<int>(0, (a, b) => a > b ? a : b)}',
               icon: Icons.auto_graph_outlined,
             ),
+            // 출발 전에만 장착을 바꾼다. 전투 중에는 이 입구가 없다.
+            IconButton(
+              key: ValueKey('prep-skill-books-${item.plantId}'),
+              tooltip: '${item.name}의 마음결 기록서',
+              constraints: const BoxConstraints.tightFor(width: 48, height: 48),
+              icon: const Icon(Icons.menu_book_outlined),
+              onPressed: () => context.push(
+                '/skill-books/${item.plantId}?name=${Uri.encodeComponent(item.name)}',
+              ),
+            ),
           ],
         ),
       ),

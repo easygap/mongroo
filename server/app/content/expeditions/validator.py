@@ -9,7 +9,12 @@ import json
 from pathlib import Path
 from typing import Any
 
+from app.content.expeditions.combat_difficulty import (
+    STAGE_THREAT_PROFILES,
+    validate_enemy_mechanic_code,
+)
 from app.content.expeditions.combat_identity import ELEMENT_LABELS
+from app.content.expeditions.skill_books import validate_skill_book_catalog
 from app.content.expeditions.tangles import (
     TANGLE_CATALOG,
     validate_tangle_catalog,
@@ -143,6 +148,9 @@ def _validate_stages(
     """
 
     errors.extend(validate_tangle_catalog())
+    # 기록서 카탈로그도 같은 관문을 지난다. 등급·슬롯·activation 계약이
+    # 깨진 채 배포되면 장착 화면이 고를 수 없는 책을 보여 주게 된다.
+    errors.extend(validate_skill_book_catalog())
 
     stages = content.get("stages")
     if not isinstance(stages, list) or len(stages) != STAGE_COUNT:
@@ -191,6 +199,11 @@ def _validate_stages(
                 errors.append(
                     f"{prefix}.weakness: 첫 웨이브의 첫 약점({expected})과 일치해야 합니다"
                 )
+        difficulty_code = stage.get("difficulty_code", f"stage_{index + 1}")
+        if difficulty_code not in STAGE_THREAT_PROFILES:
+            errors.append(
+                f"{prefix}.difficulty_code: 알 수 없는 위협 프로필 {difficulty_code}"
+            )
         weakness = stage.get("weakness")
         if weakness is not None and weakness not in ALLOWED_STATS:
             errors.append(f"{prefix}.weakness: {sorted(ALLOWED_STATS)} 중 하나여야 합니다")
@@ -305,6 +318,11 @@ def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:
                     errors.append(
                         f"{prefix}.encounter.{field}: {minimum} 이상의 정수가 필요합니다"
                     )
+            difficulty_code = encounter.get("difficulty_code")
+            if difficulty_code not in STAGE_THREAT_PROFILES:
+                errors.append(
+                    f"{prefix}.encounter.difficulty_code: 지원하지 않는 위협 프로필입니다"
+                )
             if isinstance(encounter.get("starting_focus"), int) and isinstance(
                 encounter.get("max_focus"), int
             ) and encounter["starting_focus"] > encounter["max_focus"]:
@@ -377,6 +395,15 @@ def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:
                                 field
                             ].strip():
                                 errors.append(f"{phase_prefix}.{field}: 값이 필요합니다")
+                        for field in ("rule_name", "rule_summary"):
+                            if not isinstance(phase.get(field), str) or not phase[
+                                field
+                            ].strip():
+                                errors.append(f"{phase_prefix}.{field}: 값이 필요합니다")
+                        if phase.get("phase_gate") not in {None, "resolve_intent"}:
+                            errors.append(
+                                f"{phase_prefix}.phase_gate: resolve_intent만 지원합니다"
+                            )
                         code = phase.get("code")
                         if isinstance(code, str) and code in phase_codes:
                             errors.append(f"{phase_prefix}.code: 중복할 수 없습니다")
@@ -426,6 +453,32 @@ def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:
                                 errors.append(
                                     f"{phase_prefix}.{field}: 0 이상의 정수가 필요합니다"
                                 )
+                        phase_intents = phase.get("intents")
+                        if not isinstance(phase_intents, list) or len(phase_intents) < 2:
+                            errors.append(
+                                f"{phase_prefix}.intents: 페이즈 전용 예고 2개 이상이 필요합니다"
+                            )
+                        else:
+                            for intent_index, phase_intent in enumerate(phase_intents):
+                                where = f"{phase_prefix}.intents[{intent_index}]"
+                                if not isinstance(phase_intent, dict):
+                                    errors.append(f"{where}: 객체가 필요합니다")
+                                    continue
+                                if not validate_enemy_mechanic_code(
+                                    phase_intent.get("mechanic_code")
+                                ):
+                                    errors.append(
+                                        f"{where}.mechanic_code: 지원하지 않는 적 기믹입니다"
+                                    )
+                                unlock = phase_intent.get("mechanic_unlock")
+                                if (
+                                    not isinstance(unlock, int)
+                                    or isinstance(unlock, bool)
+                                    or not 1 <= unlock <= 3
+                                ):
+                                    errors.append(
+                                        f"{where}.mechanic_unlock: 1~3 정수가 필요합니다"
+                                    )
                     if thresholds and (
                         thresholds[0] != 10_000
                         or thresholds != sorted(thresholds, reverse=True)

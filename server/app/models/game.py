@@ -49,7 +49,8 @@ class Item(Base):
     __tablename__ = "items"
     __table_args__ = (
         sa.CheckConstraint(
-            "type IN ('deco','room_theme','main_character','companion','species_unlock','wardrobe')",
+            "type IN ('deco','room_theme','main_character','companion',"
+            "'species_unlock','wardrobe','skill_book')",
             name="ck_item_type",
         ),
         sa.CheckConstraint("price_seeds >= 0", name="ck_item_price_nonnegative"),

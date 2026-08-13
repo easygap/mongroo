@@ -177,6 +177,20 @@ def test_guardian_encounter_defines_manual_round_contract():
         "뿌리 봉쇄",
         "최종 말소",
     ]
+    assert encounter["difficulty_code"] == "stage_8"
+    assert all(phase["rule_name"] for phase in encounter["boss_phases"])
+    assert all(len(phase["intents"]) == 2 for phase in encounter["boss_phases"])
+    assert {
+        intent.get("vfx_family")
+        for phase in encounter["boss_phases"]
+        for intent in phase["intents"]
+        if intent.get("vfx_family")
+    } == {
+        "guardian.record-wave",
+        "guardian.root-lockdown",
+        "guardian.seal-crush",
+        "guardian.final-redaction",
+    }
     assert {choice["effect_key"] for choice in event["choices"]} == {
         "insight_arc",
         "care_vines",

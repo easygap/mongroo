@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "content_version": "2026.08.10",
+  "content_version": "2026.08.12-combat-v9",
   "region": {
     "code": "moss_archive",
     "name": "이끼 기억서고",
@@ -251,6 +251,7 @@
         "max_rounds": 8,
         "starting_focus": 3,
         "max_focus": 5,
+        "difficulty_code": "stage_8",
         "weak_element": "water",
         "resist_element": "steel",
         "weakness_cycle": ["insight", "care", "courage", "focus"],
@@ -265,7 +266,37 @@
             "intent_power_bonus": 0,
             "focus_reward": 0,
             "tone": "rainy",
-            "intro_caption": "푸른 색인 문양이 발끝부터 차오르기 시작했어요."
+            "rule_name": "색인 복구",
+            "rule_summary": "약점을 맞히지 못한 라운드에는 수호 장벽이 2 회복돼요.",
+            "phase_gate": "resolve_intent",
+            "intro_caption": "푸른 색인 문양이 발끝부터 차오르기 시작했어요.",
+            "intents": [
+              {
+                "code": "ledger_claw",
+                "name": "장부 발톱",
+                "telegraph": "오른발이 들렸어요. 맨 앞 대원을 노려요.",
+                "target": "front",
+                "power": 1,
+                "mechanic_code": "expose",
+                "mechanic_unlock": 2
+              },
+              {
+                "code": "record_wave",
+                "name": "기록 파동",
+                "telegraph": "푸른 문양이 둥글게 번져요. 탐험대 전체를 덮쳐요.",
+                "target": "all",
+                "power": 1,
+                "mechanic_code": "repairing_index",
+                "mechanic_unlock": 1,
+                "effect_key": "record_wave",
+                "vfx_family": "guardian.record-wave",
+                "kel": "rainy",
+                "kel_fallback_family": "kel.rainy",
+                "motion_profile": "guardian.record-wave",
+                "archetype": "channel",
+                "contact_material": "paper"
+              }
+            ]
           },
           {
             "code": "root_lock",
@@ -277,7 +308,43 @@
             "intent_power_bonus": 1,
             "focus_reward": 1,
             "tone": "ember",
-            "intro_caption": "장벽이 갈라지자 붉은 뿌리 봉인이 전장을 조여 와요. 약점과 공격 순서가 바뀌었어요."
+            "rule_name": "뿌리 대열",
+            "rule_summary": "마음 지키기 없이 넘기면 광역 공격 위력이 1 높아져요.",
+            "phase_gate": "resolve_intent",
+            "intro_caption": "장벽이 갈라지자 붉은 뿌리 봉인이 전장을 조여 와요. 약점과 공격 순서가 바뀌었어요.",
+            "intents": [
+              {
+                "code": "root_lockdown",
+                "name": "뿌리 봉쇄진",
+                "telegraph": "붉은 뿌리가 세 갈래로 벌어져 탐험대 전체를 에워싸요.",
+                "target": "all",
+                "power": 1,
+                "mechanic_code": "guard_check",
+                "mechanic_unlock": 1,
+                "effect_key": "root_lockdown",
+                "vfx_family": "guardian.root-lockdown",
+                "kel": "ember",
+                "kel_fallback_family": "kel.ember",
+                "motion_profile": "guardian.root-lockdown",
+                "archetype": "channel"
+              },
+              {
+                "code": "seal_crush",
+                "name": "봉인 압쇄",
+                "telegraph": "비늘 사이 붉은 글자가 가장 지친 대원을 가리켜요.",
+                "target": "lowest",
+                "power": 2,
+                "mechanic_code": "expose",
+                "mechanic_unlock": 2,
+                "effect_key": "seal_crush",
+                "vfx_family": "guardian.seal-crush",
+                "kel": "ember",
+                "kel_fallback_family": "kel.ember",
+                "motion_profile": "guardian.seal-crush",
+                "archetype": "brace",
+                "contact_material": "paper"
+              }
+            ]
           },
           {
             "code": "final_redaction",
@@ -289,7 +356,36 @@
             "intent_power_bonus": 1,
             "focus_reward": 1,
             "tone": "sparkling",
-            "intro_caption": "마지막 장부가 펼쳐지고 치명적인 말소 문양이 드러났어요. 남은 봉인을 한 번에 끊어야 해요."
+            "rule_name": "최종 교정",
+            "rule_summary": "매 라운드 약점을 맞혀 말소 위력 상승을 끊어야 해요.",
+            "phase_gate": "resolve_intent",
+            "intro_caption": "마지막 장부가 펼쳐지고 치명적인 말소 문양이 드러났어요. 남은 봉인을 한 번에 끊어야 해요.",
+            "intents": [
+              {
+                "code": "final_redaction",
+                "name": "최종 말소선",
+                "telegraph": "검은 말소선이 약점 문양을 지우며 탐험대 전체로 번져요.",
+                "target": "all",
+                "power": 1,
+                "mechanic_code": "weakness_check",
+                "mechanic_unlock": 1,
+                "effect_key": "final_redaction",
+                "vfx_family": "guardian.final-redaction",
+                "kel": "sparkling",
+                "kel_fallback_family": "kel.sparkling",
+                "motion_profile": "guardian.final-redaction",
+                "archetype": "cast"
+              },
+              {
+                "code": "ledger_claw",
+                "name": "교정 발톱",
+                "telegraph": "금빛 교정선이 오른발에 모여 맨 앞 대원을 겨눠요.",
+                "target": "front",
+                "power": 1,
+                "mechanic_code": "weakness_check",
+                "mechanic_unlock": 1
+              }
+            ]
           }
         ],
         "intents": [

@@ -739,6 +739,78 @@ memory, loot, summary}`다. 숨은 노드는 `{code,status:hidden,type:unknown}`
 catalog의 `entry.tutorial_completed`는 완주 런을 기준으로 첫 조작 안내 노출을
 결정한다.
 
+## 마음결 기록서 — 소유와 장착
+
+구매는 기존 상점을 그대로 쓴다. `POST /shop/items/{item_id}/purchase`로 `type`이
+`skill_book`인 항목을 사면 `user_items`에 구매 기록이, `user_skill_books`에 보유가
+함께 남는다. 보유의 단일 원본은 후자이며 `source_ref`가 씨앗 원장 entry를 가리킨다.
+이미 가진 책은 씨앗을 차감하기 **전에** 409로 막는다
+(`ITEM_ALREADY_OWNED` 또는 `SKILL_BOOK_ALREADY_OWNED`).
+
+소유(계정이 무엇을 가졌나)와 장착(어느 캐릭터의 어느 프리셋에 넣었나)은 서로
+다른 축이다. 보유해도 자동으로 장착되지 않는다.
+
+| method | path | 설명 |
+|---|---|---|
+| GET | `/skill-books` | 카탈로그 + 보유 + 프리셋 + `unlock_progress`(해금 조건과 남은 진행도) |
+| GET | `/skill-books/loadouts/{plant_id}?preset_code=` | 저장된 장착과 그 해석 결과 |
+| PUT | `/skill-books/loadouts/{plant_id}` | 장착 저장. 출발 전·캐릭터 화면에서만 부른다 |
+
+카탈로그 항목의 `combat_effect`는 그 책이 전투 판정에 연결됐는지다. `false`인 책도
+구매·장착할 수 있지만 벨트에서 `효과를 준비하고 있어요`로 잠긴다. 모든 기록서
+효과는 **정액**이고 캐릭터 등급·tier·지원 능력치로 자라지 않는다.
+
+카탈로그는 보유 여부와 무관하게 **전체**를 내려보낸다. 획득 경로에 확률이 없어
+사전 공개가 원칙이기 때문이다. 3등급은 `price_seeds`가 `null`이고 `tradeoff`를
+반드시 가진다.
+
+`GET`/`PUT` 응답은 `stored`(사용자가 고른 것)와 `resolved`(지금 그것이 어떻게
+읽히는지)를 함께 준다. 둘이 다를 때 `resolved[slot].fell_back`이 `true`가 되고
+`lock_reason`이 이유를 설명한다. 슬롯 결과는 다음과 같다.
+
+```json
+{
+  "stored": {"slot_b1_code": "clear_aim", "slot_b2_code": null},
+  "resolved": {
+    "B1": {"slot": "B1", "source": "skillbook", "code": "clear_aim",
+           "locked": true, "lock_reason": "때가 되면 스스로 펼쳐져요",
+           "fell_back": false, "book": {"grade": 1, "activation_mode": "trigger"}},
+    "B2": {"slot": "B2", "source": "default_book", "code": "field_note_echo",
+           "locked": false, "lock_reason": null, "fell_back": false}
+  },
+  "revision": 1,
+  "slot_unlock_level": {"B1": 9, "B2": 23}
+}
+```
+
+`source`는 `skillbook|emotion|default_book|locked`다. `locked: true`는 오류가
+아니라 **자동 발동** 표시다 — `opening`·`trigger` 기록서는 대원 행동을 소비하지
+않으므로 벨트에서 누를 수 없지만 자리는 비우지 않는다.
+
+`PUT`은 멱등 키를 요구하지 않는다. 같은 내용을 두 번 저장해도 결과가 같고 재화가
+움직이지 않기 때문이다. 대신 `expected_revision`으로 다른 화면이 먼저 바꾼 경우를
+잡는다(불일치 시 409 `LOADOUT_REVISION_CONFLICT`).
+
+저장 단계의 거부 코드:
+
+| 상태 | code | 언제 |
+|---:|---|---|
+| 403 | `LOADOUT_BOOK_NOT_OWNED` | 보유하지 않은 기록서 |
+| 422 | `LOADOUT_SLOT_LOCKED` | B1 Lv9 · B2 Lv23 미만 |
+| 422 | `LOADOUT_SLOT_GRADE` | 3등급을 B1에 |
+| 422 | `LOADOUT_DUPLICATE_BOOK` | 같은 책을 두 칸에 |
+| 422 | `LOADOUT_STACK_CONFLICT` | 두 칸이 같은 `stack_group` |
+| 422 | `LOADOUT_BOOK_NOT_COMBAT` | 탐험 기록서를 전투 슬롯에 |
+| 409 | `SKILL_BOOK_ALREADY_OWNED` | 중복 획득. 씨앗을 차감하기 전에 막는다 |
+
+**해석은 막지 않고 저장은 막는다.** 이미 저장된 장착이 나중에 조건을 잃어도
+(책을 잃거나 밸런스가 바뀌어도) 출발은 안전 기본값으로 계속된다. 반면 고르는
+순간에는 왜 안 되는지 알려 주는 편이 낫다.
+
+같은 책을 여러 캐릭터·프리셋에 저장하는 것은 허용한다. 계정 라이선스이기
+때문이다. 실제로 **함께 출발하는 파티** 안에서만 중복을 막는다(422
+`PARTY_DUPLICATE_SKILL_BOOK`).
+
 ## P1 남은 예정 범위
 
 `/assessment-instruments/{code}`, `/assessments`

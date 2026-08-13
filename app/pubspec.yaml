@@ -41,6 +41,7 @@ flutter:
     - assets/wardrobe/previews/
     - assets/rooms/
     - assets/adventure/
+    - assets/adventure/tangles/
     - assets/adventure/effects/care-vines/
     - assets/adventure/effects/care-vines-v2/
     - assets/adventure/effects/ledger-claw-v2/
@@ -55,6 +56,9 @@ flutter:
     - assets/adventure/effects/paper-flurry-v1/
     - assets/adventure/effects/ink-mist-v1/
     - assets/adventure/effects/petal-dart-v1/
+    - assets/adventure/effects/petal-gust-v1/
+    - assets/adventure/effects/shelf-sweep-v1/
+    - assets/adventure/effects/catalogue-rain-v1/
     - assets/adventure/effects/triage-bloom-v1/
     - assets/adventure/effects/white-garden-oath-v1/
     - assets/adventure/effects/golden-downbeat-v1/
@@ -84,6 +88,10 @@ flutter:
     - assets/adventure/effects/steel-verdict-v1/
     - assets/adventure/effects/blazing-counter-v1/
     - assets/adventure/effects/boss-phase-break-v1/
+    - assets/adventure/effects/root-lockdown-v1/
+    - assets/adventure/effects/final-redaction-v1/
+    - assets/adventure/effects/record-wave-v1/
+    - assets/adventure/effects/seal-crush-v1/
     - assets/adventure/skill-icons/baby-pot/
     - assets/adventure/skill-icons/gumiho-pot/
     - assets/adventure/skill-icons/ninja-pot/

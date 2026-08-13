@@ -12,7 +12,7 @@ from types import MappingProxyType
 from typing import Any
 
 
-COMBAT_BALANCE_VERSION = 2
+COMBAT_BALANCE_VERSION = 3
 STARTING_FOCUS_LEVEL = 18
 
 # 레벨 1~9 / 10~18 / 19~26 / 27~30의 수호전 HP 이정표다.

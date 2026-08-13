@@ -99,7 +99,7 @@ def test_combat_roster_migration_links_characters_growth_and_existing_owners(
                 "SELECT version_num FROM alembic_version"
             ).fetchone()[0]
 
-        assert revision == "0034_character_expansion_v7"
+        assert revision == "0037_plant_skill_mastery"
         assert len(species_rows) == 15
         assert {row[0] for row in species_rows} >= {"maestro-pot", "nurse-pot"}
         assert all(

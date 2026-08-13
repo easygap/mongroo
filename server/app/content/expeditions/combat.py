@@ -46,17 +46,45 @@ from app.content.expeditions.combat_identity import (
     rarity_scale_bp,
     scaled_power,
 )
+from app.content.expeditions.combat_difficulty import (
+    COMBAT_DIFFICULTY_VERSION,
+    difficulty_profile_for_encounter,
+    enemy_mechanic,
+)
 from app.content.expeditions.combat_motion import (
     combat_motion,
     kel_fallback_family,
     present_intent,
 )
+from app.content.expeditions.skill_book_effects import (
+    CHOICE_KELS,
+    COMMAND_FOCUS_COST_BY_GRADE,
+    book_state,
+    command_action,
+    focus_trigger,
+    intent_preview_open,
+    kit_modifiers,
+    opening_modifiers,
+    take_weakness_bonus,
+    validate_choice,
+)
+from app.content.expeditions.skill_books import SKILL_BOOK_CATALOG
 from app.content.expeditions.tangles import CONTACT_MATERIALS, tangle_definition
 
 
 # 전용 재질이 없는 구형 수호자에게 쓸 안전 기본값. 단단한 무언가에 닿았다는
 # 사실만 전하고 재질을 과장하지 않는다.
 DEFAULT_CONTACT_MATERIAL = "stone"
+
+# 네 스킬 슬롯. 기본 공격과 마음 지키기는 어떤 제약에서도 남겨 둔다.
+SKILL_ACTIONS = frozenset({"unique_1", "unique_2", "selected_1", "selected_2"})
+
+# 고를 수 있는 성장결. 저장된 값이 깨져도 판정이 흔들리지 않게 좁힌다.
+ELEMENT_KEL_CHOICES = frozenset(CHOICE_KELS)
+
+# 전투당 1회를 쿨타임으로 표현한다. 최대 라운드보다 길면 그 전투에서 다시
+# 열리지 않는다. 라운드 상한이 늘어나는 기록서까지 고려해 넉넉히 잡는다.
+_ONCE_PER_BATTLE_COOLDOWN = 99
 
 # 캐릭터, 감정 성장, 레벨/희귀도 계수의 단일 원본은 combat_identity.py다.
 AFFINITIES = IDENTITY_AFFINITIES
@@ -152,6 +180,11 @@ def member_battle_kit(
     weak_kel = element_kels.get(str(current_weak_element))
     resist_kel = element_kels.get(str(current_resist_element))
     state_cooldowns = member_state or {}
+    # 다음 공격 한 번에만 실리는 성장결 덮어쓰기. 고유기(signature)는 품종의
+    # 정체성이라 바꾸지 않는다.
+    kel_override = (member_state or {}).get("kel_override")
+    if kel_override not in ELEMENT_KEL_CHOICES:
+        kel_override = None
     cooldowns = state_cooldowns.get("ready_round") or state_cooldowns.get(
         "cooldown_until_round", {}
     )
@@ -196,6 +229,13 @@ def member_battle_kit(
                 kels.append(emotion_kel)
             fusion_profile = FUSION_LAYER_PROFILES[form]
             fusion_variant = f"{species_code}.{form}.{slot}.t3"
+        # 마음결 조율기로 고른 결이 있으면 이 공격의 결을 그것으로 바꾼다.
+        # 상성을 여기서 다시 계산하므로 앱의 예상 피해도 바뀐 결을 반영한다.
+        # 프리즘 스킬은 이미 스스로 약점에 맞추므로 덮어쓰지 않는다 — 덮으면
+        # 오히려 상성이 나빠질 수 있다.
+        if kel_override and not prism_shifted:
+            kels = [kel_override]
+            skill_kel = kel_override
         matchup = _kel_matchup(kels, weak_kel=weak_kel, resist_kel=resist_kel)
         matchup_key = "prism_weak" if prism_shifted and matchup == "weak" else matchup
         matchup_bp = MATCHUP_POWER_BP[matchup_key]
@@ -321,23 +361,43 @@ def member_battle_kit(
         source="signature",
         unlock_level=7,
     )
-    selected_1 = resolve_skill(
-        FORM_COMBAT_SKILLS.get(form, FORM_COMBAT_SKILLS["mosaic"]),
+    # 선택 슬롯은 출발 시점에 얼린 장착을 따른다. 스냅샷이 없는 예전 런은
+    # 지금까지와 같은 안전 기본값(성장결 기본 스킬 + 현장 기록서)으로 읽힌다.
+    loadout_slots = (snapshot.get("skill_loadout") or {}).get("slots") or {}
+    # 조율기가 무엇과 비교해 `지금과 다른 결`을 따지는지의 기준. 명령 스킬 자신의
+    # 결이 아니라 **이 대원이 평소 때리는 결**이어야 한다. 둘은 감정 폼에 따라
+    # 다를 수 있고, 다르면 사용자가 고른 결이 영문 없이 거절된다.
+    default_kel = element_kels[str(discipline["primary_element"])]
+    selected_1 = _resolve_selected_slot(
+        loadout_slots.get("B1"),
+        resolve_skill=resolve_skill,
+        form=form,
+        default_kel=default_kel,
         slot="selected_1",
-        source="emotion",
         unlock_level=9,
     )
-    selected_2 = resolve_skill(
-        FIELD_NOTE_SKILL,
+    selected_2 = _resolve_selected_slot(
+        loadout_slots.get("B2"),
+        resolve_skill=resolve_skill,
+        form=form,
+        default_kel=default_kel,
         slot="selected_2",
-        source="skillbook",
         unlock_level=23,
     )
     basic_element = str(discipline["primary_element"])
+    # 장착한 기록서의 정액 보정. 등급·tier로 자라지 않고 문장의 숫자 그대로다.
+    book_modifiers = kit_modifiers(snapshot)
     basic_raw_power = (
-        10 + stats[affinity] // 2 + max(0, (int(combat_stats["offense"]) - 20) // 8)
+        10
+        + stats[affinity] // 2
+        + max(0, (int(combat_stats["offense"]) - 20) // 8)
+        + book_modifiers.get("basic_power", 0)
     )
     basic_kel = element_kels[basic_element]
+    # 조율기로 고른 결은 기본 공격에도 실린다. 설계상 `다음 공격`이지 `다음
+    # 스킬`이 아니다.
+    if kel_override:
+        basic_kel = kel_override
     basic_matchup = _kel_matchup([basic_kel], weak_kel=weak_kel, resist_kel=resist_kel)
     basic_neutral_power = scaled_power(
         scaled_power(basic_raw_power, basic_scale), TIER_POWER_BP[tier]
@@ -363,6 +423,10 @@ def member_battle_kit(
         "primary_element_label": ELEMENT_LABELS[basic_element],
         "secondary_element": discipline["secondary_element"],
         "secondary_element_label": ELEMENT_LABELS[discipline["secondary_element"]],
+        # 조율기로 바꿔 둔 결이 있으면 키트가 그 사실을 밝힌다. 앱이 "지금
+        # 무슨 결로 나가는지"를 그대로 보여 줄 수 있고, 예상 피해도 이미 바뀐
+        # 상성으로 계산돼 있다.
+        "kel_override": kel_override,
         "basic": {
             "code": "attack",
             "name": f"{ELEMENT_LABELS[basic_element]} 공명 공격",
@@ -417,7 +481,9 @@ def member_battle_kit(
             "name": "마음 지키기",
             "description": "피해를 두 칸 막고 집중력 1을 얻어요.",
             "available": True,
-            "guard": 2 + max(0, (int(combat_stats["vitality"]) - 12) // 10),
+            "guard": 2
+            + max(0, (int(combat_stats["vitality"]) - 12) // 10)
+            + book_modifiers.get("guard", 0),
             "focus_delta": 1,
             "motion_profile": "guard.channel",
             "vfx_family": "common.safe-guard",
@@ -496,6 +562,10 @@ def _resolve_boss_phases(
                 ),
                 "intent_power_bonus": int(phase.get("intent_power_bonus", 0)),
                 "focus_reward": int(phase.get("focus_reward", 0)),
+                "rule_name": phase.get("rule_name"),
+                "rule_summary": phase.get("rule_summary"),
+                "mechanic_code": phase.get("mechanic_code"),
+                "phase_gate": phase.get("phase_gate"),
             }
         )
     return phases
@@ -522,12 +592,43 @@ def _boss_phase_payload(state: dict[str, Any]) -> dict[str, Any] | None:
         "name": phase.get("name", f"{index + 1}페이즈"),
         "tone": phase.get("tone", "mosaic"),
         "intent_power_bonus": int(phase.get("intent_power_bonus", 0)),
+        "rule_name": phase.get("rule_name"),
+        "rule_summary": phase.get("rule_summary"),
+        "phase_gate": phase.get("phase_gate"),
+        "phase_gate_ready": bool(state.get("boss_phase_gate_ready", False)),
         "next_threshold_guard": (
             max(1, (max_guard * int(next_phase["threshold_bp"]) + 9_999) // 10_000)
             if next_phase is not None
             else None
         ),
     }
+
+
+def _cap_boss_damage_at_next_phase(state: dict[str, Any], damage: int) -> int:
+    """한 행동이 보스 페이즈를 건너뛰지 않도록 다음 경계에서 멈춘다.
+
+    높은 성장 파티도 세 규칙을 순서대로 보게 하되 별도 무적 시간은 만들지 않는다.
+    다음 대원의 행동은 새 상성·기믹으로 바로 이어져 전투 흐름도 끊기지 않는다.
+    """
+
+    phases = state.get("boss_phases") or []
+    index = int(state.get("boss_phase_index", 0))
+    if damage <= 0 or not phases:
+        return max(0, damage)
+    guard = int(state.get("enemy_guard", 0))
+    gate_locked = bool(phases[index].get("phase_gate")) and not bool(
+        state.get("boss_phase_gate_ready", False)
+    )
+    if index + 1 >= len(phases):
+        return min(damage, max(0, guard - 1)) if gate_locked else damage
+    max_guard = max(1, int(state.get("enemy_max_guard", 1)))
+    threshold = (
+        max_guard * int(phases[index + 1]["threshold_bp"]) + 9_999
+    ) // 10_000
+    if gate_locked:
+        # 대표 패턴을 한 번 해결하기 전에는 경계 바로 위에서 멈춘다.
+        return min(damage, max(0, guard - (threshold + 1)))
+    return min(damage, max(0, guard - threshold))
 
 
 def _advance_boss_phase(state: dict[str, Any]) -> list[dict[str, Any]]:
@@ -545,6 +646,7 @@ def _advance_boss_phase(state: dict[str, Any]) -> list[dict[str, Any]]:
         index += 1
         phase = phases[index]
         state["boss_phase_index"] = index
+        state["boss_phase_gate_ready"] = False
         state["weakness"] = phase["weakness_cycle"][0]
         state["weak_element"] = phase["weak_element"]
         state["resist_element"] = phase["resist_element"]
@@ -606,6 +708,133 @@ def _current_wave(state: dict[str, Any]) -> dict[str, Any] | None:
     return waves[index] if 0 <= index < len(waves) else None
 
 
+def _resolve_selected_slot(
+    decision: dict[str, Any] | None,
+    *,
+    resolve_skill: Any,
+    form: str,
+    default_kel: str,
+    slot: str,
+    unlock_level: int,
+) -> dict[str, Any]:
+    """얼려 둔 장착 결정 하나를 실제 행동 payload로 바꾼다.
+
+    감정 포인터와 현장 기록서는 지금까지와 똑같이 동작한다. 장착한 기록서는
+    카탈로그에서 이름·등급을 가져와 슬롯에 보여 주되, 아직 전투 판정에 연결된
+    기믹이 없으면 **누를 수 없는 상태로 정직하게 표시한다.** 없는 효과를
+    있는 것처럼 보여 주지 않는다.
+    """
+
+    source = (decision or {}).get("source")
+    code = (decision or {}).get("code")
+
+    if source == "skillbook" and code in SKILL_BOOK_CATALOG:
+        book = SKILL_BOOK_CATALOG[code]
+        action = (
+            command_action(str(code))
+            if book["activation_mode"] == "command"
+            else None
+        )
+        base = (
+            FORM_COMBAT_SKILLS.get(form, FORM_COMBAT_SKILLS["mosaic"])
+            if slot == "selected_1"
+            else FIELD_NOTE_SKILL
+        )
+        if action is not None:
+            # 쿨타임과 준비 라운드는 스킬 코드로 추적된다. 누를 수 있는 책은
+            # 자기 코드로 해석해야 `전투당 1회`가 그 책에 걸린다.
+            base = {
+                **base,
+                "code": book["code"],
+                "name": book["name"],
+                "description": book["effect_summary"],
+                "tier_names": [book["name"]] * 3,
+            }
+        payload = resolve_skill(
+            base,
+            slot=slot,
+            source="skillbook",
+            unlock_level=unlock_level,
+        )
+        book_summary = {
+            "code": book["code"],
+            "name": book["name"],
+            "grade": book["grade"],
+            "activation_mode": book["activation_mode"],
+            "effect_summary": book["effect_summary"],
+        }
+        if action is not None:
+            # 7.5.1 — 대원 행동 1회를 쓰고, 비용은 등급을 따르며, 전투당 한 번이다.
+            # 기록서는 피해를 주지 않는 지원 도구라 위력은 0이고, 효과 값은
+            # 정액이라 tier·지원 능력치로 자라지 않는다.
+            grade = int(book["grade"])
+            payload.update(
+                {
+                    "equipped_book": book_summary,
+                    "available": True,
+                    "lock_reason": None,
+                    "focus_cost": COMMAND_FOCUS_COST_BY_GRADE[grade],
+                    "focus_delta": 0,
+                    "power": 0,
+                    "raw_power": 0,
+                    "power_neutral": 0,
+                    "matchup": "neutral",
+                    "matchup_bp": 10_000,
+                    "effect": action["effect"],
+                    "effect_values": dict(action["effect_values"]),
+                    "mechanic_summary": book["effect_summary"],
+                    # 전투당 1회 — 이번 전투가 끝날 때까지 다시 열리지 않는다.
+                    "cooldown_turns": _ONCE_PER_BATTLE_COOLDOWN,
+                    # 고를 것이 있으면 무엇을 고르는지와 후보를 함께 준다.
+                    # 앱이 목록을 자체적으로 만들지 않게 하기 위해서다.
+                    "choice_kind": action.get("choice_kind"),
+                    # 무엇과 비교해 `지금과 다른 것`을 따지는지도 함께 밝힌다.
+                    # 앱은 이 값으로 현재 표시만 하고 판정은 서버가 한다.
+                    "choice_current": (
+                        default_kel if action.get("choice_kind") == "kel" else None
+                    ),
+                    "choice_options": (
+                        [
+                            {"value": kel, "label": KEL_LABELS[kel]}
+                            for kel in CHOICE_KELS
+                        ]
+                        if action.get("choice_kind") == "kel"
+                        else []
+                    ),
+                }
+            )
+            return payload
+
+        payload.update(
+            {
+                "equipped_book": book_summary,
+                # opening·trigger는 스스로 발동해 대원 행동을 소비하지 않고,
+                # command라도 기믹이 아직 없으면 누를 수 없다.
+                "available": False,
+                "lock_reason": (
+                    "효과를 준비하고 있어요"
+                    if book.get("combat_effect") is not True
+                    else "때가 되면 스스로 펼쳐져요"
+                ),
+            }
+        )
+        return payload
+
+    if slot == "selected_1":
+        return resolve_skill(
+            FORM_COMBAT_SKILLS.get(form, FORM_COMBAT_SKILLS["mosaic"]),
+            slot=slot,
+            source="emotion",
+            unlock_level=unlock_level,
+        )
+    return resolve_skill(
+        FIELD_NOTE_SKILL,
+        slot=slot,
+        source="skillbook",
+        unlock_level=unlock_level,
+    )
+
+
 def target_contact_material(state: dict[str, Any]) -> str:
     """우리 공격이 닿는 대상의 재질. 접촉 프레임의 소리를 고르는 값이다.
 
@@ -632,7 +861,11 @@ def new_guardian_battle(
     element_kels = element_kel_map(kel_map_version)
     waves = _resolve_waves(encounter, kel_map_version=kel_map_version)
     boss_phases = _resolve_boss_phases(encounter, element_kels=element_kels)
+    difficulty = difficulty_profile_for_encounter(encounter)
     growth_index, barrier_scale_bp = _party_growth_scale_bp(profiles)
+    effective_barrier_scale_bp = (
+        barrier_scale_bp * int(difficulty["barrier_bp"]) + 5_000
+    ) // 10_000
     max_focus = int(encounter.get("max_focus", 5))
     configured_focus = int(encounter.get("starting_focus", 3))
     starting_focus, starting_focus_level_bonus, average_party_level = (
@@ -644,7 +877,9 @@ def new_guardian_battle(
     )
     for wave in waves:
         wave["base_barrier"] = int(wave["barrier"])
-        wave["barrier"] = scaled_power(int(wave["barrier"]), barrier_scale_bp)
+        wave["barrier"] = scaled_power(
+            int(wave["barrier"]), effective_barrier_scale_bp
+        )
     if waves:
         first = waves[0]
         weakness_cycle = list(first["weakness_cycle"])
@@ -657,7 +892,7 @@ def new_guardian_battle(
         weak_element = encounter.get("weak_element")
         resist_element = encounter.get("resist_element")
         base_barrier = int(encounter.get("enemy_max_guard", 100))
-        barrier = scaled_power(base_barrier, barrier_scale_bp)
+        barrier = scaled_power(base_barrier, effective_barrier_scale_bp)
         opening_caption = "돌비늘 장부지기가 길을 막았어요."
         if boss_phases:
             opening = boss_phases[0]
@@ -668,14 +903,24 @@ def new_guardian_battle(
                 f"{opening_caption} "
                 f"{opening.get('intro_caption', '첫 번째 봉인이 깨어났어요.')}"
             )
+    # opening 기록서는 첫 명령 전에 한 번만 적용된다. 집중력은 파티가 나눠 쓰는
+    # 자원이라 전투 하나에 한 번 더해지고, 상한은 책 문장대로 그대로 지킨다.
+    opening = opening_modifiers(profiles)
+    max_focus = max(1, max_focus + int(opening["max_focus"]))
+    starting_focus = max(0, min(max_focus, starting_focus + int(opening["focus"])))
+
     return {
         "version": 3,
         "balance_version": COMBAT_BALANCE_VERSION,
+        "skill_book_opening": opening,
+        "difficulty_version": COMBAT_DIFFICULTY_VERSION,
+        "difficulty": difficulty,
         "kel_map_version": kel_map_version,
         "event_code": event_code,
         "status": "active",
         "round": 1,
-        "max_rounds": int(encounter.get("max_rounds", 6)),
+        "max_rounds": int(encounter.get("max_rounds", 6))
+        + int(opening["max_rounds"]),
         "focus": starting_focus,
         "max_focus": max_focus,
         "configured_starting_focus": configured_focus,
@@ -691,10 +936,12 @@ def new_guardian_battle(
         "wave_index": 0,
         "boss_phases": boss_phases,
         "boss_phase_index": 0,
+        "boss_phase_gate_ready": False,
         "enemy_guard": barrier,
         "enemy_max_guard": barrier,
         "growth_index": growth_index,
         "barrier_scale_bp": barrier_scale_bp,
+        "effective_barrier_scale_bp": effective_barrier_scale_bp,
         "weakness": weakness_cycle[0],
         "weak_element": weak_element,
         "resist_element": resist_element,
@@ -709,6 +956,7 @@ def new_guardian_battle(
                 "guard": 0,
                 "cooldown_until_round": {},
                 "ready_round": {},
+                "statuses": {},
             }
             for profile in profiles
         ],
@@ -725,6 +973,7 @@ def _intent(
     index: int,
     wave: dict[str, Any] | None = None,
     boss_phase: dict[str, Any] | None = None,
+    difficulty: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     intents = (
         (wave or {}).get("intents")
@@ -733,7 +982,7 @@ def _intent(
         or []
     )
     if not intents:
-        return present_intent(
+        presented = present_intent(
             {
                 "code": "guardian_strike",
                 "name": encounter.get("attack_name", "수호자의 공격"),
@@ -742,12 +991,24 @@ def _intent(
                 "power": 1,
             }
         )
-    presented = present_intent(dict(intents[index % len(intents)]))
+    else:
+        presented = present_intent(dict(intents[index % len(intents)]))
+    threat = difficulty or {}
+    presented["power"] = int(presented.get("power", 1)) + int(
+        threat.get("intent_power_bonus", 0)
+    )
     if boss_phase is not None:
         presented["power"] = int(presented.get("power", 1)) + int(
             boss_phase.get("intent_power_bonus", 0)
         )
         presented["boss_phase"] = int(boss_phase.get("index", 1))
+    mechanic = enemy_mechanic(
+        presented.get("mechanic_code"),
+        unlock_level=int(presented.get("mechanic_unlock", 1)),
+        mechanic_level=int(threat.get("mechanic_level", 0)),
+    )
+    if mechanic is not None:
+        presented["mechanic"] = mechanic
     return presented
 
 
@@ -796,6 +1057,7 @@ def guardian_battle_payload(
         int(state.get("intent_index", 0)),
         wave=wave,
         boss_phase=boss_phase,
+        difficulty=state.get("difficulty"),
     )
     pending = state.get("pending")
     acted = [
@@ -841,17 +1103,31 @@ def guardian_battle_payload(
                 state.get("resist_kel"), state.get("resist_kel")
             ),
             "intent": intent,
+            # 잔향 읽기 — 다음 라운드 예고를 미리 열어 준다. 공정한 선택 정보라
+            # 숨기지 않고, 책을 쓰지 않은 전투에서는 아예 나타나지 않는다.
+            "next_intent": (
+                _intent(
+                    encounter,
+                    int(state.get("intent_index", 0)) + 1,
+                    wave=wave,
+                    boss_phase=boss_phase,
+                )
+                if intent_preview_open(state, round_number=int(state.get("round", 1)))
+                else None
+            ),
         },
         "wave": (
             {
                 "index": int(state.get("wave_index", 0)) + 1,
                 "count": len(state.get("waves") or []),
+                "code": wave["code"],
                 "name": wave["name"],
             }
             if wave
             else None
         ),
         "boss_phase": _boss_phase_payload(state),
+        "threat": copy.deepcopy(state.get("difficulty") or {}),
         "pending_round": {
             "acted": acted,
             "awaiting": [
@@ -859,6 +1135,8 @@ def guardian_battle_payload(
                 for member_id in required_member_ids
                 if member_id not in acted and member_id in living_ids
             ],
+            "weakness_hit": bool((pending or {}).get("weakness_hit", False)),
+            "guard_actions": int((pending or {}).get("guard_actions", 0)),
         },
         "party": party,
     }
@@ -891,15 +1169,21 @@ def _begin_round_if_needed(state: dict[str, Any]) -> dict[str, Any]:
     pending = _pending_round(state)
     if pending is not None:
         return pending
-    # 방어는 라운드 단위다. 지난 적 행동 뒤 남은 수치를 다음 라운드에 이월하지 않는다.
+    # 방어는 라운드 단위다. 지난 적 행동 뒤 남은 수치를 다음 라운드에 이월하지
+    # 않는다 — `두 겹 잎방패`를 든 대원만 남은 방어 1칸을 가져간다.
+    carry = (state.get("skill_book_opening") or {}).get("guard_carry") or {}
     for member in state.get("party", []):
-        member["guard"] = 0
+        leftover = int(member.get("guard", 0))
+        keep = int(carry.get(str(int(member["member_id"])), 0))
+        member["guard"] = min(leftover, keep)
     pending = {
         "acted": [],
         "required_member_ids": [
             int(member["member_id"]) for member in _living_party(state)
         ],
         "intent_power_delta": 0,
+        "weakness_hit": False,
+        "guard_actions": 0,
     }
     state["pending"] = pending
     state["round_exchange"] = []
@@ -937,6 +1221,7 @@ def _apply_member_command(
     pending = _begin_round_if_needed(state)
     member_id = int(command.get("member_id", 0))
     requested_action = command.get("action")
+    choice = command.get("choice")
     action = "unique_1" if requested_action == "skill" else requested_action
     if action not in {
         "attack",
@@ -968,6 +1253,24 @@ def _apply_member_command(
         raise CombatRuleError(
             "EXPEDITION_COMBAT_MEMBER_DOWN",
             "지쳐서 물러난 대원은 이번 라운드에 행동할 수 없어요.",
+        )
+    # 발아 시계의 태엽 — 집중력 +2를 받은 대가로 1라운드에 스킬을 쓸 수 없다.
+    # 기본 공격과 마음 지키기는 남겨 둔다. `집중력 0~5에서 최소 한 행동은 항상
+    # 합법`이라는 밸런스 불변식을 반대급부가 깨뜨리면 안 되기 때문이다.
+    if (
+        action in SKILL_ACTIONS
+        and int(state.get("round", 1)) <= 1
+        and member_id
+        in {
+            int(value)
+            for value in (state.get("skill_book_opening") or {}).get(
+                "first_round_skill_locked", []
+            )
+        }
+    ):
+        raise CombatRuleError(
+            "EXPEDITION_COMBAT_FIRST_ROUND_SKILL_LOCKED",
+            "태엽을 감는 동안이라 첫 라운드에는 기본 공격과 마음 지키기만 쓸 수 있어요.",
         )
     if member_id in pending["acted"]:
         raise CombatRuleError(
@@ -1033,9 +1336,25 @@ def _apply_member_command(
     emotion_vfx_secondary = None
     caption = ""
 
+    # 전투당 한 번 터지는 기록서 트리거. 상한은 여기서 함께 지킨다.
+    trigger_focus, trigger_code = focus_trigger(
+        profile.get("snapshot") or {},
+        action=str(action),
+        fired=state.get("skill_book_triggers") or {},
+        member_id=member_id,
+    )
+    if trigger_code is not None:
+        state.setdefault("skill_book_triggers", {})[
+            f"{member_id}:{trigger_code}"
+        ] = True
+
     if action == "guard":
-        focus = min(max_focus, focus + int(kit["guard"]["focus_delta"]))
+        focus = min(
+            max_focus,
+            focus + int(kit["guard"]["focus_delta"]) + trigger_focus,
+        )
         member_state["guard"] = int(kit["guard"]["guard"])
+        pending["guard_actions"] = int(pending.get("guard_actions", 0)) + 1
         action_name = kit["guard"]["name"]
         caption = f"{actor_name}이(가) 마음을 다잡고 공격에 대비했어요."
     else:
@@ -1053,10 +1372,28 @@ def _apply_member_command(
                 )
             remaining = int(action_data.get("cooldown_remaining", 0))
             if remaining > 0:
+                # 전투당 1회짜리는 남은 턴 수를 세어 봐야 의미가 없다.
+                # `99턴 뒤`가 아니라 이 전투에서 끝났다고 말해야 읽힌다.
+                once_per_battle = remaining >= int(state.get("max_rounds", 6))
                 raise CombatRuleError(
                     "EXPEDITION_COMBAT_COOLDOWN",
-                    f"{action_name}은(는) {remaining}턴 뒤 다시 사용할 수 있어요.",
+                    f"{action_name}은(는) 이 전투에서 한 번만 쓸 수 있어요."
+                    if once_per_battle
+                    else f"{action_name}은(는) {remaining}턴 뒤 다시 사용할 수 있어요.",
                 )
+            # 고를 것이 있는 기록서는 무엇을 골랐는지 먼저 본다. 집중력을
+            # 쓰기 전에 막아야 잘못 고른 선택으로 자원이 사라지지 않는다.
+            book = action_data.get("equipped_book")
+            if book is not None:
+                problem = validate_choice(
+                    str(book["code"]),
+                    choice if isinstance(choice, str) else None,
+                    current=action_data.get("choice_current"),
+                )
+                if problem:
+                    raise CombatRuleError(
+                        "EXPEDITION_COMBAT_CHOICE_REQUIRED", problem
+                    )
             cost = int(action_data["focus_cost"])
             if focus < cost:
                 raise CombatRuleError(
@@ -1064,6 +1401,9 @@ def _apply_member_command(
                     f"{actor_name}의 스킬에 필요한 집중력이 부족해요.",
                 )
             focus -= cost
+            # 집중의 매듭 — 스킬을 쓴 뒤 한 칸 돌려받는다. 비용을 낸 뒤에
+            # 더해야 `쓸 수 있는지` 판정이 트리거로 느슨해지지 않는다.
+            focus = min(max_focus, focus + trigger_focus)
         else:
             focus = min(max_focus, focus + int(action_data["focus_delta"]))
         affinity = action_data["affinity"]
@@ -1075,6 +1415,12 @@ def _apply_member_command(
         action_element = action_data.get("element")
         action_elements = [str(item) for item in action_data.get("elements", [])]
         action_kel = action_data.get("kel")
+        # 고른 결은 공격 한 번까지다. 실제로 때린 뒤 지워야 `다음 공격 하나`라는
+        # 약속이 지켜진다. 프리즘 스킬은 결을 받지 않았으므로 그대로 남겨 둔다.
+        if member_state.get("kel_override") and action_kel == member_state.get(
+            "kel_override"
+        ):
+            member_state.pop("kel_override", None)
         action_kels = [str(item) for item in action_data.get("kels", [])]
         fusion_variant = action_data.get("fusion_variant")
         fusion_vfx_family = action_data.get("fusion_vfx_family")
@@ -1118,6 +1464,8 @@ def _apply_member_command(
             elif resistance_hit:
                 damage = max(1, damage - 4)
                 matchup = "resist"
+        if weakness_hit:
+            pending["weakness_hit"] = True
         effect = action_data.get("effect")
         if effect == "shield_all":
             for target in _living_party(state):
@@ -1138,6 +1486,34 @@ def _apply_member_command(
             target["guard"] = int(target["guard"]) + int(
                 effect_values.get("target_guard", 0)
             )
+        elif effect == "book_intent_preview":
+            # 다음 라운드 예고를 한 라운드 동안 미리 볼 수 있게 연다.
+            book_state(state)["intent_preview_until_round"] = round_number + int(
+                effect_values.get("intent_preview_rounds", 1)
+            )
+        elif effect == "book_weakness_engrave":
+            # 다음 약점 일치 공격에 실릴 추가 피해를 적어 둔다.
+            book_state(state)["weakness_bonus"] = int(
+                effect_values.get("weakness_bonus", 3)
+            )
+        elif effect == "book_kel_override":
+            # 고른 결은 이 대원의 다음 공격 한 번에만 실린다. 키트가 다음 라운드에
+            # 이 값을 읽어 상성을 다시 계산하므로 확정 전에 예상 피해가 보인다.
+            if isinstance(choice, str) and choice:
+                member_state["kel_override"] = choice
+        elif effect == "book_revive_one":
+            # HP 0 대원 1명을 HP 1로 복귀. 정액이라 등급·tier로 자라지 않는다.
+            downed = sorted(
+                (
+                    target
+                    for target in state.get("party", [])
+                    if int(target["hp"]) <= 0
+                ),
+                key=lambda item: int(item["member_id"]),
+            )
+            revived = int(effect_values.get("revive_count", 1))
+            for target in downed[:revived]:
+                target["hp"] = max(1, int(effect_values.get("revive_hp", 1)))
         elif effect == "guard_self":
             member_state["guard"] = int(member_state["guard"]) + int(
                 effect_values.get("self_guard", 2)
@@ -1365,6 +1741,10 @@ def _apply_member_command(
                 member_state.setdefault("cooldown_until_round", {})[
                     action_data["code"]
                 ] = cooldown_until_round
+        # 약점 각인 — 기다리던 추가 피해는 약점을 실제로 맞힌 공격에만 실린다.
+        if weakness_hit and damage > 0:
+            damage += take_weakness_bonus(state)
+        damage = _cap_boss_damage_at_next_phase(state, damage)
         state["enemy_guard"] = max(0, enemy_before - damage)
         if weakness_hit:
             caption = f"{actor_name}의 {action_name}! 약점을 꿰뚫어 장벽 {damage} 피해."
@@ -1444,8 +1824,24 @@ def _finalize_round(
         int(state.get("intent_index", 0)),
         wave=wave,
         boss_phase=boss_phase,
+        difficulty=state.get("difficulty"),
     )
-    power = max(0, int(intent.get("power", 1)) + intent_power_delta)
+    mechanic = intent.get("mechanic") if isinstance(intent.get("mechanic"), dict) else None
+    mechanic_triggered = False
+    mechanic_power_bonus = 0
+    if mechanic is not None:
+        trigger = mechanic.get("trigger")
+        mechanic_triggered = (
+            trigger == "no_weakness_hit" and not bool(pending.get("weakness_hit"))
+        ) or (
+            trigger == "no_guard_action" and int(pending.get("guard_actions", 0)) <= 0
+        )
+        if mechanic_triggered and mechanic.get("effect") == "power_bonus":
+            mechanic_power_bonus = int(mechanic.get("value", 0))
+    power = max(
+        0,
+        int(intent.get("power", 1)) + intent_power_delta + mechanic_power_bonus,
+    )
     targets = _target_members(state, intent)
     target_events = []
     profile_names = {
@@ -1454,10 +1850,25 @@ def _finalize_round(
     }
     for target in targets:
         guard_before = int(target.get("guard", 0))
-        blocked = min(guard_before, power)
-        damage = max(0, power - blocked)
-        target["guard"] = max(0, guard_before - power)
+        statuses = target.setdefault("statuses", {})
+        status_power = int(statuses.get("exposed", 0))
+        target_power = power + status_power
+        blocked = min(guard_before, target_power)
+        raw_damage = max(0, target_power - blocked)
+        hit_cap_bp = int(
+            (state.get("difficulty") or {}).get("single_hit_cap_bp", 10_000)
+        )
+        damage_cap = max(1, (int(target["max_hp"]) * hit_cap_bp + 9_999) // 10_000)
+        damage = min(raw_damage, damage_cap)
+        target["guard"] = max(0, guard_before - target_power)
         target["hp"] = max(0, int(target["hp"]) - damage)
+        # 빈틈은 다음으로 실제 적중한 공격 한 번에만 소비한다.
+        if status_power > 0:
+            remaining_exposed = max(0, status_power - 1)
+            if remaining_exposed:
+                statuses["exposed"] = remaining_exposed
+            else:
+                statuses.pop("exposed", None)
         target_events.append(
             {
                 "member_id": int(target["member_id"]),
@@ -1465,8 +1876,41 @@ def _finalize_round(
                 "damage": damage,
                 "blocked": blocked,
                 "hp_after": int(target["hp"]),
+                **({"damage_capped": True} if damage < raw_damage else {}),
             }
         )
+    unblocked = any(int(target["damage"]) > 0 for target in target_events)
+    if mechanic is not None and mechanic.get("trigger") == "on_unblocked":
+        mechanic_triggered = unblocked
+    mechanic_caption = None
+    if mechanic_triggered and mechanic is not None:
+        mechanic_value = int(mechanic.get("value", 0))
+        if mechanic.get("effect") == "focus_drain":
+            before = int(state.get("focus", 0))
+            state["focus"] = max(0, before - mechanic_value)
+            mechanic_caption = f"{mechanic['name']}로 집중력이 {before - int(state['focus'])} 줄었어요."
+        elif mechanic.get("effect") == "expose":
+            for target, result in zip(targets, target_events, strict=True):
+                if int(result["damage"]) <= 0:
+                    continue
+                statuses = target.setdefault("statuses", {})
+                statuses["exposed"] = min(
+                    1, int(statuses.get("exposed", 0)) + mechanic_value
+                )
+            mechanic_caption = f"{mechanic['name']}이 남아 다음 피격 위력이 1 높아져요."
+        elif mechanic.get("effect") == "barrier_mend":
+            before = int(state["enemy_guard"])
+            state["enemy_guard"] = min(
+                int(state["enemy_max_guard"]), before + mechanic_value
+            )
+            repaired = int(state["enemy_guard"]) - before
+            if repaired > 0:
+                mechanic_caption = f"{mechanic['name']}이 장벽을 {repaired} 복구했어요."
+        elif mechanic.get("effect") == "power_bonus":
+            mechanic_caption = f"{mechanic['name']}의 파훼에 실패해 위력이 {mechanic_value} 높아졌어요."
+    phase_gate = (boss_phase or {}).get("phase_gate")
+    if phase_gate == "resolve_intent":
+        state["boss_phase_gate_ready"] = True
     events.append(
         _push_event(
             state,
@@ -1484,10 +1928,15 @@ def _finalize_round(
                 "enemy_guard_before": int(state["enemy_guard"]),
                 "enemy_guard_after": int(state["enemy_guard"]),
                 "targets": target_events,
+                "mechanic": copy.deepcopy(mechanic),
+                "mechanic_triggered": mechanic_triggered,
+                "mechanic_caption": mechanic_caption,
                 "caption": intent.get("telegraph", "수호자의 공격이 밀려왔어요."),
             },
         )
     )
+    if mechanic_caption:
+        events[-1]["caption"] = f"{events[-1]['caption']} {mechanic_caption}"
     if not _living_party(state):
         state["status"] = "defeat"
         state["defeat_reason"] = "party_down"
@@ -1628,12 +2077,18 @@ def resolve_guardian_round(
     events: list[dict[str, Any]] = []
     round_over = False
     for command in commands:
+        phase_before = int(state.get("boss_phase_index", 0))
         events.append(_apply_member_command(state, command, profile_by_id))
         if int(state["enemy_guard"]) <= 0:
             events.extend(_enemy_cleared_events(state))
             round_over = True
             break
         events.extend(_advance_boss_phase(state))
+        if int(state.get("boss_phase_index", 0)) != phase_before:
+            # 새 상성과 예고를 본 뒤 다음 라운드에 대응하게 한다.
+            state["pending"] = None
+            round_over = True
+            break
     if not round_over:
         events.extend(_finalize_round(state, encounter, profile_by_id))
     state["last_exchange"] = events
@@ -1659,11 +2114,19 @@ def submit_guardian_action(
     if state.get("status") != "active":
         raise CombatRuleError("EXPEDITION_COMBAT_FINISHED", "이미 끝난 전투예요.")
     profile_by_id = {int(profile["id"]): profile for profile in profiles}
+    phase_before = int(state.get("boss_phase_index", 0))
     events = [_apply_member_command(state, command, profile_by_id)]
     if int(state["enemy_guard"]) <= 0:
         events.extend(_enemy_cleared_events(state))
     else:
         events.extend(_advance_boss_phase(state))
+        if int(state.get("boss_phase_index", 0)) != phase_before:
+            # 페이즈 전환은 한 번의 결과 사건이다. 새 공격은 다음 명령 라운드에서
+            # 예고하므로 사용자가 보지 못한 패턴에 즉시 맞지 않는다.
+            state["pending"] = None
+            state["last_exchange"] = events
+            _extend_log(state, events)
+            return state
         pending = _pending_round(state) or {"acted": []}
         required_member_ids = {
             int(item)

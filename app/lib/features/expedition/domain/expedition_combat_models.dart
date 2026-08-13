@@ -28,14 +28,21 @@ class ExpeditionCombatCommand {
   const ExpeditionCombatCommand({
     required this.memberId,
     required this.action,
+    this.choice,
   });
 
   final int memberId;
   final String action;
 
+  /// 일부 기록서는 무엇으로 바꿀지 함께 고른다. 허용값 판정은 서버가 한다.
+  final String? choice;
+
   Map<String, dynamic> toJson() => {
         'member_id': memberId,
         'action': action,
+        // 고르지 않은 명령까지 null을 실어 보내지 않는다. 구버전 서버가
+        // 모르는 키를 받고 400을 내는 일을 막는다.
+        if (choice != null) 'choice': choice,
       };
 }
 
@@ -57,6 +64,7 @@ class ExpeditionBattle {
     this.wave,
     this.bossPhase,
     this.regionCode,
+    this.threat,
   });
 
   final int version;
@@ -86,6 +94,10 @@ class ExpeditionBattle {
   /// 이 전투가 벌어지는 지역. 지역마다 다른 BGM을 고르는 값이며 웨이브가 없는
   /// 구버전 수호전 응답에는 없다.
   final String? regionCode;
+
+  /// 스테이지 시작 시 고정된 위협 프로필. 캐릭터 레벨을 읽어 공격력을 올리는
+  /// 동적 스케일이 아니라 스테이지 번호에 귀속된 공개 규칙이다.
+  final ExpeditionBattleThreat? threat;
 
   bool get isTangle => enemyKind == 'tangle';
 
@@ -144,6 +156,42 @@ class ExpeditionBattle {
                 json['boss_phase'] as Map<String, dynamic>,
               )
             : null,
+        threat: json['threat'] is Map<String, dynamic>
+            ? ExpeditionBattleThreat.fromJson(
+                json['threat'] as Map<String, dynamic>,
+              )
+            : null,
+      );
+}
+
+class ExpeditionBattleThreat {
+  const ExpeditionBattleThreat({
+    required this.code,
+    required this.name,
+    required this.tier,
+    required this.rank,
+    required this.recommendedLevel,
+    required this.mechanicLevel,
+    required this.patternDepth,
+  });
+
+  final String code;
+  final String name;
+  final int tier;
+  final String rank;
+  final int recommendedLevel;
+  final int mechanicLevel;
+  final int patternDepth;
+
+  factory ExpeditionBattleThreat.fromJson(Map<String, dynamic> json) =>
+      ExpeditionBattleThreat(
+        code: json['code'] as String? ?? 'legacy',
+        name: json['name'] as String? ?? '기본 탐험',
+        tier: _combatInt(json['tier']),
+        rank: json['rank'] as String? ?? 'legacy',
+        recommendedLevel: _combatInt(json['recommended_level'], 1),
+        mechanicLevel: _combatInt(json['mechanic_level']),
+        patternDepth: _combatInt(json['pattern_depth'], 1),
       );
 }
 
@@ -151,17 +199,20 @@ class ExpeditionBattleWave {
   const ExpeditionBattleWave({
     required this.index,
     required this.count,
+    required this.code,
     required this.name,
   });
 
   final int index;
   final int count;
+  final String code;
   final String name;
 
   factory ExpeditionBattleWave.fromJson(Map<String, dynamic> json) =>
       ExpeditionBattleWave(
         index: _combatInt(json['index'], 1),
         count: _combatInt(json['count'], 1),
+        code: json['code'] as String? ?? '',
         name: json['name'] as String? ?? '',
       );
 }
@@ -175,6 +226,10 @@ class ExpeditionBattleBossPhase {
     required this.tone,
     required this.intentPowerBonus,
     this.nextThresholdGuard,
+    this.ruleName,
+    this.ruleSummary,
+    this.phaseGate,
+    this.phaseGateReady = false,
   });
 
   final int index;
@@ -184,6 +239,10 @@ class ExpeditionBattleBossPhase {
   final String tone;
   final int intentPowerBonus;
   final int? nextThresholdGuard;
+  final String? ruleName;
+  final String? ruleSummary;
+  final String? phaseGate;
+  final bool phaseGateReady;
 
   bool get isFinal => index >= count;
 
@@ -198,6 +257,10 @@ class ExpeditionBattleBossPhase {
         nextThresholdGuard: json['next_threshold_guard'] is num
             ? (json['next_threshold_guard'] as num).toInt()
             : null,
+        ruleName: json['rule_name'] as String?,
+        ruleSummary: json['rule_summary'] as String?,
+        phaseGate: json['phase_gate'] as String?,
+        phaseGateReady: json['phase_gate_ready'] == true,
       );
 }
 
@@ -205,10 +268,14 @@ class ExpeditionBattlePendingRound {
   const ExpeditionBattlePendingRound({
     required this.acted,
     required this.awaiting,
+    this.weaknessHit = false,
+    this.guardActions = 0,
   });
 
   final List<int> acted;
   final List<int> awaiting;
+  final bool weaknessHit;
+  final int guardActions;
 
   factory ExpeditionBattlePendingRound.fromJson(Map<String, dynamic> json) =>
       ExpeditionBattlePendingRound(
@@ -224,6 +291,8 @@ class ExpeditionBattlePendingRound {
                 .map((value) => value.toInt())
                 .toList(growable: false)
             : const [],
+        weaknessHit: json['weakness_hit'] == true,
+        guardActions: _combatInt(json['guard_actions']),
       );
 }
 
@@ -298,6 +367,7 @@ class ExpeditionBattleIntent {
     this.motion,
     this.kel,
     this.contactMaterial,
+    this.mechanic,
   });
 
   final String code;
@@ -315,6 +385,7 @@ class ExpeditionBattleIntent {
   /// 이 예고가 날려 보내는 물건의 재질. 예고 preview 소리를 고르는 값이며
   /// 실제로 닿는 순간의 접촉음과 같은 재질이라 귀로 예상이 맞는지 확인된다.
   final String? contactMaterial;
+  final ExpeditionEnemyMechanic? mechanic;
 
   String get targetLabel => switch (target) {
         'all' => '탐험대 전체',
@@ -336,6 +407,39 @@ class ExpeditionBattleIntent {
         motion: ExpeditionCombatMotion.fromNullableJson(json['motion']),
         kel: json['kel'] as String?,
         contactMaterial: json['contact_material'] as String?,
+        mechanic: json['mechanic'] is Map<String, dynamic>
+            ? ExpeditionEnemyMechanic.fromJson(
+                json['mechanic'] as Map<String, dynamic>,
+              )
+            : null,
+      );
+}
+
+class ExpeditionEnemyMechanic {
+  const ExpeditionEnemyMechanic({
+    required this.code,
+    required this.name,
+    required this.trigger,
+    required this.effect,
+    required this.value,
+    required this.counter,
+  });
+
+  final String code;
+  final String name;
+  final String trigger;
+  final String effect;
+  final int value;
+  final String counter;
+
+  factory ExpeditionEnemyMechanic.fromJson(Map<String, dynamic> json) =>
+      ExpeditionEnemyMechanic(
+        code: json['code'] as String? ?? '',
+        name: json['name'] as String? ?? '',
+        trigger: json['trigger'] as String? ?? '',
+        effect: json['effect'] as String? ?? '',
+        value: _combatInt(json['value']),
+        counter: json['counter'] as String? ?? '',
       );
 }
 
@@ -437,6 +541,7 @@ class ExpeditionBattleMember {
     required this.maxHp,
     required this.guard,
     required this.kit,
+    this.statuses = const {},
   });
 
   final int memberId;
@@ -449,6 +554,7 @@ class ExpeditionBattleMember {
   final int maxHp;
   final int guard;
   final ExpeditionBattleKit kit;
+  final Map<String, int> statuses;
 
   bool get isAlive => hp > 0;
 
@@ -464,6 +570,7 @@ class ExpeditionBattleMember {
         maxHp: _combatInt(json['max_hp'], 3),
         guard: _combatInt(json['guard']),
         kit: ExpeditionBattleKit.fromJson(_combatMap(json['kit'])),
+        statuses: _combatIntMap(json['statuses']),
       );
 }
 
@@ -603,6 +710,23 @@ class ExpeditionBattleKit {
   }
 }
 
+/// 명령형 기록서가 함께 묻는 선택지 하나.
+///
+/// 값과 이름표를 서버가 짝지어 내려보낸다. 앱이 코드→한글 표를 따로 들고 있으면
+/// 결이 늘어날 때마다 두 곳을 고쳐야 하고, 한쪽만 고치면 빈 이름이 나온다.
+class ExpeditionBattleChoiceOption {
+  const ExpeditionBattleChoiceOption({required this.value, required this.label});
+
+  factory ExpeditionBattleChoiceOption.fromJson(Map<String, dynamic> json) =>
+      ExpeditionBattleChoiceOption(
+        value: json['value'] as String? ?? '',
+        label: json['label'] as String? ?? json['value'] as String? ?? '',
+      );
+
+  final String value;
+  final String label;
+}
+
 class ExpeditionBattleAction {
   const ExpeditionBattleAction({
     required this.slot,
@@ -657,6 +781,9 @@ class ExpeditionBattleAction {
     this.cameraProfile = 'steady',
     this.emotionVfxPrimary,
     this.emotionVfxSecondary,
+    this.choiceKind,
+    this.choiceCurrent,
+    this.choiceOptions = const [],
   });
 
   final String slot;
@@ -694,6 +821,19 @@ class ExpeditionBattleAction {
   final List<String> elements;
   final String? damageType;
   final String? damageTypeLabel;
+
+  /// 이 행동이 무엇을 함께 고르는지(`kel` 등). null이면 고를 것이 없다.
+  ///
+  /// 후보와 판정은 모두 서버가 쥐고 있다. 앱은 목록을 만들지도, 규칙을 다시
+  /// 계산하지도 않는다 — 두 곳이 어긋나면 사용자가 영문 없이 막히기 때문이다.
+  final String? choiceKind;
+
+  /// 지금 무엇으로 되어 있는지. 선택지에서 `현재`를 표시하는 용도다.
+  final String? choiceCurrent;
+  final List<ExpeditionBattleChoiceOption> choiceOptions;
+
+  /// 눌렀을 때 고르는 단계를 거쳐야 하는가.
+  bool get needsChoice => choiceKind != null && choiceOptions.isNotEmpty;
   final String? motionProfile;
   final String? vfxFamily;
   final String? kelFallbackFamily;
@@ -790,6 +930,13 @@ class ExpeditionBattleAction {
         cameraProfile: json['camera_profile'] as String? ?? 'steady',
         emotionVfxPrimary: json['emotion_vfx_primary'] as String?,
         emotionVfxSecondary: json['emotion_vfx_secondary'] as String?,
+        choiceKind: json['choice_kind'] as String?,
+        choiceCurrent: json['choice_current'] as String?,
+        choiceOptions: List.unmodifiable(
+          _combatMaps(json['choice_options'])
+              .map(ExpeditionBattleChoiceOption.fromJson)
+              .where((option) => option.value.isNotEmpty),
+        ),
       );
 
   factory ExpeditionBattleAction.unavailable({

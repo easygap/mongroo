@@ -31,11 +31,18 @@ app/android/key.properties
 *.jks
 *.keystore
 
+# 오디오 마스터 WAV — 합성이 결정론적이라 저장소에 두지 않는다.
+# manifest.json의 master_sha256이 출처 기록이고, 다음 명령으로 되살리고 대조한다.
+#   python design-system/scripts/build_expedition_music.py --region all
+#   python design-system/scripts/build_expedition_music.py --region all --check
+design-system/audio/**/*-master.wav
+
 # local QA artifacts
 .playwright-cli/
 .playwright-mcp/
 tmp/
 output/
 server/output/
+server/.pytest-tmp/
 server/.pytest-tmp-*/
 design-system/concepts/wardrobe-v1/qa/

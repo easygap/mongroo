@@ -48,6 +48,7 @@ docs/screenshots/web/
 28-player-enemy-contact-grid.webp (미촬영) 플레이어/적 origin→travel→contact→reaction 비교
 29-blend-backgrounds.webp        (미촬영) 네 지역 밝음/어두움 alpha fringe·depth·shadow QA
 30-store-gameplay-15s.mp4        (미촬영) 실제 빌드 준비→접촉→피격→환경 복원 15초 무편집 증빙
+31-skill-book-library.webp       마음결 기록서 프리셋·두 선택 칸·서고 실제 화면
 ```
 
 8~10번은 스테이지 개편 이전, 14·15·17~19번은 v2.0 기능 prototype 기록이다.
@@ -69,3 +70,7 @@ ImageGen으로 만든 배치 기준안이며 실제 앱 캡처가 아니다. 26~
 `docs/readme/mongroo-emotion-growth-hero.webp`는 기능 증빙 화면이 아니라 README
 첫 화면에 사용하는 콘셉트 일러스트다. 실제 기능 설명에는 항상 `screenshots/`
 아래의 실행 화면이나 녹화를 사용한다.
+
+31번은 2026-08-13 출시 후보의 실제 `SkillBookScreen`을 QA 데이터로 렌더링하고,
+Playwright에서 390×844 모바일 뷰포트로 촬영했다. 프리셋·등급·슬롯 제한·잠금
+이유를 포함해 화면에 보이는 문구와 조작 상태를 따로 합성하지 않았다.

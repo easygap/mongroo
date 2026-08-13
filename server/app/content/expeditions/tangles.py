@@ -13,6 +13,7 @@ import copy
 from typing import Any
 
 from app.content.expeditions.combat_balance import validate_tangle_balance
+from app.content.expeditions.combat_difficulty import validate_enemy_mechanic_code
 from app.content.expeditions.combat_motion import combat_motion, kel_fallback_family
 
 
@@ -417,6 +418,35 @@ TANGLE_INTENT_PRESENTATION: dict[str, tuple[str, str, str]] = {
     "tape_whip": ("mosaic", "draw", "matted-observatory.tape-whip"),
 }
 
+# 기믹은 첫 지역에서 순서대로 학습되고, 이후 지역에서 조합된다. unlock_level은
+# 스테이지 위협 프로필의 mechanic_level(1~3)이며 이름이 아니라 code로 판정한다.
+TANGLE_INTENT_MECHANICS: dict[str, tuple[str, int]] = {
+    "paper_flurry": ("expose", 2),
+    "ink_mist": ("focus_leak", 1),
+    "petal_gust": ("guard_check", 1),
+    "petal_dart": ("expose", 2),
+    "shelf_sweep": ("weakness_check", 2),
+    "catalogue_rain": ("repairing_index", 2),
+    "echo_ring": ("resonant_pressure", 1),
+    "sharp_note": ("expose", 1),
+    "splash_wave": ("focus_leak", 1),
+    "water_pop": ("guard_check", 2),
+    "bell_spin": ("weakness_check", 2),
+    "deep_toll": ("resonant_pressure", 2),
+    "dust_flare": ("focus_leak", 1),
+    "dust_lash": ("expose", 2),
+    "box_roll": ("guard_check", 1),
+    "seed_scatter": ("repairing_index", 2),
+    "spring_snap": ("reverse_winding", 2),
+    "gear_grind": ("guard_check", 2),
+    "ring_spin": ("weakness_check", 1),
+    "shard_scatter": ("expose", 2),
+    "page_storm": ("focus_leak", 1),
+    "paper_cut": ("weakness_check", 2),
+    "lens_glare": ("double_exposure", 2),
+    "tape_whip": ("reverse_winding", 2),
+}
+
 _EFFECT_KEY_BY_KEL = {
     "sunny": "care_vines",
     "rainy": "mist_dash",
@@ -425,6 +455,16 @@ _EFFECT_KEY_BY_KEL = {
     "sparkling": "prism_burst",
     "mosaic": "echo_wave",
 }
+_EXACT_TANGLE_EFFECT_CODES = frozenset(
+    {
+        "paper_flurry",
+        "ink_mist",
+        "petal_gust",
+        "petal_dart",
+        "shelf_sweep",
+        "catalogue_rain",
+    }
+)
 _IMPACT_SHAKE_BY_POWER = {1: 2.2, 2: 3.0, 3: 3.8}
 
 for _tangle_code, _tangle in TANGLE_CATALOG.items():
@@ -434,18 +474,19 @@ for _tangle_code, _tangle in TANGLE_CATALOG.items():
         _intent["contact_material"] = TANGLE_INTENT_CONTACT_MATERIAL[_code]
         _kel, _archetype, _vfx_family = TANGLE_INTENT_PRESENTATION[_code]
         _motion_profile = f"tangle.{_code.replace('_', '-')}"
+        _mechanic_code, _mechanic_unlock = TANGLE_INTENT_MECHANICS[_code]
         _intent.update(
             {
                 "kel": _kel,
                 "vfx_family": _vfx_family,
                 "kel_fallback_family": kel_fallback_family(_kel),
                 "effect_key": (
-                    _code
-                    if _code in {"paper_flurry", "ink_mist", "petal_dart"}
-                    else _EFFECT_KEY_BY_KEL[_kel]
+                    _code if _code in _EXACT_TANGLE_EFFECT_CODES else _EFFECT_KEY_BY_KEL[_kel]
                 ),
                 "motion_profile": _motion_profile,
                 "archetype": _archetype,
+                "mechanic_code": _mechanic_code,
+                "mechanic_unlock": _mechanic_unlock,
                 "motion": combat_motion(
                     _motion_profile,
                     archetype=_archetype,
@@ -515,9 +556,19 @@ def validate_tangle_catalog() -> list[str]:
                 "effect_key",
                 "motion_profile",
                 "archetype",
+                "mechanic_code",
             ):
                 if not isinstance(intent.get(key), str) or not intent[key].strip():
                     errors.append(f"{where}.{key}: 전투 표현 값이 필요합니다")
+            mechanic_unlock = intent.get("mechanic_unlock")
+            if (
+                not isinstance(mechanic_unlock, int)
+                or isinstance(mechanic_unlock, bool)
+                or not 1 <= mechanic_unlock <= 3
+            ):
+                errors.append(f"{where}.mechanic_unlock: 1~3 정수가 필요합니다")
+            if not validate_enemy_mechanic_code(intent.get("mechanic_code")):
+                errors.append(f"{where}.mechanic_code: 지원하지 않는 적 기믹입니다")
             if intent.get("archetype") not in {
                 "dash",
                 "draw",

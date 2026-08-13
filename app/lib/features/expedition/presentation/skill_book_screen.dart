@@ -1,0 +1,380 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/theme/mongroo_ui.dart';
+import '../domain/skill_book_models.dart';
+import 'skill_book_controller.dart';
+
+/// 마음결 기록서 서고와 장착 화면.
+///
+/// 두 가지를 한 화면에서 본다. 지금 두 칸에 무엇이 들어 있는지, 그리고 서고에
+/// 무엇이 있고 없는지다. 아직 없는 책도 숨기지 않고 어디서 얻는지 보여 준다 —
+/// 획득 경로에 확률이 없어서 숨길 이유가 없다.
+class SkillBookScreen extends ConsumerWidget {
+  const SkillBookScreen({super.key, required this.plantId, this.plantName});
+
+  final int plantId;
+  final String? plantName;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(skillBookControllerProvider(plantId));
+    final notifier = ref.read(skillBookControllerProvider(plantId).notifier);
+
+    return Scaffold(
+      appBar: AppBar(title: Text(plantName == null ? '마음결 기록서' : '$plantName의 기록서')),
+      body: SafeArea(
+        child: state.loading
+            ? const Center(child: CircularProgressIndicator())
+            : !state.ready
+                ? _ErrorView(
+                    message: state.error ?? '기록서를 불러오지 못했어요.',
+                    onRetry: notifier.load,
+                  )
+                : _LoadoutBody(
+                    state: state,
+                    onEquip: (slot, code) =>
+                        notifier.equip(slot: slot, code: code),
+                    onPreset: notifier.selectPreset,
+                  ),
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(message, textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              FilledButton(onPressed: onRetry, child: const Text('다시 시도')),
+            ],
+          ),
+        ),
+      );
+}
+
+class _LoadoutBody extends StatelessWidget {
+  const _LoadoutBody({
+    required this.state,
+    required this.onEquip,
+    required this.onPreset,
+  });
+
+  final SkillBookState state;
+  final Future<bool> Function(String slot, String? code) onEquip;
+  final Future<void> Function(String preset) onPreset;
+
+  @override
+  Widget build(BuildContext context) {
+    final loadout = state.loadout!;
+    final library = state.library!;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      children: [
+        _PresetRow(
+          presets: library.presets,
+          selected: state.presetCode,
+          onSelected: onPreset,
+        ),
+        const SizedBox(height: 12),
+        // 저장한 선택이 그대로 쓰이지 못했으면 조용히 넘어가지 않는다.
+        if (state.notice != null)
+          _Banner(text: state.notice!, tone: _BannerTone.notice),
+        if (state.error != null)
+          _Banner(text: state.error!, tone: _BannerTone.error),
+        for (final slot in const ['B1', 'B2']) ...[
+          _SlotCard(
+            slot: slot,
+            loadout: loadout,
+            library: library,
+            saving: state.saving,
+            onEquip: onEquip,
+          ),
+          const SizedBox(height: 12),
+        ],
+        const SizedBox(height: 8),
+        Text('서고', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 4),
+        Text(
+          '아직 없는 기록서도 어디서 얻는지 함께 보여 줘요.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 8),
+        for (final book in library.catalog)
+          _BookRow(book: book, key: ValueKey('book-${book.code}')),
+      ],
+    );
+  }
+}
+
+class _PresetRow extends StatelessWidget {
+  const _PresetRow({
+    required this.presets,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final List<String> presets;
+  final String selected;
+  final Future<void> Function(String preset) onSelected;
+
+  static const _labels = {
+    'explore': '탐험',
+    'guard': '수호',
+    'personal': '나만의',
+  };
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+        spacing: 8,
+        children: [
+          for (final preset in presets)
+            ChoiceChip(
+              key: ValueKey('preset-$preset'),
+              label: Text(_labels[preset] ?? preset),
+              selected: preset == selected,
+              onSelected: (_) => onSelected(preset),
+            ),
+        ],
+      );
+}
+
+enum _BannerTone { notice, error }
+
+class _Banner extends StatelessWidget {
+  const _Banner({required this.text, required this.tone});
+
+  final String text;
+  final _BannerTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final background = tone == _BannerTone.error
+        ? scheme.errorContainer
+        : scheme.secondaryContainer;
+    final foreground = tone == _BannerTone.error
+        ? scheme.onErrorContainer
+        : scheme.onSecondaryContainer;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Semantics(
+        liveRegion: true,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(text, style: TextStyle(color: foreground)),
+        ),
+      ),
+    );
+  }
+}
+
+class _SlotCard extends StatelessWidget {
+  const _SlotCard({
+    required this.slot,
+    required this.loadout,
+    required this.library,
+    required this.saving,
+    required this.onEquip,
+  });
+
+  final String slot;
+  final SkillLoadout loadout;
+  final SkillBookLibrary library;
+  final bool saving;
+  final Future<bool> Function(String slot, String? code) onEquip;
+
+  @override
+  Widget build(BuildContext context) {
+    final decision = loadout.slot(slot);
+    final open = loadout.isSlotOpen(slot);
+    final unlockLevel = loadout.slotUnlockLevel[slot] ?? 0;
+    final title = slot == 'B1' ? '선택 I' : '선택 II';
+
+    return MongrooPanel(
+      key: ValueKey('slot-$slot'),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                const Spacer(),
+                if (!open)
+                  Text(
+                    'Lv$unlockLevel부터',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              decision?.label ?? '아직 열리지 않음',
+              key: ValueKey('slot-$slot-label'),
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            // 왜 못 누르는지, 왜 다른 게 들어갔는지를 항상 문장으로 남긴다.
+            if (decision?.lockReason != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                decision!.lockReason!,
+                key: ValueKey('slot-$slot-reason'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _EquipButton(
+                  label: '성장결 기본',
+                  slot: slot,
+                  code: 'emotion.primary',
+                  enabled: open && !saving,
+                  selected: loadout.storedFor(slot) == 'emotion.primary',
+                  onEquip: onEquip,
+                ),
+                for (final book in library.catalog)
+                  if (book.owned)
+                    _EquipButton(
+                      label: book.name,
+                      slot: slot,
+                      code: book.code,
+                      enabled: open && !saving && library.canEquip(book, slot),
+                      selected: loadout.storedFor(slot) == book.code,
+                      // 3등급이 B1에 못 들어가는 이유를 누르기 전에 알려 준다.
+                      disabledReason: book.isGradeThree && slot == 'B1'
+                          ? '3등급은 두 번째 칸에서만 펼쳐져요'
+                          : null,
+                      onEquip: onEquip,
+                    ),
+                if (loadout.storedFor(slot) != null)
+                  _EquipButton(
+                    label: '비우기',
+                    slot: slot,
+                    code: null,
+                    enabled: open && !saving,
+                    selected: false,
+                    onEquip: onEquip,
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EquipButton extends StatelessWidget {
+  const _EquipButton({
+    required this.label,
+    required this.slot,
+    required this.code,
+    required this.enabled,
+    required this.selected,
+    required this.onEquip,
+    this.disabledReason,
+  });
+
+  final String label;
+  final String slot;
+  final String? code;
+  final bool enabled;
+  final bool selected;
+  final String? disabledReason;
+  final Future<bool> Function(String slot, String? code) onEquip;
+
+  @override
+  Widget build(BuildContext context) {
+    final semantics = disabledReason == null
+        ? '$label ${selected ? '장착됨' : '장착하기'}'
+        : '$label, $disabledReason';
+    return Semantics(
+      label: semantics,
+      button: true,
+      child: SizedBox(
+        height: 44,
+        child: FilterChip(
+          key: ValueKey('equip-$slot-${code ?? 'clear'}'),
+          selected: selected,
+          onSelected: enabled
+              ? (_) {
+                  HapticFeedback.selectionClick();
+                  onEquip(slot, code);
+                }
+              : null,
+          label: Text(label),
+          tooltip: disabledReason,
+        ),
+      ),
+    );
+  }
+}
+
+class _BookRow extends StatelessWidget {
+  const _BookRow({super.key, required this.book});
+
+  final SkillBook book;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Opacity(
+        // 없는 책도 지우지 않고 흐리게 둔다. 무엇을 모으면 되는지가 목표가 된다.
+        opacity: book.owned ? 1 : .58,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text('${book.grade}등급', style: theme.textTheme.labelSmall),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(book.name, style: theme.textTheme.titleSmall),
+                ),
+                if (!book.owned)
+                  Text(book.acquireLabel, style: theme.textTheme.labelSmall),
+              ],
+            ),
+            Text(book.effectSummary, style: theme.textTheme.bodySmall),
+            if (book.tradeoff != null)
+              Text(
+                '대가 · ${book.tradeoff}',
+                style: theme.textTheme.bodySmall,
+              ),
+            // 효과가 아직 판정에 없으면 그렇다고 밝힌다. 있는 척하지 않는다.
+            if (!book.combatEffect)
+              Text(
+                '효과를 준비하고 있어요',
+                key: ValueKey('pending-${book.code}'),
+                style: theme.textTheme.labelSmall,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -182,6 +182,9 @@ class ExpeditionCombatCommand(BaseModel):
     action: str = Field(
         pattern="^(attack|skill|unique_1|unique_2|selected_1|selected_2|guard)$"
     )
+    # 일부 기록서는 무엇으로 바꿀지 함께 고른다(성장결·대상·교체할 책).
+    # 허용값은 책마다 다르고 서버가 판정한다. 앱은 규칙을 다시 계산하지 않는다.
+    choice: str | None = Field(default=None, max_length=48)
 
 
 class ExpeditionCombatTurnRequest(ExpeditionActionRequest):
@@ -268,3 +271,17 @@ class FarmLayoutRequest(BaseModel):
         if len(ids) != len(set(ids)):
             raise ValueError("같은 보유 아이템을 여러 위치에 배치할 수 없습니다")
         return self
+
+
+class SkillBookLoadoutRequest(BaseModel):
+    """캐릭터 한 명의 선택 슬롯 저장 요청.
+
+    슬롯에는 기록서 코드 또는 감정 포인터가 들어간다. `null`은 지우기이며,
+    지운 슬롯은 안전 기본값으로 해석된다.
+    """
+
+    preset_code: str = Field(pattern="^(explore|guard|personal)$")
+    slot_b1_code: str | None = Field(default=None, max_length=48)
+    slot_b2_code: str | None = Field(default=None, max_length=48)
+    # 다른 화면이 먼저 바꿨는지 확인하는 값. 처음 저장은 0을 보낸다.
+    expected_revision: int | None = Field(default=None, ge=0)

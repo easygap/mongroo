@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.errors import AppError
 from app.core.timeutil import local_date_of, local_day_bounds_utc, to_utc_iso, utcnow
 from app.models.enums import AnalysisStatus, PlantStatus, RewardEventType
+from app.content.expeditions.skill_books import is_combat_skill_book
 from app.models.game import (
     FarmLayout,
     Item,
@@ -23,6 +24,7 @@ from app.models.mood import MoodEntry
 from app.models.plant import Plant, PlantSpecies
 from app.models.reward import RewardEvent
 from app.models.safety import SafetyEvent
+from app.models.skill_book import UserSkillBook
 from app.models.user import User
 from app.services.quest_rotation import QuestHistory, choose_daily_quest
 from app.services.rewards import RewardOutcome, grant, lock_active_plant, lock_user
@@ -677,6 +679,33 @@ async def purchase_item(db: AsyncSession, user_id: int, item_id: int) -> dict:
             {"required": item.price_seeds, "balance": user.seed_balance},
         )
 
+    # 기록서는 계정에 한 장뿐이라 상점 밖(해금·도전)에서 이미 얻었을 수 있다.
+    # 그 경우 씨앗을 차감하기 전에 막는다.
+    skill_book_code = None
+    if item.type == "skill_book":
+        skill_book_code = item.asset_manifest.get("skill_book_code")
+        if not isinstance(skill_book_code, str) or not is_combat_skill_book(
+            skill_book_code
+        ):
+            raise AppError(
+                503, "SHOP_CATALOG_INVALID", "상점 기록서 정보를 확인할 수 없습니다."
+            )
+        already_owned = await db.scalar(
+            sa.select(UserSkillBook.id)
+            .where(
+                UserSkillBook.user_id == user_id,
+                UserSkillBook.skill_book_code == skill_book_code,
+            )
+            .with_for_update()
+        )
+        if already_owned is not None:
+            raise AppError(
+                409,
+                "SKILL_BOOK_ALREADY_OWNED",
+                "이미 서고에 있는 기록서예요.",
+                {"code": skill_book_code},
+            )
+
     species_unlock = None
     species_code = item.asset_manifest.get("species_code")
     unlocks_growth_species = item.type == "species_unlock" or (
@@ -721,6 +750,18 @@ async def purchase_item(db: AsyncSession, user_id: int, item_id: int) -> dict:
     db.add(user_item)
     if species_unlock is not None:
         db.add(species_unlock)
+    if skill_book_code is not None:
+        # 보유의 단일 원본은 이 테이블이다. `source_ref`는 실제 지불액이 남은
+        # 씨앗 원장 entry를 가리켜 환불이 현재 가격이 아니라 지불액을 쓰게 한다.
+        db.add(
+            UserSkillBook(
+                user_id=user.id,
+                skill_book_code=skill_book_code,
+                acquired_at=utcnow(),
+                acquire_source="shop",
+                source_ref=f"purchase:item:{user.id}:{item.id}",
+            )
+        )
     await db.flush()
     return {
         "user_item": user_item_payload(user_item, item),

@@ -8,8 +8,8 @@ import '../../home/domain/plant.dart';
 import '../../home/presentation/plant_view.dart';
 import '../domain/expedition_models.dart';
 import 'expedition_action_cue.dart';
-import 'expedition_tangle_body.dart';
 import 'expedition_combat_audio.dart';
+import 'expedition_combat_effect_catalog.dart';
 import 'expedition_combat_effects.dart';
 import 'expedition_combat_hud.dart';
 import 'expedition_combat_sprites.dart';
@@ -75,8 +75,8 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   int? _playingCueId;
   double _previousProgress = 0;
   String? _precacheSignature;
+  String? _effectPrecacheSignature;
   String? _telegraphSignature;
-  bool _effectStartsPrecached = false;
 
   @override
   void initState() {
@@ -151,8 +151,8 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _precacheGuardianImages();
-    _precacheEffectStarts();
+    _precacheEnemyImages();
+    _precacheRelevantEffects();
     _syncMusic();
     if (MediaQuery.disableAnimationsOf(context)) {
       _ambientController
@@ -168,6 +168,11 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   @override
   void didUpdateWidget(covariant ExpeditionEncounterStage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.battle?.enemyKind != widget.battle?.enemyKind ||
+        oldWidget.battle?.wave?.code != widget.battle?.wave?.code) {
+      _precacheEnemyImages();
+    }
+    _precacheRelevantEffects();
     if (oldWidget.audioMode != widget.audioMode) {
       unawaited(_applyAudioMode());
     }
@@ -234,41 +239,92 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
         .clamp(256, 1024);
   }
 
-  void _precacheGuardianImages() {
+  void _precacheEnemyImages() {
     final cacheWidth = _guardianCacheWidth(context);
-    final signature = '$cacheWidth:${expeditionCombatAssets.join('|')}';
+    final battle = widget.battle;
+    final tangleCode = battle?.wave?.code ?? '';
+    final isTangle = battle?.enemyKind == 'tangle';
+    final assets = isTangle
+        ? <String>{
+            for (final state in expeditionTangleStates)
+              expeditionTangleAssetPath(tangleCode, state),
+          }
+        : expeditionCombatAssets;
+    final mobileWidth =
+        isTangle ? expeditionMobileTangleWidth : expeditionMobileGuardianWidth;
+    final signature = '$cacheWidth:$mobileWidth:${assets.join('|')}';
     if (_precacheSignature == signature) return;
     _precacheSignature = signature;
-    for (final asset in expeditionCombatAssets) {
+    for (final asset in assets) {
       final provider = expeditionRuntimeImageProvider(
         assetPath: asset,
         cacheWidth: cacheWidth,
-        mobileAssetWidth: expeditionMobileGuardianWidth,
+        mobileAssetWidth: mobileWidth,
       );
       // 디코드는 첫 공격보다 먼저 시작하되 화면 진입은 기다리지 않는다.
       precacheImage(provider, context).ignore();
     }
   }
 
-  void _precacheEffectStarts() {
-    if (_effectStartsPrecached) return;
-    _effectStartsPrecached = true;
-    final fullSequences = <String>{
-      if (widget.battle != null || widget.encounter?.kind == 'guardian') ...{
-        'ledger_claw',
-        'enemy_wave',
-      },
-      if (widget.battle != null)
-        for (final member in widget.battle!.party) ...{
-          if (member.kit.basic.effectKey != null) member.kit.basic.effectKey!,
-          if (member.kit.skill.effectKey != null) member.kit.skill.effectKey!,
-          'safe_guard',
-        },
-    };
+  void _precacheRelevantEffects() {
+    final battle = widget.battle;
+    final firstFrames = <String, ExpeditionCombatEffectSpec>{};
+    final fullSequences = <String, ExpeditionCombatEffectSpec>{};
+
+    void addFirstFrame({
+      String? vfxFamily,
+      String? kelFallbackFamily,
+      String? effectKey,
+    }) {
+      final effect = resolveExpeditionCombatEffect(
+        vfxFamily: vfxFamily,
+        kelFallbackFamily: kelFallbackFamily,
+        legacyEffectKey: effectKey,
+      );
+      firstFrames[effect.family] = effect;
+    }
+
+    if (battle != null) {
+      final intent = battle.enemy.intent;
+      final enemyEffect = resolveExpeditionCombatEffect(
+        vfxFamily: intent.vfxFamily,
+        kelFallbackFamily: intent.kelFallbackFamily,
+        legacyEffectKey: intent.effectKey,
+      );
+      // 다음 적 행동은 예고가 노출되는 동안 전 프레임을 디코드한다. 아군은
+      // 선택 전 첫 프레임만 준비하고, 실제 선택 뒤 나머지를 병렬로 올린다.
+      fullSequences[enemyEffect.family] = enemyEffect;
+      for (final member in battle.party) {
+        for (final action in <ExpeditionBattleAction>[
+          member.kit.basic,
+          ...member.kit.combatSkills,
+          member.kit.guard,
+        ]) {
+          if (!action.available) continue;
+          addFirstFrame(
+            vfxFamily: action.vfxFamily,
+            kelFallbackFamily: action.kelFallbackFamily,
+            effectKey: action.effectKey,
+          );
+        }
+      }
+    } else if (widget.encounter?.kind == 'guardian') {
+      for (final effectKey in const ['ledger_claw', 'enemy_wave']) {
+        final effect = expeditionCombatEffectForKey(effectKey);
+        fullSequences[effect.family] = effect;
+      }
+    }
+
+    final firstFamilies = firstFrames.keys.toList()..sort();
+    final fullFamilies = fullSequences.keys.toList()..sort();
+    final signature = '${firstFamilies.join(',')}|${fullFamilies.join(',')}';
+    if (_effectPrecacheSignature == signature) return;
+    _effectPrecacheSignature = signature;
+
     for (final asset in <String>{
-      ...expeditionCombatEffectFirstFrames,
-      for (final effectKey in fullSequences)
-        ...expeditionCombatEffectAssets(effectKey),
+      for (final effect in firstFrames.values) effect.asset(0),
+      for (final effect in fullSequences.values)
+        ...expeditionCombatEffectAssetsFor(effect),
     }) {
       precacheImage(AssetImage(asset), context).ignore();
     }
@@ -516,8 +572,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                         reduceMotion: reduceMotion,
                         imageCacheWidth: _guardianCacheWidth(context),
                         enemyKind: battle?.enemyKind ?? 'guardian',
-                        enemyName: battle?.enemy.name ?? '',
-                        enemyElite: battle?.enemy.elite ?? false,
+                        enemyCode: battle?.wave?.code ?? '',
                       ),
                     ),
                   if ((cue != null && !cue.isBossPhase) ||
@@ -608,8 +663,7 @@ class _AnimatedGuardian extends StatelessWidget {
     required this.reduceMotion,
     required this.imageCacheWidth,
     this.enemyKind = 'guardian',
-    this.enemyName = '',
-    this.enemyElite = false,
+    this.enemyCode = '',
   });
 
   final Animation<double> action;
@@ -619,10 +673,9 @@ class _AnimatedGuardian extends StatelessWidget {
   final bool reduceMotion;
   final int imageCacheWidth;
 
-  /// 'tangle'이면 원화 대신 절차적 엉킴 몸체를 그린다.
+  /// 'tangle'이면 현재 웨이브 코드에 대응하는 전용 상태 원화를 그린다.
   final String enemyKind;
-  final String enemyName;
-  final bool enemyElite;
+  final String enemyCode;
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
@@ -730,8 +783,15 @@ class _AnimatedGuardian extends StatelessWidget {
                 shake;
 
             if (enemyKind == 'tangle') {
-              // 엉킴은 원화 대신 절차적 몸체를 쓴다. 같은 타임라인의
-              // 피격·공격·풀려남 값을 그대로 넘겨 연출 문법을 공유한다.
+              // 상태별 알파 원화를 한 장만 유지한다. 반투명 레이어를 매 프레임
+              // 겹치지 않아 작은 기기에서도 saveLayer 비용과 메모리 피크를 막는다.
+              final state = defeatedBlend > .001
+                  ? 'release'
+                  : hitBlend > .001
+                      ? 'hit'
+                      : attackBlend > .001
+                          ? 'attack'
+                          : 'idle';
               return Transform.translate(
                 offset: offset,
                 child: Transform.scale(
@@ -757,13 +817,11 @@ class _AnimatedGuardian extends StatelessWidget {
                           ),
                         ),
                       ),
-                      ExpeditionTangleBody(
-                        seedText: enemyName,
-                        elite: enemyElite,
-                        hit: hitBlend,
-                        attack: attackBlend,
-                        released: defeatedBlend,
-                        flash: guardianFlash,
+                      _GuardianImage(
+                        key: ValueKey('tangle-body-$state'),
+                        asset: expeditionTangleAssetPath(enemyCode, state),
+                        cacheWidth: imageCacheWidth,
+                        mobileAssetWidth: expeditionMobileTangleWidth,
                       ),
                     ],
                   ),
@@ -864,17 +922,19 @@ class _GuardianImage extends StatelessWidget {
     super.key,
     required this.asset,
     required this.cacheWidth,
+    this.mobileAssetWidth = expeditionMobileGuardianWidth,
   });
 
   final String asset;
   final int cacheWidth;
+  final int mobileAssetWidth;
 
   @override
   Widget build(BuildContext context) => Image(
         image: expeditionRuntimeImageProvider(
           assetPath: asset,
           cacheWidth: cacheWidth,
-          mobileAssetWidth: expeditionMobileGuardianWidth,
+          mobileAssetWidth: mobileAssetWidth,
         ),
         fit: BoxFit.contain,
         alignment: Alignment.bottomCenter,

@@ -47,8 +47,36 @@ const expeditionCombatAssets = <String>{
   expeditionLedgerKeeperDefeatedAsset,
 };
 
+const expeditionTangleCodes = <String>{
+  'tangled_ledger',
+  'drifting_pressings',
+  'shelf_snarl',
+};
+
+const expeditionTangleStates = <String>{
+  'idle',
+  'attack',
+  'hit',
+  'release',
+};
+
+String expeditionTangleAssetPath(String code, String state) {
+  final safeCode = expeditionTangleCodes.contains(code)
+      ? code.replaceAll('_', '-')
+      : 'tangled-ledger';
+  final safeState = expeditionTangleStates.contains(state) ? state : 'idle';
+  return 'assets/adventure/tangles/tangle-$safeCode-$safeState-v1.webp';
+}
+
+final expeditionTangleCombatAssets = <String>{
+  for (final code in expeditionTangleCodes)
+    for (final state in expeditionTangleStates)
+      expeditionTangleAssetPath(code, state),
+};
+
 const expeditionMobileSceneWidth = 960;
 const expeditionMobileGuardianWidth = 768;
+const expeditionMobileTangleWidth = 576;
 
 const expeditionSceneKeys = <String>{
   'dungeon_gate',

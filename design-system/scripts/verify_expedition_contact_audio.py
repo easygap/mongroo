@@ -225,6 +225,27 @@ def verify(root: Path) -> list[str]:
                 f"({telegraph_peak:.2f}) — 믹스 우선순위 위반"
             )
 
+    # 모험 UI cue — 문서가 순간마다 길이 상한을 정해 뒀다.
+    for key, limit_ms in (
+        ("patrol-depart", 300),
+        ("patrol-return", 450),
+        ("dungeon-clear", 400),
+        ("research-complete", 350),
+    ):
+        path = root / f"cue-{key}.wav"
+        if not path.exists():
+            problems.append(f"{path.name}: 파일이 없습니다")
+            continue
+        samples, rate, channels = _read(path)
+        duration = len(samples) / rate * 1000
+        if duration > limit_ms:
+            problems.append(f"{path.name}: {duration:.0f}ms > 상한 {limit_ms}ms")
+        if channels != 1:
+            problems.append(f"{path.name}: UI cue는 모노여야 합니다")
+        peak = _true_peak_dbtp(path)
+        if peak > TRUE_PEAK_CEILING_DBTP:
+            problems.append(f"{path.name}: true peak {peak:.1f}dBTP")
+
     for region in (
         "moss-archive",
         "echo-well",

@@ -7,10 +7,13 @@
 
 from __future__ import annotations
 
+import json
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from functools import lru_cache
+from pathlib import Path
 from typing import Any, Literal
 
 from app.content.expeditions.combat import (
@@ -43,6 +46,18 @@ SLOT_ORDER = {
     "selected_2": 3,
     "unique_2": 4,
 }
+
+# 스테이지 형태는 첫 지역의 실제 학습 순서를 따른다. 같은 형태를 다른 지역에
+# 재사용해도 공격력은 캐릭터 레벨이 아니라 이 고정 위협 코드에서만 결정된다.
+STAGE_DIFFICULTY_BY_SHAPE: Mapping[str, str] = {
+    "tutorial": "stage_1",
+    "standard": "stage_3",
+    "elite": "stage_4",
+    "mixed": "stage_7",
+}
+MOSS_ARCHIVE_CONTENT_PATH = (
+    Path(__file__).resolve().parent / "v1" / "moss_archive.json"
+)
 
 
 @dataclass(frozen=True)
@@ -85,6 +100,7 @@ class SimulationResult:
     weak_bonus_damage: int
     remaining_hp: int
     maximum_hp: int
+    maximum_boss_phase: int = 0
 
     @property
     def score_rounds(self) -> int:
@@ -153,12 +169,24 @@ def party_for_case(case: SimulationCase) -> list[dict[str, Any]]:
     ]
 
 
+@lru_cache(maxsize=1)
+def _moss_archive_boss_encounter() -> dict[str, Any]:
+    """서비스 계층을 거치지 않고 실제 출시 콘텐츠의 보스 계약을 읽는다."""
+
+    content = json.loads(MOSS_ARCHIVE_CONTENT_PATH.read_text(encoding="utf-8"))
+    encounter = content["events"]["ledger_keeper"]["encounter"]
+    return {**encounter, "region_code": "moss_archive"}
+
+
 def encounter_for_case(case: SimulationCase) -> dict[str, Any]:
+    if case.stage_shape == "boss":
+        return _moss_archive_boss_encounter()
     return {
         "waves": list(case.waves),
         "max_rounds": 4 * len(case.waves),
         "starting_focus": 3,
         "max_focus": 5,
+        "difficulty_code": STAGE_DIFFICULTY_BY_SHAPE[case.stage_shape],
     }
 
 
@@ -200,6 +228,24 @@ def simulation_cases() -> Iterable[SimulationCase]:
                                 stage_shape=stage_shape,
                                 waves=waves,
                             )
+
+
+def boss_simulation_cases() -> Iterable[SimulationCase]:
+    """첫 지역 실제 보스를 권장 레벨의 모든 캐릭터 셀로 검증한다."""
+
+    species_codes = sorted(set(SPECIES_SKILLS) - {"archive_guide"})
+    for species in species_codes:
+        for form in EMOTION_DISCIPLINES:
+            for rarity in range(1, 6):
+                yield SimulationCase(
+                    species=species,
+                    form=form,
+                    rarity=rarity,
+                    level=9,
+                    region_code="moss_archive",
+                    stage_shape="boss",
+                    waves=(),
+                )
 
 
 def _living_payload_members(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
@@ -282,6 +328,21 @@ def _choose_action(
     candidates = _skill_candidates(actor, focus=focus)
     opportunities = [str(candidate["slot"]) for candidate in candidates]
     intent_power = int(_current_intent(payload).get("power", 0))
+    mechanic = _current_intent(payload).get("mechanic") or {}
+    pending = payload.get("pending_round") or {}
+
+    # 보스 기믹은 대미지 후보 정렬보다 먼저 대응한다. 정책이 공개된 파훼법을
+    # 무시해 사망하면 캐릭터 계수와 보스 학습 난도를 분리해서 볼 수 없다.
+    awaiting = len(pending.get("awaiting") or [])
+    if (
+        policy in {"weakness_first", "survival"}
+        and mechanic.get("trigger") == "no_guard_action"
+        and int(pending.get("guard_actions", 0)) == 0
+        # 공격 대상이 라운드 끝에 정해지므로 마지막 생존 대원이 받는다.
+        # 첫 대원이 무조건 지키게 하면 뒤 대원이 전열이 되어 보호가 무효다.
+        and awaiting <= 1
+    ):
+        return "guard", [*opportunities, "guard"]
 
     if policy == "survival":
         party = list(payload.get("party", []))
@@ -321,7 +382,8 @@ def _choose_action(
         weakeners = [
             candidate
             for candidate in candidates
-            if candidate.get("effect") in {"patina_parry", "weaken_intent"}
+            if int((candidate.get("effect_values") or {}).get("intent_power_delta", 0))
+            < 0
         ]
         if intent_power >= 2 and weakeners:
             choice = max(
@@ -359,7 +421,14 @@ def _choose_action(
     ranked_pool = candidates
     if policy in {"weakness_first", "survival"}:
         weak = [item for item in candidates if item.get("matchup") == "weak"]
-        if weak:
+        must_hit_weakness = (
+            mechanic.get("trigger") == "no_weakness_hit"
+            and not bool(pending.get("weakness_hit"))
+        )
+        # 공개된 파훼 기믹이 걸린 순간에만 약점 후보를 강제한다. 평상시에는
+        # 약점 배율까지 적용된 최종 power를 전체 후보와 비교해야, 약점이라는
+        # 이유만으로 낮은 위력 기술을 반복하는 비현실적인 정책이 되지 않는다.
+        if weak and must_hit_weakness:
             ranked_pool = weak
     # max_damage는 이름 그대로 상성을 모르는 비교군이다. 최종 power를 보면 약점
     # 배수가 이미 반영되어 weakness_first와 같은 결정을 하므로 중립 위력을 쓴다.
@@ -368,6 +437,7 @@ def _choose_action(
         ranked_pool,
         key=lambda item: (
             int(item.get(power_key, item["power"])),
+            item.get("matchup") == "weak",
             -int(item.get("focus_cost", 0)),
             SLOT_ORDER[str(item["slot"])],
         ),
@@ -387,9 +457,16 @@ def simulate_case(case: SimulationCase, policy: PolicyCode) -> SimulationResult:
     weak_neutral_damage = 0
     weak_bonus_damage = 0
     command_count = 0
+    maximum_boss_phase = 0
 
     while state["status"] == "active":
         payload = guardian_battle_payload(state, encounter, profiles)
+        phase = payload.get("boss_phase")
+        if isinstance(phase, Mapping):
+            maximum_boss_phase = max(
+                maximum_boss_phase,
+                int(phase.get("index", 0)),
+            )
         available_members = _living_payload_members(payload)
         if not available_members:
             break
@@ -408,6 +485,12 @@ def simulate_case(case: SimulationCase, policy: PolicyCode) -> SimulationResult:
         )
         actions[action] += 1
         command_count += 1
+        maximum_boss_phase = max(
+            maximum_boss_phase,
+            int(state.get("boss_phase_index", -1)) + 1
+            if state.get("boss_phases")
+            else 0,
+        )
         for event in state.get("last_exchange", []):
             if event.get("type") != "party_action":
                 continue
@@ -439,6 +522,7 @@ def simulate_case(case: SimulationCase, policy: PolicyCode) -> SimulationResult:
         weak_bonus_damage=weak_bonus_damage,
         remaining_hp=remaining_hp,
         maximum_hp=maximum_hp,
+        maximum_boss_phase=maximum_boss_phase,
     )
 
 
@@ -511,6 +595,17 @@ def _summarize_results(results: Sequence[SimulationResult]) -> dict[str, Any]:
             / max(1, sum(result.maximum_hp for result in results)),
             2,
         ),
+        "boss_phase_reach_rate_pct": {
+            f"phase_{phase}": round(
+                100
+                * sum(result.maximum_boss_phase >= phase for result in results)
+                / len(results),
+                2,
+            )
+            for phase in (2, 3)
+        }
+        if any(result.maximum_boss_phase for result in results)
+        else {},
         "slot_use": slot_use,
     }
 
@@ -608,20 +703,46 @@ def _balance_gates(report: Mapping[str, Any]) -> dict[str, Any]:
     matchup_pair = report["matchup_contribution"]
     species = report["species_gap"]["weakness_first"]
     survival_species = report["species_gap"]["survival"]
-    standard_species = set(species["win_rate_pct"]) - PREMIUM_SPECIES
-    standard_win_rates = [species["win_rate_pct"][code] for code in standard_species]
-    standard_score_rounds = [
-        species["mean_score_rounds"][code] for code in standard_species
+    boss_neutral = report["boss_summary"]["max_damage"]
+    boss_matchup = report["boss_summary"]["weakness_first"]
+    boss_survival = report["boss_summary"]["survival"]
+    accessible_species = set(species["win_rate_pct"]) - PREMIUM_SPECIES
+    accessible_win_rates = [
+        species["win_rate_pct"][code] for code in accessible_species
     ]
-    standard_survival_rates = [
-        survival_species["win_rate_pct"][code] for code in standard_species
+    accessible_score_rounds = [
+        species["mean_score_rounds"][code] for code in accessible_species
     ]
-    standard_remaining_hp = [
-        survival_species["remaining_hp_pct"][code] for code in standard_species
+    accessible_survival_rates = [
+        survival_species["win_rate_pct"][code] for code in accessible_species
     ]
-    standard_gap_pp = round(max(standard_win_rates) - min(standard_win_rates), 2)
-    premium_survival_floor = min(
+    accessible_remaining_hp = [
+        survival_species["remaining_hp_pct"][code] for code in accessible_species
+    ]
+    premium_win_rates = [species["win_rate_pct"][code] for code in PREMIUM_SPECIES]
+    premium_score_rounds = [
+        species["mean_score_rounds"][code] for code in PREMIUM_SPECIES
+    ]
+    premium_survival_rates = [
         survival_species["win_rate_pct"][code] for code in PREMIUM_SPECIES
+    ]
+    premium_remaining_hp = [
+        survival_species["remaining_hp_pct"][code] for code in PREMIUM_SPECIES
+    ]
+
+    def average(values: Sequence[float | int]) -> float:
+        return round(sum(values) / len(values), 2)
+
+    accessible_win_average = average(accessible_win_rates)
+    accessible_score_average = average(accessible_score_rounds)
+    accessible_survival_average = average(accessible_survival_rates)
+    accessible_remaining_hp_average = average(accessible_remaining_hp)
+    premium_win_average = average(premium_win_rates)
+    premium_score_average = average(premium_score_rounds)
+    premium_survival_average = average(premium_survival_rates)
+    premium_remaining_hp_average = average(premium_remaining_hp)
+    boss_counterplay_lift = round(
+        boss_matchup["win_rate_pct"] - boss_neutral["win_rate_pct"], 2
     )
     reference_slots = {
         slot: details["use_rate_when_available_pct"]
@@ -637,6 +758,28 @@ def _balance_gates(report: Mapping[str, Any]) -> dict[str, Any]:
     )
 
     checks = {
+        "boss_mastery": {
+            "pass": _between(boss_matchup["win_rate_pct"], 95, 100)
+            and _between(boss_survival["win_rate_pct"], 95, 100)
+            and _between(boss_neutral["win_rate_pct"], 20, 60)
+            and _between(boss_matchup["clear_rounds"]["p50"], 4, 6)
+            and boss_matchup["one_round_clears"] == 0
+            and boss_matchup["boss_phase_reach_rate_pct"]["phase_3"] == 100.0,
+            "actual": {
+                "matchup_win_rate_pct": boss_matchup["win_rate_pct"],
+                "survival_win_rate_pct": boss_survival["win_rate_pct"],
+                "neutral_win_rate_pct": boss_neutral["win_rate_pct"],
+                "matchup_p50": boss_matchup["clear_rounds"]["p50"],
+                "one_round_clears": boss_matchup["one_round_clears"],
+                "phase_3_reach_rate_pct": boss_matchup[
+                    "boss_phase_reach_rate_pct"
+                ]["phase_3"],
+            },
+            "target": (
+                "파훼·생존 정책 승률 95~100%, 무상성 화력 정책 20~60%, "
+                "P50 4~6라운드, 3페이즈 도달 100%, 1라운드 완료 0건"
+            ),
+        },
         "tutorial_completion": {
             "pass": tutorial["win_rate_pct"] == 100.0
             and _between(tutorial["clear_rounds"]["p90"], 1, 2),
@@ -689,14 +832,23 @@ def _balance_gates(report: Mapping[str, Any]) -> dict[str, Any]:
         },
         "matchup_selection": {
             "pass": matchup_selection_lift >= 10
-            and matchup_pair["positive_case_rate_pct"]
-            >= matchup_pair["negative_case_rate_pct"],
+            and boss_counterplay_lift >= 35
+            and matchup_pair["negative_case_rate_pct"] <= 25
+            and all(
+                float(value) >= 0
+                for value in matchup_pair["region_p50"].values()
+            ),
             "actual": {
                 "weakness_hit_lift_pp": matchup_selection_lift,
+                "boss_counterplay_win_lift_pp": boss_counterplay_lift,
                 "faster_case_rate_pct": matchup_pair["positive_case_rate_pct"],
                 "slower_case_rate_pct": matchup_pair["negative_case_rate_pct"],
+                "region_round_delta_p50": matchup_pair["region_p50"],
             },
-            "target": "약점 우선 시 적중률 +10%p 이상, 빨라지는 셀이 느려지는 셀 이상",
+            "target": (
+                "약점 적중률 +10%p 이상, 보스 파훼 승률 +35%p 이상, "
+                "느려지는 셀 25% 이하, 전 지역 라운드 중앙값 악화 없음"
+            ),
         },
         "slot_coverage": {
             "pass": all(rate >= 5 for rate in reference_slots.values()),
@@ -704,32 +856,37 @@ def _balance_gates(report: Mapping[str, Any]) -> dict[str, Any]:
             "target": "사용 가능한 기본·고유·선택·방어 슬롯 선택률 각각 5% 이상",
         },
         "species_role_positioning": {
-            "pass": standard_gap_pp <= 5.0
-            and species["mean_score_rounds"]["maestro-pot"]
-            <= min(standard_score_rounds)
+            "pass": species["max_gap_pp"] <= 15.0
+            and premium_win_average >= accessible_win_average + 2
+            and premium_score_average <= accessible_score_average - 0.05
+            and premium_survival_average >= accessible_survival_average
+            and premium_remaining_hp_average >= accessible_remaining_hp_average + 2
+            and species["mean_score_rounds"]["gal-pot"]
+            <= min(species["mean_score_rounds"].values())
             and survival_species["remaining_hp_pct"]["nurse-pot"]
-            >= max(standard_remaining_hp)
-            and premium_survival_floor
-            >= sum(standard_survival_rates) / len(standard_survival_rates),
+            >= accessible_remaining_hp_average + 5,
             "actual": {
-                "standard_max_gap_pp": standard_gap_pp,
                 "all_species_max_gap_pp": species["max_gap_pp"],
-                "maestro_mean_score_rounds": species["mean_score_rounds"][
-                    "maestro-pot"
-                ],
-                "standard_fastest_mean_score_rounds": min(standard_score_rounds),
+                "premium_win_average_pct": premium_win_average,
+                "accessible_win_average_pct": accessible_win_average,
+                "premium_mean_score_rounds": premium_score_average,
+                "accessible_mean_score_rounds": accessible_score_average,
+                "premium_survival_win_average_pct": premium_survival_average,
+                "accessible_survival_win_average_pct": accessible_survival_average,
+                "premium_remaining_hp_average_pct": premium_remaining_hp_average,
+                "accessible_remaining_hp_average_pct": accessible_remaining_hp_average,
+                "gal_mean_score_rounds": species["mean_score_rounds"]["gal-pot"],
+                "all_species_fastest_mean_score_rounds": min(
+                    species["mean_score_rounds"].values()
+                ),
                 "nurse_survival_remaining_hp_pct": survival_species["remaining_hp_pct"][
                     "nurse-pot"
                 ],
-                "standard_best_remaining_hp_pct": max(standard_remaining_hp),
-                "premium_survival_win_floor_pct": premium_survival_floor,
-                "standard_survival_win_average_pct": round(
-                    sum(standard_survival_rates) / len(standard_survival_rates), 2
-                ),
             },
             "target": (
-                "기본·접근형 11종 승률 격차 5%p 이하, 세렌은 최단 공략, "
-                "백화는 최고 생존 잔여 체력, 프리미엄 생존 승률은 기본 평균 이상"
+                "전체 품종 승률 격차 15%p 이하, 프리미엄 평균 승률 +2%p·공략 "
+                "0.05라운드 단축·잔여 체력 +2%p 이상, 최고가 리아는 최단 공략, "
+                "전담 힐러 백화는 접근형 평균보다 잔여 체력 +5%p 이상"
             ),
         },
     }
@@ -741,11 +898,18 @@ def _balance_gates(report: Mapping[str, Any]) -> dict[str, Any]:
 
 def run_balance_matrix() -> dict[str, Any]:
     cases = list(simulation_cases())
+    boss_cases = list(boss_simulation_cases())
     by_policy: dict[PolicyCode, list[SimulationResult]] = {
+        policy: [] for policy in POLICIES
+    }
+    boss_by_policy: dict[PolicyCode, list[SimulationResult]] = {
         policy: [] for policy in POLICIES
     }
     for policy in POLICIES:
         by_policy[policy] = [simulate_case(case, policy) for case in cases]
+        boss_by_policy[policy] = [
+            simulate_case(case, policy) for case in boss_cases
+        ]
 
     stage_summary: dict[str, dict[str, Any]] = {}
     for policy, results in by_policy.items():
@@ -761,6 +925,7 @@ def run_balance_matrix() -> dict[str, Any]:
         "generated_at": datetime.now(UTC).isoformat(),
         "engine": "deterministic-exact-enumeration",
         "party_fixture": "owned identity 1 + Lv16 archive guide 2",
+        "difficulty_fixture": dict(STAGE_DIFFICULTY_BY_SHAPE),
         "dimensions": {
             "species": len(set(case.species for case in cases)),
             "forms": len(set(case.form for case in cases)),
@@ -769,12 +934,21 @@ def run_balance_matrix() -> dict[str, Any]:
             "regions": len(REGION_COMBAT_BANDS),
             "stage_shapes": 4,
             "cases_per_policy": len(cases),
-            "total_battles": len(cases) * len(POLICIES),
+            "boss_cases_per_policy": len(boss_cases),
+            "total_battles": (len(cases) + len(boss_cases)) * len(POLICIES),
         },
         "policy_summary": {
             policy: _summarize_results(results) for policy, results in by_policy.items()
         },
         "stage_summary": stage_summary,
+        "boss_summary": {
+            policy: _summarize_results(results)
+            for policy, results in boss_by_policy.items()
+        },
+        "boss_species_gap": {
+            policy: _species_gap(results)
+            for policy, results in boss_by_policy.items()
+        },
         "matchup_contribution": _paired_matchup_report(by_policy),
         "species_gap": {
             policy: _species_gap(results) for policy, results in by_policy.items()

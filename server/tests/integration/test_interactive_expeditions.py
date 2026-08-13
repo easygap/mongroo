@@ -182,12 +182,13 @@ async def _complete_run(client, headers: dict, run: dict) -> dict:
         "combat_turn",
         "retreat",
     }
+    expected_guard = run["current_event"]["battle"]["enemy"]["max_guard"]
     run = await _fight_guardian(client, headers, run, "combat-keeper")
     resolution = run["last_resolution"]
     assert resolution["event_code"] == "ledger_keeper"
     assert resolution["actor_name"]
     assert resolution["battle_status"] == "victory"
-    assert resolution["score"] == 100
+    assert resolution["score"] == expected_guard
     assert run["last_combat_exchange"][-1] == {
         "sequence": run["last_combat_exchange"][-1]["sequence"],
         "type": "outcome",

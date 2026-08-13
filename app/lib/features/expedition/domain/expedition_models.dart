@@ -144,6 +144,7 @@ class ExpeditionSnapshot {
     required this.memory,
     required this.loot,
     required this.summary,
+    this.unlockedSkillBooks = const [],
   });
 
   final ExpeditionRun run;
@@ -159,6 +160,12 @@ class ExpeditionSnapshot {
   final Map<String, dynamic> memory;
   final List<ExpeditionLootItem> loot;
   final Map<String, dynamic>? summary;
+
+  /// 이번 행동으로 조건을 채워 새로 서고에 들어온 기록서.
+  ///
+  /// 조건을 채운 순간에 알려 주지 않으면 사용자는 서고를 따로 열어 보기 전까지
+  /// 모른다. 확률이 아니라 결정적으로 얻는 보상이라 더더욱 즉시 알려야 한다.
+  final List<ExpeditionUnlockedSkillBook> unlockedSkillBooks;
 
   Set<String> get availableMoveCodes => availableActions
       .where((action) => action['type'] == 'move')
@@ -181,6 +188,7 @@ class ExpeditionSnapshot {
 
   factory ExpeditionSnapshot.fromJson(Map<String, dynamic> json) {
     final map = _map(json['map']);
+    final unlocked = json['unlocked_skill_books'];
     final rawSummary = json['summary'];
     return ExpeditionSnapshot(
       run: ExpeditionRun.fromJson(_map(json['run'])),
@@ -218,6 +226,46 @@ class ExpeditionSnapshot {
           .map(ExpeditionLootItem.fromJson)
           .toList(growable: false),
       summary: rawSummary is Map<String, dynamic> ? rawSummary : null,
+      unlockedSkillBooks: unlocked is List
+          ? unlocked
+              .whereType<Map<String, dynamic>>()
+              .map(ExpeditionUnlockedSkillBook.fromJson)
+              .toList(growable: false)
+          : const [],
+    );
+  }
+}
+
+/// 조건을 채워 방금 열린 기록서 한 권.
+class ExpeditionUnlockedSkillBook {
+  const ExpeditionUnlockedSkillBook({
+    required this.code,
+    required this.source,
+    required this.name,
+    required this.effectSummary,
+  });
+
+  final String code;
+
+  /// `unlock`(조건 달성) 또는 `challenge`(도전 고정 달성).
+  final String source;
+
+  /// 서버가 함께 보내 준 이름. 앱이 카탈로그 사본을 들고 있지 않아도 된다.
+  final String name;
+  final String effectSummary;
+
+  String get sourceLabel => source == 'challenge' ? '도전 달성' : '조건 달성';
+
+  /// 안내 한 줄. 보유해도 자동 장착되지 않으므로 다음 행동까지 알려 준다.
+  String get notice => '$name을(를) 서고에 담았어요. 기록서 화면에서 장착할 수 있어요.';
+
+  factory ExpeditionUnlockedSkillBook.fromJson(Map<String, dynamic> json) {
+    final code = json['code'] as String? ?? '';
+    return ExpeditionUnlockedSkillBook(
+      code: code,
+      source: json['source'] as String? ?? 'unlock',
+      name: json['name'] as String? ?? code,
+      effectSummary: json['effect_summary'] as String? ?? '',
     );
   }
 }

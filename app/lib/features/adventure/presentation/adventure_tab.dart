@@ -8,9 +8,11 @@ import 'package:go_router/go_router.dart';
 import '../../../core/config/app_formats.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
+import '../../expedition/presentation/expedition_battle_dock.dart';
 import '../../home/presentation/plant_view.dart';
 import '../domain/adventure_models.dart';
 import 'adventure_controller.dart';
+import 'adventure_cue_audio.dart';
 
 class AdventureTab extends ConsumerStatefulWidget {
   const AdventureTab({super.key});
@@ -22,10 +24,12 @@ class AdventureTab extends ConsumerStatefulWidget {
 class _AdventureTabState extends ConsumerState<AdventureTab> {
   Timer? _clock;
   DateTime _now = DateTime.now();
+  late final AdventureCueAudio _cues;
 
   @override
   void initState() {
     super.initState();
+    _cues = AdventureCueAudio();
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _now = DateTime.now());
     });
@@ -34,8 +38,15 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
   @override
   void dispose() {
     _clock?.cancel();
+    unawaited(_cues.dispose());
     super.dispose();
   }
+
+  /// 확정 순간의 소리. 사용자가 효과음을 끄면 문구와 촉각만 남는다.
+  Future<void> _playCue(AdventureCue cue) => _cues.play(
+        cue,
+        enabled: ref.read(expeditionBattleSettingsProvider).sfxEnabled,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -210,6 +221,7 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
         .startPatrol(routeCode);
     if (!mounted || !success) return;
     await HapticFeedback.selectionClick();
+    unawaited(_playCue(AdventureCue.patrolDepart));
     _showSuccess('순찰을 보냈어요. 돌아올 때까지 일상을 이어가도 좋아요.');
   }
 
@@ -221,6 +233,7 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
     final encounter = ref.read(adventureControllerProvider).actionMessage;
     _showSuccess(encounter ?? '순찰 보상과 새 발견을 수집함에 담았어요.');
     await HapticFeedback.lightImpact();
+    unawaited(_playCue(AdventureCue.patrolReturn));
   }
 
   Future<void> _runDungeon(AdventureDungeon dungeon) async {
@@ -242,6 +255,7 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
     final outcome = ref.read(adventureControllerProvider).actionMessage;
     _showSuccess(outcome ?? '던전 탐험을 마치고 성장 보상을 받았어요.');
     await HapticFeedback.lightImpact();
+    unawaited(_playCue(AdventureCue.dungeonClear));
   }
 
   Future<void> _completeResearch(String projectCode) async {
@@ -252,7 +266,10 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
     final suspended =
         ref.read(adventureControllerProvider).data.valueOrNull?.suspended ??
             false;
-    if (!suspended) await HapticFeedback.mediumImpact();
+    if (!suspended) {
+      await HapticFeedback.mediumImpact();
+      unawaited(_playCue(AdventureCue.researchComplete));
+    }
     _showSuccess('표본 연구를 완성했어요. 다음 탐험부터 효과가 적용돼요.');
   }
 
@@ -262,6 +279,7 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
         .claimWeeklyGoal(goalCode);
     if (!mounted || !success) return;
     await HapticFeedback.lightImpact();
+    unawaited(_playCue(AdventureCue.patrolReturn));
     _showSuccess('주간 탐험 약속을 지켜 씨앗 보상을 받았어요.');
   }
 

@@ -256,7 +256,12 @@ async def test_battle_stage_run_starts_directly_in_a_tangle_fight(
     battle = run["current_event"]["battle"]
     assert battle["enemy_kind"] == "tangle"
     assert battle["enemy"]["name"] == "엉킨 장부 뭉치"
-    assert battle["wave"] == {"index": 1, "count": 1, "name": "엉킨 장부 뭉치"}
+    assert battle["wave"] == {
+        "index": 1,
+        "count": 1,
+        "code": "tangled_ledger",
+        "name": "엉킨 장부 뭉치",
+    }
     assert battle["max_rounds"] == 4
     assert {action["type"] for action in run["available_actions"]} == {
         "combat_turn",
@@ -302,7 +307,12 @@ async def test_wave_stage_swaps_tangles_without_extra_rounds(
         key="stage-wave-0001",
     )
     battle = run["current_event"]["battle"]
-    assert battle["wave"] == {"index": 1, "count": 2, "name": "엉킨 장부 뭉치"}
+    assert battle["wave"] == {
+        "index": 1,
+        "count": 2,
+        "code": "tangled_ledger",
+        "name": "엉킨 장부 뭉치",
+    }
     assert battle["max_rounds"] == 8
 
     run, exchanges = await _fight_stage_battle(client, headers, run, "stage-wave-fight")

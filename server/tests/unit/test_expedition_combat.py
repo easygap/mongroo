@@ -413,7 +413,12 @@ def test_partial_action_returns_only_new_events(profiles):
     assert after_first["pending"]["acted"] == [2]
 
     payload = guardian_battle_payload(after_first, encounter, profiles)
-    assert payload["pending_round"] == {"acted": [2], "awaiting": [1]}
+    assert payload["pending_round"] == {
+        "acted": [2],
+        "awaiting": [1],
+        "weakness_hit": True,
+        "guard_actions": 0,
+    }
 
     after_second = submit_guardian_action(
         after_first, {"member_id": 1, "action": "attack"}, encounter, profiles
@@ -542,7 +547,12 @@ def test_wave_battle_starts_from_the_first_tangle(profiles):
     payload = guardian_battle_payload(battle, encounter, profiles)
     assert payload["enemy"]["name"] == "엉킨 장부 뭉치"
     assert payload["enemy"]["kind"] == "tangle"
-    assert payload["wave"] == {"index": 1, "count": 2, "name": "엉킨 장부 뭉치"}
+    assert payload["wave"] == {
+        "index": 1,
+        "count": 2,
+        "code": "tangled_ledger",
+        "name": "엉킨 장부 뭉치",
+    }
 
 
 def test_early_levels_do_not_scale_enemy_barrier_before_power_rounding_moves():
@@ -604,7 +614,12 @@ def test_clearing_a_wave_ends_the_round_and_brings_the_next_tangle(profiles):
     assert intro["enemy_name"] == "표류 압화 떼"
 
     payload = guardian_battle_payload(resolved, encounter, profiles)
-    assert payload["wave"] == {"index": 2, "count": 2, "name": "표류 압화 떼"}
+    assert payload["wave"] == {
+        "index": 2,
+        "count": 2,
+        "code": "drifting_pressings",
+        "name": "표류 압화 떼",
+    }
 
 
 def test_final_wave_release_becomes_the_victory_caption(profiles):
@@ -1518,6 +1533,67 @@ def test_guardian_boss_changes_affinity_intent_and_staging_across_three_phases(
     assert phase_event["vfx_family"] == "guardian.phase-break"
 
 
+def test_large_boss_hit_stops_at_each_phase_boundary(profiles):
+    encounter = _encounter(
+        enemy_max_guard=100,
+        boss_phases=[
+            {
+                "code": "opening",
+                "threshold_bp": 10_000,
+                "weak_element": "light",
+                "resist_element": "shadow",
+            },
+            {
+                "code": "middle",
+                "threshold_bp": 6_600,
+                "weak_element": "water",
+                "resist_element": "fire",
+            },
+            {
+                "code": "final",
+                "threshold_bp": 3_300,
+                "weak_element": "poison",
+                "resist_element": "steel",
+            },
+        ],
+    )
+    battle = new_guardian_battle("phase-boundary", encounter, profiles)
+    middle_threshold = (
+        battle["enemy_max_guard"] * 6_600 + 9_999
+    ) // 10_000
+    battle["enemy_guard"] = middle_threshold + 3
+
+    middle = submit_guardian_action(
+        battle,
+        {"member_id": 1, "action": "unique_1"},
+        encounter,
+        profiles,
+    )
+    assert middle["enemy_guard"] == middle_threshold
+    assert middle["boss_phase_index"] == 1
+    assert [
+        event["phase_code"]
+        for event in middle["last_exchange"]
+        if event["type"] == "boss_phase"
+    ] == ["middle"]
+
+    final_threshold = (middle["enemy_max_guard"] * 3_300 + 9_999) // 10_000
+    middle["enemy_guard"] = final_threshold + 3
+    final = submit_guardian_action(
+        middle,
+        {"member_id": 2, "action": "unique_1"},
+        encounter,
+        profiles,
+    )
+    assert final["enemy_guard"] == final_threshold
+    assert final["boss_phase_index"] == 2
+    assert [
+        event["phase_code"]
+        for event in final["last_exchange"]
+        if event["type"] == "boss_phase"
+    ] == ["final"]
+
+
 def test_server_cooldown_blocks_next_round_then_releases():
     stats = {"care": 4, "focus": 5, "courage": 6, "insight": 7}
     cooldown_profiles = [
@@ -1682,7 +1758,10 @@ def test_all_twenty_four_tangle_intents_have_unique_visual_contracts():
     assert {intent["code"] for intent in exact_intents} == {
         "paper_flurry",
         "ink_mist",
+        "petal_gust",
         "petal_dart",
+        "shelf_sweep",
+        "catalogue_rain",
     }
     assert {intent["target"] for intent in exact_intents} == {
         "front",
@@ -1936,3 +2015,224 @@ def test_battle_payload_reports_the_region_for_its_bgm(profiles):
     assert (
         guardian_battle_payload(legacy, _encounter(), profiles)["region_code"] is None
     )
+
+
+def _complete_round_with(
+    battle: dict,
+    encounter: dict,
+    profiles: list[dict],
+    actions: list[str],
+) -> dict:
+    state = battle
+    for member, action in zip(profiles, actions, strict=True):
+        state = submit_guardian_action(
+            state,
+            {"member_id": member["id"], "action": action},
+            encounter,
+            profiles,
+        )
+    return state
+
+
+def test_unblocked_expose_marks_exactly_the_next_enemy_hit(profiles):
+    encounter = _encounter(
+        waves=["tangled_ledger"],
+        difficulty_code="stage_4",
+        max_rounds=5,
+        starting_focus=5,
+    )
+    battle = new_guardian_battle("expose-lifetime", encounter, profiles)
+    battle["enemy_guard"] = battle["enemy_max_guard"] = 10_000
+
+    first = _complete_round_with(battle, encounter, profiles, ["attack", "attack"])
+    first_enemy = next(
+        event for event in first["last_exchange"] if event["type"] == "enemy_action"
+    )
+    assert first_enemy["mechanic"]["code"] == "expose"
+    assert first_enemy["mechanic_triggered"] is True
+    assert first["party"][0]["statuses"] == {"exposed": 1}
+
+    second = _complete_round_with(first, encounter, profiles, ["attack", "attack"])
+    second_enemy = next(
+        event for event in second["last_exchange"] if event["type"] == "enemy_action"
+    )
+    assert second_enemy["targets"][0]["damage"] >= 2
+    assert "exposed" not in second["party"][0]["statuses"]
+
+
+def test_guard_check_is_cancelled_by_one_guard_action(profiles):
+    encounter = _encounter(
+        waves=["drifting_pressings"],
+        difficulty_code="stage_3",
+        max_rounds=4,
+        starting_focus=5,
+    )
+    battle = new_guardian_battle("guard-counter", encounter, profiles)
+
+    defended = _complete_round_with(battle, encounter, profiles, ["guard", "attack"])
+    enemy_event = next(
+        event
+        for event in defended["last_exchange"]
+        if event["type"] == "enemy_action"
+    )
+    assert enemy_event["mechanic"]["code"] == "guard_check"
+    assert enemy_event["mechanic_triggered"] is False
+
+
+def test_weakness_check_rewards_reading_the_current_matchup(profiles):
+    encounter = _encounter(
+        waves=["shelf_snarl"],
+        difficulty_code="stage_4",
+        max_rounds=4,
+        starting_focus=5,
+    )
+    battle = new_guardian_battle("weakness-counter", encounter, profiles)
+    # 둘 다 방어하면 약점 공격은 발생하지 않는다. 파훼 실패 판정만 독립 확인한다.
+    failed = _complete_round_with(battle, encounter, profiles, ["guard", "guard"])
+    enemy_event = next(
+        event for event in failed["last_exchange"] if event["type"] == "enemy_action"
+    )
+    assert enemy_event["mechanic"]["code"] == "weakness_check"
+    assert enemy_event["mechanic_triggered"] is True
+
+
+def test_focus_leak_and_barrier_mend_apply_only_when_their_counter_fails(profiles):
+    focus_encounter = _encounter(
+        difficulty_code="stage_3",
+        enemy_max_guard=500,
+        starting_focus=5,
+        intents=[
+            {
+                "code": "focus_leak_test",
+                "name": "잉크 누수",
+                "telegraph": "먹빛이 번져요.",
+                "target": "front",
+                "power": 1,
+                "mechanic_code": "focus_leak",
+                "mechanic_unlock": 1,
+            }
+        ],
+    )
+    focus_battle = new_guardian_battle("focus-leak", focus_encounter, profiles)
+    leaked = _complete_round_with(
+        focus_battle,
+        focus_encounter,
+        profiles,
+        ["attack", "attack"],
+    )
+    assert leaked["focus"] == 4
+
+    mend_encounter = _encounter(
+        difficulty_code="stage_4",
+        enemy_max_guard=500,
+        starting_focus=5,
+        intents=[
+            {
+                "code": "barrier_mend_test",
+                "name": "색인 복구",
+                "telegraph": "장부 틈이 다시 엮여요.",
+                "target": "front",
+                "power": 1,
+                "mechanic_code": "repairing_index",
+                "mechanic_unlock": 1,
+            }
+        ],
+    )
+    mend_battle = new_guardian_battle("barrier-mend", mend_encounter, profiles)
+    mend_battle["enemy_guard"] = mend_battle["enemy_max_guard"] - 5
+    repaired = _complete_round_with(
+        mend_battle,
+        mend_encounter,
+        profiles,
+        ["guard", "guard"],
+    )
+    assert repaired["enemy_guard"] == repaired["enemy_max_guard"] - 3
+
+
+def test_stage_hit_cap_prevents_a_single_enemy_action_from_one_shotting(profiles):
+    encounter = _encounter(
+        difficulty_code="stage_8",
+        intents=[
+            {
+                "code": "cap_test",
+                "name": "치명 압쇄",
+                "telegraph": "무거운 봉인이 떨어져요.",
+                "target": "front",
+                "power": 99,
+            }
+        ],
+        max_rounds=2,
+    )
+    battle = new_guardian_battle("one-shot-cap", encounter, profiles)
+    resolved = _complete_round_with(battle, encounter, profiles, ["attack", "attack"])
+    enemy_event = next(
+        event for event in resolved["last_exchange"] if event["type"] == "enemy_action"
+    )
+    target = enemy_event["targets"][0]
+    assert target["damage_capped"] is True
+    assert resolved["party"][0]["hp"] > 0
+
+
+def test_boss_phase_rules_and_exact_vfx_survive_the_battle_snapshot(profiles):
+    from app.services.expeditions import load_content
+
+    encounter = load_content()["events"]["ledger_keeper"]["encounter"]
+    battle = new_guardian_battle("boss-pattern-contract", encounter, profiles)
+    phase_one = battle["boss_phases"][0]
+    phase_two = battle["boss_phases"][1]
+    phase_three = battle["boss_phases"][2]
+
+    assert phase_one["phase_gate"] == "resolve_intent"
+    assert phase_one["intents"][1]["vfx_family"] == "guardian.record-wave"
+    assert phase_two["rule_name"] == "뿌리 대열"
+    assert phase_two["intents"][0]["vfx_family"] == "guardian.root-lockdown"
+    assert phase_two["intents"][1]["vfx_family"] == "guardian.seal-crush"
+    assert phase_three["rule_name"] == "최종 교정"
+    assert phase_three["intents"][0]["vfx_family"] == "guardian.final-redaction"
+
+
+def test_phase_gate_requires_the_visible_intent_before_crossing_a_boundary(profiles):
+    from app.services.expeditions import load_content
+
+    encounter = load_content()["events"]["ledger_keeper"]["encounter"]
+    battle = new_guardian_battle("boss-phase-gate", encounter, profiles)
+    middle_threshold = (
+        battle["enemy_max_guard"] * 6_600 + 9_999
+    ) // 10_000
+
+    # 현재 페이즈의 대표 공격을 아직 보지 않았다. 큰 피해도 경계 바로 위에서 멈춘다.
+    battle["enemy_guard"] = middle_threshold + 2
+    held = submit_guardian_action(
+        battle,
+        {"member_id": 1, "action": "unique_1"},
+        encounter,
+        profiles,
+    )
+    assert held["enemy_guard"] == middle_threshold + 1
+    assert held["boss_phase_index"] == 0
+    assert held["boss_phase_gate_ready"] is False
+
+    # 나머지 대원이 행동하면 화면에 예고돼 있던 공격이 해결되고 문이 열린다.
+    ready = submit_guardian_action(
+        held,
+        {"member_id": 2, "action": "guard"},
+        encounter,
+        profiles,
+    )
+    assert ready["boss_phase_gate_ready"] is True
+
+    crossed = submit_guardian_action(
+        ready,
+        {"member_id": 1, "action": "attack"},
+        encounter,
+        profiles,
+    )
+    assert crossed["enemy_guard"] == middle_threshold
+    assert crossed["boss_phase_index"] == 1
+    assert crossed["pending"] is None
+    assert not any(
+        event["type"] == "enemy_action" for event in crossed["last_exchange"]
+    )
+    payload = guardian_battle_payload(crossed, encounter, profiles)
+    assert payload["boss_phase"]["phase_gate"] == "resolve_intent"
+    assert payload["boss_phase"]["phase_gate_ready"] is False

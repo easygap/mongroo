@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/text/korean_particles.dart';
 import '../../../core/theme/app_theme.dart';
@@ -44,6 +45,24 @@ class ExpeditionScreen extends ConsumerWidget {
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text(next)));
         ref.read(expeditionControllerProvider.notifier).clearError();
+      },
+    );
+    ref.listen(
+      expeditionControllerProvider.select((state) => state.unlockedSkillBooks),
+      (previous, next) {
+        if (next.isEmpty) return;
+        final book = next.first;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            // 해금은 계정 단위라 어느 캐릭터로 보낼지 정할 수 없다. 대신 어디서
+            // 장착하는지를 문장으로 알려 주고 이동은 사용자가 고르게 둔다.
+            SnackBar(
+              content: Text(book.notice),
+              duration: const Duration(seconds: 6),
+            ),
+          );
+        ref.read(expeditionControllerProvider.notifier).clearUnlockedSkillBooks();
       },
     );
     final shell = ref.watch(

@@ -169,6 +169,7 @@ def present_intent(intent: dict[str, Any]) -> dict[str, Any]:
         "motion_profile", "guardian.ledger-claw" if is_claw else "guardian.enemy-wave"
     )
     presented.setdefault("archetype", "draw" if is_claw else "cast")
+    presented.setdefault("mechanic_unlock", 1)
     # 장부 발톱은 종이 뭉치가 스치는 소리, 나머지 구형 수호자는 단단한 기본값이다.
     presented.setdefault("contact_material", "paper" if is_claw else "stone")
     presented.setdefault(

@@ -34,6 +34,7 @@ class ExpeditionUiState {
     this.actionCue,
     this.pendingExpedition,
     this.settlingResult = false,
+    this.unlockedSkillBooks = const [],
   });
 
   final bool loading;
@@ -53,6 +54,9 @@ class ExpeditionUiState {
   final ExpeditionActionCue? actionCue;
   final ExpeditionSnapshot? pendingExpedition;
   final bool settlingResult;
+
+  /// 방금 조건을 채워 열린 기록서. 한 번 알린 뒤 비운다.
+  final List<ExpeditionUnlockedSkillBook> unlockedSkillBooks;
 
   ExpeditionStage? get selectedStage => stageMap?.stageOf(selectedStageNo);
 
@@ -78,6 +82,7 @@ class ExpeditionUiState {
     Object? actionCue = _unset,
     Object? pendingExpedition = _unset,
     bool? settlingResult,
+    List<ExpeditionUnlockedSkillBook>? unlockedSkillBooks,
   }) =>
       ExpeditionUiState(
         loading: loading ?? this.loading,
@@ -111,6 +116,7 @@ class ExpeditionUiState {
             ? this.pendingExpedition
             : pendingExpedition as ExpeditionSnapshot?,
         settlingResult: settlingResult ?? this.settlingResult,
+        unlockedSkillBooks: unlockedSkillBooks ?? this.unlockedSkillBooks,
       );
 }
 
@@ -469,6 +475,12 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
         ref.read(authControllerProvider.notifier).updateSeedBalance(balance);
       }
       ref.invalidate(homeControllerProvider);
+      // 조건을 채워 열린 기록서는 연출과 무관하게 즉시 알린다.
+      if (expedition.unlockedSkillBooks.isNotEmpty) {
+        state = state.copyWith(
+          unlockedSkillBooks: expedition.unlockedSkillBooks,
+        );
+      }
       final actionCues = _actionCuesFor(
         action,
         previousExpedition: previousExpedition,
@@ -646,6 +658,10 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
   }
 
   void clearError() => state = state.copyWith(error: null);
+
+  /// 새 기록서 안내를 한 번 보여 준 뒤 비운다. 같은 소식을 반복하지 않는다.
+  void clearUnlockedSkillBooks() =>
+      state = state.copyWith(unlockedSkillBooks: const []);
 
   void clearActionCue() {
     if (_queuedCues.isNotEmpty) {

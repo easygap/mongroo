@@ -470,6 +470,144 @@ def _release(region: str) -> tuple[list[float], list[float]]:
     return left, right
 
 
+# ── 모험 UI cue 4종 ─────────────────────────────────────────────────────────
+#
+# `ADVENTURE_AUDIO.md`의 `효과음과 촉각`이 네 순간의 재료와 길이 상한을 이미
+# 문장으로 정해 뒀다. 그 문장을 그대로 모드와 노이즈로 옮긴다. 실패·잠금에는
+# 소리를 만들지 않는다 — 문구와 비활성 상태만 쓰라고 정해져 있다.
+
+
+def _cue_patrol_depart() -> list[float]:
+    """순찰 출발 — 종이 지도 펼침과 가벼운 나무 발판. 300ms 안."""
+
+    buffer = _blank(0.29)
+    # 지도가 펼쳐지는 동안은 transient가 아니라 이어지는 결이라 곡선을 눕힌다.
+    _add_noise(
+        buffer,
+        duration_ms=150,
+        low_hz=1600,
+        high_hz=5200,
+        gain=0.40,
+        seed=901,
+        curve=1.5,
+    )
+    for frequency, decay_ms, gain in ((188.0, 96, 0.34), (337.0, 62, 0.18)):
+        _add_mode(
+            buffer,
+            frequency=frequency,
+            decay_ms=decay_ms,
+            gain=gain,
+            start=0.108,
+        )
+    _add_noise(
+        buffer,
+        duration_ms=18,
+        low_hz=600,
+        high_hz=2800,
+        gain=0.20,
+        seed=907,
+        start=0.108,
+        curve=4.5,
+    )
+    return buffer
+
+
+def _cue_patrol_return() -> list[float]:
+    """귀환·새 장소 발견 — 작은 나무 걸쇠와 씨앗 두 알. 450ms 안."""
+
+    buffer = _blank(0.44)
+    for frequency, decay_ms, gain in (
+        (262.0, 118, 0.38),
+        (473.0, 82, 0.22),
+        (818.0, 48, 0.12),
+    ):
+        _add_mode(buffer, frequency=frequency, decay_ms=decay_ms, gain=gain)
+    _add_noise(
+        buffer,
+        duration_ms=16,
+        low_hz=700,
+        high_hz=3600,
+        gain=0.26,
+        seed=911,
+        curve=5.0,
+    )
+    # 씨앗 두 알 — 짧고 마른 두 번의 닿음. 셋 이상으로 늘리지 않는다.
+    for index, start in enumerate((0.168, 0.246)):
+        _add_mode(
+            buffer,
+            frequency=1580.0 if index == 0 else 1940.0,
+            decay_ms=26,
+            gain=0.15 if index == 0 else 0.12,
+            start=start,
+        )
+        _add_noise(
+            buffer,
+            duration_ms=12,
+            low_hz=1400,
+            high_hz=5200,
+            gain=0.10,
+            seed=917 + index,
+            start=start,
+            curve=5.0,
+        )
+    return buffer
+
+
+def _cue_dungeon_clear() -> list[float]:
+    """던전 완료 — 무광 도자기 차임. 400ms 안.
+
+    `무광`이라 유리처럼 번쩍이는 고역 transient를 넣지 않는다. 도자기의
+    약간 어긋난 배음만 남기고 어택을 부드럽게 눌러 둔다.
+    """
+
+    buffer = _blank(0.39)
+    for frequency, decay_ms, gain in (
+        (868.0, 250, 0.34),
+        (1302.0, 172, 0.20),
+        (2098.0, 104, 0.10),
+    ):
+        _add_mode(buffer, frequency=frequency, decay_ms=decay_ms, gain=gain)
+    _add_noise(
+        buffer,
+        duration_ms=14,
+        low_hz=900,
+        high_hz=3200,
+        gain=0.12,
+        seed=929,
+        curve=4.0,
+    )
+    return buffer
+
+
+def _cue_research_complete() -> list[float]:
+    """표본 연구 완료 — 나무 서랍 닫힘과 얇은 유리 차임. 350ms 안."""
+
+    buffer = _blank(0.34)
+    for frequency, decay_ms, gain in ((148.0, 104, 0.40), (259.0, 68, 0.20)):
+        _add_mode(buffer, frequency=frequency, decay_ms=decay_ms, gain=gain)
+    # 서랍이 미끄러져 닫히는 마찰 — 짧은 transient가 아니라 눌린 결이다.
+    _add_noise(
+        buffer,
+        duration_ms=62,
+        low_hz=260,
+        high_hz=1500,
+        gain=0.26,
+        seed=937,
+        curve=2.4,
+    )
+    # 얇은 유리 — 한 번만, 아주 여리게.
+    _add_mode(buffer, frequency=2612.0, decay_ms=118, gain=0.11, start=0.148)
+    return buffer
+
+
+ADVENTURE_CUE_BUILDERS = {
+    "patrol-depart": (_cue_patrol_depart, 300),
+    "patrol-return": (_cue_patrol_return, 450),
+    "dungeon-clear": (_cue_dungeon_clear, 400),
+    "research-complete": (_cue_research_complete, 350),
+}
+
+
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest().upper()
 
@@ -514,6 +652,28 @@ def build(output_root: Path) -> dict:
                 "path": path.as_posix(),
                 "channels": 1,
                 "duration_ms": round(len(samples) / SAMPLE_RATE * 1000),
+                "window_rms": round(_window_rms(samples), 5),
+                "sha256": _sha256(path),
+            }
+        )
+
+    for key, (builder, limit_ms) in ADVENTURE_CUE_BUILDERS.items():
+        samples = builder()
+        _fade(samples, attack_ms=2.0, release_ms=10.0)
+        samples = _normalise(samples, loudness=CONTACT_LOUDNESS)
+        duration_ms = round(len(samples) / SAMPLE_RATE * 1000)
+        if duration_ms > limit_ms:
+            raise ValueError(f"{key}: {duration_ms}ms는 상한 {limit_ms}ms를 넘는다")
+        path = output_root / f"cue-{key}.wav"
+        _write_mono(path, samples)
+        files.append(
+            {
+                "role": "adventure_cue",
+                "key": key,
+                "path": path.as_posix(),
+                "channels": 1,
+                "duration_ms": duration_ms,
+                "limit_ms": limit_ms,
                 "window_rms": round(_window_rms(samples), 5),
                 "sha256": _sha256(path),
             }

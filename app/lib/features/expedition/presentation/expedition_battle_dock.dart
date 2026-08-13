@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
 import '../../home/domain/plant.dart';
 import '../../home/presentation/plant_view.dart';
+import '../data/expedition_settings_store.dart';
 import '../domain/expedition_models.dart';
 import 'expedition_combat_audio.dart';
 import 'expedition_combat_effects.dart';
@@ -83,12 +85,71 @@ class ExpeditionBattleSettings {
         shortEffects: shortEffects ?? this.shortEffects,
         audioMode: audioMode ?? this.audioMode,
       );
+
+  static const _schemaVersion = 1;
+
+  /// 기기에 남길 설정만 직렬화한다.
+  ///
+  /// **AUTO는 일부러 저장하지 않는다.** 품질 기준이 `자동 지휘는 초기 OFF`를
+  /// 요구한다 — 지난번에 켜 뒀다는 이유로 이번 전투를 앱이 대신 지휘하기
+  /// 시작하면, 사용자가 조작하지 않은 사이에 결과가 확정된다.
+  String encode() => jsonEncode({
+        'schema_version': _schemaVersion,
+        'audio_mode': audioMode.name,
+        'pace': pace,
+        'short_effects': shortEffects,
+      });
+
+  /// 저장된 문자열을 설정으로 되돌린다. 알 수 없는 값은 기본값으로 떨어진다.
+  factory ExpeditionBattleSettings.decode(String encoded) {
+    final decoded = jsonDecode(encoded);
+    if (decoded is! Map<String, dynamic> ||
+        decoded['schema_version'] != _schemaVersion) {
+      throw const FormatException('지원하지 않는 전투 설정입니다.');
+    }
+    final rawMode = decoded['audio_mode'] as String?;
+    final rawPace = decoded['pace'];
+    return ExpeditionBattleSettings(
+      audioMode: ExpeditionAudioMode.values
+              .where((mode) => mode.name == rawMode)
+              .firstOrNull ??
+          ExpeditionAudioMode.all,
+      // 배속은 1과 2만 있다. 저장값이 깨져도 판정이 바뀌지 않게 좁힌다.
+      pace: rawPace == 2 ? 2 : 1,
+      shortEffects: decoded['short_effects'] == true,
+    );
+  }
 }
 
 class ExpeditionBattleSettingsNotifier
     extends Notifier<ExpeditionBattleSettings> {
+  /// 저장된 설정을 다 읽기 전에는 저장하지 않는다. 앱을 켜자마자 기본값으로
+  /// 덮어써 지난 선택을 지우는 일을 막는다.
+  bool _restored = false;
+
   @override
-  ExpeditionBattleSettings build() => const ExpeditionBattleSettings();
+  ExpeditionBattleSettings build() {
+    unawaited(_restore());
+    return const ExpeditionBattleSettings();
+  }
+
+  Future<void> _restore() async {
+    final encoded = await ref.read(expeditionSettingsStoreProvider).load();
+    if (encoded != null) {
+      try {
+        // AUTO는 저장하지 않으므로 되살린 뒤에도 항상 꺼진 상태로 시작한다.
+        state = ExpeditionBattleSettings.decode(encoded);
+      } on Object {
+        // 이전 스키마나 손상된 값이면 기본 설정으로 계속 진행한다.
+      }
+    }
+    _restored = true;
+  }
+
+  void _persist() {
+    if (!_restored) return;
+    unawaited(ref.read(expeditionSettingsStoreProvider).save(state.encode()));
+  }
 
   void cycleAutoMode() {
     state = state.copyWith(
@@ -106,10 +167,15 @@ class ExpeditionBattleSettingsNotifier
     }
   }
 
-  void togglePace() => state = state.copyWith(pace: state.pace == 1 ? 2 : 1);
+  void togglePace() {
+    state = state.copyWith(pace: state.pace == 1 ? 2 : 1);
+    _persist();
+  }
 
-  void toggleShortEffects() =>
-      state = state.copyWith(shortEffects: !state.shortEffects);
+  void toggleShortEffects() {
+    state = state.copyWith(shortEffects: !state.shortEffects);
+    _persist();
+  }
 
   /// 음악·효과음 → 효과음만 → 소리 꺼짐 순으로 돈다.
   void cycleAudioMode() {
@@ -120,11 +186,13 @@ class ExpeditionBattleSettingsNotifier
         ExpeditionAudioMode.muted => ExpeditionAudioMode.all,
       },
     );
+    _persist();
   }
 }
 
-/// 전투 표준 장비(AUTO·배속·짧은 연출) 상태. 앱 세션 동안 유지된다.
-/// 계정 설정 동기화는 스테이지 개편 S2에서 서버 설정과 함께 붙인다.
+/// 전투 표준 장비(AUTO·배속·짧은 연출·소리) 상태.
+/// 소리·배속·짧은 연출은 기기에 남고, AUTO만 매번 꺼진 채로 시작한다.
+/// 계정 간 동기화는 서버 설정과 함께 붙일 때까지 미룬다.
 final expeditionBattleSettingsProvider = NotifierProvider<
     ExpeditionBattleSettingsNotifier, ExpeditionBattleSettings>(
   ExpeditionBattleSettingsNotifier.new,
@@ -178,6 +246,7 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
     };
     final wave = battle.wave;
     final bossPhase = battle.bossPhase;
+    final threat = battle.threat;
     return SizedBox(
       height: 48,
       child: Row(
@@ -215,6 +284,19 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
                 backgroundColor: bossPhase.isFinal
                     ? scheme.errorContainer.withAlpha(160)
                     : scheme.secondaryContainer.withAlpha(140),
+              ),
+            ),
+          ],
+          if (threat != null && threat.tier > 0 && bossPhase == null) ...[
+            const SizedBox(width: 6),
+            Semantics(
+              label:
+                  '위협 ${threat.tier}단계 ${threat.name}, 권장 레벨 ${threat.recommendedLevel}',
+              child: MongrooTag(
+                key: const ValueKey('seq-dock-threat'),
+                label: '위협 ${threat.tier} · ${threat.name}',
+                icon: Icons.shield_moon_outlined,
+                backgroundColor: scheme.tertiaryContainer.withAlpha(130),
               ),
             ),
           ],
@@ -509,6 +591,16 @@ class _ExpeditionSequentialCommandDockState
     final actor = _actor;
     if (actor == null || _locked) return;
     if (_lockReason(actor, actionCode) != null) return;
+
+    // 무엇으로 바꿀지 함께 묻는 기록서는 고르는 단계를 먼저 거친다. 고르지 않고
+    // 보내면 서버가 되돌려보내고 아무 일도 일어나지 않으므로, 여기서 미리 묻는다.
+    final action = _actionFor(actor, actionCode);
+    String? choice;
+    if (action.needsChoice) {
+      choice = await _askChoice(action);
+      if (choice == null || !mounted) return;
+    }
+
     _autoTimer?.cancel();
     HapticFeedback.mediumImpact();
     setState(() => _submitting = true);
@@ -519,6 +611,7 @@ class _ExpeditionSequentialCommandDockState
             ExpeditionCombatCommand(
               memberId: actor.memberId,
               action: actionCode,
+              choice: choice,
             ),
           );
       if (accepted) {
@@ -527,6 +620,51 @@ class _ExpeditionSequentialCommandDockState
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  /// 명령형 기록서가 묻는 선택을 받는다. 취소하면 null이고 행동도 소비되지 않는다.
+  ///
+  /// 후보와 이름표는 서버가 준 것을 그대로 쓴다. 앱이 목록을 만들면 결이 늘어날
+  /// 때 두 곳이 어긋나고, 그러면 사용자가 이유 없이 거절당한다.
+  Future<String?> _askChoice(ExpeditionBattleAction action) async {
+    final theme = Theme.of(context);
+    return showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(action.name, style: theme.textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text(
+                action.mechanicSummary.isEmpty
+                    ? '무엇으로 바꿀지 골라 주세요.'
+                    : action.mechanicSummary,
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              for (final option in action.choiceOptions)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _ChoiceOptionTile(
+                    label: option.label,
+                    // 지금과 같은 것은 고를 수 없다. 눌러 본 뒤 거절당하는 대신
+                    // 왜 못 고르는지 자리에서 보여 준다.
+                    isCurrent: option.value == action.choiceCurrent,
+                    onTap: option.value == action.choiceCurrent
+                        ? null
+                        : () => Navigator.of(context).pop(option.value),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   /// AUTO 판단. 현재 공개된 의도·약점·집중력만 읽고 미래 정보를 쓰지 않는다.
@@ -563,6 +701,9 @@ class _ExpeditionSequentialCommandDockState
       if (actor == null) return;
       var action = _autoActionFor(actor);
       if (_lockReason(actor, action) != null) action = 'attack';
+      // AUTO는 사람이 골라야 하는 행동을 대신 고르지 않는다. 시트를 띄우면
+      // 자동 진행이 멈춰 서고, 임의로 고르면 사용자가 안 시킨 선택이 된다.
+      if (_actionFor(actor, action).needsChoice) action = 'attack';
       unawaited(_submit(action));
     });
   }
@@ -787,6 +928,8 @@ class _ExpeditionSequentialCommandDockState
 
   Future<void> _showBattleDiscovery() async {
     final enemy = _battle.enemy;
+    final mechanic = enemy.intent.mechanic;
+    final bossRule = _battle.bossPhase;
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -808,6 +951,26 @@ class _ExpeditionSequentialCommandDockState
                     enemy.weakElementLabel ??
                     enemy.weaknessLabel,
               ),
+              if (mechanic != null) ...[
+                _DiscoverySheetLine(
+                  icon: Icons.extension_outlined,
+                  title: '공격 기믹 · ${mechanic.name}',
+                  value: mechanic.counter,
+                ),
+              ],
+              if (bossRule?.ruleSummary case final rule?)
+                _DiscoverySheetLine(
+                  icon: Icons.change_circle_outlined,
+                  title: bossRule?.ruleName ?? '현재 페이즈 규칙',
+                  value: rule,
+                ),
+              if (bossRule?.phaseGate == 'resolve_intent' &&
+                  bossRule?.phaseGateReady == false)
+                const _DiscoverySheetLine(
+                  icon: Icons.visibility_outlined,
+                  title: '봉인 경계',
+                  value: '현재 예고를 한 번 해결하면 다음 봉인을 열 수 있어요.',
+                ),
               if (enemy.resistKelLabel ?? enemy.resistElementLabel
                   case final resistance?)
                 _DiscoverySheetLine(
@@ -1015,6 +1178,7 @@ class _IntentLine extends StatelessWidget {
         battle.enemy.weaknessLabel;
     final resistLabel =
         battle.enemy.resistKelLabel ?? battle.enemy.resistElementLabel;
+    final mechanic = intent.mechanic;
     final matchupTag = MongrooTag(
       label:
           resistLabel == null ? '↑ $weakLabel' : '↑ $weakLabel  ↓ $resistLabel',
@@ -1037,7 +1201,8 @@ class _IntentLine extends StatelessWidget {
         const SizedBox(width: 6),
         Expanded(
           child: Text(
-            '${intent.name} · ${intent.targetLabel} · 위력 ${intent.power}',
+            '${intent.name} · ${intent.targetLabel} · 위력 ${intent.power}'
+            '${mechanic == null ? '' : ' · ${mechanic.name}'}',
             maxLines: textScale >= 1.35 ? 2 : 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.labelMedium,
@@ -1048,6 +1213,7 @@ class _IntentLine extends StatelessWidget {
     return Semantics(
       button: true,
       label: '적 의도 ${intent.name}, ${intent.targetLabel}, 위력 ${intent.power}. '
+          '${mechanic == null ? '' : '기믹 ${mechanic.name}, ${mechanic.counter}. '}'
           '약점 $weakLabel${resistLabel == null ? '' : ', 내성 $resistLabel'}. '
           '눌러서 발견 정보 보기',
       child: Material(
@@ -1175,6 +1341,66 @@ class _FocusBeads extends StatelessWidget {
                 ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 명령형 기록서의 선택지 한 줄.
+///
+/// 지금과 같은 값은 누를 수 없되 목록에서 빼지는 않는다. 빼 버리면 "왜 이것만
+/// 없지" 하고 헷갈리고, 남겨 두면 "지금 이거라서 못 고른다"가 그대로 읽힌다.
+class _ChoiceOptionTile extends StatelessWidget {
+  const _ChoiceOptionTile({
+    required this.label,
+    required this.isCurrent,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isCurrent;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      button: onTap != null,
+      enabled: onTap != null,
+      label: isCurrent ? '$label, 지금 이 결이에요' : label,
+      child: Material(
+        color: isCurrent
+            ? theme.colorScheme.surfaceContainerHighest
+            : theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: isCurrent
+                          ? theme.colorScheme.onSurfaceVariant
+                          : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                if (isCurrent)
+                  Text(
+                    '지금 이 결',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1316,6 +1542,23 @@ class _DockMemberChip extends StatelessWidget {
                               .textTheme
                               .labelSmall
                               ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                      if ((member.statuses['exposed'] ?? 0) > 0) ...[
+                        const SizedBox(width: 3),
+                        Icon(
+                          Icons.gps_fixed_rounded,
+                          size: 12,
+                          color: scheme.error,
+                        ),
+                        Text(
+                          '빈틈',
+                          textScaler: TextScaler.noScaling,
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: scheme.error,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                         ),
                       ],
                     ],

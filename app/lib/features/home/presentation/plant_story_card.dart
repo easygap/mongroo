@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
@@ -239,6 +240,18 @@ class _PlantStorySheet extends StatelessWidget {
           for (final chapter in plant.storyChapters) ...[
             _StoryChapterTile(chapter: chapter, plant: plant),
             const SizedBox(height: 10),
+          ],
+          // B1은 3단계(Lv9)에 열린다. 그 전에는 넣을 칸이 없어 보여 주지 않는다.
+          if (plant.stage >= 3) ...[
+            const SizedBox(height: 4),
+            OutlinedButton.icon(
+              key: const ValueKey('plant-detail-skill-books'),
+              onPressed: () => context.push(
+                '/skill-books/${plant.id}?name=${Uri.encodeComponent(plant.name)}',
+              ),
+              icon: const Icon(Icons.menu_book_outlined),
+              label: const Text('마음결 기록서 정리하기'),
+            ),
           ],
           if (plant.stage >= 5) ...[
             const SizedBox(height: 4),

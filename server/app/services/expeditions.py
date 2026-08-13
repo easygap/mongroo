@@ -50,9 +50,13 @@ from app.models.expedition import (
 )
 from app.models.game import FarmLayout, Item, UserItem
 from app.models.mood import MoodEntry
+from app.content.expeditions.skill_books import resolve_loadout
 from app.models.plant import Plant, PlantSpecies
 from app.models.reward import RewardEvent
+from app.models.skill_book import PlantSkillLoadout
 from app.services import game as game_service
+from app.services import skill_books as skill_book_service
+from app.services import skill_mastery
 from app.services import rewards
 from app.services.adventure import ITEMS, character_stats
 from app.services.plants import growth_state_payload, level_from_exp, stage_from_exp
@@ -126,6 +130,7 @@ def _stage_arena(
     """
 
     stage_no = int(stage["no"])
+    difficulty_code = str(stage.get("difficulty_code", f"stage_{stage_no}"))
     region = content["region"]
     kind = stage["kind"]
     events = content["events"]
@@ -166,6 +171,7 @@ def _stage_arena(
                     "max_rounds": 4 * len(wave_codes),
                     "starting_focus": 3,
                     "max_focus": 5,
+                    "difficulty_code": difficulty_code,
                 },
             },
         }
@@ -236,6 +242,7 @@ def _plant_snapshot(
     *,
     stat_cap: int | None = None,
     outfit_key: str | None = None,
+    skill_loadout: dict | None = None,
 ) -> dict:
     stage = stage_from_exp(plant.exp)
     form = _growth_form(plant)
@@ -256,8 +263,74 @@ def _plant_snapshot(
         "effective_stats": effective_stats,
         "stat_cap": stat_cap,
         "outfit_key": outfit_key,
+        # 출발 시점의 선택 슬롯을 그대로 얼린다. 진행 중인 런은 이후 장착
+        # 변경이나 밸런스 패치의 영향을 받지 않는다. 값이 없는 예전 런은
+        # 지금까지와 같은 안전 기본값으로 읽힌다.
+        "skill_loadout": skill_loadout,
         "asset_manifest": species.asset_manifest or {},
     }
+
+
+
+async def _party_skill_loadouts(
+    db: AsyncSession, user_id: int, plant_ids: list[int]
+) -> dict[int, dict]:
+    """출발하는 파티의 선택 슬롯을 해석해 캐릭터별로 돌려준다.
+
+    저장된 장착을 그대로 쓰지 않고 `resolve_loadout`을 한 번 지난다. 저장 뒤에
+    책을 잃었거나 카탈로그가 바뀌었어도 출발이 막히지 않고 안전 기본값으로
+    내려오게 하기 위해서다. 대신 같은 책을 두 캐릭터가 함께 들고 나가는 것은
+    막는다.
+    """
+
+    if not plant_ids:
+        return {}
+    rows = await db.execute(
+        sa.select(PlantSkillLoadout).where(
+            PlantSkillLoadout.user_id == user_id,
+            PlantSkillLoadout.plant_id.in_(plant_ids),
+            PlantSkillLoadout.preset_code == skill_book_service.DEFAULT_PRESET,
+        )
+    )
+    stored_by_plant = {
+        row.plant_id: {
+            "slot_b1_code": row.slot_b1_code,
+            "slot_b2_code": row.slot_b2_code,
+        }
+        for row in rows.scalars().all()
+    }
+    skill_book_service.assert_party_books_unique(
+        [{"stored": stored} for stored in stored_by_plant.values()]
+    )
+
+    owned = await skill_book_service.owned_book_codes(db, user_id)
+    plants = await db.execute(sa.select(Plant).where(Plant.id.in_(plant_ids)))
+    level_by_plant = {
+        plant.id: level_from_exp(int(plant.exp or 0))
+        for plant in plants.scalars().all()
+    }
+    resolved: dict[int, dict] = {}
+    for plant_id in plant_ids:
+        stored = stored_by_plant.get(plant_id)
+        slots = resolve_loadout(
+            stored,
+            owned_codes=owned,
+            level=level_by_plant.get(plant_id, 1),
+        )
+        resolved[plant_id] = {
+            "preset_code": skill_book_service.DEFAULT_PRESET,
+            "stored": stored or {"slot_b1_code": None, "slot_b2_code": None},
+            # 스냅샷에는 결정만 남긴다. 카탈로그 본문은 키트가 다시 읽는다.
+            "slots": {
+                slot: {
+                    key: value
+                    for key, value in decision.items()
+                    if key != "book"
+                }
+                for slot, decision in slots.items()
+            },
+        }
+    return resolved
 
 
 def _guide_snapshot(position: int, *, stat_cap: int | None = None) -> dict:
@@ -835,6 +908,10 @@ async def start_run(
     stage_no: int | None = None,
 ) -> dict:
     content = _content()
+    if region_code != content["region"]["code"]:
+        raise AppError(
+            404, "EXPEDITION_REGION_NOT_FOUND", "탐험 지역을 찾을 수 없습니다."
+        )
     stage_data: dict[str, Any] | None = None
     if stage_no is not None:
         stages = content.get("stages") or []
@@ -860,10 +937,6 @@ async def start_run(
             422,
             "INVALID_EXPEDITION_PARTY",
             "서로 다른 보유 캐릭터를 한 명 이상, 전체 세 명 이하로 편성해 주세요.",
-        )
-    if region_code != content["region"]["code"]:
-        raise AppError(
-            404, "EXPEDITION_REGION_NOT_FOUND", "탐험 지역을 찾을 수 없습니다."
         )
     today = local_date_of(utcnow())
     if await game_service.safety_active_today(db, user_id, today):
@@ -972,6 +1045,10 @@ async def start_run(
         if active_plant_id in plant_ids
         else None
     )
+    # 출발하는 파티 전원의 수호 프리셋을 한 번에 읽는다. 같은 기록서를 두
+    # 캐릭터가 함께 들고 나가는 것은 여기서 막는다 — 저장은 허용하지만 계정에
+    # 한 장뿐인 라이선스라 한 파티에서 두 번 쓸 수는 없다.
+    loadouts = await _party_skill_loadouts(db, user_id, plant_ids)
     position = 0
     for plant_id in plant_ids:
         plant, species = by_id[plant_id]
@@ -987,6 +1064,7 @@ async def start_run(
                 outfit_key=(
                     equipped_outfit_key if plant.id == active_plant_id else None
                 ),
+                skill_loadout=loadouts.get(plant_id),
             ),
         )
         db.add(member)
@@ -1546,6 +1624,19 @@ async def resolve_combat_turn(
     effects.pop("pending_skill", None)
     run.runtime_effects_snapshot = effects
 
+    # 숙련은 성능을 바꾸지 않지만 `마음 지키기 30회` 같은 해금 조건의 근거다.
+    # 방금 확정된 행동만 센다. 라운드를 다시 읽으면 두 번 세게 된다.
+    await skill_mastery.record_skill_uses(
+        db,
+        resolved.get("last_exchange") or [],
+        {
+            member.id: member.plant_id
+            for member in members
+            if member.plant_id is not None
+        },
+    )
+    unlocked_books = await skill_mastery.evaluate_skill_book_unlocks(db, run.user_id)
+
     if resolved["status"] in {"victory", "defeat"}:
         # 순차 명령에서 last_exchange는 이번 호출의 변화만 담는다. 이야기 기록은
         # 라운드 전체(round_exchange)를 읽어 일괄 라운드와 같은 결과를 남긴다.
@@ -1606,7 +1697,7 @@ async def resolve_combat_turn(
         else:
             await _safe_return(db, run, reason="guardian_defeat")
 
-    return await _finish_action(
+    payload = await _finish_action(
         db,
         run,
         action_type="combat_turn",
@@ -1614,6 +1705,10 @@ async def resolve_combat_turn(
         expected_revision=expected_revision,
         request_payload=request_payload,
     )
+    if unlocked_books:
+        # 이번 전투로 새로 열린 기록서. 조건을 채운 순간에 알려 준다.
+        payload = {**payload, "unlocked_skill_books": unlocked_books}
+    return payload
 
 
 async def _reveal_nearby_nodes(

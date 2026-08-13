@@ -9,6 +9,13 @@ from app.content.expeditions.combat_balance import (
     starting_focus_for_party,
     validate_tangle_balance,
 )
+from app.content.expeditions.combat_difficulty import (
+    COMBAT_DIFFICULTY_VERSION,
+    ENEMY_MECHANICS,
+    STAGE_THREAT_PROFILES,
+    difficulty_profile_for_encounter,
+    enemy_mechanic,
+)
 from app.content.expeditions.tangles import TANGLE_CATALOG
 
 
@@ -139,3 +146,53 @@ def test_wave_snapshot_keeps_region_and_unscaled_barrier_for_replay():
     assert wave["base_barrier"] == TANGLE_CATALOG["tangled_ledger"]["barrier"]
     assert wave["barrier"] == battle["enemy_max_guard"]
     assert wave["barrier"] >= wave["base_barrier"]
+
+
+def test_stage_threat_is_fixed_by_stage_and_never_reads_party_level():
+    low_party = [_profile(1, 3)]
+    high_party = [_profile(1, 30)]
+    encounter = {
+        "waves": ["tangled_ledger"],
+        "max_rounds": 4,
+        "starting_focus": 3,
+        "max_focus": 5,
+        "difficulty_code": "stage_7",
+    }
+
+    low = new_guardian_battle("fixed-threat-low", encounter, low_party)
+    high = new_guardian_battle("fixed-threat-high", encounter, high_party)
+
+    assert low["difficulty"] == high["difficulty"]
+    assert low["difficulty"]["code"] == "stage_7"
+    assert low["difficulty_version"] == COMBAT_DIFFICULTY_VERSION
+    # 성장 보정은 이미 공개된 장벽에만 반영되고 적 공격 계수에는 섞이지 않는다.
+    assert high["enemy_max_guard"] > low["enemy_max_guard"]
+    assert low["difficulty"]["intent_power_bonus"] == 0
+
+
+def test_stage_threat_curve_adds_barrier_and_pattern_depth_monotonically():
+    ordered = [
+        STAGE_THREAT_PROFILES[code]
+        for code in ("stage_1", "stage_3", "stage_4", "stage_7", "stage_8")
+    ]
+
+    assert [profile["tier"] for profile in ordered] == [1, 2, 3, 4, 5]
+    assert [profile["barrier_bp"] for profile in ordered] == sorted(
+        profile["barrier_bp"] for profile in ordered
+    )
+    assert [profile["pattern_depth"] for profile in ordered] == sorted(
+        profile["pattern_depth"] for profile in ordered
+    )
+    assert difficulty_profile_for_encounter({"boss_phases": [{}]})["code"] == (
+        "stage_8"
+    )
+
+
+def test_every_enemy_mechanic_has_a_player_readable_counter_and_unlock_gate():
+    assert len(ENEMY_MECHANICS) == 8
+    for code, definition in ENEMY_MECHANICS.items():
+        assert definition["counter"].endswith("요.")
+        assert enemy_mechanic(code, unlock_level=2, mechanic_level=1) is None
+        opened = enemy_mechanic(code, unlock_level=2, mechanic_level=2)
+        assert opened is not None
+        assert opened["code"] == code

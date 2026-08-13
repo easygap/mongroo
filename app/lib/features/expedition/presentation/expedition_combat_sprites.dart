@@ -32,12 +32,6 @@ List<String> expeditionCombatEffectAssetsFor(
 ) =>
     List.generate(effect.frameCount, effect.asset, growable: false);
 
-List<String> get expeditionCombatEffectFirstFrames =>
-    expeditionCombatEffectsByFamily.values
-        .map((effect) => effect.asset(0))
-        .toSet()
-        .toList(growable: false);
-
 /// 검수된 래스터 시퀀스만 재생하는 전투 이펙트 레이어.
 ///
 /// 전투 판정과 프레임 선택은 분리한다. 서버가 보낸 효과 키와 타임라인 구간만

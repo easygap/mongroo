@@ -109,6 +109,46 @@
       "sha256": "F2629F4B95AADE9A735320243FF4B08FFAD340F75E553080ED0EEF3AFC255A3A"
     },
     {
+      "role": "adventure_cue",
+      "key": "patrol-depart",
+      "path": "app/assets/adventure/sfx/cue-patrol-depart.wav",
+      "channels": 1,
+      "duration_ms": 290,
+      "limit_ms": 300,
+      "window_rms": 0.15,
+      "sha256": "58BFADE705568E3A98A9549573280580503526C01F30E6941D6BB2C8AF07426D"
+    },
+    {
+      "role": "adventure_cue",
+      "key": "patrol-return",
+      "path": "app/assets/adventure/sfx/cue-patrol-return.wav",
+      "channels": 1,
+      "duration_ms": 440,
+      "limit_ms": 450,
+      "window_rms": 0.15,
+      "sha256": "4F8FAD49E09FADB48E080FFD26878F84DC26909BF04710627E5466B807496D67"
+    },
+    {
+      "role": "adventure_cue",
+      "key": "dungeon-clear",
+      "path": "app/assets/adventure/sfx/cue-dungeon-clear.wav",
+      "channels": 1,
+      "duration_ms": 390,
+      "limit_ms": 400,
+      "window_rms": 0.15,
+      "sha256": "AD8371DEFA79135263893263A65B47EBCDB7804A56CE0D1A5DFC79E61802E708"
+    },
+    {
+      "role": "adventure_cue",
+      "key": "research-complete",
+      "path": "app/assets/adventure/sfx/cue-research-complete.wav",
+      "channels": 1,
+      "duration_ms": 340,
+      "limit_ms": 350,
+      "window_rms": 0.15,
+      "sha256": "FDEFD6002781A92971C4C9B0CA006E7AB722013D6BC6525E15A23E4AAEDBB5AF"
+    },
+    {
       "role": "release",
       "key": "moss_archive",
       "path": "app/assets/adventure/sfx/release-moss-archive.wav",

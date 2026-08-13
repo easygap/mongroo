@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
+import 'package:mongroo/features/expedition/data/expedition_settings_store.dart';
 import 'package:mongroo/features/expedition/domain/expedition_models.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_controller.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_action_cue.dart';
@@ -582,6 +583,7 @@ class _FakeExpeditionController extends ExpeditionController {
 }
 
 void main() {
+  _combatChoiceContractTests();
   testWidgets('모든 탐험 장면 에셋을 앱 번들에서 읽는다', (tester) async {
     expect(expeditionSceneKeys, hasLength(7));
     expect(expeditionEnvironmentAssets, hasLength(8));
@@ -600,12 +602,23 @@ void main() {
       expect(data.getUint32(12, Endian.big), 0x56503858, reason: asset);
       expect(data.getUint8(20) & 0x10, 0x10, reason: '$asset 알파 채널');
     }
+    expect(expeditionTangleCombatAssets, hasLength(12));
+    for (final asset in expeditionTangleCombatAssets) {
+      expect(asset, endsWith('.webp'));
+      final data = await rootBundle.load(asset);
+      expect(data.lengthInBytes, greaterThan(40000), reason: asset);
+      expect(data.getUint32(0, Endian.big), 0x52494646, reason: asset);
+      expect(data.getUint32(8, Endian.big), 0x57454250, reason: asset);
+      expect(data.getUint32(12, Endian.big), 0x56503858, reason: asset);
+      expect(data.getUint8(20) & 0x10, 0x10, reason: '$asset 알파 채널');
+    }
     expect(mossArchiveMapAsset, endsWith('terrain-v3.webp'));
     final terrain = await rootBundle.load(mossArchiveMapAsset);
     expect(terrain.lengthInBytes, greaterThan(300000));
     for (final asset in {
       ...expeditionEnvironmentAssets,
       ...expeditionCombatAssets,
+      ...expeditionTangleCombatAssets,
       mossArchiveMapAsset,
     }) {
       final mobileAsset = expeditionMobileAssetPath(asset);
@@ -614,12 +627,15 @@ void main() {
       final size = _webpCanvasSize(data);
       expect(
         size.width,
-        expeditionCombatAssets.contains(asset)
-            ? expeditionMobileGuardianWidth
-            : expeditionMobileSceneWidth,
+        expeditionTangleCombatAssets.contains(asset)
+            ? expeditionMobileTangleWidth
+            : expeditionCombatAssets.contains(asset)
+                ? expeditionMobileGuardianWidth
+                : expeditionMobileSceneWidth,
         reason: mobileAsset,
       );
-      if (expeditionCombatAssets.contains(asset)) {
+      if (expeditionCombatAssets.contains(asset) ||
+          expeditionTangleCombatAssets.contains(asset)) {
         expect(
           data.getUint8(20) & 0x10,
           0x10,
@@ -745,7 +761,14 @@ void main() {
       'enemy_wave',
       'paper_flurry',
       'ink_mist',
+      'petal_gust',
       'petal_dart',
+      'shelf_sweep',
+      'catalogue_rain',
+      'record_wave',
+      'seal_crush',
+      'root_lockdown',
+      'final_redaction',
     ];
 
     for (final effectKey in effectKeys) {
@@ -773,6 +796,18 @@ void main() {
     expect(expeditionCombatEffectFrameForProgress('ink_mist', .6), 4);
     expect(expeditionCombatEffectFrameCountFor('petal_dart'), 7);
     expect(expeditionCombatEffectFrameForProgress('petal_dart', .6), 4);
+    for (final effectKey in const [
+      'petal_gust',
+      'shelf_sweep',
+      'catalogue_rain',
+      'record_wave',
+      'seal_crush',
+      'root_lockdown',
+      'final_redaction',
+    ]) {
+      expect(expeditionCombatEffectFrameCountFor(effectKey), 8);
+      expect(expeditionCombatEffectFrameForProgress(effectKey, .5), 3);
+    }
   });
 
   test('서버가 지정한 여섯 motion archetype은 서로 다른 동선을 만든다', () {
@@ -1140,6 +1175,10 @@ void main() {
       'name': '최종 말소',
       'tone': 'ember',
       'intent_power_bonus': 2,
+      'rule_name': '최종 교정',
+      'rule_summary': '약점을 맞혀 말소 위력 상승을 끊어요.',
+      'phase_gate': 'resolve_intent',
+      'phase_gate_ready': false,
       'next_threshold_guard': null,
     };
     final party = battleJson['party'] as List<dynamic>;
@@ -1195,6 +1234,9 @@ void main() {
     expect(battle.bossPhase?.index, 3);
     expect(battle.bossPhase?.name, '최종 말소');
     expect(battle.bossPhase?.isFinal, isTrue);
+    expect(battle.bossPhase?.ruleName, '최종 교정');
+    expect(battle.bossPhase?.phaseGate, 'resolve_intent');
+    expect(battle.bossPhase?.phaseGateReady, isFalse);
     expect(parsedKit.version, 7);
     expect(parsedKit.role, 'premium_healer');
     expect(parsedKit.combatStats['support'], 35);
@@ -1444,14 +1486,94 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('엉킴 웨이브 전투는 웨이브 표기와 절차적 몸체를 보여 준다', (tester) async {
+  testWidgets('고를 것이 있는 기록서는 먼저 묻고 고른 값을 실어 보낸다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final raw = _battleSnapshotJson();
+    final battleJson = (raw['current_event'] as Map<String, dynamic>)['battle']
+        as Map<String, dynamic>;
+    final kitJson = ((battleJson['party'] as List).first
+        as Map<String, dynamic>)['kit'] as Map<String, dynamic>;
+    final slotJson =
+        (kitJson['selected_skills'] as List).first as Map<String, dynamic>;
+    // 서버가 명령형 기록서를 내려보낸 상태. 후보와 현재값까지 함께 온다.
+    slotJson
+      ..['code'] = 'resonance_tuner'
+      ..['name'] = '마음결 조율기'
+      ..['focus_cost'] = 1
+      ..['cooldown_remaining'] = 0
+      ..['mechanic_summary'] = '다음 공격 성장결을 바꿔요'
+      ..['choice_kind'] = 'kel'
+      ..['choice_current'] = 'sunny'
+      ..['choice_options'] = [
+        {'value': 'sunny', 'label': '햇살결'},
+        {'value': 'ember', 'label': '잉걸결'},
+      ];
+    final snapshot = ExpeditionSnapshot.fromJson(raw);
+    late _FakeExpeditionController controller;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          expeditionControllerProvider.overrideWith(() {
+            controller = _FakeExpeditionController(
+              ExpeditionUiState(
+                loading: false,
+                expedition: snapshot,
+                selectedMemberId: 11,
+              ),
+            );
+            return controller;
+          }),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const ExpeditionScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final card = find.byKey(const ValueKey('seq-dock-card-selected_1'));
+    await tester.ensureVisible(card);
+    await tester.pump();
+    await tester.tap(card, warnIfMissed: false);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // 누르자마자 보내지 않는다. 무엇으로 바꿀지 먼저 묻는다.
+    expect(controller.combatActionRequests, 0);
+    expect(find.text('잉걸결'), findsOneWidget);
+    // 지금과 같은 결도 목록에 남지만 고를 수는 없다.
+    expect(find.text('지금 이 결'), findsOneWidget);
+    await tester.tap(find.text('햇살결'));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(controller.combatActionRequests, 0);
+
+    await tester.tap(find.text('잉걸결'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(controller.combatActionRequests, 1);
+    final sent = controller.combatActionLog.single;
+    expect(sent.action, 'selected_1');
+    expect(sent.choice, 'ember');
+    expect(sent.toJson()['choice'], 'ember');
+  });
+
+  testWidgets('엉킴 웨이브 전투는 웨이브 표기와 전용 상태 원화를 보여 준다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 1100));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final raw = _battleSnapshotJson();
     final event = raw['current_event'] as Map<String, dynamic>;
     final battleJson = event['battle'] as Map<String, dynamic>;
     battleJson['enemy_kind'] = 'tangle';
-    battleJson['wave'] = {'index': 1, 'count': 2, 'name': '엉킨 장부 뭉치'};
+    battleJson['wave'] = {
+      'index': 1,
+      'count': 2,
+      'code': 'tangled_ledger',
+      'name': '엉킨 장부 뭉치',
+    };
     final enemyJson = battleJson['enemy'] as Map<String, dynamic>;
     enemyJson['name'] = '엉킨 장부 뭉치';
     enemyJson['elite'] = false;
@@ -1461,6 +1583,7 @@ void main() {
     expect(battle.isTangle, isTrue);
     expect(battle.wave!.index, 1);
     expect(battle.wave!.count, 2);
+    expect(battle.wave!.code, 'tangled_ledger');
     expect(battle.enemy.name, '엉킨 장부 뭉치');
 
     await tester.pumpWidget(
@@ -1486,8 +1609,8 @@ void main() {
 
     expect(find.byKey(const ValueKey('seq-dock-wave')), findsOneWidget);
     expect(find.text('웨이브 1/2'), findsOneWidget);
-    // 엉킴은 절차적 몸체를 그리고 수호짐승 원화는 쓰지 않는다.
-    expect(find.byKey(const ValueKey('tangle-body')), findsOneWidget);
+    // 엉킴은 코드에 맞는 알파 원화를 쓰고 수호짐승 원화는 쓰지 않는다.
+    expect(find.byKey(const ValueKey('tangle-body-idle')), findsOneWidget);
     expect(find.byKey(const ValueKey('ledger-keeper-idle')), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
@@ -2521,5 +2644,207 @@ void main() {
       'battle_log': <String>[],
     });
     expect(legacy.regionCode, isNull);
+  });
+
+  test('소리·배속·짧은 연출은 저장되고 AUTO는 저장되지 않는다', () {
+    const tuned = ExpeditionBattleSettings(
+      autoMode: ExpeditionAutoMode.continuous,
+      pace: 2,
+      shortEffects: true,
+      audioMode: ExpeditionAudioMode.sfxOnly,
+    );
+    final restored = ExpeditionBattleSettings.decode(tuned.encode());
+
+    expect(restored.audioMode, ExpeditionAudioMode.sfxOnly);
+    expect(restored.pace, 2);
+    expect(restored.shortEffects, isTrue);
+    // 품질 기준의 `자동 지휘는 초기 OFF`. 지난 전투에서 켰다는 이유로 이번
+    // 전투를 앱이 대신 지휘하기 시작하면 안 된다.
+    expect(restored.autoMode, ExpeditionAutoMode.off);
+    expect(tuned.encode().contains('auto'), isFalse);
+  });
+
+  test('손상되거나 이전 스키마인 설정은 기본값으로 떨어진다', () {
+    expect(
+      () => ExpeditionBattleSettings.decode('{"schema_version":0}'),
+      throwsFormatException,
+    );
+    expect(
+      () => ExpeditionBattleSettings.decode('not json'),
+      throwsA(isA<FormatException>()),
+    );
+    // 스키마는 맞지만 값이 깨진 경우에는 판정이 바뀌지 않게 좁힌다.
+    final broken = ExpeditionBattleSettings.decode(
+      '{"schema_version":1,"audio_mode":"loud","pace":99,"short_effects":"y"}',
+    );
+    expect(broken.audioMode, ExpeditionAudioMode.all);
+    expect(broken.pace, 1);
+    expect(broken.shortEffects, isFalse);
+  });
+
+  test('저장된 설정을 앱 시작 때 되살리고 바꾸면 다시 저장한다', () async {
+    final storage = _FakeExpeditionSettingsStorage(
+      const ExpeditionBattleSettings(
+        audioMode: ExpeditionAudioMode.muted,
+        pace: 2,
+      ).encode(),
+    );
+    final container = ProviderContainer(
+      overrides: [
+        expeditionSettingsStorageProvider.overrideWithValue(storage),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    // 첫 build는 기본값이고, 저장소를 읽은 뒤 지난 선택으로 바뀐다.
+    expect(
+      container.read(expeditionBattleSettingsProvider).audioMode,
+      ExpeditionAudioMode.all,
+    );
+    await container.read(expeditionSettingsStoreProvider).load();
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      container.read(expeditionBattleSettingsProvider).audioMode,
+      ExpeditionAudioMode.muted,
+    );
+    expect(container.read(expeditionBattleSettingsProvider).pace, 2);
+
+    container.read(expeditionBattleSettingsProvider.notifier).cycleAudioMode();
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      ExpeditionBattleSettings.decode(storage.value!).audioMode,
+      ExpeditionAudioMode.all,
+    );
+  });
+
+  test('저장소가 막혀 있어도 설정 변경과 전투는 계속된다', () async {
+    final container = ProviderContainer(
+      overrides: [
+        expeditionSettingsStorageProvider
+            .overrideWithValue(_BrokenExpeditionSettingsStorage()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await Future<void>.delayed(Duration.zero);
+    final notifier = container.read(expeditionBattleSettingsProvider.notifier);
+    notifier.cycleAudioMode();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(
+      container.read(expeditionBattleSettingsProvider).audioMode,
+      ExpeditionAudioMode.sfxOnly,
+    );
+  });
+
+  testWidgets('모험 확정음 4종을 앱 번들에서 읽는다', (tester) async {
+    // 문서가 순간마다 정한 길이 상한. 44.1kHz 16bit 모노라 헤더에서
+    // 재생 시간을 바로 계산할 수 있다.
+    const limits = <String, int>{
+      'patrol-depart': 300,
+      'patrol-return': 450,
+      'dungeon-clear': 400,
+      'research-complete': 350,
+    };
+    for (final entry in limits.entries) {
+      final asset = 'assets/adventure/sfx/cue-${entry.key}.wav';
+      final data = await rootBundle.load(asset);
+      expect(data.getUint32(8, Endian.big), 0x57415645, reason: '$asset WAVE');
+      expect(data.getUint16(22, Endian.little), 1, reason: '$asset 모노');
+
+      final sampleRate = data.getUint32(24, Endian.little);
+      final byteRate = data.getUint32(28, Endian.little);
+      final durationMs = (data.lengthInBytes - 44) / byteRate * 1000;
+      expect(sampleRate, 44100, reason: asset);
+      expect(
+        durationMs,
+        lessThanOrEqualTo(entry.value.toDouble()),
+        reason: '$asset 은 ${entry.value}ms 안이어야 한다',
+      );
+    }
+  });
+}
+
+class _FakeExpeditionSettingsStorage implements ExpeditionSettingsStorage {
+  _FakeExpeditionSettingsStorage([this.value]);
+
+  String? value;
+
+  @override
+  Future<String?> read() async => value;
+
+  @override
+  Future<void> write(String value) async => this.value = value;
+
+  @override
+  Future<void> clear() async => value = null;
+}
+
+class _BrokenExpeditionSettingsStorage implements ExpeditionSettingsStorage {
+  @override
+  Future<String?> read() async => throw StateError('저장소를 쓸 수 없습니다');
+
+  @override
+  Future<void> write(String value) async => throw StateError('저장소를 쓸 수 없습니다');
+
+  @override
+  Future<void> clear() async => throw StateError('저장소를 쓸 수 없습니다');
+}
+
+void _combatChoiceContractTests() {
+  test('선택이 필요한 행동은 후보와 현재값을 서버에서 그대로 받는다', () {
+    final action = ExpeditionBattleAction.fromJson(const {
+      'slot': 'selected_1',
+      'code': 'resonance_tuner',
+      'name': '마음결 조율기',
+      'available': true,
+      'choice_kind': 'kel',
+      'choice_current': 'sunny',
+      'choice_options': [
+        {'value': 'sunny', 'label': '햇살결'},
+        {'value': 'ember', 'label': '잉걸결'},
+      ],
+    });
+
+    expect(action.needsChoice, isTrue);
+    expect(action.choiceCurrent, 'sunny');
+    expect(
+      action.choiceOptions.map((option) => option.label),
+      ['햇살결', '잉걸결'],
+    );
+  });
+
+  test('고를 것이 없는 행동은 선택 단계를 거치지 않는다', () {
+    final plain = ExpeditionBattleAction.fromJson(const {
+      'slot': 'selected_1',
+      'code': 'short_cheer',
+      'available': true,
+    });
+
+    expect(plain.needsChoice, isFalse);
+    expect(plain.choiceKind, isNull);
+    expect(plain.choiceOptions, isEmpty);
+
+    // 무엇을 고르는지는 말했지만 후보가 비어 있으면 띄울 화면이 없다.
+    // 선택지 없는 시트를 여느니 그냥 보내고 서버 판정을 받는다.
+    final empty = ExpeditionBattleAction.fromJson(const {
+      'slot': 'selected_1',
+      'available': true,
+      'choice_kind': 'kel',
+      'choice_options': <Map<String, dynamic>>[],
+    });
+    expect(empty.needsChoice, isFalse);
+  });
+
+  test('고르지 않은 명령은 choice 키 자체를 보내지 않는다', () {
+    const plain = ExpeditionCombatCommand(memberId: 1, action: 'attack');
+    expect(plain.toJson().containsKey('choice'), isFalse);
+
+    const chosen = ExpeditionCombatCommand(
+      memberId: 1,
+      action: 'selected_1',
+      choice: 'ember',
+    );
+    expect(chosen.toJson()['choice'], 'ember');
   });
 }

@@ -48,6 +48,11 @@
 
 ## 제작 파일과 납품 규격
 
+아래 `master`는 납품 **규격**이지 저장소에 두는 파일이 아니다. 코드로 합성하는
+음원의 마스터는 `.gitignore`로 막고 스크립트와 manifest의 sha256으로 관리한다
+(아래 `지역 BGM 12곡` 참고). 손으로 녹음한 foley를 도입한다면 그때는 원본을
+저장소나 별도 저장소에 보관해야 한다 — 재생성할 수 없기 때문이다.
+
 | 분류 | 수량 | master | runtime |
 |---|---:|---|---|
 | 지역 BGM | 4 | 48kHz/24bit stereo WAV | AAC-LC M4A stereo |
@@ -169,9 +174,14 @@ pitch만 바꿔 두 스킬로 납품하지 않는다.
   연속 공격은 실제 contact가 여러 번이어도 120ms보다 촘촘하게 촉각을 반복하지 않는다.
 - 적 anticipation에는 촉각을 넣지 않는다. 예고는 소리·pose·glyph로 읽고, 사용자가
   조작하지 않은 순간에 진동을 계속 발생시키지 않는다.
-- 현재 구현은 출발에 선택 촉각, 귀환·던전 완료에 가벼운 촉각, 표본 연구 완료에
-  중간 세기 촉각을 적용한다. 안전 지원 활성일에는 연구 완료 촉각도 생략한다.
-  검수된 원본 음원이 준비된 뒤 위 기준으로 앱 오디오 설정과 함께 연결한다.
+- 위 네 순간은 **소리와 촉각이 함께 연결됐다**(2026-08-12). 출발에 선택 촉각,
+  귀환·던전 완료에 가벼운 촉각, 표본 연구 완료에 중간 세기 촉각을 쓰고, 같은
+  자리에 `cue-{patrol-depart|patrol-return|dungeon-clear|research-complete}.wav`가
+  난다. 주간 약속 수령은 귀환과 같은 `보상을 받았다` 순간이라 귀환 소리를 함께
+  쓴다. 안전 지원 활성일에는 연구 완료의 촉각과 소리를 **둘 다** 생략한다.
+  효과음을 끈 사용자에게는 문구와 촉각만 남는다.
+- 보상이 여러 개여도 소리는 한 번이다. 400ms 안에 같은 cue가 다시 요청되면
+  재생하지 않는다.
 
 ## 구현 상태 — 접촉 재질·예고·풀려남 (2026-08-12)
 
@@ -185,7 +195,8 @@ pitch만 바꿔 두 스킬로 납품하지 않는다.
 | 지역 풀려남 cadence | 4 | **4** | — |
 | 지역 BGM·combat·guardian stem | 12 | **12** | — |
 | 지역 환경음 | 8 | 0 | 전량 |
-| 발걸음·발견·UI cue | 11 | 0 | 전량 |
+| 모험 확정 cue | 4 | **4** | — |
+| 발걸음·발견 cue | 7 | 0 | 전량 |
 | 품종 고유 skill signature | 20 | 3(tier 대체) | 품종별 분화 |
 | 엉킴·수호짐승 공격 signature | 24 | 재질 cue로 대체 | 개별 signature |
 
@@ -224,8 +235,27 @@ pitch만 바꿔 두 스킬로 납품하지 않는다.
 ### 지역 BGM 12곡 (2026-08-12)
 
 제작·검수: `build_expedition_music.py --region all`,
-`verify_expedition_music.py`. 지역별 master와 manifest는
+`verify_expedition_music.py`. manifest는
 `design-system/audio/adventure-{slug}-v1/`에 남긴다.
+
+**마스터 WAV는 저장소에 두지 않는다.** 48kHz/24bit 마스터는 지역당 14MB라
+12곡이면 53MB인데, 합성이 결정론적이라 언제든 같은 바이트로 되살아난다.
+그래서 파일 대신 **스크립트와 manifest의 `master_sha256`**을 출처 기록으로 삼고
+`.gitignore`가 `design-system/audio/**/*-master.wav`를 막는다. 런타임 M4A는
+그대로 추적한다 — 앱이 번들에 싣는 실제 산출물이기 때문이다.
+
+```bash
+# 마스터가 필요할 때 되살린다(런타임 M4A도 함께 다시 만든다)
+python design-system/scripts/build_expedition_music.py --region all
+
+# 아무것도 쓰지 않고 기록된 sha256과 대조만 한다
+python design-system/scripts/build_expedition_music.py --region all --check
+```
+
+`--check`는 임시 폴더에만 렌더링해 manifest의 `master_sha256`과 맞춰 본다.
+빌더를 고쳤는데 산출이 달라졌다면 여기서 잡힌다. 곡을 의도적으로 바꿨다면
+`--check`가 실패하는 것이 정상이므로, 다시 렌더링해 manifest를 갱신하고
+`verify_expedition_music.py`로 순환·음량을 다시 검수한다.
 
 | 지역 | BPM | 16초 안 박자 | 악기 | 악보 |
 |---|---:|---:|---|---|
