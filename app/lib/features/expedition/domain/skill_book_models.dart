@@ -19,6 +19,8 @@ class SkillBook {
     this.priceSeeds,
     this.unlockHint,
     this.tradeoff,
+    this.isActive = true,
+    this.retiredReason,
   });
 
   final String code;
@@ -43,20 +45,37 @@ class SkillBook {
   /// 3등급이 예산 2를 쓰는 대신 지는 대가.
   final String? tradeoff;
 
+  /// 아직 새로 얻을 수 있는 책인가. false면 상점에서 내려간 책이다.
+  ///
+  /// 서고에서 지우지는 않는다 — 이미 가진 사람에게는 그대로 남아야 하고,
+  /// 산 것을 조용히 없애면 왜 사라졌는지 알 길이 없다.
+  final bool isActive;
+
+  /// 왜 내렸는지. 서버 문장을 그대로 쓴다.
+  final String? retiredReason;
+
   bool get isGradeThree => grade == 3;
 
   /// 획득처를 한 줄로 읽는다. 상점가와 조건을 숨기지 않는다.
-  String get acquireLabel => switch (acquireKind) {
-        'shop' => '상점 씨앗 $priceSeeds',
-        'unlock' => '해금 · ${unlockHint ?? ''}',
-        _ => '도전 · ${unlockHint ?? ''}',
-      };
+  ///
+  /// 내린 책은 값을 먼저 말하지 않는다. 살 수 없는데 `상점 씨앗 120`이라고
+  /// 하면 어디서 사는지 찾아 헤매게 된다.
+  String get acquireLabel {
+    if (!isActive) return retiredReason ?? '지금은 얻을 수 없어요';
+    return switch (acquireKind) {
+      'shop' => '상점 씨앗 $priceSeeds',
+      'unlock' => '해금 · ${unlockHint ?? ''}',
+      _ => '도전 · ${unlockHint ?? ''}',
+    };
+  }
 
   factory SkillBook.fromJson(Map<String, dynamic> json) => SkillBook(
         code: json['code'] as String? ?? '',
         name: json['name'] as String? ?? '',
         grade: _asInt(json['grade'], 1),
         activationMode: json['activation_mode'] as String? ?? 'command',
+        isActive: json['is_active'] != false,
+        retiredReason: json['retired_reason'] as String?,
         effectSummary: json['effect_summary'] as String? ?? '',
         stackGroup: json['stack_group'] as String? ?? '',
         minSlot: json['min_slot'] as String? ?? 'B1',

@@ -11,6 +11,11 @@ enum ExpeditionCombatSound {
   victory,
   defeat,
   storyReveal,
+  // 걸을 때 바닥에서 나는 소리. 재질은 지금 서 있는 장면이 정한다.
+  stepLeaf,
+  stepPot,
+  stepWood,
+  stepStone,
   skillLight,
   skillFull,
   skillSignature,
@@ -126,6 +131,10 @@ class ExpeditionCombatAudio {
     ExpeditionCombatSound.victory: 'adventure/sfx/combat-victory.wav',
     ExpeditionCombatSound.defeat: 'adventure/sfx/combat-defeat.wav',
     ExpeditionCombatSound.storyReveal: 'adventure/sfx/story-postcard.wav',
+    ExpeditionCombatSound.stepLeaf: 'adventure/sfx/step-leaf.wav',
+    ExpeditionCombatSound.stepPot: 'adventure/sfx/step-pot.wav',
+    ExpeditionCombatSound.stepWood: 'adventure/sfx/step-wood.wav',
+    ExpeditionCombatSound.stepStone: 'adventure/sfx/step-stone.wav',
     ExpeditionCombatSound.skillLight: 'adventure/sfx/skill-tier-light.wav',
     ExpeditionCombatSound.skillFull: 'adventure/sfx/skill-tier-full.wav',
     ExpeditionCombatSound.skillSignature:
@@ -171,10 +180,42 @@ class ExpeditionCombatAudio {
     return 'adventure/music/$slug-${_musicStateSuffix[state]}.m4a';
   }
 
+  /// 이 장면을 걸을 때 나는 발소리.
+  ///
+  /// 재질을 앱이 지어내지 않고 **장면이 정한다** — 젖은 동굴에서 나무 소리가
+  /// 나면 눈과 귀가 다른 말을 한다. 모르는 장면은 화분 자신의 소리로 떨어져
+  /// 무음이 되지 않는다(주인공은 화분이라 자기 몸이 바닥에 닿는 소리가 있다).
+  static ExpeditionCombatSound stepSoundFor(String? sceneKey) =>
+      switch (sceneKey) {
+        'root_tunnel' => ExpeditionCombatSound.stepLeaf,
+        'flooded_cave' || 'echo_well' => ExpeditionCombatSound.stepStone,
+        'treasure_vault' || 'monster_den' => ExpeditionCombatSound.stepStone,
+        'moon_tower' => ExpeditionCombatSound.stepWood,
+        'dungeon_gate' => ExpeditionCombatSound.stepStone,
+        _ => ExpeditionCombatSound.stepPot,
+      };
+
+  /// 지역 ambience 경로. A는 바닥, B는 공기다.
+  ///
+  /// 두 층의 길이가 서로 달라(32초·40초) 겹쳐 틀면 실제 반복 주기가 160초로
+  /// 늘어난다. 그래서 둘을 **각자 loop**시키고 위치를 맞추지 않는다 — 맞추면
+  /// 길이를 다르게 둔 뜻이 사라진다.
+  static String ambiencePath(String? regionCode, String layer) {
+    final slug = _musicSlugs[regionCode] ?? 'moss-archive';
+    return 'adventure/ambience/$slug-$layer.m4a';
+  }
+
+  /// 전투에 들어가면 배경을 2dB 낮춘다(기준 문서 `연속 무대의 적응형 레이어`).
+  /// 진폭으로는 약 0.79배다.
+  static const _ambienceDuck = 0.79;
+
   final Future<Map<ExpeditionCombatSound, AudioPool>> _ready;
   final Map<ExpeditionCombatSound, DateTime> _lastPlayedAt = {};
   AudioPlayer _activeMusic = AudioPlayer();
   AudioPlayer _standbyMusic = AudioPlayer();
+  final AudioPlayer _ambienceA = AudioPlayer();
+  final AudioPlayer _ambienceB = AudioPlayer();
+  String? _ambienceRegion;
   ExpeditionMusicState? _musicState;
 
   /// 지금 울리고 있는 지역 곡. 지역이 바뀌면 재생 세션을 새로 연다.
@@ -190,6 +231,10 @@ class ExpeditionCombatAudio {
 
   /// 마지막으로 요청받은 지역 음악 음량. 페이드가 이 값을 목표로 돌아온다.
   double _musicVolume = 0.18;
+
+  /// ambience 기준 음량. 마스터가 이미 -28 LUFS로 조용해서 곡보다 조금 낮게
+  /// 얹으면 충분하다. 전투에서는 여기에 duck 계수를 곱한다.
+  double _ambienceVolume = 0.12;
 
   /// 효과음이 하나라도 나갈 수 있는 상태인지. 판정·촉각은 이 값과 무관하다.
   bool get _enabled => _sfxEnabled && !_backgrounded;
@@ -304,6 +349,64 @@ class ExpeditionCombatAudio {
   Future<void> playBossPhaseBreak() =>
       play(ExpeditionCombatSound.bossPhaseBreak, volume: .68);
 
+  /// 지역 ambience 두 층을 틀거나 지역이 바뀌면 갈아 끼운다.
+  ///
+  /// 같은 지역이면 다시 시작하지 않는다. 배경이 장면마다 처음으로 돌아가면
+  /// 그 순간이 오히려 사건처럼 들린다.
+  Future<void> playAmbience(
+    String? regionCode, {
+    ExpeditionMusicState state = ExpeditionMusicState.base,
+    double volume = 0.12,
+  }) async {
+    if (_disposed || !_musicPlayable) return;
+    _ambienceVolume = volume;
+    final target = _ambienceLevel(state);
+    if (_ambienceRegion == regionCode) {
+      // 지역이 그대로면 음량만 옮긴다 — 전투 진입·이탈이 여기로 온다.
+      await _setAmbienceVolume(target);
+      return;
+    }
+    try {
+      for (final (player, layer) in [(_ambienceA, 'a'), (_ambienceB, 'b')]) {
+        await player.setReleaseMode(ReleaseMode.loop);
+        await player.play(
+          AssetSource(ambiencePath(regionCode, layer)),
+          volume: target,
+          ctx: _musicContext,
+        );
+      }
+      if (!_disposed) _ambienceRegion = regionCode;
+    } on Object {
+      // 배경이 안 깔려도 탐험은 계속된다. 소리는 거들 뿐이다.
+    }
+  }
+
+  double _ambienceLevel(ExpeditionMusicState state) =>
+      state == ExpeditionMusicState.base
+          ? _ambienceVolume
+          : _ambienceVolume * _ambienceDuck;
+
+  Future<void> _setAmbienceVolume(double volume) async {
+    if (_ambienceRegion == null) return;
+    try {
+      await Future.wait([
+        _ambienceA.setVolume(volume),
+        _ambienceB.setVolume(volume),
+      ]);
+    } on Object {
+      // 볼륨을 못 바꿔도 재생은 유지한다.
+    }
+  }
+
+  Future<void> stopAmbience() async {
+    _ambienceRegion = null;
+    try {
+      await Future.wait([_ambienceA.stop(), _ambienceB.stop()]);
+    } on Object {
+      // 이미 멈춰 있으면 할 일이 없다.
+    }
+  }
+
   /// 16초 마디를 처음부터 다시 틀지 않고 지역 음악을 시작하거나 교차 전환한다.
   Future<void> playMusic(
     ExpeditionMusicState state, {
@@ -312,6 +415,8 @@ class ExpeditionCombatAudio {
   }) async {
     if (_disposed || !_musicPlayable) return;
     final regionChanged = _musicRegion != regionCode;
+    // 배경은 곡보다 먼저 자리를 잡는다. 곡 상태가 바뀌면 duck도 따라간다.
+    await playAmbience(regionCode, state: state, volume: _ambienceVolume);
     if (_musicState == state && !regionChanged) return;
     _musicVolume = volume;
     final generation = ++_transitionGeneration;
@@ -409,6 +514,9 @@ class ExpeditionCombatAudio {
     try {
       if (resume) {
         if (_musicState == null) return;
+        // 배경도 함께 돌아온다. 곡만 살아나고 배경이 죽어 있으면 복귀한
+        // 장면이 원래보다 얇게 들린다.
+        await _resumeAmbience();
         await _activeMusic.setVolume(0);
         await _activeMusic.resume();
         await _fadeActiveMusic(
@@ -425,9 +533,24 @@ class ExpeditionCombatAudio {
         duration: backgroundFadeOut,
         generation: generation,
       );
-      await Future.wait([_activeMusic.pause(), _standbyMusic.pause()]);
+      await Future.wait([
+        _activeMusic.pause(),
+        _standbyMusic.pause(),
+        _ambienceA.pause(),
+        _ambienceB.pause(),
+      ]);
     } on Object {
       // 오디오 장치 상태와 무관하게 설정과 화면은 즉시 바뀐다.
+    }
+  }
+
+  Future<void> _resumeAmbience() async {
+    if (_ambienceRegion == null) return;
+    try {
+      await Future.wait([_ambienceA.resume(), _ambienceB.resume()]);
+      await _setAmbienceVolume(_ambienceLevel(_musicState ?? ExpeditionMusicState.base));
+    } on Object {
+      // 배경이 안 돌아와도 곡과 판정은 계속된다.
     }
   }
 
@@ -456,6 +579,8 @@ class ExpeditionCombatAudio {
         ...pools.values.map((pool) => pool.dispose()),
         _activeMusic.dispose(),
         _standbyMusic.dispose(),
+        _ambienceA.dispose(),
+        _ambienceB.dispose(),
       ]);
     } on Object {
       // 초기화가 실패한 플랫폼에서는 해제할 플레이어가 없다.

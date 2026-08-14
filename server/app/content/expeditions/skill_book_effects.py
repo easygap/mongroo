@@ -13,7 +13,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, MutableMapping
+from typing import Any, Iterable, Mapping, MutableMapping, Sequence
 
 
 # 전투 시작 전에 한 번만 적용되는 효과(activation_mode=opening).
@@ -34,6 +34,40 @@ KIT_MODIFIERS: dict[str, dict[str, int]] = {
     "leaf_greave": {"guard": 1},
     # 기본 공격 위력 +3
     "clear_aim": {"basic_power": 3},
+}
+
+# 조건이 붙은 정액 보정. 조건을 만족하는 동안에만 더해지고 풀리면 사라진다.
+# 값이 자라지 않는 것은 무조건 보정과 같다.
+LOW_BARRIER_MODIFIERS: dict[str, dict[str, int]] = {
+    # 적 장벽 20% 이하일 때 기본 공격 위력 +5
+    "final_resolve": {"basic_power": 5},
+}
+
+# `장벽 20% 이하`의 단일 원본. 앱은 이 값을 다시 계산하지 않고 서버가 이미
+# 반영해 내려보낸 위력을 읽는다.
+LOW_BARRIER_BP = 2_000
+
+# 적이 **전원을 노리는** 공격에서 덜어 내는 피해. 정액 차감이라 광역기가 셀수록
+# 체감이 옅어지고 약할수록 크다 — 정액 규칙이 만드는 의도한 곡선이다.
+ALL_HIT_REDUCTION: dict[str, int] = {"steady_axis": 1}
+
+# 파티 전원에게 한 번 걸리는 전투 시작 보정. 장착자 개인이 아니라 전투 하나에
+# 걸리므로 `opening_modifiers`가 모아서 전투 상태에 남긴다.
+PARTY_OPENING_MODIFIERS: dict[str, dict[str, int]] = {
+    # 파티 전원 고유 II 위력 +4
+    "ringcount_record": {"unique2_power": 4},
+}
+
+# 그 전투 내내 마음 지키기를 고를 수 없는 책(반대급부).
+GUARD_LOCKED_BOOKS = frozenset({"ringcount_record"})
+
+# 장착자 한 명의 상성 배율을 갈아 끼우는 책. 기본값은 `MATCHUP_POWER_BP`
+# (weak 15000 / neutral 10000 / resist 6000)이고 여기 적힌 열쇠만 덮는다.
+# **내성은 덮지 않는다** — 설계서의 `원래 내성과 중복하지 않음`이 그 뜻이다.
+# 덮으면 중립 0.60과 내성 0.60이 겹쳐 두 배로 아프다.
+OATH_MATCHUP_BP: dict[str, dict[str, int]] = {
+    # 약점 배율 ×1.50 → ×1.70, 중립은 ×0.60
+    "shadow_oath": {"weak": 17_000, "neutral": 6_000},
 }
 
 # 7.5.1 — command 기록서는 대원 행동 1회를 소비한다. 집중력 비용은 등급을 따르고
@@ -63,6 +97,21 @@ COMMAND_ACTIONS: dict[str, dict[str, Any]] = {
         "effect_values": {"weakness_bonus": 3},
     },
     # 전투 1회, 자신의 다음 공격 성장결을 확정 전에 고른 다른 결로 변경
+    # 아홉 꼬리의 잔상 — 예고된 공격을 다른 대원이 받는다. 대신 그 대원은 그
+    # 라운드에 마음 지키기를 쓸 수 없다(설계서의 반대급부). 전체 공격은 넘길
+    # 대상이라는 개념이 없어 전투 쪽에서 후보가 비고, 슬롯은 잠긴 채 보인다.
+    "nine_tail_afterimage": {
+        "effect": "book_intent_retarget",
+        "effect_values": {},
+        "choice_kind": "member",
+    },
+    # 마음결 대백과 — B1을 출발 스냅샷에 얼려 둔 다른 보유 책으로 바꾼다. 대신
+    # 바꾼 라운드에는 스킬을 쓸 수 없다.
+    "heart_encyclopedia": {
+        "effect": "book_swap_b1",
+        "effect_values": {},
+        "choice_kind": "book",
+    },
     "resonance_tuner": {
         "effect": "book_kel_override",
         "effect_values": {},
@@ -82,10 +131,39 @@ def choice_kind(code: str) -> str | None:
     return None if action is None else action.get("choice_kind")
 
 
-def validate_choice(code: str, choice: str | None, *, current: str | None) -> str:
+# 고를 것이 없을 때 슬롯에 붙는 사유. 파티가 한 명뿐이거나 예비 기록서가
+# 없으면 누를 수 있는 것처럼 보여 놓고 거절하는 대신 미리 잠근다.
+NOTHING_TO_CHOOSE = {
+    "kel": "바꿀 성장결이 없어요.",
+    "member": "넘길 다른 대원이 없어요.",
+    "book": "바꿔 낄 다른 기록서가 없어요.",
+}
+
+
+def choice_options(kind: str | None) -> tuple[str, ...]:
+    """후보가 전투 상황과 무관하게 고정된 종류만 여기서 답한다.
+
+    성장결 여섯은 언제나 같지만, 대원과 기록서는 그 전투의 파티와 출발 스냅샷을
+    봐야 안다. 그런 종류는 빈 튜플을 돌려주고 전투 쪽이 채운다.
+    """
+
+    return CHOICE_KELS if kind == "kel" else ()
+
+
+def validate_choice(
+    code: str,
+    choice: str | None,
+    *,
+    current: str | None,
+    allowed: Sequence[str] | None = None,
+) -> str:
     """고른 값이 이 책에 유효한지 본다. 문제가 있으면 사유를 문장으로 돌려준다.
 
     빈 문자열이면 통과다. 판정은 서버가 하고 앱은 다시 계산하지 않는다.
+
+    `allowed`는 그 전투에서 실제로 고를 수 있었던 후보다. 앱에 내려보낸 목록과
+    **같은 목록으로 판정해야** 화면에 보인 것을 골랐는데 거절당하는 일이 없다.
+    넘기지 않으면 종류가 고정 후보를 가진 경우(성장결)만 검사한다.
     """
 
     kind = choice_kind(code)
@@ -93,13 +171,27 @@ def validate_choice(code: str, choice: str | None, *, current: str | None) -> st
         return "" if choice is None else "이 기록서는 고를 것이 없어요."
     if not choice:
         return "무엇으로 바꿀지 먼저 골라 주세요."
-    if kind == "kel":
-        if choice not in CHOICE_KELS:
-            return "그런 성장결은 없어요."
-        # `다른 결로 변경`이라 지금과 같은 결은 고를 수 없다.
-        if current is not None and choice == current:
-            return "지금과 다른 결을 골라 주세요."
+
+    candidates = tuple(allowed) if allowed is not None else choice_options(kind)
+    if candidates and choice not in candidates:
+        return _NOT_A_CANDIDATE.get(kind, "지금 고를 수 없는 값이에요.")
+    # `다른 것으로 변경`이라 지금과 같은 것은 고를 수 없다.
+    if current is not None and choice == current:
+        return _SAME_AS_NOW.get(kind, "지금과 다른 것을 골라 주세요.")
     return ""
+
+
+_NOT_A_CANDIDATE = {
+    "kel": "그런 성장결은 없어요.",
+    "member": "지금 넘길 수 없는 대원이에요.",
+    "book": "출발할 때 가져오지 않은 기록서예요.",
+}
+
+_SAME_AS_NOW = {
+    "kel": "지금과 다른 결을 골라 주세요.",
+    "member": "이미 이 대원이 노려지고 있어요.",
+    "book": "이미 끼고 있는 기록서예요.",
+}
 
 # 라운드가 넘어갈 때 방어를 이월하는 책. 값은 설계서 문장 그대로 1이다.
 GUARD_CARRY = {"double_leaf": 1}
@@ -121,9 +213,9 @@ GUARD_CARRY = {"double_leaf": 1}
 # | `guard_blocked` | nine_tail_afterimage 반대급부 | 라운드 끝 |
 # | `b1_override` / `skill_blocked` | heart_encyclopedia | 라운드 끝 |
 #
-# 아래 셋은 **사용자의 선택**을 함께 받아야 한다(어느 결로 바꿀지, 누구에게
-# 넘길지, 어떤 책으로 교체할지). 명령 요청에 `choice`를 더하는 계약이 먼저
-# 필요해서 여기 표에만 적어 두고 아직 구현하지 않는다.
+# 아래 셋은 **사용자의 선택**을 함께 받는다(어느 결로 바꿀지, 누구에게 넘길지,
+# 어떤 책으로 교체할지). 명령 요청의 `choice`와 슬롯의 `choice_options`가 그
+# 계약이고, 후보 목록과 판정은 서버만 쥔다.
 CHOICE_REQUIRED = frozenset(
     {"resonance_tuner", "nine_tail_afterimage", "heart_encyclopedia"}
 )
@@ -182,6 +274,10 @@ FOCUS_TRIGGERS: dict[str, dict[str, Any]] = {
 IMPLEMENTED_CODES = (
     frozenset(OPENING_MODIFIERS)
     | frozenset(KIT_MODIFIERS)
+    | frozenset(LOW_BARRIER_MODIFIERS)
+    | frozenset(ALL_HIT_REDUCTION)
+    | frozenset(PARTY_OPENING_MODIFIERS)
+    | frozenset(OATH_MATCHUP_BP)
     | frozenset(FOCUS_TRIGGERS)
     | frozenset(COMMAND_ACTIONS)
     | frozenset(GUARD_CARRY)
@@ -237,18 +333,60 @@ def equipped_book_codes(snapshot: Mapping[str, Any] | None) -> list[str]:
     return codes
 
 
-def kit_modifiers(snapshot: Mapping[str, Any] | None) -> dict[str, int]:
+def kit_modifiers(
+    snapshot: Mapping[str, Any] | None,
+    *,
+    b1_override: str | None = None,
+    enemy_guard_bp: int = 10_000,
+) -> dict[str, int]:
     """한 캐릭터의 행동 수치 보정 합계.
 
     두 슬롯이 같은 `stack_group`을 쓸 수 없다는 규칙은 장착 단계에서 이미
     지켜졌으므로 여기서는 단순히 더한다.
+
+    `b1_override`는 마음결 대백과로 전투 중에 바꿔 낀 첫 칸이다. 슬롯에는 새 책이
+    보이는데 그 책의 수치는 안 붙는 상태를 만들지 않으려고 함께 본다.
     """
 
+    codes = list(equipped_book_codes(snapshot))
+    if b1_override:
+        slots = ((snapshot or {}).get("skill_loadout") or {}).get("slots") or {}
+        replaced = (slots.get("B1") or {}).get("code")
+        codes = [code for code in codes if code != replaced] + [b1_override]
+
+    # 장벽이 얼마 안 남았을 때만 붙는 보정. 조건은 서버가 판정하고 앱은 이미
+    # 반영된 위력을 읽는다 — 두 곳이 20%를 각자 계산하면 어긋난다.
+    tables = [KIT_MODIFIERS]
+    if int(enemy_guard_bp) <= LOW_BARRIER_BP:
+        tables.append(LOW_BARRIER_MODIFIERS)
+
     total: dict[str, int] = {}
-    for code in equipped_book_codes(snapshot):
-        for key, value in KIT_MODIFIERS.get(code, {}).items():
-            total[key] = total.get(key, 0) + int(value)
+    for code in codes:
+        for table in tables:
+            for key, value in table.get(code, {}).items():
+                total[key] = total.get(key, 0) + int(value)
     return total
+
+
+def oath_matchup_bp(snapshot: Mapping[str, Any] | None) -> dict[str, int]:
+    """이 캐릭터가 쓰는 상성 배율 중 덮어쓸 부분.
+
+    비어 있으면 기본 배율 그대로다. 두 칸에 같은 `stack_group`을 둘 수 없어
+    맹세가 겹쳐 쌓이는 일은 장착 단계에서 이미 막혀 있다.
+    """
+
+    override: dict[str, int] = {}
+    for code in equipped_book_codes(snapshot):
+        override.update(OATH_MATCHUP_BP.get(code, {}))
+    return override
+
+
+def all_hit_reduction(snapshot: Mapping[str, Any] | None) -> int:
+    """적이 전원을 노릴 때 이 캐릭터가 덜 받는 피해."""
+
+    return sum(
+        ALL_HIT_REDUCTION.get(code, 0) for code in equipped_book_codes(snapshot)
+    )
 
 
 def opening_modifiers(
@@ -264,7 +402,9 @@ def opening_modifiers(
     focus = 0
     max_focus = 0
     max_rounds = 0
+    unique2_power = 0
     locked_members: list[int] = []
+    guard_locked: list[int] = []
     carry_members: dict[str, int] = {}
     applied: list[str] = []
     for profile in profiles:
@@ -274,6 +414,13 @@ def opening_modifiers(
             # 시점에 정해진다. 라운드 정리는 전투 상태만 보므로 여기서 남긴다.
             if code in GUARD_CARRY:
                 carry_members[str(int(profile.get("id", 0)))] = GUARD_CARRY[code]
+            # 그 전투 내내 몸을 뺄 수 없는 반대급부. 라운드가 아니라 전투
+            # 단위라 여기서 한 번만 정해 둔다.
+            if code in GUARD_LOCKED_BOOKS:
+                guard_locked.append(int(profile.get("id", 0)))
+            if party := PARTY_OPENING_MODIFIERS.get(code):
+                applied.append(code)
+                unique2_power += int(party.get("unique2_power", 0))
             modifier = OPENING_MODIFIERS.get(code)
             if modifier is None:
                 continue
@@ -287,8 +434,12 @@ def opening_modifiers(
         "focus": focus,
         "max_focus": max_focus,
         "max_rounds": max_rounds,
+        # 파티 전원의 고유 II에 실리는 정액 보정.
+        "unique2_power": unique2_power,
         # 반대급부를 진 대원. 1라운드에 스킬을 고를 수 없다.
         "first_round_skill_locked": locked_members,
+        # 반대급부를 진 대원. 그 전투 내내 마음 지키기를 고를 수 없다.
+        "guard_locked": guard_locked,
         # 라운드가 넘어갈 때 방어를 이 만큼 남겨 둘 대원.
         "guard_carry": carry_members,
         "books": applied,

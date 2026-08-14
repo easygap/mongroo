@@ -46,3 +46,15 @@ server/output/
 server/.pytest-tmp/
 server/.pytest-tmp-*/
 design-system/concepts/wardrobe-v1/qa/
+
+# 장면 원화 생성 원본 PNG(장당 2.3MB). **재생성이 불가능하므로** 같은 폴더의
+# `*-master.webp`(화질 95, 원본 해상도)를 대신 추적한다. 오디오 마스터를 지우는
+# 것과 사정이 다르다 — 오디오는 스크립트가 같은 바이트로 되살리지만, 이미지는
+# 같은 프롬프트로도 같은 그림이 안 나온다.
+design-system/concepts/region-scene-art-v1/*.png
+
+# 로컬 개발 도구 설정 (기기별 절대 경로가 들어간다)
+.claude/
+
+# 지형 원화 생성 원본 PNG. 장면 원화와 같은 이유로 `*-master.webp`만 추적한다.
+design-system/concepts/region-terrain-art-v1/*.png

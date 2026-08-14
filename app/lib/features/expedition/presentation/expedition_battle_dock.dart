@@ -557,7 +557,11 @@ class _ExpeditionSequentialCommandDockState
 
   String? _lockReason(ExpeditionBattleMember member, String actionCode) {
     final action = _actionFor(member, actionCode);
-    if (!action.available) return 'Lv.${action.unlockLevel} 해금';
+    // 잠긴 이유는 레벨만이 아니다. 서버가 사유를 보냈으면 그것을 쓴다 —
+    // `넘길 다른 대원이 없어요`를 `Lv.9 해금`으로 바꿔 말하면 거짓말이 된다.
+    if (!action.available) {
+      return action.lockReason ?? 'Lv.${action.unlockLevel} 해금';
+    }
     if (actionCode == 'attack' || actionCode == 'guard') return null;
     if (action.cooldownRemaining > 0) {
       return '재사용 ${action.cooldownRemaining}';
@@ -642,7 +646,11 @@ class _ExpeditionSequentialCommandDockState
               const SizedBox(height: 4),
               Text(
                 action.mechanicSummary.isEmpty
-                    ? '무엇으로 바꿀지 골라 주세요.'
+                    ? switch (action.choiceKind) {
+                        'member' => '누가 대신 받을지 골라 주세요.',
+                        'book' => '어떤 기록서로 바꿀지 골라 주세요.',
+                        _ => '무엇으로 바꿀지 골라 주세요.',
+                      }
                     : action.mechanicSummary,
                 style: theme.textTheme.bodyMedium,
               ),
@@ -655,6 +663,11 @@ class _ExpeditionSequentialCommandDockState
                     // 지금과 같은 것은 고를 수 없다. 눌러 본 뒤 거절당하는 대신
                     // 왜 못 고르는지 자리에서 보여 준다.
                     isCurrent: option.value == action.choiceCurrent,
+                    currentLabel: switch (action.choiceKind) {
+                      'member' => '지금 노려짐',
+                      'book' => '지금 끼고 있음',
+                      _ => '지금 이 결',
+                    },
                     onTap: option.value == action.choiceCurrent
                         ? null
                         : () => Navigator.of(context).pop(option.value),
@@ -1354,11 +1367,15 @@ class _ChoiceOptionTile extends StatelessWidget {
   const _ChoiceOptionTile({
     required this.label,
     required this.isCurrent,
+    required this.currentLabel,
     required this.onTap,
   });
 
   final String label;
   final bool isCurrent;
+
+  /// `지금 이것`을 뭐라고 부를지. 성장결·대원·기록서가 각각 다르게 읽힌다.
+  final String currentLabel;
   final VoidCallback? onTap;
 
   @override
@@ -1392,7 +1409,7 @@ class _ChoiceOptionTile extends StatelessWidget {
                 ),
                 if (isCurrent)
                   Text(
-                    '지금 이 결',
+                    currentLabel,
                     style: theme.textTheme.labelMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),

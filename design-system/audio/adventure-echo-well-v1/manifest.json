@@ -26,7 +26,7 @@
       "sample_rate": 48000,
       "master_bit_depth": 24,
       "target_lufs": -20,
-      "master_sha256": "b3df979f2386ad8cfc964760fc399347aee44605ba3ee8f4a936482b770b1f02",
+      "master_sha256": "d349444fc5f1cea323b4a89f34f0d1dbf007245e9e530ae3c0813707dc168b61",
       "runtime_sha256": "7457d85f892634ddb110b3b73b7e1496d49bf29dca7f32dd10dc96828899871b"
     },
     {

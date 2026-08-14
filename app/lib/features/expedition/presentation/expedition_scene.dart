@@ -187,8 +187,124 @@ const _sceneThemes = <String, ExpeditionSceneTheme>{
   ),
 };
 
-ExpeditionSceneTheme expeditionSceneTheme(String sceneKey) =>
-    _sceneThemes[sceneKey] ?? _sceneThemes['dungeon_gate']!;
+/// 지역 전용 장면 원화가 **이미 있는** 것들.
+///
+/// `{지역}/{장면}` 조합만 적는다. 여기 없는 조합은 공용 원화로 떨어지므로,
+/// 새 원화가 들어오면 이 표에 한 줄 더하는 것으로 끝난다. 파일이 없는데 표에
+/// 적으면 그 장면만 검은 화면이 되므로 번들 테스트가 존재를 확인한다.
+/// 첫 지역의 지형 지도. 전용 지도가 없는 지역이 기대는 자리다.
+const mossArchiveMapAsset =
+    'assets/adventure/expedition-moss-archive-terrain-v3.webp';
+
+/// 지역 전용 지형 지도.
+///
+/// 걷는 내내 보는 화면이라 장면 배경보다 먼저 갈랐어야 했다. 네 지역이 기억서고
+/// 지형 하나를 공유하던 동안에는 색 보정으로 덮어 두었지만, 그 그림에는 보물상자
+/// 동굴·뿌리 둥지 같은 **기억서고의 물건**이 박혀 있어 색만으로는 다른 지역이
+/// 되지 않았다.
+///
+/// 여덟 랜드마크가 노드 좌표에 맞춰 그려져 있다. 지도를 새로 그리면 노드 자리도
+/// 함께 봐야 하고, 그 대조는 `expeditionRegionWalkAreas`가 맡는다.
+const expeditionRegionTerrain = <String, String>{
+  'echo_well': 'assets/adventure/expedition-echo-well-terrain-v1.webp',
+  'starlight_seed_vault':
+      'assets/adventure/expedition-starlight-seed-vault-terrain-v1.webp',
+  'heartwood_observatory':
+      'assets/adventure/expedition-heartwood-observatory-terrain-v1.webp',
+};
+
+/// 이 지역의 지형 지도. 전용이 없으면 첫 지역 것을 쓴다.
+String expeditionTerrainAsset(String? regionCode) =>
+    expeditionRegionTerrain[regionCode] ?? mossArchiveMapAsset;
+
+const expeditionRegionSceneAssets = <String, String>{
+  // 기억서고는 공용 원화가 곧 자기 원화다(먼저 만들어진 지역이라 그렇다).
+  //
+  // 아래 여덟은 재사용이 가장 거슬리던 자리다 — 수호자 소굴 셋(보스방은 가장
+  // 오래 보는 화면), 지역 입구 셋(새 지역 첫 화면), 그리고 두 지역의 상징 공간.
+  // 나머지 장면은 여전히 공용 원화 + 지역 색 보정으로 간다.
+  'echo_well/monster_den':
+      'assets/adventure/expedition-monster-den-echo-well-v1.webp',
+  'starlight_seed_vault/monster_den':
+      'assets/adventure/expedition-monster-den-starlight-seed-vault-v1.webp',
+  'heartwood_observatory/monster_den':
+      'assets/adventure/expedition-monster-den-heartwood-observatory-v1.webp',
+  'echo_well/dungeon_gate':
+      'assets/adventure/expedition-dungeon-gate-echo-well-v1.webp',
+  'starlight_seed_vault/dungeon_gate':
+      'assets/adventure/expedition-dungeon-gate-starlight-seed-vault-v1.webp',
+  'heartwood_observatory/dungeon_gate':
+      'assets/adventure/expedition-dungeon-gate-heartwood-observatory-v1.webp',
+  'starlight_seed_vault/treasure_vault':
+      'assets/adventure/expedition-treasure-vault-starlight-seed-vault-v1.webp',
+  'heartwood_observatory/moon_tower':
+      'assets/adventure/expedition-moon-tower-heartwood-observatory-v1.webp',
+  // v2 — 글과 그림이 다른 말을 하던 세 자리. `메아리 없는 방`이 이 프로젝트에서
+  // 가장 절제된 원화라 나머지 둘의 화풍 기준으로 썼다.
+  'echo_well/treasure_vault':
+      'assets/adventure/expedition-treasure-vault-echo-well-v1.webp',
+  'echo_well/echo_well':
+      'assets/adventure/expedition-echo-well-echo-well-v1.webp',
+  'starlight_seed_vault/root_tunnel':
+      'assets/adventure/expedition-root-tunnel-starlight-seed-vault-v1.webp',
+};
+
+/// 지역마다 다른 색 보정. 전용 원화가 오기 전까지 **같은 배경이 지역마다 다르게
+/// 읽히게** 하는 최소 장치다.
+///
+/// 원화를 대신하지는 못한다. 다만 우물정원의 침수 동굴과 보관고의 침수 동굴이
+/// 완전히 같은 그림으로 보이는 것보다는, 물빛과 성에빛으로 갈라 두는 편이 낫다.
+/// 전용 원화가 들어오면 이 보정은 옅어져도 된다.
+const expeditionRegionGrades = <String, Color>{
+  'moss_archive': Color(0x00000000),
+  // 물빛 — 푸르고 축축하게.
+  'echo_well': Color(0x2247A0C8),
+  // 성에빛 — 차고 마르게.
+  'starlight_seed_vault': Color(0x268FA6D4),
+  // 나무빛 — 따뜻하고 높게.
+  'heartwood_observatory': Color(0x24C08A4E),
+};
+
+/// 지역별 강조색. 같은 장면이라도 지역이 다르면 테두리와 표시선이 달라진다.
+const expeditionRegionAccents = <String, Color>{
+  'echo_well': Color(0xFF6FC3D9),
+  'starlight_seed_vault': Color(0xFFA9BCE4),
+  'heartwood_observatory': Color(0xFFD6A46A),
+};
+
+/// 이 지역에서 이 장면을 그릴 때 덮는 색.
+///
+/// **전용 원화가 있으면 덮지 않는다.** 보정은 공용 원화를 지역별로 갈라 주려고
+/// 있는 것이라, 이미 그 지역 색으로 그려진 그림에 또 얹으면 두 번 물든다.
+/// 모르는 지역도 덮지 않는다.
+Color expeditionRegionGrade(String? regionCode, {String? sceneKey}) {
+  if (regionCode == null) return const Color(0x00000000);
+  if (sceneKey != null &&
+      expeditionRegionSceneAssets.containsKey('$regionCode/$sceneKey')) {
+    return const Color(0x00000000);
+  }
+  return expeditionRegionGrades[regionCode] ?? const Color(0x00000000);
+}
+
+/// 장면 테마. 지역을 주면 전용 원화와 지역 강조색을 함께 반영한다.
+///
+/// 지역을 안 주면 지금까지와 똑같이 동작한다 — 준비 화면처럼 아직 지역이 정해지지
+/// 않은 자리가 있기 때문이다.
+ExpeditionSceneTheme expeditionSceneTheme(
+  String sceneKey, {
+  String? regionCode,
+}) {
+  final base = _sceneThemes[sceneKey] ?? _sceneThemes['dungeon_gate']!;
+  if (regionCode == null) return base;
+  final dedicated = expeditionRegionSceneAssets['$regionCode/$sceneKey'];
+  final accent = expeditionRegionAccents[regionCode];
+  if (dedicated == null && accent == null) return base;
+  return ExpeditionSceneTheme(
+    assetPath: dedicated ?? base.assetPath,
+    icon: base.icon,
+    accent: accent ?? base.accent,
+  );
+}
 
 const expeditionGuardianBattleScene = ExpeditionSceneTheme(
   assetPath: expeditionMonsterDenBattleAsset,
@@ -205,9 +321,18 @@ class ExpeditionSceneBackdrop extends StatefulWidget {
     this.borderRadius = const BorderRadius.all(Radius.circular(16)),
     this.preloadScenes = const [],
     this.preloadDelay = Duration.zero,
+    this.regionCode,
+    this.sceneKey,
   });
 
   final ExpeditionSceneTheme scene;
+
+  /// 어느 지역에서 보는 장면인지. 전용 원화가 없는 장면만 색 보정으로
+  /// 갈라 준다. 모르면 보정하지 않는다.
+  final String? regionCode;
+
+  /// 어떤 장면인지. 이 지역·이 장면의 전용 원화가 있으면 보정을 건너뛴다.
+  final String? sceneKey;
   final String semanticLabel;
   final Widget child;
   final BorderRadius borderRadius;
@@ -370,6 +495,23 @@ class _ExpeditionSceneBackdropState extends State<ExpeditionSceneBackdrop>
                   ),
                 ),
               ),
+              // 지역 색 보정. 원화 위, 가독성 그라디언트 아래에 둔다 — 글자
+              // 대비를 만드는 층을 건드리면 안 되기 때문이다.
+              if (expeditionRegionGrade(
+                widget.regionCode,
+                sceneKey: widget.sceneKey,
+              ).a >
+                  0)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ColoredBox(
+                      color: expeditionRegionGrade(
+                        widget.regionCode,
+                        sceneKey: widget.sceneKey,
+                      ),
+                    ),
+                  ),
+                ),
               Positioned.fill(
                 child: IgnorePointer(
                   child: DecoratedBox(

@@ -230,11 +230,14 @@ class _CurrentLocationScene extends ConsumerWidget {
             interaction.actionCue?.isGuardianExchange == true);
     final scene = guardianBattle
         ? expeditionGuardianBattleScene
-        : expeditionSceneTheme(node.sceneKey);
+        : expeditionSceneTheme(node.sceneKey, regionCode: expedition.region.code);
     final nextSnapshot = interaction.pendingExpedition ?? expedition;
     final preloadScenes = nextSnapshot.nodes
         .where((item) => nextSnapshot.availableMoveCodes.contains(item.code))
-        .map((item) => expeditionSceneTheme(item.sceneKey))
+        .map((item) => expeditionSceneTheme(
+          item.sceneKey,
+          regionCode: nextSnapshot.region.code,
+        ))
         .toList(growable: false);
     final explored = expedition.nodes
         .where((item) => item.status == 'visited' || item.status == 'resolved')
@@ -252,6 +255,8 @@ class _CurrentLocationScene extends ConsumerWidget {
               aspectRatio: constraints.maxWidth < 600 ? 4 / 3 : 16 / 9,
               child: ExpeditionSceneBackdrop(
                 scene: scene,
+                regionCode: expedition.region.code,
+                sceneKey: node.sceneKey,
                 preloadScenes: preloadScenes,
                 preloadDelay: interaction.actionCue == null
                     ? Duration.zero

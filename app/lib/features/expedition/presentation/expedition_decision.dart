@@ -164,7 +164,10 @@ class _TravelDecisionPanel extends ConsumerWidget {
     final current = expedition.nodes.firstWhere(
       (node) => node.code == expedition.run.currentNodeCode,
     );
-    final currentScene = expeditionSceneTheme(current.sceneKey);
+    final currentScene = expeditionSceneTheme(
+      current.sceneKey,
+      regionCode: expedition.region.code,
+    );
     final destinations = expedition.nodes
         .where((node) => expedition.availableMoveCodes.contains(node.code))
         .toList(growable: false);
@@ -204,6 +207,7 @@ class _TravelDecisionPanel extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 10),
                 child: _DestinationChoiceCard(
                   node: destination,
+                  regionCode: expedition.region.code,
                   busy: busy,
                   onTap: () async {
                     final moved = await ref
@@ -297,11 +301,16 @@ class _TravelDecisionPanel extends ConsumerWidget {
 class _DestinationChoiceCard extends StatefulWidget {
   const _DestinationChoiceCard({
     required this.node,
+    required this.regionCode,
     required this.busy,
     required this.onTap,
   });
 
   final ExpeditionNode node;
+
+  /// 이동 카드도 갈 곳의 전용 원화를 보여 준다. 도착해서야 그림이 바뀌면
+  /// 미리 보기가 거짓말이 된다. 한 run 안에서는 지역이 바뀌지 않는다.
+  final String regionCode;
   final bool busy;
   final VoidCallback onTap;
 
@@ -314,7 +323,10 @@ class _DestinationChoiceCardState extends State<_DestinationChoiceCard> {
 
   @override
   Widget build(BuildContext context) {
-    final scene = expeditionSceneTheme(widget.node.sceneKey);
+    final scene = expeditionSceneTheme(
+      widget.node.sceneKey,
+      regionCode: widget.regionCode,
+    );
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return Semantics(
       button: true,

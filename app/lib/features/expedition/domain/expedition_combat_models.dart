@@ -784,6 +784,7 @@ class ExpeditionBattleAction {
     this.choiceKind,
     this.choiceCurrent,
     this.choiceOptions = const [],
+    this.lockReason,
   });
 
   final String slot;
@@ -834,6 +835,10 @@ class ExpeditionBattleAction {
 
   /// 눌렀을 때 고르는 단계를 거쳐야 하는가.
   bool get needsChoice => choiceKind != null && choiceOptions.isNotEmpty;
+
+  /// 왜 못 누르는지에 대한 서버의 문장. 레벨 해금 말고도 이유가 여럿이라
+  /// (넘길 대원이 없다, 바꿔 낄 책이 없다) 앱이 추측하지 않고 그대로 쓴다.
+  final String? lockReason;
   final String? motionProfile;
   final String? vfxFamily;
   final String? kelFallbackFamily;
@@ -930,6 +935,7 @@ class ExpeditionBattleAction {
         cameraProfile: json['camera_profile'] as String? ?? 'steady',
         emotionVfxPrimary: json['emotion_vfx_primary'] as String?,
         emotionVfxSecondary: json['emotion_vfx_secondary'] as String?,
+        lockReason: json['lock_reason'] as String?,
         choiceKind: json['choice_kind'] as String?,
         choiceCurrent: json['choice_current'] as String?,
         choiceOptions: List.unmodifiable(

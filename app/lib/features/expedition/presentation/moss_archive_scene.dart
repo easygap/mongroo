@@ -5,129 +5,6 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import 'expedition_scene.dart';
 
-const mossArchiveMapAsset =
-    'assets/adventure/expedition-moss-archive-terrain-v3.webp';
-
-/// 통합 지형 원화에 실제로 그려진 길의 중심선이다.
-/// 캐릭터 이동과 발자국이 같은 좌표를 써서 수풀이나 건물을 가로지르지 않게 한다.
-const _mossArchiveRoutes = <String, List<Offset>>{
-  'entrance>wet_labels': [
-    Offset(.08, .50),
-    Offset(.14, .48),
-    Offset(.19, .42),
-    Offset(.24, .34),
-    Offset(.28, .27),
-  ],
-  'entrance>root_catalogue': [
-    Offset(.08, .50),
-    Offset(.14, .55),
-    Offset(.20, .63),
-    Offset(.29, .72),
-  ],
-  'wet_labels>quiet_camp': [
-    Offset(.28, .27),
-    Offset(.34, .32),
-    Offset(.41, .30),
-    Offset(.46, .23),
-    Offset(.49, .19),
-  ],
-  'root_catalogue>pressed_gallery': [
-    Offset(.29, .72),
-    Offset(.35, .73),
-    Offset(.42, .78),
-    Offset(.50, .81),
-  ],
-  'quiet_camp>ledger_keeper': [
-    Offset(.49, .19),
-    Offset(.54, .27),
-    Offset(.59, .34),
-    Offset(.64, .43),
-    Offset(.69, .50),
-  ],
-  'pressed_gallery>ledger_keeper': [
-    Offset(.50, .81),
-    Offset(.55, .73),
-    Offset(.59, .64),
-    Offset(.64, .56),
-    Offset(.69, .50),
-  ],
-  'ledger_keeper>memory_drawer': [
-    Offset(.69, .50),
-    Offset(.74, .46),
-    Offset(.79, .40),
-    Offset(.84, .34),
-  ],
-  'memory_drawer>exit': [
-    Offset(.84, .34),
-    Offset(.86, .42),
-    Offset(.89, .51),
-    Offset(.91, .60),
-    Offset(.93, .67),
-  ],
-  'wet_labels>pressed_gallery': [
-    Offset(.28, .27),
-    Offset(.35, .38),
-    Offset(.42, .49),
-    Offset(.47, .64),
-    Offset(.50, .81),
-  ],
-  'root_catalogue>quiet_camp': [
-    Offset(.29, .72),
-    Offset(.35, .62),
-    Offset(.42, .48),
-    Offset(.47, .33),
-    Offset(.49, .19),
-  ],
-  'quiet_camp>pressed_gallery': [
-    Offset(.49, .19),
-    Offset(.45, .34),
-    Offset(.44, .50),
-    Offset(.46, .66),
-    Offset(.50, .81),
-  ],
-};
-
-List<Offset> mossArchiveRouteBetween(
-  String from,
-  String to, {
-  required Offset fallbackFrom,
-  required Offset fallbackTo,
-}) {
-  final direct = _mossArchiveRoutes['$from>$to'];
-  if (direct != null) return direct;
-  final reverse = _mossArchiveRoutes['$to>$from'];
-  if (reverse != null) return reverse.reversed.toList(growable: false);
-  return [fallbackFrom, fallbackTo];
-}
-
-Offset mossArchiveRoutePosition(List<Offset> route, double progress) {
-  if (route.isEmpty) return Offset.zero;
-  if (route.length == 1) return route.first;
-  if (progress <= 0) return route.first;
-  if (progress >= 1) return route.last;
-  final lengths = <double>[];
-  var total = 0.0;
-  for (var index = 1; index < route.length; index++) {
-    final length = (route[index] - route[index - 1]).distance;
-    lengths.add(length);
-    total += length;
-  }
-  if (total == 0) return route.last;
-  var remaining = progress.clamp(0.0, 1.0) * total;
-  for (var index = 0; index < lengths.length; index++) {
-    if (remaining <= lengths[index]) {
-      return Offset.lerp(
-            route[index],
-            route[index + 1],
-            remaining / lengths[index],
-          ) ??
-          route[index + 1];
-    }
-    remaining -= lengths[index];
-  }
-  return route.last;
-}
-
 /// 실시간 3D 엔진 없이 배경·안개·광점을 분리해 깊이를 만드는 탐험 무대다.
 /// 지형과 상호작용 좌표가 어긋나지 않도록 배경 자체에는 이동 변환을 주지 않는다.
 class MossArchiveScene extends StatefulWidget {
@@ -137,12 +14,20 @@ class MossArchiveScene extends StatefulWidget {
     this.semanticLabel = '이끼와 오래된 서가가 이어진 기억서고 탐험길',
     this.borderRadius = const BorderRadius.all(Radius.circular(16)),
     this.fit = BoxFit.cover,
+    this.regionCode,
   });
 
   final Widget child;
   final String semanticLabel;
   final BorderRadius borderRadius;
   final BoxFit fit;
+
+  /// 어느 지역의 지형인지.
+  ///
+  /// 지형 원화는 아직 기억서고 것 하나뿐이라 **네 지역이 같은 그림을 쓴다.**
+  /// 지역 전용 지형이 들어오기 전까지는 장면 배경과 같은 방식으로 색을 갈라
+  /// 둔다 — 우물정원과 보관고 지도가 완전히 같은 그림으로 보이는 것보다는 낫다.
+  final String? regionCode;
 
   @override
   State<MossArchiveScene> createState() => _MossArchiveSceneState();
@@ -166,11 +51,14 @@ class _MossArchiveSceneState extends State<MossArchiveScene>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final cacheWidth = expeditionSceneDecodeWidth(context);
-    final signature = '$mossArchiveMapAsset@$cacheWidth';
+    final signature = '$expeditionTerrainAsset(widget.regionCode)@$cacheWidth';
     if (_precacheSignature != signature) {
       _precacheSignature = signature;
       precacheImage(
-        expeditionSceneImageProvider(context, mossArchiveMapAsset),
+        expeditionSceneImageProvider(
+          context,
+          expeditionTerrainAsset(widget.regionCode),
+        ),
         context,
       ).ignore();
     }
@@ -206,7 +94,7 @@ class _MossArchiveSceneState extends State<MossArchiveScene>
                 child: Image(
                   image: expeditionSceneImageProvider(
                     context,
-                    mossArchiveMapAsset,
+                    expeditionTerrainAsset(widget.regionCode),
                   ),
                   fit: widget.fit,
                   alignment: Alignment.center,
@@ -248,6 +136,16 @@ class _MossArchiveSceneState extends State<MossArchiveScene>
                   ),
                 ),
               ),
+              // 지역 색 보정. 지형 그림 위, 노드·토큰 아래다 — 노드와 캐릭터가
+              // 함께 물들면 지도에서 읽기 어려워진다.
+              if (expeditionRegionGrade(widget.regionCode).a > 0)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ColoredBox(
+                      color: expeditionRegionGrade(widget.regionCode),
+                    ),
+                  ),
+                ),
               widget.child,
               Positioned.fill(
                 child: IgnorePointer(

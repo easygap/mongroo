@@ -1,0 +1,717 @@
+{
+  "schema_version": 1,
+  "content_version": "expedition-content-v2",
+  "region": {
+    "code": "starlight_seed_vault",
+    "name": "별빛 씨앗 보관고",
+    "short_name": "보관고",
+    "description": "언젠가를 위해 모든 씨앗을 재워 둔 곳이에요. 기다리는 것과 미루는 것이 어떻게 다른지 묻게 돼요.",
+    "recommended_stage": 4,
+    "stat_cap": 9,
+    "reward": {
+      "exp": 8,
+      "seeds": 3,
+      "item_code": "vault_key"
+    }
+  },
+  "stages": [
+    {
+      "no": 1,
+      "kind": "battle",
+      "estimated_seconds": 75,
+      "story": {
+        "code": "vault_someday_shelves",
+        "chapter": 1,
+        "phase": "setup",
+        "title": "언젠가라는 이름표",
+        "caption": "모든 칸이 `언젠가`라고만 적혀 있어요. 그게 며칠인지는 아무 데도 없어요.",
+        "scene_key": "dungeon_gate",
+        "codex_entry": "보관고.chapter.1"
+      },
+      "title": "문턱의 별가루",
+      "summary": "쓸리지 않은 별가루가 성에와 엉겨 문턱을 덮고 있어요.",
+      "tangles": [
+        "snarled_stardust"
+      ],
+      "weakness": "insight"
+    },
+    {
+      "no": 2,
+      "kind": "event",
+      "estimated_seconds": 45,
+      "story": {
+        "code": "vault_one_awake",
+        "chapter": 2,
+        "phase": "setup",
+        "title": "혼자 깨어 있던 씨앗",
+        "caption": "다 자는 칸에서 하나만 깨어 있었어요. 기다리는 것과 미루는 것은 다른 일이었어요.",
+        "scene_key": "treasure_vault",
+        "codex_entry": "보관고.chapter.2"
+      },
+      "title": "잠들지 못한 씨앗",
+      "summary": "혼자 깨어 있는 씨앗을 어떻게 대할지 골라요.",
+      "event_code": "awake_seed"
+    },
+    {
+      "no": 3,
+      "kind": "battle",
+      "estimated_seconds": 75,
+      "story": {
+        "code": "vault_dust_of_stars",
+        "chapter": 3,
+        "phase": "rising",
+        "title": "쓸리지 않은 별가루",
+        "caption": "선반 사이에 별가루가 쌓여 있어요. 아무도 지나가지 않은 시간만큼 두꺼워요.",
+        "scene_key": "treasure_vault",
+        "codex_entry": "보관고.chapter.3"
+      },
+      "title": "구르는 씨앗함",
+      "summary": "별가루에 밀린 씨앗함들이 선반 사이를 제멋대로 굴러다녀요.",
+      "tangles": [
+        "snarled_stardust",
+        "rolling_seedbox"
+      ],
+      "weakness": "insight"
+    },
+    {
+      "no": 4,
+      "kind": "battle",
+      "estimated_seconds": 75,
+      "story": {
+        "code": "vault_time_rewinds",
+        "chapter": 4,
+        "phase": "turn",
+        "title": "되감기는 방",
+        "caption": "시계가 거꾸로 돌 때마다 방이 조금씩 더 차가워져요. 시간이 아니라 마음이 되감기고 있었어요.",
+        "scene_key": "root_tunnel",
+        "codex_entry": "보관고.chapter.4"
+      },
+      "title": "거꾸로 선 태엽",
+      "summary": "되감긴 태엽 하나가 곧게 서서 통로를 가로막아요.",
+      "tangles": [
+        "backwound_clockspring"
+      ],
+      "weakness": "focus"
+    },
+    {
+      "no": 5,
+      "kind": "camp",
+      "estimated_seconds": 30,
+      "story": {
+        "code": "vault_warm_shelf",
+        "chapter": 5,
+        "phase": "rising",
+        "title": "남은 온기",
+        "caption": "누군가 오래 앉았던 자리가 아직 따뜻해요. 여기 있었던 사람도 시작을 망설였던 것 같아요.",
+        "scene_key": "root_tunnel",
+        "codex_entry": "보관고.chapter.5"
+      },
+      "title": "온기 남은 선반",
+      "summary": "숨을 고르고 오늘 본 것을 이야기해요."
+    },
+    {
+      "no": 6,
+      "kind": "event",
+      "estimated_seconds": 45,
+      "story": {
+        "code": "vault_who_locked_it",
+        "chapter": 6,
+        "phase": "truth",
+        "title": "잠근 사람",
+        "caption": "칸을 잠근 것은 바깥의 누군가가 아니라 이 보관고 자신이었어요. 깨우면 잃을까 봐요.",
+        "scene_key": "root_tunnel",
+        "codex_entry": "보관고.chapter.6"
+      },
+      "title": "거꾸로 도는 태엽",
+      "summary": "되감기는 시계를 어떻게 다룰지 골라요.",
+      "event_code": "backward_spring"
+    },
+    {
+      "no": 7,
+      "kind": "battle",
+      "estimated_seconds": 75,
+      "story": {
+        "code": "vault_wind_it_forward",
+        "chapter": 7,
+        "phase": "climax",
+        "title": "앞으로 감는 법",
+        "caption": "태엽은 멈추는 게 아니라 앞으로 감는 것이었어요. 방이 조금 따뜻해져요.",
+        "scene_key": "treasure_vault",
+        "codex_entry": "보관고.chapter.7"
+      },
+      "title": "발아실 앞",
+      "summary": "씨앗함과 태엽이 마지막 문 앞에 뒤엉켜 쌓였어요.",
+      "tangles": [
+        "rolling_seedbox",
+        "backwound_clockspring"
+      ],
+      "weakness": "care"
+    },
+    {
+      "no": 8,
+      "kind": "boss",
+      "estimated_seconds": 150,
+      "story": {
+        "code": "vault_today_written",
+        "chapter": 8,
+        "phase": "resolution",
+        "title": "오늘이라고 적힌 칸",
+        "caption": "첫 싹이 오른 칸에 `오늘`이 적혀요. 다음 편지는 마음나무 관측실로 향해요.",
+        "scene_key": "monster_den",
+        "codex_entry": "보관고.chapter.8"
+      },
+      "title": "발아 시계",
+      "summary": "방 한가운데의 큰 시계가 태엽을 감기 시작해요. 다 감기기 전에 멈출 자리를 찾아야 해요.",
+      "event_code": "germination_clock",
+      "weakness": "courage"
+    }
+  ],
+  "map": {
+    "code": "starlight_seed_vault_main",
+    "name": "보관고 선반길",
+    "entrance": "entrance",
+    "nodes": [
+      {
+        "code": "entrance",
+        "name": "성에 낀 문",
+        "type": "entrance",
+        "x": 0.08,
+        "y": 0.5,
+        "cost": 0,
+        "scene_key": "dungeon_gate",
+        "scene_label": "성에 낀 문",
+        "scene_description": "문고리에 성에가 앉았어요. 안쪽 공기는 숨을 오래 참은 것처럼 말라 있어요.",
+        "depth_label": "지하 1층 · 성에문",
+        "threat_level": 1
+      },
+      {
+        "code": "first_event",
+        "name": "잠들지 못한 씨앗",
+        "type": "event",
+        "x": 0.27,
+        "y": 0.3,
+        "cost": 1,
+        "scene_key": "treasure_vault",
+        "scene_label": "잠들지 못한 씨앗",
+        "scene_description": "한 칸만 성에가 녹아 있어요. 그 안의 씨앗이 혼자 깨어 있었어요.",
+        "depth_label": "지하 2층 · 깨어난 칸",
+        "threat_level": 1,
+        "event_code": "awake_seed"
+      },
+      {
+        "code": "second_event",
+        "name": "거꾸로 도는 태엽",
+        "type": "event",
+        "x": 0.27,
+        "y": 0.7,
+        "cost": 1,
+        "scene_key": "root_tunnel",
+        "scene_label": "거꾸로 도는 태엽",
+        "scene_description": "벽시계가 거꾸로 돌아요. 보관고의 시간이 되감기고 있어요.",
+        "depth_label": "지하 2층 · 태엽실",
+        "threat_level": 1,
+        "event_code": "backward_spring"
+      },
+      {
+        "code": "camp",
+        "name": "온기 남은 선반",
+        "type": "camp",
+        "x": 0.48,
+        "y": 0.5,
+        "cost": 1,
+        "scene_key": "root_tunnel",
+        "scene_label": "온기 남은 선반",
+        "scene_description": "누군가 오래 앉았던 자리에 아직 온기가 남아 있어요.",
+        "depth_label": "지하 3층 · 온기 선반",
+        "threat_level": 1
+      },
+      {
+        "code": "nameless_slot",
+        "name": "이름표 없는 칸",
+        "type": "discovery",
+        "x": 0.5,
+        "y": 0.2,
+        "cost": 1,
+        "scene_key": "treasure_vault",
+        "scene_label": "이름표 없는 칸",
+        "scene_description": "비어 있는 칸 하나에 이름표만 없어요. 무엇을 재워 뒀는지 아무도 안 적었어요.",
+        "depth_label": "지하 3층 · 빈 칸",
+        "threat_level": 2
+      },
+      {
+        "code": "guardian",
+        "name": "발아실",
+        "type": "guardian",
+        "x": 0.69,
+        "y": 0.5,
+        "cost": 1,
+        "scene_key": "monster_den",
+        "scene_label": "발아실",
+        "scene_description": "가장 안쪽 방의 공기만 따뜻해요. 시계 소리가 여기서 나요.",
+        "depth_label": "지하 4층 · 발아실",
+        "threat_level": 3,
+        "event_code": "germination_clock"
+      },
+      {
+        "code": "objective",
+        "name": "첫 싹의 칸",
+        "type": "objective",
+        "x": 0.86,
+        "y": 0.32,
+        "cost": 1,
+        "scene_key": "treasure_vault",
+        "scene_label": "첫 싹의 칸",
+        "scene_description": "성에가 녹은 자리에서 아주 작은 싹이 하나 올라와 있어요.",
+        "depth_label": "지하 5층 · 첫 싹",
+        "threat_level": 2
+      },
+      {
+        "code": "exit",
+        "name": "녹기 시작한 문",
+        "type": "exit",
+        "x": 0.94,
+        "y": 0.62,
+        "cost": 0,
+        "scene_key": "dungeon_gate",
+        "scene_label": "녹기 시작한 문",
+        "scene_description": "돌아 나오는 길의 성에가 물방울이 되어 떨어져요.",
+        "depth_label": "지상 · 녹는 문",
+        "threat_level": 1
+      }
+    ],
+    "edges": [
+      [
+        "entrance",
+        "first_event"
+      ],
+      [
+        "entrance",
+        "second_event"
+      ],
+      [
+        "first_event",
+        "camp"
+      ],
+      [
+        "second_event",
+        "camp"
+      ],
+      [
+        "camp",
+        "nameless_slot"
+      ],
+      [
+        "camp",
+        "guardian"
+      ],
+      [
+        "guardian",
+        "objective"
+      ],
+      [
+        "objective",
+        "exit"
+      ]
+    ],
+    "initial_revealed": [
+      "entrance",
+      "first_event",
+      "second_event"
+    ]
+  },
+  "map_templates": [
+    {
+      "code": "starlight_seed_vault_crossroads_b",
+      "name": "보관고 갈래길",
+      "edges": [
+        [
+          "entrance",
+          "first_event"
+        ],
+        [
+          "entrance",
+          "second_event"
+        ],
+        [
+          "first_event",
+          "camp"
+        ],
+        [
+          "first_event",
+          "nameless_slot"
+        ],
+        [
+          "second_event",
+          "camp"
+        ],
+        [
+          "second_event",
+          "nameless_slot"
+        ],
+        [
+          "camp",
+          "guardian"
+        ],
+        [
+          "nameless_slot",
+          "guardian"
+        ],
+        [
+          "guardian",
+          "objective"
+        ],
+        [
+          "objective",
+          "exit"
+        ]
+      ],
+      "coordinate_overrides": {
+        "discovery": {
+          "x": 0.5,
+          "y": 0.78
+        }
+      }
+    },
+    {
+      "code": "starlight_seed_vault_ring_c",
+      "name": "보관고 고리길",
+      "edges": [
+        [
+          "entrance",
+          "first_event"
+        ],
+        [
+          "entrance",
+          "second_event"
+        ],
+        [
+          "first_event",
+          "second_event"
+        ],
+        [
+          "first_event",
+          "nameless_slot"
+        ],
+        [
+          "second_event",
+          "camp"
+        ],
+        [
+          "camp",
+          "nameless_slot"
+        ],
+        [
+          "nameless_slot",
+          "guardian"
+        ],
+        [
+          "camp",
+          "guardian"
+        ],
+        [
+          "guardian",
+          "objective"
+        ],
+        [
+          "objective",
+          "exit"
+        ]
+      ],
+      "coordinate_overrides": {
+        "camp": {
+          "x": 0.44,
+          "y": 0.66
+        }
+      }
+    }
+  ],
+  "events": {
+    "awake_seed": {
+      "title": "잠들지 못한 씨앗",
+      "text": "혼자 깨어 있는 씨앗이 아주 작게 떨고 있어요. 어떻게 할까요?",
+      "tags": [
+        "puzzle",
+        "mystery"
+      ],
+      "choices": [
+        {
+          "code": "let_it_wake",
+          "label": "깨어 있기로 한 선택을 존중한다",
+          "stat": "courage",
+          "difficulty": 8,
+          "resolve_cost": 1
+        },
+        {
+          "code": "warm_gently",
+          "label": "손으로 감싸 온도를 맞춰 준다",
+          "stat": "care",
+          "difficulty": 8,
+          "resolve_cost": 1
+        },
+        {
+          "code": "close_again",
+          "label": "칸을 다시 닫고 지나간다",
+          "stat": null,
+          "difficulty": 0,
+          "resolve_cost": 0,
+          "safe": true
+        }
+      ]
+    },
+    "backward_spring": {
+      "title": "거꾸로 도는 태엽",
+      "text": "벽시계가 되감기고 있어요. 이 방의 시간을 어떻게 다룰까요?",
+      "tags": [
+        "puzzle",
+        "mystery"
+      ],
+      "choices": [
+        {
+          "code": "count_teeth",
+          "label": "톱니 수를 세어 되감긴 만큼을 잰다",
+          "stat": "focus",
+          "difficulty": 8,
+          "resolve_cost": 1
+        },
+        {
+          "code": "hold_the_hand",
+          "label": "바늘을 붙잡아 지금에 멈춰 둔다",
+          "stat": "courage",
+          "difficulty": 8,
+          "resolve_cost": 1
+        },
+        {
+          "code": "let_it_turn",
+          "label": "건드리지 않고 지나간다",
+          "stat": null,
+          "difficulty": 0,
+          "resolve_cost": 0,
+          "safe": true
+        }
+      ]
+    },
+    "germination_clock": {
+      "title": "발아 시계",
+      "text": "방 한가운데의 큰 시계가 태엽을 감기 시작해요. 다 감기기 전에 멈출 자리를 찾아야 해요.",
+      "tags": [
+        "guardian",
+        "social"
+      ],
+      "encounter": {
+        "kind": "guardian",
+        "enemy_name": "발아 시계",
+        "enemy_max_guard": 100,
+        "attack_name": "되감는 태엽",
+        "telegraph": "태엽이 반대로 돌면 시간이 되감겨요.",
+        "damage_target": "탐험대",
+        "max_rounds": 8,
+        "starting_focus": 3,
+        "max_focus": 5,
+        "difficulty_code": "stage_8",
+        "weak_element": "nature",
+        "resist_element": "gravity",
+        "weakness_cycle": [
+          "courage",
+          "focus",
+          "insight",
+          "care"
+        ],
+        "boss_phases": [
+          {
+            "code": "winding",
+            "name": "태엽 감기",
+            "threshold_bp": 10000,
+            "weak_element": "nature",
+            "resist_element": "gravity",
+            "weakness_cycle": [
+              "courage",
+              "focus",
+              "insight",
+              "care"
+            ],
+            "intent_power_bonus": 0,
+            "focus_reward": 0,
+            "tone": "sparkling",
+            "rule_name": "태엽 감기",
+            "rule_summary": "감긴 만큼 다음 전체 공격의 위력이 올라가요.",
+            "phase_gate": "resolve_intent",
+            "intro_caption": "태엽이 한 칸씩 되감기기 시작했어요.",
+            "intents": [
+              {
+                "code": "mainspring_lash",
+                "name": "튕기는 태엽",
+                "telegraph": "태엽 하나가 팽팽해요. 맨 앞 대원을 노려요.",
+                "target": "front",
+                "power": 3,
+                "contact_material": "stone",
+                "mechanic_code": "reverse_winding",
+                "mechanic_unlock": 1
+              },
+              {
+                "code": "escapement_grind",
+                "name": "톱니 갈림",
+                "telegraph": "톱니가 서로 갈리며 방 전체가 흔들려요.",
+                "target": "all",
+                "power": 1,
+                "contact_material": "stone",
+                "mechanic_code": "repairing_index",
+                "mechanic_unlock": 2
+              }
+            ]
+          },
+          {
+            "code": "frost_hold",
+            "name": "성에 붙듦",
+            "threshold_bp": 6600,
+            "weak_element": "nature",
+            "resist_element": "gravity",
+            "weakness_cycle": [
+              "courage",
+              "focus",
+              "insight",
+              "care"
+            ],
+            "intent_power_bonus": 0,
+            "focus_reward": 1,
+            "tone": "moonlit",
+            "rule_name": "성에 붙듦",
+            "rule_summary": "약점을 맞히지 못한 라운드에는 수호 장벽이 2 회복돼요.",
+            "phase_gate": "resolve_intent",
+            "intro_caption": "톱니 사이에 성에가 하얗게 앉았어요.",
+            "intents": [
+              {
+                "code": "escapement_grind",
+                "name": "톱니 갈림",
+                "telegraph": "톱니가 서로 갈리며 방 전체가 흔들려요.",
+                "target": "all",
+                "power": 1,
+                "contact_material": "stone",
+                "mechanic_code": "repairing_index",
+                "mechanic_unlock": 2
+              },
+              {
+                "code": "frost_bite",
+                "name": "성에 물기",
+                "telegraph": "성에가 발끝을 물어요. 가장 지친 대원을 노려요.",
+                "target": "lowest",
+                "power": 2,
+                "contact_material": "water",
+                "mechanic_code": "expose",
+                "mechanic_unlock": 3
+              }
+            ]
+          },
+          {
+            "code": "first_sprout",
+            "name": "첫 싹 틔우기",
+            "threshold_bp": 3300,
+            "weak_element": "nature",
+            "resist_element": "gravity",
+            "weakness_cycle": [
+              "courage",
+              "focus",
+              "insight",
+              "care"
+            ],
+            "intent_power_bonus": 1,
+            "focus_reward": 1,
+            "tone": "sunny",
+            "rule_name": "첫 싹 틔우기",
+            "rule_summary": "장벽이 얇아질수록 예고가 짧아져요.",
+            "phase_gate": "resolve_intent",
+            "intro_caption": "태엽이 처음으로 앞으로 한 칸 움직였어요.",
+            "intents": [
+              {
+                "code": "frost_bite",
+                "name": "성에 물기",
+                "telegraph": "성에가 발끝을 물어요. 가장 지친 대원을 노려요.",
+                "target": "lowest",
+                "power": 2,
+                "contact_material": "water",
+                "mechanic_code": "expose",
+                "mechanic_unlock": 3
+              },
+              {
+                "code": "mainspring_lash",
+                "name": "튕기는 태엽",
+                "telegraph": "태엽 하나가 팽팽해요. 맨 앞 대원을 노려요.",
+                "target": "front",
+                "power": 3,
+                "contact_material": "stone",
+                "mechanic_code": "reverse_winding",
+                "mechanic_unlock": 1
+              }
+            ]
+          }
+        ],
+        "intents": [
+          {
+            "code": "mainspring_lash",
+            "name": "튕기는 태엽",
+            "telegraph": "태엽 하나가 팽팽해요. 맨 앞 대원을 노려요.",
+            "target": "front",
+            "power": 3
+          },
+          {
+            "code": "escapement_grind",
+            "name": "톱니 갈림",
+            "telegraph": "톱니가 서로 갈리며 방 전체가 흔들려요.",
+            "target": "all",
+            "power": 1
+          },
+          {
+            "code": "frost_bite",
+            "name": "성에 물기",
+            "telegraph": "성에가 발끝을 물어요. 가장 지친 대원을 노려요.",
+            "target": "lowest",
+            "power": 2
+          }
+        ]
+      },
+      "choices": [
+        {
+          "code": "find_the_stop",
+          "label": "톱니 사이의 멈출 자리를 찾아낸다",
+          "stat": "insight",
+          "difficulty": 10,
+          "resolve_cost": 1,
+          "effect_key": "insight_arc",
+          "guard_damage": 68
+        },
+        {
+          "code": "warm_the_frost",
+          "label": "손으로 성에를 녹여 톱니를 풀어 준다",
+          "stat": "care",
+          "difficulty": 10,
+          "resolve_cost": 1,
+          "effect_key": "care_vines",
+          "guard_damage": 68
+        },
+        {
+          "code": "step_back",
+          "label": "안전한 자리까지 물러난다",
+          "stat": null,
+          "difficulty": 0,
+          "resolve_cost": 0,
+          "safe": true,
+          "effect_key": "safe_guard",
+          "guard_damage": 0
+        }
+      ]
+    }
+  },
+  "discoveries": {
+    "nameless_slot": {
+      "title": "이름표 없는 칸",
+      "text": "비어 있는 칸 하나에만 이름표가 없어요. 탐험대는 대신 오늘 날짜를 적어 두기로 해요."
+    }
+  },
+  "run_threads": [
+    {
+      "code": "vault_someday",
+      "seed": "모든 칸에 `언젠가`라고만 적혀 있어요. 그 언젠가가 며칠인지는 아무 데도 없어요.",
+      "echo": "깨어 있는 씨앗과 되감기는 시계가 같은 말을 해요. 여기서는 시작이 계속 미뤄져요.",
+      "payoff": "첫 싹이 올라온 칸에는 `오늘`이라고 적혀 있어요. 언젠가가 날짜를 가졌어요."
+    }
+  ]
+}

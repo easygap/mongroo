@@ -1,0 +1,717 @@
+{
+  "schema_version": 1,
+  "content_version": "expedition-content-v2",
+  "region": {
+    "code": "heartwood_observatory",
+    "name": "마음나무 관측실",
+    "short_name": "관측실",
+    "description": "마음나무의 나이테를 오래 지켜본 곳이에요. 기록은 가득한데 읽어 줄 사람이 없어, 마지막 답장이 어디로 가야 할지 알게 돼요.",
+    "recommended_stage": 5,
+    "stat_cap": 10,
+    "reward": {
+      "exp": 9,
+      "seeds": 3,
+      "item_code": "heartwood_key"
+    }
+  },
+  "stages": [
+    {
+      "no": 1,
+      "kind": "battle",
+      "estimated_seconds": 75,
+      "story": {
+        "code": "heartwood_unopened",
+        "chapter": 1,
+        "phase": "setup",
+        "title": "펼친 자국 없는 벽",
+        "caption": "기록이 벽을 가득 채웠는데 펼쳐 본 자국이 없어요. 남기기만 하고 아무도 읽지 않았어요.",
+        "scene_key": "dungeon_gate",
+        "codex_entry": "관측실.chapter.1"
+      },
+      "title": "계단의 나이테 조각",
+      "summary": "떨어져 나온 나이테 조각들이 나선 계단에 얽혀 있어요.",
+      "tangles": [
+        "ring_shard_tangle"
+      ],
+      "weakness": "courage"
+    },
+    {
+      "no": 2,
+      "kind": "event",
+      "estimated_seconds": 45,
+      "story": {
+        "code": "heartwood_mixed_years",
+        "chapter": 2,
+        "phase": "setup",
+        "title": "섞여 버린 해",
+        "caption": "낱장이 순서를 잃었어요. 순서가 없으면 기록은 이야기가 되지 못해요.",
+        "scene_key": "moon_tower",
+        "codex_entry": "관측실.chapter.2"
+      },
+      "title": "겹친 낱장",
+      "summary": "섞인 관측 기록을 어떻게 되돌릴지 골라요.",
+      "event_code": "scattered_pages"
+    },
+    {
+      "no": 3,
+      "kind": "battle",
+      "estimated_seconds": 75,
+      "story": {
+        "code": "heartwood_one_off_year",
+        "chapter": 3,
+        "phase": "rising",
+        "title": "방향이 다른 한 해",
+        "caption": "그해의 나이테만 반대로 감겨 있어요. 무언가를 견디던 해였어요.",
+        "scene_key": "moon_tower",
+        "codex_entry": "관측실.chapter.3"
+      },
+      "title": "흩어진 낱장",
+      "summary": "나이테 조각 사이로 관측 기록 낱장이 순서 없이 날려요.",
+      "tangles": [
+        "ring_shard_tangle",
+        "scattered_records"
+      ],
+      "weakness": "courage"
+    },
+    {
+      "no": 4,
+      "kind": "battle",
+      "estimated_seconds": 75,
+      "story": {
+        "code": "heartwood_far_light",
+        "chapter": 4,
+        "phase": "turn",
+        "title": "창밖의 작은 불빛",
+        "caption": "창턱에서 보면 온실 불빛이 아주 작게 켜져 있어요. 아직 누가 기다리고 있어요.",
+        "scene_key": "root_tunnel",
+        "codex_entry": "관측실.chapter.4"
+      },
+      "title": "헝클어진 관측기",
+      "summary": "렌즈와 실이 서로 감겨 관측기가 통째로 헝클어졌어요.",
+      "tangles": [
+        "matted_observatory"
+      ],
+      "weakness": "insight"
+    },
+    {
+      "no": 5,
+      "kind": "camp",
+      "estimated_seconds": 30,
+      "story": {
+        "code": "heartwood_someone_sat",
+        "chapter": 5,
+        "phase": "rising",
+        "title": "오래 앉았던 자리",
+        "caption": "창가 자리만 반들반들해요. 여기서 오래 바깥을 본 사람이 있었어요.",
+        "scene_key": "moon_tower",
+        "codex_entry": "관측실.chapter.5"
+      },
+      "title": "창가 쉼터",
+      "summary": "숨을 고르고 오늘 본 것을 이야기해요."
+    },
+    {
+      "no": 6,
+      "kind": "event",
+      "estimated_seconds": 45,
+      "story": {
+        "code": "heartwood_cut_sentence",
+        "chapter": 6,
+        "phase": "truth",
+        "title": "끊긴 마지막 문장",
+        "caption": "일지의 마지막 문장이 중간에서 멈춰요. 답을 기다리다 멈춘 문장이에요.",
+        "scene_key": "root_tunnel",
+        "codex_entry": "관측실.chapter.6"
+      },
+      "title": "어긋난 나이테",
+      "summary": "방향이 다른 한 해를 어떻게 읽을지 골라요.",
+      "event_code": "crooked_ring"
+    },
+    {
+      "no": 7,
+      "kind": "battle",
+      "estimated_seconds": 75,
+      "story": {
+        "code": "heartwood_read_aloud",
+        "chapter": 7,
+        "phase": "climax",
+        "title": "소리 내어 읽기",
+        "caption": "기록은 남기는 것으로 끝나지 않아요. 읽어 주는 사람이 있어야 이야기가 돼요.",
+        "scene_key": "moon_tower",
+        "codex_entry": "관측실.chapter.7"
+      },
+      "title": "관측대 아래",
+      "summary": "낱장과 관측기가 마지막 층계에 함께 뭉쳐 길을 막아요.",
+      "tangles": [
+        "scattered_records",
+        "matted_observatory"
+      ],
+      "weakness": "insight"
+    },
+    {
+      "no": 8,
+      "kind": "boss",
+      "estimated_seconds": 150,
+      "story": {
+        "code": "heartwood_way_home",
+        "chapter": 8,
+        "phase": "resolution",
+        "title": "돌아가는 길",
+        "caption": "창밖 온실이 또렷해져요. 마지막 답장은 처음 떠나온 곳으로 돌아가요.",
+        "scene_key": "monster_den",
+        "codex_entry": "관측실.chapter.8"
+      },
+      "title": "나이테 관측자",
+      "summary": "관측자가 눈을 떠요. 오래 본 사람만 아는 방식으로 길을 막고 있어요.",
+      "event_code": "ring_watcher",
+      "weakness": "care"
+    }
+  ],
+  "map": {
+    "code": "heartwood_observatory_main",
+    "name": "관측실 나선길",
+    "entrance": "entrance",
+    "nodes": [
+      {
+        "code": "entrance",
+        "name": "나선 계단 아래",
+        "type": "entrance",
+        "x": 0.08,
+        "y": 0.5,
+        "cost": 0,
+        "scene_key": "dungeon_gate",
+        "scene_label": "나선 계단 아래",
+        "scene_description": "위로 감기는 계단이 나무 속을 지나 올라가요. 밟을 때마다 나이테가 한 겹씩 지나가요.",
+        "depth_label": "지상 1층 · 나선 아래",
+        "threat_level": 1
+      },
+      {
+        "code": "first_event",
+        "name": "겹친 낱장",
+        "type": "event",
+        "x": 0.27,
+        "y": 0.3,
+        "cost": 1,
+        "scene_key": "moon_tower",
+        "scene_label": "겹친 낱장",
+        "scene_description": "떨어진 관측 기록이 순서 없이 겹쳐 있어요. 어느 해의 것인지 섞여 버렸어요.",
+        "depth_label": "2층 · 기록실",
+        "threat_level": 1,
+        "event_code": "scattered_pages"
+      },
+      {
+        "code": "second_event",
+        "name": "어긋난 나이테",
+        "type": "event",
+        "x": 0.27,
+        "y": 0.7,
+        "cost": 1,
+        "scene_key": "root_tunnel",
+        "scene_label": "어긋난 나이테",
+        "scene_description": "한 해의 나이테만 방향이 달라요. 그해에 무슨 일이 있었어요.",
+        "depth_label": "3층 · 나이테 벽",
+        "threat_level": 1,
+        "event_code": "crooked_ring"
+      },
+      {
+        "code": "camp",
+        "name": "창가 쉼터",
+        "type": "camp",
+        "x": 0.48,
+        "y": 0.5,
+        "cost": 1,
+        "scene_key": "moon_tower",
+        "scene_label": "창가 쉼터",
+        "scene_description": "창턱에 앉으면 온실 쪽 불빛이 아주 작게 보여요.",
+        "depth_label": "4층 · 창가",
+        "threat_level": 1
+      },
+      {
+        "code": "last_logbook",
+        "name": "마지막 관측 일지",
+        "type": "discovery",
+        "x": 0.5,
+        "y": 0.2,
+        "cost": 1,
+        "scene_key": "moon_tower",
+        "scene_label": "마지막 관측 일지",
+        "scene_description": "일지의 마지막 장이 펼쳐진 채 멈춰 있어요. 문장이 중간에서 끊겼어요.",
+        "depth_label": "5층 · 일지실",
+        "threat_level": 2
+      },
+      {
+        "code": "guardian",
+        "name": "관측대",
+        "type": "guardian",
+        "x": 0.69,
+        "y": 0.5,
+        "cost": 1,
+        "scene_key": "monster_den",
+        "scene_label": "관측대",
+        "scene_description": "가장 높은 자리에 관측자가 눈을 감은 채 앉아 있어요.",
+        "depth_label": "6층 · 관측대",
+        "threat_level": 3,
+        "event_code": "ring_watcher"
+      },
+      {
+        "code": "objective",
+        "name": "온실이 보이는 창",
+        "type": "objective",
+        "x": 0.86,
+        "y": 0.32,
+        "cost": 1,
+        "scene_key": "moon_tower",
+        "scene_label": "온실이 보이는 창",
+        "scene_description": "여기서는 마음정원 온실이 또렷하게 보여요. 답장이 갈 곳이 정해졌어요.",
+        "depth_label": "7층 · 전망창",
+        "threat_level": 2
+      },
+      {
+        "code": "exit",
+        "name": "내려가는 계단",
+        "type": "exit",
+        "x": 0.94,
+        "y": 0.62,
+        "cost": 0,
+        "scene_key": "dungeon_gate",
+        "scene_label": "내려가는 계단",
+        "scene_description": "내려가는 길에서는 나이테가 반대로 지나가요. 돌아가는 중이에요.",
+        "depth_label": "지상 · 내려가는 길",
+        "threat_level": 1
+      }
+    ],
+    "edges": [
+      [
+        "entrance",
+        "first_event"
+      ],
+      [
+        "entrance",
+        "second_event"
+      ],
+      [
+        "first_event",
+        "camp"
+      ],
+      [
+        "second_event",
+        "camp"
+      ],
+      [
+        "camp",
+        "last_logbook"
+      ],
+      [
+        "camp",
+        "guardian"
+      ],
+      [
+        "guardian",
+        "objective"
+      ],
+      [
+        "objective",
+        "exit"
+      ]
+    ],
+    "initial_revealed": [
+      "entrance",
+      "first_event",
+      "second_event"
+    ]
+  },
+  "map_templates": [
+    {
+      "code": "heartwood_observatory_crossroads_b",
+      "name": "관측실 갈래길",
+      "edges": [
+        [
+          "entrance",
+          "first_event"
+        ],
+        [
+          "entrance",
+          "second_event"
+        ],
+        [
+          "first_event",
+          "camp"
+        ],
+        [
+          "first_event",
+          "last_logbook"
+        ],
+        [
+          "second_event",
+          "camp"
+        ],
+        [
+          "second_event",
+          "last_logbook"
+        ],
+        [
+          "camp",
+          "guardian"
+        ],
+        [
+          "last_logbook",
+          "guardian"
+        ],
+        [
+          "guardian",
+          "objective"
+        ],
+        [
+          "objective",
+          "exit"
+        ]
+      ],
+      "coordinate_overrides": {
+        "discovery": {
+          "x": 0.5,
+          "y": 0.78
+        }
+      }
+    },
+    {
+      "code": "heartwood_observatory_ring_c",
+      "name": "관측실 고리길",
+      "edges": [
+        [
+          "entrance",
+          "first_event"
+        ],
+        [
+          "entrance",
+          "second_event"
+        ],
+        [
+          "first_event",
+          "second_event"
+        ],
+        [
+          "first_event",
+          "last_logbook"
+        ],
+        [
+          "second_event",
+          "camp"
+        ],
+        [
+          "camp",
+          "last_logbook"
+        ],
+        [
+          "last_logbook",
+          "guardian"
+        ],
+        [
+          "camp",
+          "guardian"
+        ],
+        [
+          "guardian",
+          "objective"
+        ],
+        [
+          "objective",
+          "exit"
+        ]
+      ],
+      "coordinate_overrides": {
+        "camp": {
+          "x": 0.44,
+          "y": 0.66
+        }
+      }
+    }
+  ],
+  "events": {
+    "scattered_pages": {
+      "title": "겹친 낱장",
+      "text": "관측 기록이 순서 없이 겹쳐 있어요. 어떻게 되돌릴까요?",
+      "tags": [
+        "puzzle",
+        "mystery"
+      ],
+      "choices": [
+        {
+          "code": "match_edges",
+          "label": "종이 가장자리의 닳은 결을 맞춘다",
+          "stat": "insight",
+          "difficulty": 8,
+          "resolve_cost": 1
+        },
+        {
+          "code": "read_each",
+          "label": "한 장씩 읽으며 이야기 순서를 찾는다",
+          "stat": "focus",
+          "difficulty": 8,
+          "resolve_cost": 1
+        },
+        {
+          "code": "stack_neatly",
+          "label": "읽지 않고 가지런히 쌓아 둔다",
+          "stat": null,
+          "difficulty": 0,
+          "resolve_cost": 0,
+          "safe": true
+        }
+      ]
+    },
+    "crooked_ring": {
+      "title": "어긋난 나이테",
+      "text": "한 해의 나이테만 방향이 달라요. 그해를 어떻게 읽을까요?",
+      "tags": [
+        "puzzle",
+        "mystery"
+      ],
+      "choices": [
+        {
+          "code": "measure_twice",
+          "label": "앞뒤 해와 견주어 두 번 잰다",
+          "stat": "focus",
+          "difficulty": 8,
+          "resolve_cost": 1
+        },
+        {
+          "code": "ask_the_tree",
+          "label": "나무에 손을 대고 그해를 물어본다",
+          "stat": "care",
+          "difficulty": 8,
+          "resolve_cost": 1
+        },
+        {
+          "code": "note_and_pass",
+          "label": "표시만 남기고 지나간다",
+          "stat": null,
+          "difficulty": 0,
+          "resolve_cost": 0,
+          "safe": true
+        }
+      ]
+    },
+    "ring_watcher": {
+      "title": "나이테 관측자",
+      "text": "관측자가 눈을 떠요. 오래 본 사람만 아는 방식으로 길을 막고 있어요.",
+      "tags": [
+        "guardian",
+        "social"
+      ],
+      "encounter": {
+        "kind": "guardian",
+        "enemy_name": "나이테 관측자",
+        "enemy_max_guard": 100,
+        "attack_name": "나이테 읽기",
+        "telegraph": "관측자의 눈이 한 바퀴 돌면 나이테가 읽혀요.",
+        "damage_target": "탐험대",
+        "max_rounds": 8,
+        "starting_focus": 3,
+        "max_focus": 5,
+        "difficulty_code": "stage_8",
+        "weak_element": "fire",
+        "resist_element": "seal",
+        "weakness_cycle": [
+          "care",
+          "courage",
+          "focus",
+          "insight"
+        ],
+        "boss_phases": [
+          {
+            "code": "long_watch",
+            "name": "긴 관측",
+            "threshold_bp": 10000,
+            "weak_element": "fire",
+            "resist_element": "seal",
+            "weakness_cycle": [
+              "care",
+              "courage",
+              "focus",
+              "insight"
+            ],
+            "intent_power_bonus": 0,
+            "focus_reward": 0,
+            "tone": "moonlit",
+            "rule_name": "긴 관측",
+            "rule_summary": "약점을 맞히지 못한 라운드에는 수호 장벽이 2 회복돼요.",
+            "phase_gate": "resolve_intent",
+            "intro_caption": "관측자의 눈이 천천히 초점을 맞췄어요.",
+            "intents": [
+              {
+                "code": "ringread_turn",
+                "name": "나이테 돌리기",
+                "telegraph": "나이테 하나가 돌아요. 맨 앞 대원을 노려요.",
+                "target": "front",
+                "power": 2,
+                "contact_material": "wood",
+                "mechanic_code": "double_exposure",
+                "mechanic_unlock": 2
+              },
+              {
+                "code": "record_gale",
+                "name": "낱장 폭풍",
+                "telegraph": "기록이 방 전체로 날아요. 탐험대 전체를 덮쳐요.",
+                "target": "all",
+                "power": 1,
+                "contact_material": "paper",
+                "mechanic_code": "resonant_pressure",
+                "mechanic_unlock": 1
+              }
+            ]
+          },
+          {
+            "code": "record_storm",
+            "name": "기록 폭풍",
+            "threshold_bp": 6600,
+            "weak_element": "fire",
+            "resist_element": "seal",
+            "weakness_cycle": [
+              "care",
+              "courage",
+              "focus",
+              "insight"
+            ],
+            "intent_power_bonus": 0,
+            "focus_reward": 1,
+            "tone": "sparkling",
+            "rule_name": "기록 폭풍",
+            "rule_summary": "전체 공격의 위력이 한 단계 높아져요.",
+            "phase_gate": "resolve_intent",
+            "intro_caption": "낱장이 방 전체로 날아올랐어요.",
+            "intents": [
+              {
+                "code": "record_gale",
+                "name": "낱장 폭풍",
+                "telegraph": "기록이 방 전체로 날아요. 탐험대 전체를 덮쳐요.",
+                "target": "all",
+                "power": 1,
+                "contact_material": "paper",
+                "mechanic_code": "resonant_pressure",
+                "mechanic_unlock": 1
+              },
+              {
+                "code": "lens_focus",
+                "name": "렌즈 반사",
+                "telegraph": "렌즈가 빛을 모아요. 가장 지친 대원을 노려요.",
+                "target": "lowest",
+                "power": 2,
+                "contact_material": "stone",
+                "mechanic_code": "focus_leak",
+                "mechanic_unlock": 3
+              }
+            ]
+          },
+          {
+            "code": "closing_ring",
+            "name": "닫히는 나이테",
+            "threshold_bp": 3300,
+            "weak_element": "fire",
+            "resist_element": "seal",
+            "weakness_cycle": [
+              "care",
+              "courage",
+              "focus",
+              "insight"
+            ],
+            "intent_power_bonus": 1,
+            "focus_reward": 1,
+            "tone": "ember",
+            "rule_name": "닫히는 나이테",
+            "rule_summary": "장벽이 얇아질수록 예고가 짧아져요.",
+            "phase_gate": "resolve_intent",
+            "intro_caption": "관측자가 두 손을 가슴 앞으로 모았어요.",
+            "intents": [
+              {
+                "code": "lens_focus",
+                "name": "렌즈 반사",
+                "telegraph": "렌즈가 빛을 모아요. 가장 지친 대원을 노려요.",
+                "target": "lowest",
+                "power": 2,
+                "contact_material": "stone",
+                "mechanic_code": "focus_leak",
+                "mechanic_unlock": 3
+              },
+              {
+                "code": "ringread_turn",
+                "name": "나이테 돌리기",
+                "telegraph": "나이테 하나가 돌아요. 맨 앞 대원을 노려요.",
+                "target": "front",
+                "power": 2,
+                "contact_material": "wood",
+                "mechanic_code": "double_exposure",
+                "mechanic_unlock": 2
+              }
+            ]
+          }
+        ],
+        "intents": [
+          {
+            "code": "ringread_turn",
+            "name": "나이테 돌리기",
+            "telegraph": "나이테 하나가 돌아요. 맨 앞 대원을 노려요.",
+            "target": "front",
+            "power": 2
+          },
+          {
+            "code": "record_gale",
+            "name": "낱장 폭풍",
+            "telegraph": "기록이 방 전체로 날아요. 탐험대 전체를 덮쳐요.",
+            "target": "all",
+            "power": 1
+          },
+          {
+            "code": "lens_focus",
+            "name": "렌즈 반사",
+            "telegraph": "렌즈가 빛을 모아요. 가장 지친 대원을 노려요.",
+            "target": "lowest",
+            "power": 2
+          }
+        ]
+      },
+      "choices": [
+        {
+          "code": "read_the_gap",
+          "label": "나이테가 어긋난 해를 짚어 낸다",
+          "stat": "insight",
+          "difficulty": 10,
+          "resolve_cost": 1,
+          "effect_key": "insight_arc",
+          "guard_damage": 68
+        },
+        {
+          "code": "read_it_aloud",
+          "label": "기록을 소리 내어 읽어 준다",
+          "stat": "care",
+          "difficulty": 10,
+          "resolve_cost": 1,
+          "effect_key": "care_vines",
+          "guard_damage": 68
+        },
+        {
+          "code": "step_back",
+          "label": "안전한 자리까지 물러난다",
+          "stat": null,
+          "difficulty": 0,
+          "resolve_cost": 0,
+          "safe": true,
+          "effect_key": "safe_guard",
+          "guard_damage": 0
+        }
+      ]
+    }
+  },
+  "discoveries": {
+    "last_logbook": {
+      "title": "마지막 관측 일지",
+      "text": "마지막 문장이 중간에서 끊겨 있어요. 쓰던 사람이 급히 자리를 떴거나, 답을 기다리고 있었던 것 같아요."
+    }
+  },
+  "run_threads": [
+    {
+      "code": "heartwood_unread",
+      "seed": "관측 기록이 벽을 가득 채웠는데, 펼쳐 본 자국이 하나도 없어요.",
+      "echo": "낱장도 나이테도 읽히기를 기다리고 있었어요. 기록은 남기는 것으로 끝나지 않아요.",
+      "payoff": "관측자에게 기록을 소리 내어 읽어 주자, 창밖으로 온실 불빛이 또렷해져요."
+    }
+  ]
+}

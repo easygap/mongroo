@@ -50,7 +50,11 @@ from app.models.expedition import (
 )
 from app.models.game import FarmLayout, Item, UserItem
 from app.models.mood import MoodEntry
-from app.content.expeditions.skill_books import resolve_loadout
+from app.content.expeditions.skill_books import (
+    GRADE_ALLOWED_SLOTS,
+    SKILL_BOOK_CATALOG,
+    resolve_loadout,
+)
 from app.models.plant import Plant, PlantSpecies
 from app.models.reward import RewardEvent
 from app.models.skill_book import PlantSkillLoadout
@@ -78,17 +82,71 @@ _OUTCOME_LABELS = {
 }
 
 
-def load_content() -> dict[str, Any]:
-    """검증을 통과한 지역 콘텐츠 팩. 스테이지 서비스와 함께 쓴다."""
+# 첫 지역. 콘텐츠가 하나뿐이던 시절의 호출부가 지역을 안 넘기면 여기로 온다.
+DEFAULT_REGION_CODE = "moss_archive"
 
-    with _CONTENT_PATH.open(encoding="utf-8") as file:
+
+def load_content(region_code: str | None = None) -> dict[str, Any]:
+    """검증을 통과한 지역 콘텐츠 팩. 스테이지 서비스와 함께 쓴다.
+
+    지역을 안 넘기면 첫 지역을 준다 — 지역이 하나뿐이던 시절의 호출부가 그대로
+    돌아가야 하기 때문이다. 모르는 지역은 조용히 첫 지역으로 떨어지지 **않고**
+    404로 막는다. 없는 지역을 있는 것처럼 열어 주면 진행 기록이 엉뚱한 지역에
+    쌓인다.
+    """
+
+    code = region_code or DEFAULT_REGION_CODE
+    path = _CONTENT_PATH.parent / f"{code}.json"
+    if not path.exists():
+        raise AppError(
+            404, "EXPEDITION_REGION_NOT_FOUND", "아직 열리지 않은 지역이에요."
+        )
+    with path.open(encoding="utf-8") as file:
         content = json.load(file)
     validate_content(content)
+    if content["region"]["code"] != code:
+        # 파일 이름과 안의 코드가 다르면 진행 기록이 어긋난다. 조용히 고치지
+        # 않고 막는다 — 콘텐츠를 실은 사람이 알아야 하는 실수다.
+        raise RuntimeError(
+            f"콘텐츠 파일 이름({code})과 region.code({content['region']['code']})가 다릅니다"
+        )
     return content
 
 
-def _content() -> dict[str, Any]:
-    return load_content()
+def _content(region_code: str | None = None) -> dict[str, Any]:
+    return load_content(region_code)
+
+
+def shipped_region_codes() -> frozenset[str]:
+    """지금 콘텐츠 팩이 실려 있는 지역 코드.
+
+    폴더를 훑어서 답한다. 새 지역 JSON을 넣으면 `깊은 조사 최초 완주` 같은
+    조건이 **코드를 고치지 않아도** 저절로 열린다. 목록을 손으로 들고 있으면
+    지역을 실은 날 반드시 한쪽을 잊는다.
+    """
+
+    return frozenset(path.stem for path in _CONTENT_PATH.parent.glob("*.json"))
+
+
+def region_order() -> list[str]:
+    """지역을 지나가는 순서.
+
+    **알파벳순으로 정렬하지 않는다.** 그렇게 하면 관측실이 보관고보다 먼저
+    열리는데, 이야기는 정확히 반대다 — 보관고의 마지막 장이 `다음 편지는
+    마음나무 관측실로 향해요`로 끝난다. 순서를 코드가 따로 들고 있으면 지역을
+    실은 날 이야기와 어긋나고, 어긋난 것은 걸어 보기 전에는 안 보인다.
+
+    각 팩의 `recommended_stage`가 이미 그 순서를 담고 있으므로(2·3·4·5) 그것을
+    읽는다. 콘텐츠가 순서의 단일 원본이다.
+    """
+
+    return [
+        code
+        for _stage, code in sorted(
+            (int(load_content(code)["region"]["recommended_stage"]), code)
+            for code in shipped_region_codes()
+        )
+    ]
 
 
 def select_map_template(
@@ -320,6 +378,16 @@ async def _party_skill_loadouts(
         resolved[plant_id] = {
             "preset_code": skill_book_service.DEFAULT_PRESET,
             "stored": stored or {"slot_b1_code": None, "slot_b2_code": None},
+            # 마음결 대백과가 전투 중에 바꿔 낄 수 있는 후보. **출발 시점에
+            # 얼린다** — 런 도중 상점에서 산 책이 진행 중인 전투에 끼어들면
+            # 스냅샷을 얼려 둔 이유가 없어진다. 첫 칸에 들어갈 수 있는 것만
+            # 남겨서 앱이 고를 수 없는 것을 보게 되지 않는다.
+            "owned_codes": sorted(
+                code
+                for code in owned
+                if code in SKILL_BOOK_CATALOG
+                and "B1" in GRADE_ALLOWED_SLOTS[int(SKILL_BOOK_CATALOG[code]["grade"])]
+            ),
             # 스냅샷에는 결정만 남긴다. 카탈로그 본문은 키트가 다시 읽는다.
             "slots": {
                 slot: {
@@ -425,6 +493,16 @@ async def _active_run(db: AsyncSession, user_id: int) -> ExpeditionRun | None:
     )
 
 
+async def region_cleared(db: AsyncSession, user_id: int, region_code: str) -> bool:
+    """그 지역 8스테이지를 모두 깼는가 — 깊은 조사의 유일한 열쇠다.
+
+    `stage_progress`가 이미 쓰는 기록을 그대로 읽는다. 완주 여부를 위해 새
+    플래그를 만들면 두 값이 어긋나는 날이 온다.
+    """
+
+    return len(await _cleared_stage_numbers(db, user_id, region_code)) >= STAGE_COUNT
+
+
 async def catalog_payload(db: AsyncSession, user_id: int) -> dict:
     today = local_date_of(utcnow())
     active = await _active_run(db, user_id)
@@ -441,6 +519,34 @@ async def catalog_payload(db: AsyncSession, user_id: int) -> dict:
         )
     )
     content = _content()
+    first_code = content["region"]["code"]
+    deep_open = await region_cleared(db, user_id, first_code)
+
+    # 실려 있는 지역을 **이야기 순서로** 내려보낸다(`recommended_stage`).
+    codes = region_order()
+    regions = []
+    for code in codes:
+        pack = content if code == first_code else _content(code)
+        cleared = (
+            deep_open if code == first_code else await region_cleared(db, user_id, code)
+        )
+        # 앞 지역을 완주해야 다음 지역이 열린다. 첫 지역은 언제나 열려 있다.
+        unlocked = code == first_code or await region_cleared(
+            db, user_id, codes[codes.index(code) - 1]
+        )
+        regions.append(
+            {
+                **pack["region"],
+                # 잠긴 모드도 목록에 남긴다. 빼 버리면 있는 줄도 모른다.
+                "modes": ["tutorial", "heart_resonance", "free_explore", "deep"],
+                "deep_available": cleared,
+                "unlocked": unlocked,
+                "locked_reason": (
+                    None if unlocked else "앞 지역을 완주하면 열려요"
+                ),
+            }
+        )
+
     return {
         "content_version": content["content_version"],
         "active_run_id": active.id if active else None,
@@ -450,21 +556,25 @@ async def catalog_payload(db: AsyncSession, user_id: int) -> dict:
             and not reward_used
             and not safety_active,
             "free_explore_available": not safety_active,
+            # 깊은 조사는 지역을 완주해야 열린다. 왜 잠겼는지 함께 내려보내
+            # 앱이 `8스테이지를 마치면 열려요`를 그대로 말할 수 있게 한다.
+            "deep_available": deep_open and not safety_active,
+            "deep_locked_reason": (
+                None if deep_open else "지역의 8스테이지를 모두 마치면 열려요"
+            ),
             "suspended": safety_active,
             "tutorial_completed": tutorial_completed,
             "reason": "safety_support_active" if safety_active else None,
         },
-        "regions": [
-            {
-                **content["region"],
-                "modes": ["tutorial", "heart_resonance", "free_explore"],
-            }
-        ],
+        "regions": regions,
         "rules": {
             "party_min": 1,
             "party_max": 3,
             "daily_reward_mode": "heart_resonance",
             "free_explore_reward": False,
+            # 깊은 조사는 **반복 재화를 늘리지 않는다**(9.2). 처음 여는 기록서와
+            # 서사만 다르다. 어려운 쪽이 벌이도 좋으면 편안한 난이도가 손해가 된다.
+            "deep_reward": False,
         },
     }
 
@@ -907,11 +1017,20 @@ async def start_run(
     guide_count: int,
     stage_no: int | None = None,
 ) -> dict:
-    content = _content()
-    if region_code != content["region"]["code"]:
-        raise AppError(
-            404, "EXPEDITION_REGION_NOT_FOUND", "탐험 지역을 찾을 수 없습니다."
-        )
+    # 요청한 지역의 팩을 연다. 없는 지역이면 loader가 404로 막는다.
+    content = _content(region_code)
+
+    # 앞 지역을 완주해야 다음 지역으로 간다. 순서는 이야기가 정하고, 첫 지역은
+    # 언제나 열려 있다. 관문이 서버에 있어야 요청을 직접 만들어도 막힌다.
+    order = region_order()
+    if region_code in order and order.index(region_code) > 0:
+        previous = order[order.index(region_code) - 1]
+        if not await region_cleared(db, user_id, previous):
+            raise AppError(
+                409,
+                "EXPEDITION_REGION_LOCKED",
+                "앞 지역을 완주하면 이 지역이 열려요.",
+            )
     stage_data: dict[str, Any] | None = None
     if stage_no is not None:
         stages = content.get("stages") or []
@@ -978,6 +1097,14 @@ async def start_run(
         raise AppError(
             422, "EXPEDITION_STAGE_REQUIRED", "새싹 단계부터 탐험할 수 있습니다."
         )
+    # 깊은 조사는 그 지역을 완주해야 들어간다. 앱이 잠긴 버튼을 눌러 보낼 수도
+    # 있고 요청을 직접 만들 수도 있으므로 여기가 진짜 관문이다.
+    if mode == "deep" and not await region_cleared(db, user_id, region_code):
+        raise AppError(
+            422,
+            "EXPEDITION_DEEP_LOCKED",
+            "지역의 8스테이지를 모두 마치면 깊은 조사가 열려요.",
+        )
     if mode == "tutorial" and (
         len(plant_ids) != 1
         or by_id[plant_ids[0]][0].status != PlantStatus.ACTIVE
@@ -1000,6 +1127,18 @@ async def start_run(
     else:
         map_data = select_map_template(content, map_seed, mode)
         map_events = content["events"]
+    if mode == "deep":
+        # 깊은 조사의 난이도는 **출발 시점 스냅샷에 굳는다.** 진행 중인 run이
+        # 나중의 밸런스 조정에 흔들리지 않게 하려는 것으로, 장착 스냅샷을
+        # 얼려 두는 것과 같은 이유다.
+        map_events = {
+            code: (
+                {**event, "encounter": {**event["encounter"], "difficulty_code": "deep"}}
+                if isinstance(event.get("encounter"), dict)
+                else event
+            )
+            for code, event in map_events.items()
+        }
     map_snapshot = {
         "code": map_data["code"],
         "name": map_data["name"],

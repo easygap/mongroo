@@ -1,0 +1,73 @@
+{
+  "note": "ChatGPT ImageGen 1536x1024 원본. **이 이미지는 재생성할 수 없다** — 오디오와 달리 스크립트가 만드는 것이 아니라 이미지 모델이 만든 것이라 같은 프롬프트로도 같은 그림이 안 나온다. 그래서 원본 PNG는 저장소 밖에 두되 화질 95 WebP 사본을 여기 남긴다. 앱 산출물(1600x900)은 세로를 잘라 낸 것이라, 크롭을 다시 잡으려면 이 사본이 필요하다.",
+  "app_output": "import_scene_art.py → 1600x900 + 960x540 WebP",
+  "entries": [
+    {
+      "scene": "dungeon_gate",
+      "region": "echo_well",
+      "master": "dungeon_gate__echo_well-master.webp",
+      "master_sha256": "9AB0AA34F68151E6FED59D1A4EB718789FFDF0AEA5B92750611F63CEC4917CD6"
+    },
+    {
+      "scene": "dungeon_gate",
+      "region": "heartwood_observatory",
+      "master": "dungeon_gate__heartwood_observatory-master.webp",
+      "master_sha256": "525CC91B852DA16A4EAB82FD63D922633A863ADD98A3E4FF447C52DBFA673CF3"
+    },
+    {
+      "scene": "dungeon_gate",
+      "region": "starlight_seed_vault",
+      "master": "dungeon_gate__starlight_seed_vault-master.webp",
+      "master_sha256": "B1B30962FD16F040748B68BBF6EBA4A083220A37875296E27A4F263E6AE7E618"
+    },
+    {
+      "scene": "echo_well",
+      "region": "echo_well",
+      "master": "echo_well__echo_well-master.webp",
+      "master_sha256": "63880557B09FAD76D421F07689FC0936F48F578D273B0448A233718133175E28"
+    },
+    {
+      "scene": "monster_den",
+      "region": "echo_well",
+      "master": "monster_den__echo_well-master.webp",
+      "master_sha256": "43977D44070C33BE509073488CB12A25E16BA722506FCECE9054DE9364E269FD"
+    },
+    {
+      "scene": "monster_den",
+      "region": "heartwood_observatory",
+      "master": "monster_den__heartwood_observatory-master.webp",
+      "master_sha256": "5816F0BF1C94475BFEC067377D7D13B9079EB3F20B8DC1FB7186264A9ED528A1"
+    },
+    {
+      "scene": "monster_den",
+      "region": "starlight_seed_vault",
+      "master": "monster_den__starlight_seed_vault-master.webp",
+      "master_sha256": "7B5ED5A4809AA8252EA2BCEF6ED46EB361E92C0A1CC078FDEC33BDBAF1B41040"
+    },
+    {
+      "scene": "moon_tower",
+      "region": "heartwood_observatory",
+      "master": "moon_tower__heartwood_observatory-master.webp",
+      "master_sha256": "BD73E77F08173853F6E187E212A4321D32F53941FE256E444000A6D7ED26000A"
+    },
+    {
+      "scene": "root_tunnel",
+      "region": "starlight_seed_vault",
+      "master": "root_tunnel__starlight_seed_vault-master.webp",
+      "master_sha256": "5D2F946DAD88A2AD208CC82CDC183E1B85FF3D55FD21E772A568699102DFF37F"
+    },
+    {
+      "scene": "treasure_vault",
+      "region": "echo_well",
+      "master": "treasure_vault__echo_well-master.webp",
+      "master_sha256": "39EAAAAD94AEED10A89600DC624804DCBD3EB62760FC36098A0CB2E8182CD4EB"
+    },
+    {
+      "scene": "treasure_vault",
+      "region": "starlight_seed_vault",
+      "master": "treasure_vault__starlight_seed_vault-master.webp",
+      "master_sha256": "DC781F101ADCB5A8B0F5141F31FB8DCA31BA6E749D3E241A71EAF7743A538AA5"
+    }
+  ],
+  "count": 11
+}

@@ -130,7 +130,9 @@ class ExpeditionStartRequest(BaseModel):
         max_length=40,
         pattern=r"^[a-z0-9_]+$",
     )
-    mode: str = Field(pattern="^(tutorial|heart_resonance|free_explore)$")
+    # `deep`은 그 지역 8스테이지를 모두 깬 사람만 고를 수 있다. 판정은 서버가
+    # 하고(`EXPEDITION_DEEP_LOCKED`), 앱은 열렸는지만 읽는다.
+    mode: str = Field(pattern="^(tutorial|heart_resonance|free_explore|deep)$")
     plant_ids: list[int] = Field(min_length=1, max_length=3)
     guide_count: int = Field(default=0, ge=0, le=2)
     # 스테이지 지도에서 출발했을 때만 채운다. 없으면 기존 노드 지도 흐름 그대로다.

@@ -7,6 +7,8 @@
 import sqlite3
 from pathlib import Path
 
+import sqlalchemy as sa
+
 from alembic import command
 from alembic.config import Config
 
@@ -220,3 +222,40 @@ def test_mastery_migration_creates_the_record_table(tmp_path, monkeypatch):
             assert "plant_skill_mastery" not in tables
     finally:
         get_settings.cache_clear()
+
+
+def test_retiring_first_signal_pulls_it_from_the_shop(tmp_path, monkeypatch):
+    """0038 — 선제 신호는 더 이상 팔리지 않고, 산 기록은 남는다.
+
+    `is_active`가 상점 목록과 구매 처리 양쪽의 관문이라 이 한 줄로 둘 다 막힌다.
+    행을 지우지 않는 이유는 이미 산 사람의 `user_items`가 참조하고 있어서다.
+    """
+
+    config, database_path = _alembic_config(tmp_path, monkeypatch)
+    command.upgrade(config, "0038_retire_first_signal")
+
+    engine = sa.create_engine(f"sqlite:///{database_path}")
+    with engine.connect() as connection:
+        rows = dict(
+            connection.execute(
+                sa.text(
+                    "SELECT code, is_active FROM items WHERE type = 'skill_book'"
+                )
+            ).all()
+        )
+
+    assert rows["skill_book_first_signal"] == 0
+    # 한 권만 내렸다. 나머지 열 권은 그대로 팔린다.
+    assert sum(1 for active in rows.values() if active) == len(rows) - 1
+    assert rows["skill_book_clear_aim"] == 1
+
+    # 되돌리면 다시 팔린다.
+    command.downgrade(config, "0037_plant_skill_mastery")
+    with engine.connect() as connection:
+        restored = connection.execute(
+            sa.text(
+                "SELECT is_active FROM items WHERE code = 'skill_book_first_signal'"
+            )
+        ).scalar_one()
+    assert restored == 1
+    engine.dispose()

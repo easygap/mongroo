@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,10 @@ import 'package:mongroo/features/expedition/presentation/expedition_controller.d
 import 'package:mongroo/features/expedition/presentation/expedition_action_cue.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_battle_dock.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_audio.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_walk_path.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_walk_area.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_walk_masks.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_free_walk.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_overlay.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_effect_catalog.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_effects.dart';
@@ -583,6 +588,11 @@ class _FakeExpeditionController extends ExpeditionController {
 }
 
 void main() {
+  _freeWalkTests();
+  _walkAreaTests();
+  _walkRouteTests();
+  _regionSceneTests();
+  _deepSurveyTests();
   _combatChoiceContractTests();
   testWidgets('모든 탐험 장면 에셋을 앱 번들에서 읽는다', (tester) async {
     expect(expeditionSceneKeys, hasLength(7));
@@ -1047,25 +1057,19 @@ void main() {
   });
 
   test('탐험대와 발자국이 통합 지형의 같은 경로 좌표를 사용한다', () {
-    final route = mossArchiveRouteBetween(
-      'entrance',
-      'wet_labels',
-      fallbackFrom: const Offset(.08, .50),
-      fallbackTo: const Offset(.28, .27),
-    );
-    final reverse = mossArchiveRouteBetween(
-      'wet_labels',
-      'entrance',
-      fallbackFrom: const Offset(.28, .27),
-      fallbackTo: const Offset(.08, .50),
-    );
+    final area = expeditionWalkAreaFor('moss_archive');
+    final from = expeditionStandPoint(area, const Offset(.08, .50));
+    final to = expeditionStandPoint(area, const Offset(.28, .27));
+    final route = expeditionWalkPath(area, from, to);
 
     expect(route.length, greaterThan(2));
-    expect(route.first, const Offset(.08, .50));
-    expect(route.last, const Offset(.28, .27));
-    expect(reverse, route.reversed.toList());
-    expect(mossArchiveRoutePosition(route, 0), route.first);
-    expect(mossArchiveRoutePosition(route, 1), route.last);
+    expect(route.first, from);
+    expect(route.last, to);
+    expect(expeditionPathPosition(route, 0), route.first);
+    expect(expeditionPathPosition(route, 1), route.last);
+    // 발자국 그리기도 같은 함수를 부른다. 두 번 물어 같은 답이 나와야 한 길을
+    // 밟는다 — 다르면 캐릭터와 발자국이 갈라진다.
+    expect(expeditionWalkPath(area, from, to), route);
   });
 
   test('탐험 편성 목록에서 현재 성장 캐릭터를 구분한다', () {
@@ -2560,6 +2564,153 @@ void main() {
     );
   });
 
+  testWidgets('발걸음 4·발견 3 현장음을 앱 번들에서 읽는다', (tester) async {
+    const names = <String>[
+      'step-leaf',
+      'step-pot',
+      'step-wood',
+      'step-stone',
+      'discover-normal',
+      'discover-story',
+      'discover-target',
+    ];
+    for (final name in names) {
+      final asset = 'assets/adventure/sfx/$name.wav';
+      final data = await rootBundle.load(asset);
+      // RIFF 헤더가 없으면 파일이 깨진 것이다.
+      expect(data.getUint32(0, Endian.big), 0x52494646, reason: '$asset RIFF');
+      expect(data.lengthInBytes, greaterThan(2000), reason: asset);
+    }
+  });
+
+  testWidgets('16품종 × 2의 고유 스킬 signature를 앱 번들에서 읽는다', (tester) async {
+    // 서버 스킬 코드와 같은 이름이어야 앱이 찾을 수 있다. 하나라도 빠지면
+    // 그 캐릭터만 소리가 없어지는데, 눈으로는 안 보인다.
+    const skills = <String, List<String>>{
+      'baby-pot': ['sprout-cheer', 'root-embrace'],
+      'handsome-pot': ['command-blade', 'command-crescendo'],
+      'pretty-pot': ['heart-spotlight', 'ribbon-encore'],
+      'tsundere-pot': ['blazing-counter', 'iron-uppercut'],
+      'zombie-pot': ['grave-gravity', 'undying-chain'],
+      'gumiho-pot': ['heart-moon-charm', 'nine-tail-eclipse'],
+      'ninja-pot': ['venom-seam', 'shadow-execution'],
+      'magical-pot': ['prism-meteor', 'timefold-comet'],
+      'aloof-pot': ['absolute-zero-read', 'steel-verdict'],
+      'student-pot': ['ink-formula-burst', 'seal-rewrite'],
+      'nurse-pot': ['triage-bloom', 'white-garden-oath'],
+      'maestro-pot': ['golden-downbeat', 'silent-coda'],
+      'restorer-pot': ['patina-parry', 'golden-seam'],
+      'marten-pot': ['softpaw-rush', 'den-guardian-roar'],
+      'gal-pot': ['patchwork-relay', 'runway-reversal'],
+      'archive_guide': ['archive-lantern', 'archive-seal'],
+    };
+    var count = 0;
+    for (final entry in skills.entries) {
+      for (final skill in entry.value) {
+        final asset = 'assets/adventure/sfx/skill-${entry.key}-$skill.wav';
+        final data = await rootBundle.load(asset);
+        expect(data.getUint32(0, Endian.big), 0x52494646, reason: asset);
+        count++;
+      }
+    }
+    expect(count, 32);
+  });
+
+  testWidgets('엉킴 24·수호자 14의 공격 signature를 앱 번들에서 읽는다', (tester) async {
+    const enemies = <String, List<String>>{
+      'tangled-ledger': ['paper-flurry', 'ink-mist'],
+      'drifting-pressings': ['petal-gust', 'petal-dart'],
+      'shelf-snarl': ['shelf-sweep', 'catalogue-rain'],
+      'knotted-echo': ['echo-ring', 'sharp-note'],
+      'splashing-droplets': ['splash-wave', 'water-pop'],
+      'bell-knot-swirl': ['bell-spin', 'deep-toll'],
+      'snarled-stardust': ['dust-flare', 'dust-lash'],
+      'rolling-seedbox': ['box-roll', 'seed-scatter'],
+      'backwound-clockspring': ['spring-snap', 'gear-grind'],
+      'ring-shard-tangle': ['ring-spin', 'shard-scatter'],
+      'scattered-records': ['page-storm', 'paper-cut'],
+      'matted-observatory': ['lens-glare', 'tape-whip'],
+    };
+    var count = 0;
+    for (final entry in enemies.entries) {
+      for (final attack in entry.value) {
+        final asset = 'assets/adventure/sfx/enemy-${entry.key}-$attack.wav';
+        final data = await rootBundle.load(asset);
+        expect(data.getUint32(0, Endian.big), 0x52494646, reason: asset);
+        count++;
+      }
+    }
+    expect(count, 24);
+
+    // 네 지역의 수호자 전부. 지역을 실었는데 수호자만 소리가 없으면
+    // 눈으로는 안 보인다.
+    const guardians = <String, List<String>>{
+      'ledger-keeper': [
+        'ledger-claw',
+        'record-wave',
+        'seal-crush',
+        'root-lockdown',
+        'final-redaction',
+      ],
+      'bell-ringer': ['toll-sweep', 'drown-peal', 'undertow'],
+      'germination-clock': [
+        'mainspring-lash',
+        'escapement-grind',
+        'frost-bite',
+      ],
+      'ring-watcher': ['ringread-turn', 'record-gale', 'lens-focus'],
+    };
+    var guardianCount = 0;
+    for (final entry in guardians.entries) {
+      for (final attack in entry.value) {
+        final asset =
+            'assets/adventure/sfx/guardian-${entry.key}-$attack.wav';
+        final data = await rootBundle.load(asset);
+        expect(data.getUint32(0, Endian.big), 0x52494646, reason: asset);
+        guardianCount++;
+      }
+    }
+    expect(guardianCount, 14);
+  });
+
+  testWidgets('네 지역의 8개 ambience를 앱 번들에서 읽는다', (tester) async {
+    const slugs = <String>[
+      'moss-archive',
+      'echo-well',
+      'starlight-seed-vault',
+      'heartwood-observatory',
+    ];
+    for (final slug in slugs) {
+      for (final layer in const ['a', 'b']) {
+        final asset = 'assets/adventure/ambience/$slug-$layer.m4a';
+        final data = await rootBundle.load(asset);
+        expect(data.lengthInBytes, greaterThan(100000), reason: asset);
+        expect(data.getUint32(4, Endian.big), 0x66747970,
+            reason: '$asset ftyp');
+      }
+    }
+  });
+
+  test('ambience 경로는 지역을 따르고 모르는 지역은 첫 지역으로 떨어진다', () {
+    expect(
+      ExpeditionCombatAudio.ambiencePath('echo_well', 'a'),
+      'adventure/ambience/echo-well-a.m4a',
+    );
+    expect(
+      ExpeditionCombatAudio.ambiencePath('heartwood_observatory', 'b'),
+      'adventure/ambience/heartwood-observatory-b.m4a',
+    );
+    // 모르는 지역이 무음이 되지 않는다.
+    expect(
+      ExpeditionCombatAudio.ambiencePath('알 수 없음', 'a'),
+      'adventure/ambience/moss-archive-a.m4a',
+    );
+    expect(
+      ExpeditionCombatAudio.ambiencePath(null, 'b'),
+      'adventure/ambience/moss-archive-b.m4a',
+    );
+  });
+
   testWidgets('네 지역의 12개 BGM을 앱 번들에서 읽는다', (tester) async {
     const slugs = <String>[
       'moss-archive',
@@ -2836,6 +2987,52 @@ void _combatChoiceContractTests() {
     expect(empty.needsChoice, isFalse);
   });
 
+  test('대원·기록서 선택도 같은 계약으로 읽는다', () {
+    final handoff = ExpeditionBattleAction.fromJson(const {
+      'slot': 'selected_2',
+      'code': 'nine_tail_afterimage',
+      'available': true,
+      'choice_kind': 'member',
+      'choice_current': '1',
+      'choice_options': [
+        {'value': '2', 'label': '볕이'},
+      ],
+    });
+    expect(handoff.needsChoice, isTrue);
+    expect(handoff.choiceKind, 'member');
+    expect(handoff.choiceOptions.single.label, '볕이');
+
+    final swap = ExpeditionBattleAction.fromJson(const {
+      'slot': 'selected_2',
+      'code': 'heart_encyclopedia',
+      'available': true,
+      'choice_kind': 'book',
+      'choice_current': 'clear_aim',
+      'choice_options': [
+        {'value': 'leaf_greave', 'label': '잎사귀 각반'},
+      ],
+    });
+    expect(swap.needsChoice, isTrue);
+    expect(swap.choiceCurrent, 'clear_aim');
+  });
+
+  test('잠긴 사유는 서버 문장을 그대로 쓰고 없을 때만 레벨로 떨어진다', () {
+    final noTarget = ExpeditionBattleAction.fromJson(const {
+      'slot': 'selected_2',
+      'available': false,
+      'unlock_level': 23,
+      'lock_reason': '넘길 다른 대원이 없어요.',
+    });
+    expect(noTarget.lockReason, '넘길 다른 대원이 없어요.');
+
+    final levelLocked = ExpeditionBattleAction.fromJson(const {
+      'slot': 'selected_2',
+      'available': false,
+      'unlock_level': 23,
+    });
+    expect(levelLocked.lockReason, isNull);
+  });
+
   test('고르지 않은 명령은 choice 키 자체를 보내지 않는다', () {
     const plain = ExpeditionCombatCommand(memberId: 1, action: 'attack');
     expect(plain.toJson().containsKey('choice'), isFalse);
@@ -2846,5 +3043,710 @@ void _combatChoiceContractTests() {
       choice: 'ember',
     );
     expect(chosen.toJson()['choice'], 'ember');
+  });
+}
+
+void _deepSurveyTests() {
+  test('깊은 조사 잠금 상태를 서버 문장 그대로 읽는다', () {
+    final locked = ExpeditionCatalog.fromJson(const {
+      'content_version': 'v1',
+      'entry': {
+        'diary_ready': true,
+        'heart_resonance_available': true,
+        'free_explore_available': true,
+        'deep_available': false,
+        'deep_locked_reason': '지역의 8스테이지를 모두 마치면 열려요',
+      },
+      'regions': <Map<String, dynamic>>[],
+    });
+
+    expect(locked.deepAvailable, isFalse);
+    // 조건을 앱이 다시 세지 않는다. 두 곳이 어긋나면 채운 줄 알았는데 안 열린다.
+    expect(locked.deepLockedReason, '지역의 8스테이지를 모두 마치면 열려요');
+
+    final open = ExpeditionCatalog.fromJson(const {
+      'content_version': 'v1',
+      'entry': {
+        'diary_ready': true,
+        'heart_resonance_available': true,
+        'free_explore_available': true,
+        'deep_available': true,
+        'deep_locked_reason': null,
+      },
+      'regions': <Map<String, dynamic>>[],
+    });
+    expect(open.deepAvailable, isTrue);
+    expect(open.deepLockedReason, isNull);
+  });
+
+  test('깊은 조사를 모르는 구버전 응답도 깨지지 않는다', () {
+    // 필드가 없으면 잠긴 것으로 읽는다. 없는 모드를 열어 두는 것보다 안전하다.
+    final legacy = ExpeditionCatalog.fromJson(const {
+      'content_version': 'v1',
+      'entry': {'diary_ready': true},
+      'regions': <Map<String, dynamic>>[],
+    });
+    expect(legacy.deepAvailable, isFalse);
+    expect(legacy.deepLockedReason, isNull);
+  });
+}
+
+void _regionSceneTests() {
+  test('같은 장면도 지역이 다르면 다르게 읽힌다', () {
+    // 지역을 안 주면 지금까지와 똑같다 — 준비 화면처럼 지역이 아직 없는 자리가 있다.
+    final shared = expeditionSceneTheme('flooded_cave');
+    final archive =
+        expeditionSceneTheme('flooded_cave', regionCode: 'moss_archive');
+    expect(archive.assetPath, shared.assetPath);
+    expect(archive.accent, shared.accent);
+
+    // 뒤 지역은 강조색이 갈린다. 전용 원화가 오기 전까지의 최소 장치다.
+    final well = expeditionSceneTheme('flooded_cave', regionCode: 'echo_well');
+    final vault = expeditionSceneTheme(
+      'flooded_cave',
+      regionCode: 'starlight_seed_vault',
+    );
+    expect(well.accent, isNot(shared.accent));
+    expect(vault.accent, isNot(well.accent));
+    // 전용 원화가 아직 없으니 그림은 공용 그대로다.
+    expect(well.assetPath, shared.assetPath);
+
+    // 모르는 지역은 공용으로 떨어져 무음이 아니라 무화면이 되지 않는다.
+    expect(
+      expeditionSceneTheme('flooded_cave', regionCode: '없는지역').accent,
+      shared.accent,
+    );
+  });
+
+  test('지역 색 보정은 첫 지역에 걸리지 않고 뒤 지역만 갈라 준다', () {
+    expect(expeditionRegionGrade('moss_archive').a, 0);
+    expect(expeditionRegionGrade(null).a, 0);
+    expect(expeditionRegionGrade('없는지역').a, 0);
+    for (final code in const [
+      'echo_well',
+      'starlight_seed_vault',
+      'heartwood_observatory',
+    ]) {
+      final grade = expeditionRegionGrade(code);
+      expect(grade.a, greaterThan(0), reason: code);
+      // 너무 진하면 원화가 안 보이고 글자 대비 계약도 흔들린다.
+      expect(grade.a, lessThan(.20), reason: code);
+    }
+  });
+
+  testWidgets('전용 원화 표에 적힌 8장이 실제로 번들에 있다', (tester) async {
+    // 표에만 적고 파일이 없으면 그 장면만 검은 화면이 된다. 번들에서 실제로
+    // 읽어 봐야 잡힌다 — 경로 문자열만 검사하면 오타를 놓친다.
+    expect(expeditionRegionSceneAssets, hasLength(11));
+    for (final entry in expeditionRegionSceneAssets.entries) {
+      expect(entry.key.split('/'), hasLength(2), reason: entry.key);
+      final data = await rootBundle.load(entry.value);
+      // RIFF....WEBP
+      expect(data.getUint32(0, Endian.big), 0x52494646, reason: entry.value);
+      expect(data.getUint32(8, Endian.big), 0x57454250, reason: entry.value);
+      expect(data.lengthInBytes, greaterThan(50000), reason: entry.value);
+
+      // 모바일 판본도 함께 있어야 한다. 없으면 작은 화면에서 원본을 통째로
+      // 디코드해 메모리가 튄다.
+      final mobile = entry.value.replaceFirst('.webp', '-mobile.webp');
+      final mobileData = await rootBundle.load(mobile);
+      expect(mobileData.getUint32(0, Endian.big), 0x52494646, reason: mobile);
+    }
+  });
+
+  testWidgets('지역 지형 지도 네 장이 번들에 있고 통행 마스크와 짝이 맞는다',
+      (tester) async {
+    // 지형은 걷는 내내 보는 화면이고, 통행 마스크는 그 그림에서 뽑은 것이다.
+    // 그림이 없어지거나 마스크만 남으면 캐릭터가 검은 화면 위를 걷는다.
+    final terrain = <String, String>{
+      'moss_archive': mossArchiveMapAsset,
+      ...expeditionRegionTerrain,
+    };
+    expect(terrain.keys, unorderedEquals(expeditionWalkMasks.keys));
+    for (final entry in terrain.entries) {
+      final data = await rootBundle.load(entry.value);
+      // RIFF....WEBP
+      expect(data.getUint32(0, Endian.big), 0x52494646, reason: entry.value);
+      expect(data.getUint32(8, Endian.big), 0x57454250, reason: entry.value);
+      expect(data.lengthInBytes, greaterThan(50000), reason: entry.value);
+
+      final mobile = entry.value.replaceFirst('.webp', '-mobile.webp');
+      final mobileData = await rootBundle.load(mobile);
+      expect(mobileData.getUint32(0, Endian.big), 0x52494646, reason: mobile);
+    }
+    // 전용 지형이 없는 지역은 첫 지역 지도로 떨어진다.
+    expect(expeditionTerrainAsset(null), mossArchiveMapAsset);
+    expect(expeditionTerrainAsset('없는지역'), mossArchiveMapAsset);
+  });
+
+  test('전용 원화가 있는 장면에는 색 보정을 겹쳐 얹지 않는다', () {
+    // 보정은 공용 원화를 지역별로 갈라 주려고 있는 것이다. 이미 그 지역 색으로
+    // 그려진 그림에 또 얹으면 두 번 물든다.
+    expect(
+      expeditionRegionGrade('echo_well', sceneKey: 'monster_den').a,
+      0,
+    );
+    expect(
+      expeditionRegionGrade('starlight_seed_vault', sceneKey: 'treasure_vault').a,
+      0,
+    );
+    // 전용 원화가 없는 장면은 여전히 보정을 받는다.
+    expect(
+      expeditionRegionGrade('echo_well', sceneKey: 'flooded_cave').a,
+      greaterThan(0),
+    );
+    // 장면을 모르면 지역 기준으로만 판단한다(기존 동작).
+    expect(expeditionRegionGrade('echo_well').a, greaterThan(0));
+  });
+
+  test('전용 원화가 있으면 그 지역에서 실제로 그 그림을 고른다', () {
+    final shared = expeditionSceneTheme('monster_den');
+    final well = expeditionSceneTheme('monster_den', regionCode: 'echo_well');
+    final vault = expeditionSceneTheme(
+      'monster_den',
+      regionCode: 'starlight_seed_vault',
+    );
+    expect(well.assetPath, isNot(shared.assetPath));
+    expect(vault.assetPath, isNot(well.assetPath));
+    expect(well.assetPath, contains('echo-well'));
+
+    // 전용 원화가 없는 조합은 공용으로 떨어진다.
+    expect(
+      expeditionSceneTheme('flooded_cave', regionCode: 'echo_well').assetPath,
+      expeditionSceneTheme('flooded_cave').assetPath,
+    );
+  });
+}
+
+void _walkRouteTests() {
+  test('길은 그림에 그려진 길을 따라가고 물·수풀을 밟지 않는다', () {
+    // 전에는 두 노드를 잇고 가운데를 해시로 부풀린 굽이를 썼다. 굽는 방향이
+    // 그림과 아무 상관이 없어 개울을 가로질렀다. 이제는 통행 마스크 위에서
+    // 찾으므로 길 밖으로 나갈 수 없다.
+    for (final region in _regionsWithTerrain) {
+      final area = expeditionWalkAreaFor(region);
+      final nodes = _layoutFor(region);
+      for (final edge in _edgesFor(region)) {
+        final from = expeditionStandPoint(area, nodes[edge[0]]!);
+        final to = expeditionStandPoint(area, nodes[edge[1]]!);
+        final route = expeditionWalkPath(area, from, to);
+        expect(
+          route.length,
+          greaterThan(1),
+          reason: '$region의 ${edge[0]} → ${edge[1]} 길을 못 찾습니다',
+        );
+        expect(
+          expeditionRouteStaysInside(area, route),
+          isTrue,
+          reason: '$region의 ${edge[0]} → ${edge[1]} 길이 걸을 수 없는 곳을 지납니다',
+        );
+      }
+    }
+  });
+
+  test('길은 벽에 붙지 않아 토큰이 벽을 먹지 않는다', () {
+    final area = expeditionWalkAreaFor('echo_well');
+    final nodes = _layoutFor('echo_well');
+    final route = expeditionWalkPath(
+      area,
+      expeditionStandPoint(area, nodes['entrance']!),
+      expeditionStandPoint(area, nodes['guardian']!),
+    );
+    expect(expeditionPathKeepsClear(area, route), isTrue);
+  });
+
+  test('같은 두 자리를 물으면 언제나 같은 길이 나온다', () {
+    // 캐릭터와 발자국이 따로 물어보므로, 답이 흔들리면 둘이 갈라진다.
+    final area = expeditionWalkAreaFor('heartwood_observatory');
+    final nodes = _layoutFor('heartwood_observatory');
+    final from = expeditionStandPoint(area, nodes['entrance']!);
+    final to = expeditionStandPoint(area, nodes['objective']!);
+    expect(expeditionWalkPath(area, from, to),
+        expeditionWalkPath(area, from, to));
+  });
+
+  test('걸음은 굽은 곳에서도 일정한 속도로 나아간다', () {
+    final area = expeditionWalkAreaFor('echo_well');
+    final nodes = _layoutFor('echo_well');
+    final route = expeditionWalkPath(
+      area,
+      expeditionStandPoint(area, nodes['entrance']!),
+      expeditionStandPoint(area, nodes['objective']!),
+    );
+
+    // 진행도를 고르게 나눴을 때 이동 거리도 고르게 나와야 한다. 조각 번호로
+    // 나누면 굽은 구간에서 걸음이 빨라진다.
+    const aspect = 16 / 9;
+    double gap(Offset a, Offset b) {
+      final dx = (a.dx - b.dx) * aspect;
+      final dy = a.dy - b.dy;
+      return math.sqrt(dx * dx + dy * dy);
+    }
+
+    final steps = <double>[];
+    for (var i = 0; i < 10; i++) {
+      steps.add(gap(
+        expeditionPathPosition(route, i / 10),
+        expeditionPathPosition(route, (i + 1) / 10),
+      ));
+    }
+    final shortest = steps.reduce(math.min);
+    final longest = steps.reduce(math.max);
+    expect(longest / shortest, lessThan(1.25));
+
+    expect(expeditionPathPosition(route, 0), route.first);
+    expect(expeditionPathPosition(route, 1), route.last);
+  });
+
+  test('걷는 방향은 좌우로만 갈리고 수직 이동에서는 파닥이지 않는다', () {
+    const rightward = [Offset(.1, .5), Offset(.5, .5), Offset(.9, .5)];
+    expect(expeditionPathFacing(rightward, .5), 1);
+
+    const leftward = [Offset(.9, .5), Offset(.5, .5), Offset(.1, .5)];
+    expect(expeditionPathFacing(leftward, .5), -1);
+
+    // 세로로만 걷는 구간에서 0을 돌려주면 캐릭터가 정면을 봤다 돌았다 한다.
+    const upward = [Offset(.5, .9), Offset(.5, .5), Offset(.5, .1)];
+    expect(expeditionPathFacing(upward, .5).abs(), 1);
+
+    // 점 하나짜리 길에서는 기본 방향을 지킨다.
+    expect(expeditionPathFacing(const [Offset(.5, .5)], .5), 1);
+  });
+
+  test('장면이 발소리 재질을 정하고 모르는 장면은 화분 소리로 떨어진다', () {
+    // 젖은 곳에서 나무 소리가 나면 눈과 귀가 다른 말을 한다.
+    expect(
+      ExpeditionCombatAudio.stepSoundFor('flooded_cave'),
+      ExpeditionCombatSound.stepStone,
+    );
+    expect(
+      ExpeditionCombatAudio.stepSoundFor('root_tunnel'),
+      ExpeditionCombatSound.stepLeaf,
+    );
+    expect(
+      ExpeditionCombatAudio.stepSoundFor('moon_tower'),
+      ExpeditionCombatSound.stepWood,
+    );
+    // 주인공은 화분이라 모르는 바닥에서도 자기 몸 소리가 난다 — 무음이 아니다.
+    expect(
+      ExpeditionCombatAudio.stepSoundFor('없는장면'),
+      ExpeditionCombatSound.stepPot,
+    );
+    expect(
+      ExpeditionCombatAudio.stepSoundFor(null),
+      ExpeditionCombatSound.stepPot,
+    );
+  });
+}
+
+/// 생성기(`server/scripts/build_region_packs.py`)의 `NODE_LAYOUT`과 같은 자리.
+///
+/// 세 지역이 이 배치를 공유한다. 기억서고는 자기 배치를 쓴다(`_mossLayout`).
+/// 여기 값이 서버와 어긋나면 벽 속에 박힌 노드를 `땅 안에 있다`고 통과시킨다.
+///
+/// 서버 쪽에도 같은 좌표가 박혀 있고(`test_node_layout_is_pinned_because_the_app_mirrors_it`),
+/// 자리를 옮기려면 **두 표를 함께** 고쳐야 한다. 한쪽만 고치면 그 테스트가 잡는다.
+const _nodeLayout = <String, Offset>{
+  'entrance': Offset(.08, .50),
+  'first_event': Offset(.27, .30),
+  'second_event': Offset(.27, .70),
+  'camp': Offset(.48, .50),
+  'discovery': Offset(.50, .20),
+  'guardian': Offset(.69, .50),
+  'objective': Offset(.86, .32),
+  'exit': Offset(.94, .62),
+};
+
+const _sharedEdges = <List<String>>[
+  ['entrance', 'first_event'],
+  ['entrance', 'second_event'],
+  ['first_event', 'camp'],
+  ['second_event', 'camp'],
+  ['camp', 'discovery'],
+  ['camp', 'guardian'],
+  ['guardian', 'objective'],
+  ['objective', 'exit'],
+  // 갈래길·고리길 템플릿이 더 쓰는 간선.
+  ['first_event', 'discovery'],
+  ['second_event', 'discovery'],
+  ['discovery', 'guardian'],
+  ['first_event', 'second_event'],
+];
+
+/// 기억서고는 노드 이름도 자리도 다르다. 가운데 야영지 대신 위아래로 갈린
+/// 마름모라, 공용 배치를 그대로 대면 아래쪽 노드가 벽에 박힌다.
+const _mossLayout = <String, Offset>{
+  'entrance': Offset(.08, .50),
+  'wet_labels': Offset(.28, .27),
+  'root_catalogue': Offset(.29, .72),
+  'quiet_camp': Offset(.49, .19),
+  'pressed_gallery': Offset(.50, .81),
+  'ledger_keeper': Offset(.69, .50),
+  'memory_drawer': Offset(.84, .34),
+  'exit': Offset(.93, .67),
+};
+
+const _mossEdges = <List<String>>[
+  ['entrance', 'wet_labels'],
+  ['entrance', 'root_catalogue'],
+  ['wet_labels', 'quiet_camp'],
+  ['wet_labels', 'pressed_gallery'],
+  ['root_catalogue', 'quiet_camp'],
+  ['root_catalogue', 'pressed_gallery'],
+  ['quiet_camp', 'pressed_gallery'],
+  ['quiet_camp', 'ledger_keeper'],
+  ['pressed_gallery', 'ledger_keeper'],
+  ['ledger_keeper', 'memory_drawer'],
+  ['memory_drawer', 'exit'],
+];
+
+/// 전용 지형 원화가 있는 지역. 통행 마스크도 이만큼 있다.
+const _regionsWithTerrain = <String>[
+  'moss_archive',
+  'echo_well',
+  'starlight_seed_vault',
+  'heartwood_observatory',
+];
+
+Map<String, Offset> _layoutFor(String region) =>
+    region == 'moss_archive' ? _mossLayout : _nodeLayout;
+
+List<List<String>> _edgesFor(String region) =>
+    region == 'moss_archive' ? _mossEdges : _sharedEdges;
+
+void _walkAreaTests() {
+  test('네 지역이 저마다 통행 마스크를 가진다', () {
+    for (final region in _regionsWithTerrain) {
+      final area = expeditionWalkAreaFor(region);
+      expect(area.rows, isNotEmpty, reason: '$region의 마스크가 없습니다');
+      expect(area.rows.length, expeditionWalkMaskRows);
+      for (final row in area.rows) {
+        expect(row.length, expeditionWalkMaskColumns);
+      }
+    }
+    // 모르는 지역도 걸을 땅을 얻어 못 움직이는 일이 없다.
+    expect(expeditionWalkAreaFor(null).rows, isNotEmpty);
+    expect(expeditionWalkAreaFor('없는지역').rows, isNotEmpty);
+  });
+
+  test('걸을 수 있는 땅은 길만큼이지 지도 전체가 아니다', () {
+    for (final region in _regionsWithTerrain) {
+      final coverage = expeditionWalkAreaCoverage(expeditionWalkAreaFor(region));
+      // 너무 좁으면 걸어 다닐 곳이 없다.
+      expect(coverage, greaterThan(.10), reason: '$region이 너무 좁습니다');
+      // 지도 전체를 덮으면 경계가 없는 것과 같다 — 개울 위를 걷던 시절로
+      // 되돌아간다.
+      expect(coverage, lessThan(.45), reason: '$region이 너무 넓습니다');
+    }
+  });
+
+  test('노드마다 설 자리가 있고 표식에서 멀지 않다', () {
+    // 설 자리가 없으면 그 노드는 **영원히 닿을 수 없는 자리**다. 반대로 너무
+    // 멀면 표식과 캐릭터가 따로 논다.
+    const aspect = 16 / 9;
+    for (final region in _regionsWithTerrain) {
+      final area = expeditionWalkAreaFor(region);
+      _layoutFor(region).forEach((code, marker) {
+        final stand = expeditionStandPoint(area, marker);
+        expect(area.contains(stand), isTrue, reason: '$region의 $code');
+        final dx = (stand.dx - marker.dx) * aspect;
+        final dy = stand.dy - marker.dy;
+        expect(
+          math.sqrt(dx * dx + dy * dy),
+          lessThan(.24),
+          reason: '$region의 $code가 표식에서 너무 멉니다',
+        );
+        // 가장자리에 딱 붙으면 88px 토큰이 벽을 먹는다.
+        expect(
+          expeditionWalkAreaMargin(area, stand),
+          greaterThan(.01),
+          reason: '$region의 $code가 벽에 너무 가깝습니다',
+        );
+      });
+    }
+  });
+
+  test('그림에 없는 자리는 걸을 수 없다', () {
+    // 볼록 다각형 하나로 감쌌을 때 실제로 걸을 수 있던 자리들이다. 개울과
+    // 유적 위를 걷던 그 시절로 되돌아가지 않았는지 못 박아 둔다.
+    final echo = expeditionWalkAreaFor('echo_well');
+    // 지도 네 귀퉁이는 밤 수풀이다.
+    for (final corner in const [
+      Offset(.02, .02),
+      Offset(.98, .02),
+      Offset(.02, .98),
+      Offset(.98, .98),
+    ]) {
+      expect(echo.contains(corner), isFalse, reason: '$corner');
+    }
+    // 기억서고 개울.
+    final moss = expeditionWalkAreaFor('moss_archive');
+    expect(moss.contains(const Offset(.20, .13)), isFalse);
+  });
+
+  test('벽으로 걸어가면 멈추지 않고 벽을 따라 미끄러진다', () {
+    final area = expeditionWalkAreaFor('echo_well');
+    final inside = expeditionStandPoint(area, const Offset(.48, .50));
+    expect(area.contains(inside), isTrue);
+
+    // 어떤 방향으로 밀어도 땅을 벗어나지 않는다.
+    for (final delta in const [
+      Offset(.4, 0),
+      Offset(-.4, 0),
+      Offset(0, .4),
+      Offset(0, -.4),
+      Offset(.3, .3),
+      Offset(-.3, -.3),
+    ]) {
+      final next = expeditionStepWithin(area, inside, delta);
+      expect(area.contains(next), isTrue, reason: '$delta 로 벗어났습니다');
+    }
+
+    // 벽에 정면으로 부딪혀도 한 축은 살아 있어야 한다 — 완전히 멈추면 조작이
+    // 걸린 것처럼 느껴진다. 벽을 찾아 실제로 밀어 본다.
+    var wall = inside;
+    for (var step = 0; step < 40; step++) {
+      final next = expeditionStepWithin(area, wall, const Offset(0, -.01));
+      if (next == wall) break;
+      wall = next;
+    }
+    final slid = expeditionStepWithin(area, wall, const Offset(.03, -.03));
+    expect(slid.dx, greaterThan(wall.dx));
+    expect(area.contains(slid), isTrue);
+  });
+}
+
+/// 사방이 가장 넓게 트인 자리. 걸음 테스트가 벽이 아니라 걸음을 재게 한다.
+Offset _openGround(ExpeditionWalkArea area) {
+  var best = const Offset(.5, .5);
+  var bestMargin = -1.0;
+  for (var row = 0; row < area.rows.length; row++) {
+    for (var column = 0; column < area.columns; column++) {
+      if (!area.cellAt(column, row)) continue;
+      final point = Offset(
+        (column + .5) / area.columns,
+        (row + .5) / area.rows.length,
+      );
+      final margin = expeditionWalkAreaMargin(area, point);
+      if (margin > bestMargin) {
+        bestMargin = margin;
+        best = point;
+      }
+    }
+  }
+  return best;
+}
+
+void _freeWalkTests() {
+  test('스틱은 죽은 구역에서 움직이지 않고 바깥에서 0부터 세진다', () {
+    const center = Offset(100, 100);
+
+    // 손가락을 얹기만 해도 캐릭터가 흐르면 안 된다.
+    expect(expeditionStickVector(center, center), Offset.zero);
+    expect(
+      expeditionStickVector(center, center + const Offset(5, 0)),
+      Offset.zero,
+    );
+
+    // 죽은 구역 바로 바깥에서 갑자기 최고 속도가 되지 않는다.
+    final justOutside = expeditionStickVector(
+      center,
+      center + const Offset(expeditionStickDeadZone + 1, 0),
+    );
+    expect(justOutside.distance, lessThan(.1));
+
+    // 끝까지 밀면 1이다.
+    final full = expeditionStickVector(
+      center,
+      center + const Offset(expeditionStickRadius * 2, 0),
+    );
+    expect(full.distance, closeTo(1, .001));
+    expect(full.dx, greaterThan(0));
+  });
+
+  test('손잡이는 반지름 밖으로 나가지 않는다', () {
+    const center = Offset(100, 100);
+    final far = expeditionStickKnob(center, center + const Offset(300, 0));
+    expect((far - center).distance, closeTo(expeditionStickRadius, .001));
+
+    // 안쪽이면 손가락을 그대로 따라간다.
+    const near = Offset(120, 100);
+    expect(expeditionStickKnob(center, near), near);
+  });
+
+  test('가로세로 비율을 보정해 화면에서 같은 속도로 걷는다', () {
+    // 통행 마스크는 그림에서 뽑은 길이라 `(.5,.5)`가 걸을 수 있는 자리라는
+    // 보장이 없다. 사방이 트인 자리를 골라 쓴다 — 벽에 막히면 걸음이 줄어
+    // 비율이 아니라 벽을 재게 된다.
+    final area = expeditionWalkAreaFor('echo_well');
+    final from = _openGround(area);
+    final right = expeditionWalkStep(
+      area: area, from: from, direction: const Offset(1, 0),
+      seconds: .02, aspect: 2,
+    );
+    final down = expeditionWalkStep(
+      area: area, from: from, direction: const Offset(0, 1),
+      seconds: .02, aspect: 2,
+    );
+    // 가로가 세로의 두 배인 지도에서 세로로 걸으면, 정규화 좌표로는 두 배를
+    // 움직여야 화면에서 같은 거리가 된다.
+    expect((down.dy - from.dy) / (right.dx - from.dx), closeTo(2, .01));
+  });
+
+  test('걸음은 땅을 벗어나지 않고 멈춰 있으면 그대로다', () {
+    final area = expeditionWalkAreaFor('echo_well');
+    var position = _openGround(area);
+
+    // 스틱을 놓으면 제자리다.
+    expect(
+      expeditionWalkStep(
+        area: area, from: position, direction: Offset.zero,
+        seconds: .1, aspect: 1.6,
+      ),
+      position,
+    );
+
+    // 위로 계속 밀어도 벽을 넘지 않는다.
+    for (var i = 0; i < 40; i++) {
+      position = expeditionWalkStep(
+        area: area, from: position, direction: const Offset(0, -1),
+        seconds: .05, aspect: 1.6,
+      );
+    }
+    expect(area.contains(position), isTrue);
+  });
+
+  test('스틱만으로 옆 노드까지 실제로 걸어갈 수 있다', () {
+    // 단위 함수만 보면 `한 걸음이 안전한가`만 알 수 있다. 실제 조작은 수백
+    // 걸음이 이어지는 것이고, 벽에 미끄러지며 쌓인 오차나 좁은 목이 캐릭터를
+    // 붙잡을 수 있다. 그래서 길을 따라 스틱을 밀어 **끝까지 닿는지** 본다.
+    const aspect = 16 / 9;
+    for (final region in _regionsWithTerrain) {
+      final area = expeditionWalkAreaFor(region);
+      final nodes = _layoutFor(region);
+      for (final edge in _edgesFor(region)) {
+        final from = expeditionStandPoint(area, nodes[edge[0]]!);
+        final goal = expeditionStandPoint(area, nodes[edge[1]]!);
+        final route = expeditionWalkPath(area, from, goal);
+
+        var position = from;
+        var mark = 1;
+        var frames = 0;
+        while (mark < route.length && frames < 4000) {
+          frames++;
+          final target = route[mark];
+          final gap = target - position;
+          // 한 프레임 걸음(.42/60 ≈ .007)보다 넉넉히 잡는다. 이보다 좁게 잡으면
+          // 다음 점을 지나쳤다 되돌아오기를 되풀이해, 걷지 못하는 게 아닌데도
+          // 걷지 못하는 것처럼 보인다.
+          if (math.sqrt(
+                math.pow(gap.dx * aspect, 2) + gap.dy * gap.dy,
+              ) <
+              .016) {
+            mark++;
+            continue;
+          }
+          // 화면 기준 방향으로 민다. 스틱이 주는 것과 같은 모양의 입력이다.
+          final direction = Offset(gap.dx * aspect, gap.dy);
+          position = expeditionWalkStep(
+            area: area,
+            from: position,
+            direction: direction / direction.distance,
+            seconds: 1 / 60,
+            aspect: aspect,
+          );
+          expect(
+            area.contains(position),
+            isTrue,
+            reason: '$region ${edge[0]}→${edge[1]}에서 길 밖으로 나갔습니다',
+          );
+        }
+        expect(
+          mark,
+          route.length,
+          reason: '$region ${edge[0]}→${edge[1]}에서 걷다 붙잡혔습니다',
+        );
+        final left = goal - position;
+        expect(
+          math.sqrt(math.pow(left.dx * aspect, 2) + left.dy * left.dy),
+          lessThan(.03),
+          reason: '$region ${edge[0]}→${edge[1]} 도착 자리가 어긋났습니다',
+        );
+      }
+    }
+  });
+
+  test('프레임이 길게 끊겨도 벽을 뛰어넘지 않는다', () {
+    // 걸음은 도착 자리만 보고 판정한다. 탭 전환이나 첫 로딩으로 프레임이 한 번
+    // 길게 끊기면 한 번에 지도 절반을 옮기게 되고, 그러면 개울 건너편에
+    // 착지한다. 실제로 0.5초짜리 프레임을 던져 본다.
+    final area = expeditionWalkAreaFor('moss_archive');
+    final from = expeditionStandPoint(area, const Offset(.08, .50));
+    for (final direction in const [
+      Offset(1, 0),
+      Offset(-1, 0),
+      Offset(0, 1),
+      Offset(0, -1),
+      Offset(.7, .7),
+      Offset(-.7, -.7),
+    ]) {
+      final next = expeditionWalkStep(
+        area: area,
+        from: from,
+        direction: direction,
+        seconds: .5,
+        aspect: 16 / 9,
+      );
+      expect(area.contains(next), isTrue, reason: '$direction');
+
+      // 긴 프레임 한 번이 짧은 프레임 여럿과 같은 자리에 닿아야 한다. 나눠
+      // 걷지 않으면 긴 프레임만 벽 너머로 넘어가 둘이 갈라진다.
+      var stepped = from;
+      for (var i = 0; i < 30; i++) {
+        stepped = expeditionWalkStep(
+          area: area,
+          from: stepped,
+          direction: direction,
+          seconds: .5 / 30,
+          aspect: 16 / 9,
+        );
+      }
+      expect(
+        (next - stepped).distance,
+        lessThan(.01),
+        reason: '$direction 에서 긴 프레임이 벽을 뛰어넘었습니다',
+      );
+    }
+  });
+
+  test('가장 가까운 노드를 고르고 멀면 아무 데도 아니다', () {
+    const nodes = <String, Offset>{
+      'camp': Offset(.48, .50),
+      'guardian': Offset(.69, .50),
+    };
+
+    expect(expeditionNodeAt(nodes, const Offset(.48, .50)), 'camp');
+    // 둘 사이 한가운데는 어느 쪽에도 닿지 않는다.
+    expect(expeditionNodeAt(nodes, const Offset(.585, .50)), isNull);
+    // 살짝 치우치면 가까운 쪽이다 — 뒤쪽 노드가 뽑히면 보는 것과 다른 곳으로
+    // 들어간다.
+    expect(expeditionNodeAt(nodes, const Offset(.52, .50)), 'camp');
+    expect(expeditionNodeAt(nodes, const Offset(.66, .50)), 'guardian');
+  });
+
+  test('아래에 있을수록 화면 앞이다', () {
+    expect(
+      expeditionDepthOf(const Offset(.2, .8)),
+      greaterThan(expeditionDepthOf(const Offset(.9, .3))),
+    );
+  });
+
+  test('그림자는 발이 뜬 만큼 줄고 멈추면 온전하다', () {
+    expect(expeditionShadowScale(false, .5), 1);
+    final scales = [
+      for (var i = 0; i < 12; i++) expeditionShadowScale(true, i / 12),
+    ];
+    expect(scales.reduce(math.min), lessThan(.85));
+    expect(scales.reduce(math.max), lessThanOrEqualTo(1));
   });
 }

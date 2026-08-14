@@ -159,6 +159,28 @@ STAGE_THREAT_PROFILES: Mapping[str, Mapping[str, Any]] = MappingProxyType(
                 "pattern_depth": 3,
             }
         ),
+        # 깊은 조사 — 지역을 완주한 사람만 들어온다. 첫 도전 승률 45~70%를
+        # 노리는 유일한 난이도이고 **보상은 늘지 않는다**(9.2: 최초 기록서·서사만).
+        #
+        # 보스보다 장벽을 더 두껍게 하지 않는다. 장벽만 키우면 전투가 길어지기만
+        # 하고 어려워지지는 않는다. 대신 **한 방 상한을 올려** 예고를 잘못 읽은
+        # 대가가 실제로 아프게 만든다 — 실패가 숨은 확률이 아니라 읽고 감수한
+        # 선택에서 나오게 하는 장치다.
+        "deep": MappingProxyType(
+            {
+                "code": "deep",
+                "name": "깊은 조사",
+                "tier": 5,
+                "rank": "deep",
+                "recommended_level": 9,
+                "barrier_bp": 11_500,
+                "intent_power_bonus": 1,
+                "mechanic_level": 3,
+                "affix_slots": 1,
+                "single_hit_cap_bp": 8_400,
+                "pattern_depth": 3,
+            }
+        ),
     }
 )
 

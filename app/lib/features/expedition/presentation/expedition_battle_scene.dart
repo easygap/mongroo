@@ -167,6 +167,7 @@ class _ImmersiveBattleStage extends StatelessWidget {
       borderColor: expeditionGuardianBattleScene.accent.withAlpha(105),
       child: ExpeditionSceneBackdrop(
         scene: expeditionGuardianBattleScene,
+        regionCode: expedition.region.code,
         borderRadius: BorderRadius.circular(18),
         semanticLabel:
             '${node.sceneLabel} 수호전. ${battle.enemy.name} 장벽 ${battle.enemy.guard}/${battle.enemy.maxGuard}.',
