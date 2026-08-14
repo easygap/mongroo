@@ -332,6 +332,38 @@ class _EquipButton extends StatelessWidget {
   }
 }
 
+/// 발동 방식을 한 글자 그림으로.
+///
+/// 서고에서 가장 먼저 알아야 할 것은 효과가 아니라 **`내가 눌러야 하나, 저절로
+/// 되나`**다. 그게 편성 판단을 바꾼다 — 명령형은 대원 행동 한 번을 먹으므로
+/// 두 권을 다 명령형으로 채우면 정작 때릴 사람이 없다. 글로만 적혀 있으면
+/// 스무 권을 다 읽어야 알 수 있어서 그림으로 갈라 둔다.
+///
+/// 래스터 아이콘을 새로 만들지 않는다. 장면 테마가 이미 Material 아이콘을 쓰고
+/// 있어 화풍이 어긋나지 않고, 스무 권 × 등급 조합을 그림으로 그리면 관리할
+/// 자산만 늘어난다.
+IconData skillBookActivationIcon(String activationMode) => switch (activationMode) {
+      // 전투가 시작되면 저절로 — 해가 뜨듯이.
+      'opening' => Icons.wb_twilight_rounded,
+      // 조건이 맞으면 저절로 — 튀는 순간.
+      'trigger' => Icons.bolt_rounded,
+      // 내가 눌러야 한다 — 대원 행동 한 번을 쓴다.
+      _ => Icons.touch_app_rounded,
+    };
+
+String skillBookActivationLabel(String activationMode) => switch (activationMode) {
+      'opening' => '전투 시작에 저절로',
+      'trigger' => '조건이 맞으면 저절로',
+      _ => '눌러서 사용 · 행동 1회',
+    };
+
+/// 등급 색. 3등급은 예산 2를 쓰는 대신 반드시 대가를 지므로 가장 눈에 띈다.
+Color skillBookGradeColor(int grade, ColorScheme scheme) => switch (grade) {
+      3 => scheme.tertiary,
+      2 => scheme.primary,
+      _ => scheme.outline,
+    };
+
 class _BookRow extends StatelessWidget {
   const _BookRow({super.key, required this.book});
 
@@ -350,13 +382,53 @@ class _BookRow extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text('${book.grade}등급', style: theme.textTheme.labelSmall),
-                const SizedBox(width: 6),
+                // 발동 방식과 등급을 한 덩어리로 읽는다. 테두리 색이 등급이고
+                // 안의 그림이 발동 방식이다.
+                Semantics(
+                  label:
+                      '${book.grade}등급, ${skillBookActivationLabel(book.activationMode)}',
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: skillBookGradeColor(
+                          book.grade,
+                          theme.colorScheme,
+                        ),
+                        width: book.grade >= 3 ? 2 : 1,
+                      ),
+                    ),
+                    child: Icon(
+                      skillBookActivationIcon(book.activationMode),
+                      size: 16,
+                      color: skillBookGradeColor(book.grade, theme.colorScheme),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Expanded(
-                  child: Text(book.name, style: theme.textTheme.titleSmall),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(book.name, style: theme.textTheme.titleSmall),
+                      Text(
+                        '${book.grade}등급 · '
+                        '${skillBookActivationLabel(book.activationMode)}',
+                        style: theme.textTheme.labelSmall,
+                      ),
+                    ],
+                  ),
                 ),
                 if (!book.owned)
-                  Text(book.acquireLabel, style: theme.textTheme.labelSmall),
+                  Flexible(
+                    child: Text(
+                      book.acquireLabel,
+                      style: theme.textTheme.labelSmall,
+                      textAlign: TextAlign.end,
+                    ),
+                  ),
               ],
             ),
             Text(book.effectSummary, style: theme.textTheme.bodySmall),

@@ -59,11 +59,14 @@ from app.content.expeditions.combat_motion import (
 from app.content.expeditions.skill_book_effects import (
     CHOICE_KELS,
     COMMAND_FOCUS_COST_BY_GRADE,
+    NOTHING_TO_CHOOSE,
+    all_hit_reduction,
     book_state,
     command_action,
     focus_trigger,
     intent_preview_open,
     kit_modifiers,
+    oath_matchup_bp,
     opening_modifiers,
     take_weakness_bonus,
     validate_choice,
@@ -157,6 +160,9 @@ def member_battle_kit(
     kel_map_version: int = CURRENT_KEL_MAP_VERSION,
     member_state: dict[str, Any] | None = None,
     round_number: int = 1,
+    choice_context: dict[str, dict[str, Any]] | None = None,
+    enemy_guard_bp: int = 10_000,
+    party_unique2_power: int = 0,
 ) -> dict[str, Any]:
     element_kels = element_kel_map(kel_map_version)
     snapshot = profile.get("snapshot", {})
@@ -191,6 +197,10 @@ def member_battle_kit(
 
     def cooldown_remaining(code: str) -> int:
         return max(0, int(cooldowns.get(code, 0)) - int(round_number))
+
+    # 그림자 맹세 — 이 대원이 쓰는 상성 배율을 통째로 갈아 끼운다. 약점은 더
+    # 아프고 중립은 덜 아프다. 내성은 원래 값 그대로다(중복하지 않는다).
+    matchup_bp_table = {**MATCHUP_POWER_BP, **oath_matchup_bp(snapshot)}
 
     def resolve_skill(
         definition: dict[str, Any],
@@ -238,7 +248,7 @@ def member_battle_kit(
             skill_kel = kel_override
         matchup = _kel_matchup(kels, weak_kel=weak_kel, resist_kel=resist_kel)
         matchup_key = "prism_weak" if prism_shifted and matchup == "weak" else matchup
-        matchup_bp = MATCHUP_POWER_BP[matchup_key]
+        matchup_bp = matchup_bp_table[matchup_key]
         cooldown_turns = int(skill["cooldown_turns"])
         if source == "signature" and tier >= 3 and cooldown_turns > 0:
             cooldown_turns = max(1, cooldown_turns - 1)
@@ -246,6 +256,9 @@ def member_battle_kit(
             int(skill["power"])
             + stats[skill_affinity]
             + max(0, (int(combat_stats["offense"]) - 20) // 6)
+            # 고리수 기록부 — 파티 전원의 고유 II에 실리는 정액. `또렷한 겨냥`이
+            # 기본 공격에 붙는 것과 같은 자리(raw_power)라 정액 계약이 같다.
+            + (party_unique2_power if slot == "unique_2" else 0)
         )
         power_scale = signature_scale if source == "signature" else 10_000
         tier_power_bp = TIER_POWER_BP[tier]
@@ -353,6 +366,8 @@ def member_battle_kit(
         source="signature",
         unlock_level=3,
     )
+    # 고리수 기록부 — 파티 전원의 고유 II에 정액이 실린다. 위력만 올리고
+    # 비용·쿨타임은 건드리지 않는다.
     unique_2 = resolve_skill(
         SPECIES_SECONDARY_SKILLS.get(
             species_code, SPECIES_SECONDARY_SKILLS["archive_guide"]
@@ -368,11 +383,30 @@ def member_battle_kit(
     # 결이 아니라 **이 대원이 평소 때리는 결**이어야 한다. 둘은 감정 폼에 따라
     # 다를 수 있고, 다르면 사용자가 고른 결이 영문 없이 거절된다.
     default_kel = element_kels[str(discipline["primary_element"])]
+    # 무엇을 고를 수 있고 지금은 무엇인지. 성장결 여섯은 전투와 무관하게 같아서
+    # 여기서 만들고, 대원·기록서처럼 그 전투를 봐야 아는 것은 호출부가 넘긴다.
+    choices: dict[str, dict[str, Any]] = {
+        "kel": {
+            "options": [
+                {"value": kel, "label": KEL_LABELS[kel]} for kel in CHOICE_KELS
+            ],
+            "current": default_kel,
+        },
+        **(choice_context or {}),
+    }
+    # 마음결 대백과로 바꿔 낀 B1은 이 전투 동안 유지된다. 얼려 둔 장착 위에
+    # 덮어쓰되 스냅샷 자체는 건드리지 않는다 — 런이 끝나면 원래 장착이다.
+    swapped_b1 = (member_state or {}).get("b1_override")
     selected_1 = _resolve_selected_slot(
-        loadout_slots.get("B1"),
+        (
+            {"source": "skillbook", "code": swapped_b1}
+            if swapped_b1 in SKILL_BOOK_CATALOG
+            else loadout_slots.get("B1")
+        ),
         resolve_skill=resolve_skill,
         form=form,
         default_kel=default_kel,
+        choices=choices,
         slot="selected_1",
         unlock_level=9,
     )
@@ -381,12 +415,15 @@ def member_battle_kit(
         resolve_skill=resolve_skill,
         form=form,
         default_kel=default_kel,
+        choices=choices,
         slot="selected_2",
         unlock_level=23,
     )
     basic_element = str(discipline["primary_element"])
     # 장착한 기록서의 정액 보정. 등급·tier로 자라지 않고 문장의 숫자 그대로다.
-    book_modifiers = kit_modifiers(snapshot)
+    book_modifiers = kit_modifiers(
+        snapshot, b1_override=swapped_b1, enemy_guard_bp=enemy_guard_bp
+    )
     basic_raw_power = (
         10
         + stats[affinity] // 2
@@ -441,11 +478,13 @@ def member_battle_kit(
             "tier_power_bp": TIER_POWER_BP[tier],
             "power_neutral": basic_neutral_power,
             "matchup": basic_matchup,
-            "matchup_bp": MATCHUP_POWER_BP[basic_matchup],
+            "matchup_bp": matchup_bp_table[basic_matchup],
             "effect_power_bp": 10_000,
             "effect_values": {},
             "mechanic_summary": "집중 회복 1",
-            "power": scaled_power(basic_neutral_power, MATCHUP_POWER_BP[basic_matchup]),
+            "power": scaled_power(
+                basic_neutral_power, matchup_bp_table[basic_matchup]
+            ),
             "focus_delta": 1,
             "affinity": affinity,
             "affinity_label": AFFINITY_LABELS[affinity],
@@ -714,6 +753,7 @@ def _resolve_selected_slot(
     resolve_skill: Any,
     form: str,
     default_kel: str,
+    choices: dict[str, dict[str, Any]],
     slot: str,
     unlock_level: int,
 ) -> dict[str, Any]:
@@ -764,6 +804,13 @@ def _resolve_selected_slot(
             "effect_summary": book["effect_summary"],
         }
         if action is not None:
+            kind = action.get("choice_kind")
+            picked = choices.get(str(kind)) if kind else None
+            options = list((picked or {}).get("options") or [])
+            # 고를 것이 있다고 해 놓고 후보가 비면 누를 수 없다. 눌러 본 뒤
+            # 거절당하는 대신 왜 못 쓰는지 슬롯에서 바로 읽히게 한다.
+            nothing_to_choose = kind is not None and not options
+        if action is not None:
             # 7.5.1 — 대원 행동 1회를 쓰고, 비용은 등급을 따르며, 전투당 한 번이다.
             # 기록서는 피해를 주지 않는 지원 도구라 위력은 0이고, 효과 값은
             # 정액이라 tier·지원 능력치로 자라지 않는다.
@@ -771,8 +818,12 @@ def _resolve_selected_slot(
             payload.update(
                 {
                     "equipped_book": book_summary,
-                    "available": True,
-                    "lock_reason": None,
+                    "available": not nothing_to_choose,
+                    "lock_reason": (
+                        NOTHING_TO_CHOOSE.get(str(kind), "지금은 고를 것이 없어요.")
+                        if nothing_to_choose
+                        else None
+                    ),
                     "focus_cost": COMMAND_FOCUS_COST_BY_GRADE[grade],
                     "focus_delta": 0,
                     "power": 0,
@@ -786,21 +837,14 @@ def _resolve_selected_slot(
                     # 전투당 1회 — 이번 전투가 끝날 때까지 다시 열리지 않는다.
                     "cooldown_turns": _ONCE_PER_BATTLE_COOLDOWN,
                     # 고를 것이 있으면 무엇을 고르는지와 후보를 함께 준다.
-                    # 앱이 목록을 자체적으로 만들지 않게 하기 위해서다.
-                    "choice_kind": action.get("choice_kind"),
+                    # 앱이 목록을 자체적으로 만들지 않게 하기 위해서다. 판정도
+                    # 이 목록으로 하므로 화면에 보인 것을 골랐는데 거절당하는
+                    # 일이 없다.
+                    "choice_kind": kind,
                     # 무엇과 비교해 `지금과 다른 것`을 따지는지도 함께 밝힌다.
                     # 앱은 이 값으로 현재 표시만 하고 판정은 서버가 한다.
-                    "choice_current": (
-                        default_kel if action.get("choice_kind") == "kel" else None
-                    ),
-                    "choice_options": (
-                        [
-                            {"value": kel, "label": KEL_LABELS[kel]}
-                            for kel in CHOICE_KELS
-                        ]
-                        if action.get("choice_kind") == "kel"
-                        else []
-                    ),
+                    "choice_current": (picked or {}).get("current"),
+                    "choice_options": options,
                 }
             )
             return payload
@@ -1024,6 +1068,23 @@ def guardian_battle_payload(
     weakness = state.get("weakness", AFFINITIES[0])
     weak_element = state.get("weak_element")
     resist_element = state.get("resist_element")
+    # 이번 라운드 예고는 선택 후보(누구에게 넘길까)를 정하는 데 필요해서 파티를
+    # 돌기 전에 먼저 읽는다. 아래에서 그대로 다시 쓴다.
+    wave = _current_wave(state)
+    boss_phase = _current_boss_phase(state)
+    payload_intent = _intent(
+        encounter,
+        int(state.get("intent_index", 0)),
+        wave=wave,
+        boss_phase=boss_phase,
+        difficulty=state.get("difficulty"),
+    )
+    # 마무리 결심이 보는 장벽 비율과 고리수 기록부의 파티 보정. 파티를 돌기
+    # 전에 한 번만 구한다.
+    enemy_guard_bp = _enemy_guard_bp(state)
+    party_unique2_power = int(
+        (state.get("skill_book_opening") or {}).get("unique2_power", 0)
+    )
     party = []
     for member_state in state.get("party", []):
         member_id = int(member_state["member_id"])
@@ -1047,18 +1108,18 @@ def guardian_battle_payload(
                     kel_map_version=kel_map_version,
                     member_state=member_state,
                     round_number=int(state.get("round", 1)),
+                    enemy_guard_bp=enemy_guard_bp,
+                    party_unique2_power=party_unique2_power,
+                    choice_context=_battle_choice_context(
+                        state,
+                        member_state=member_state,
+                        profile_by_id=profile_by_id,
+                        intent=payload_intent,
+                    ),
                 ),
             }
         )
-    wave = _current_wave(state)
-    boss_phase = _current_boss_phase(state)
-    intent = _intent(
-        encounter,
-        int(state.get("intent_index", 0)),
-        wave=wave,
-        boss_phase=boss_phase,
-        difficulty=state.get("difficulty"),
-    )
+    intent = payload_intent
     pending = state.get("pending")
     acted = [
         int(member_id)
@@ -1146,6 +1207,114 @@ def _living_party(state: dict[str, Any]) -> list[dict[str, Any]]:
     return [member for member in state.get("party", []) if int(member["hp"]) > 0]
 
 
+def _battle_choice_context(
+    state: dict[str, Any],
+    *,
+    member_state: dict[str, Any],
+    profile_by_id: dict[int, dict[str, Any]],
+    intent: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    """그 전투를 봐야 아는 선택 후보를 한 곳에서 만든다.
+
+    이 함수가 만든 목록이 앱에 그대로 내려가고, 명령이 들어올 때도 **같은
+    목록으로** 판정한다. 만드는 곳과 판정하는 곳이 갈라지면 화면에 보인 것을
+    골랐는데 거절당하는 일이 생긴다.
+    """
+
+    member_id = int(member_state["member_id"])
+    living = _living_party(state)
+
+    def name_of(other: dict[str, Any]) -> str:
+        snapshot = (profile_by_id.get(int(other["member_id"])) or {}).get(
+            "snapshot"
+        ) or {}
+        return str(snapshot.get("name") or other.get("name") or "탐험대원")
+
+    # ── 누구에게 넘길까(아홉 꼬리의 잔상) ─────────────────────────────────
+    # 전체 공격은 넘길 대상이라는 개념이 없다. 하나로 몰아 주면 전체기를 단일기로
+    # 바꾸는 셈이라 후보를 비워 슬롯이 잠긴 채 보이게 한다.
+    targeted = (
+        [] if intent.get("target", "front") == "all" else _target_members(state, intent)
+    )
+    current_target = str(int(targeted[0]["member_id"])) if targeted else None
+    member_options = (
+        [
+            {"value": str(int(other["member_id"])), "label": name_of(other)}
+            for other in living
+            if str(int(other["member_id"])) != current_target
+        ]
+        if targeted
+        else []
+    )
+
+    # ── 어떤 책으로 바꿔 낄까(마음결 대백과) ──────────────────────────────
+    loadout = ((profile_by_id.get(member_id) or {}).get("snapshot") or {}).get(
+        "skill_loadout"
+    ) or {}
+    current_b1 = member_state.get("b1_override") or (
+        (loadout.get("slots") or {}).get("B1") or {}
+    ).get("code")
+    # 파티 안에서 같은 책을 둘이 들 수 없다는 규칙은 전투 중 교체에도 그대로
+    # 적용된다. 출발에서만 막고 여기서 뚫리면 규칙이 아니다.
+    taken = _party_equipped_codes(state, list(profile_by_id.values()))
+    # 읽는 순서는 이름순이다. 스냅샷이 어떤 순서로 얼렸든 화면에서는 늘 같은
+    # 자리에 있어야 손이 기억한다.
+    book_options = sorted(
+        (
+            {"value": code, "label": str(SKILL_BOOK_CATALOG[code]["name"])}
+            for code in (loadout.get("owned_codes") or [])
+            if code in SKILL_BOOK_CATALOG and code not in taken
+        ),
+        key=lambda option: option["label"],
+    )
+
+    return {
+        "member": {"options": member_options, "current": current_target},
+        "book": {"options": book_options, "current": current_b1},
+    }
+
+
+def _party_equipped_codes(
+    state: dict[str, Any], profiles: list[dict[str, Any]]
+) -> set[str]:
+    """지금 파티가 실제로 끼고 있는 기록서 코드 전부.
+
+    스냅샷의 두 칸과 전투 중 교체분을 함께 본다. `파티 안 중복 금지`를 전투 중
+    교체에도 그대로 적용하려면 두 가지를 같이 봐야 한다.
+    """
+
+    override_by_member = {
+        int(member["member_id"]): member.get("b1_override")
+        for member in state.get("party", [])
+    }
+    codes: set[str] = set()
+    for profile in profiles:
+        member_id = int(profile.get("id", 0))
+        slots = ((profile.get("snapshot") or {}).get("skill_loadout") or {}).get(
+            "slots"
+        ) or {}
+        for slot, decision in slots.items():
+            code = (decision or {}).get("code")
+            # 교체된 첫 칸은 원래 책이 아니라 지금 낀 책이 자리를 차지한다.
+            if slot == "B1" and override_by_member.get(member_id):
+                continue
+            if code:
+                codes.add(str(code))
+        if override := override_by_member.get(member_id):
+            codes.add(str(override))
+    return codes
+
+
+def _enemy_guard_bp(state: dict[str, Any]) -> int:
+    """남은 적 장벽을 만분율로. `장벽 20% 이하` 판정의 단일 원본이다.
+
+    장벽이 0이면 전투가 이미 끝나 있으므로 0을 그대로 돌려준다.
+    """
+
+    maximum = max(1, int(state.get("enemy_max_guard", 1)))
+    return max(0, int(state.get("enemy_guard", 0))) * 10_000 // maximum
+
+
 def _target_members(
     state: dict[str, Any], intent: dict[str, Any]
 ) -> list[dict[str, Any]]:
@@ -1153,9 +1322,27 @@ def _target_members(
     target = intent.get("target", "front")
     if target == "all":
         return living
+    # 아홉 꼬리의 잔상 — 이 라운드에 한해 예고된 공격을 다른 대원이 받는다.
+    # 넘겨받은 대원이 그 사이 쓰러졌으면 원래 규칙으로 돌아간다.
+    retarget = _retargeted_member_id(state)
+    if retarget is not None:
+        for member in living:
+            if int(member["member_id"]) == retarget:
+                return [member]
     if target == "lowest":
         return [min(living, key=lambda item: (int(item["hp"]), item["member_id"]))]
     return [living[0]]
+
+
+def _retargeted_member_id(state: dict[str, Any]) -> int | None:
+    """이번 라운드에 예고를 넘겨받은 대원. 라운드가 지나면 저절로 풀린다."""
+
+    handoff = book_state(state).get("intent_target")
+    if not isinstance(handoff, dict):
+        return None
+    if int(handoff.get("round", 0)) != int(state.get("round", 1)):
+        return None
+    return int(handoff.get("member_id", 0)) or None
 
 
 def _pending_round(state: dict[str, Any]) -> dict[str, Any] | None:
@@ -1211,6 +1398,7 @@ def _apply_member_command(
     state: dict[str, Any],
     command: dict[str, Any],
     profile_by_id: dict[int, dict[str, Any]],
+    encounter: dict[str, Any],
 ) -> dict[str, Any]:
     """대원 한 명의 행동을 해석해 상태를 바꾸고 이벤트 하나를 돌려준다.
 
@@ -1272,6 +1460,33 @@ def _apply_member_command(
             "EXPEDITION_COMBAT_FIRST_ROUND_SKILL_LOCKED",
             "태엽을 감는 동안이라 첫 라운드에는 기본 공격과 마음 지키기만 쓸 수 있어요.",
         )
+    # 고리수 기록부 — 파티 전원이 고유 II를 +4 받는 대가로, 장착자는 그 전투
+    # 내내 몸을 뺄 수 없다. 라운드가 아니라 전투 단위다.
+    if action == "guard" and member_id in {
+        int(value)
+        for value in (state.get("skill_book_opening") or {}).get("guard_locked", [])
+    }:
+        raise CombatRuleError(
+            "EXPEDITION_COMBAT_GUARD_LOCKED",
+            "고리수를 세는 동안이라 이 전투에서는 마음 지키기를 쓸 수 없어요.",
+        )
+    # 아홉 꼬리의 잔상 — 예고를 넘겨받은 대원은 그 라운드에 몸을 뺄 수 없다.
+    if action == "guard" and _retargeted_member_id(state) == member_id:
+        raise CombatRuleError(
+            "EXPEDITION_COMBAT_GUARD_BLOCKED",
+            "잔상을 대신 받은 대원이라 이번 라운드에는 마음 지키기를 쓸 수 없어요.",
+        )
+    # 마음결 대백과 — 책을 바꿔 낀 라운드에는 스킬이 잠긴다. 기본 공격과 마음
+    # 지키기는 남겨 `최소 한 행동은 항상 합법` 불변식을 지킨다.
+    if (
+        action in SKILL_ACTIONS
+        and int(member_state.get("skill_blocked_round", 0))
+        == int(state.get("round", 1))
+    ):
+        raise CombatRuleError(
+            "EXPEDITION_COMBAT_SKILL_BLOCKED",
+            "기록서를 바꿔 끼는 중이라 이번 라운드에는 기본 공격과 마음 지키기만 쓸 수 있어요.",
+        )
     if member_id in pending["acted"]:
         raise CombatRuleError(
             "EXPEDITION_COMBAT_DUPLICATE_MEMBER",
@@ -1304,6 +1519,22 @@ def _apply_member_command(
         kel_map_version=kel_map_version,
         member_state=member_state,
         round_number=round_number,
+        enemy_guard_bp=_enemy_guard_bp(state),
+        party_unique2_power=int(
+            (state.get("skill_book_opening") or {}).get("unique2_power", 0)
+        ),
+        choice_context=_battle_choice_context(
+            state,
+            member_state=member_state,
+            profile_by_id=profile_by_id,
+            intent=_intent(
+                encounter,
+                int(state.get("intent_index", 0)),
+                wave=_current_wave(state),
+                boss_phase=_current_boss_phase(state),
+                difficulty=state.get("difficulty"),
+            ),
+        ),
     )
     actor_name = profile.get("snapshot", {}).get("name", "탐험대원")
     enemy_before = int(state["enemy_guard"])
@@ -1389,6 +1620,11 @@ def _apply_member_command(
                     str(book["code"]),
                     choice if isinstance(choice, str) else None,
                     current=action_data.get("choice_current"),
+                    # 앱에 내려보낸 바로 그 목록으로 판정한다.
+                    allowed=[
+                        str(option["value"])
+                        for option in action_data.get("choice_options") or []
+                    ],
                 )
                 if problem:
                     raise CombatRuleError(
@@ -1501,6 +1737,20 @@ def _apply_member_command(
             # 이 값을 읽어 상성을 다시 계산하므로 확정 전에 예상 피해가 보인다.
             if isinstance(choice, str) and choice:
                 member_state["kel_override"] = choice
+        elif effect == "book_intent_retarget":
+            # 예고된 공격을 이 라운드에 한해 다른 대원이 받는다. 넘겨받은 대원은
+            # 그 라운드에 마음 지키기를 쓸 수 없다 — 설계서의 반대급부다.
+            if isinstance(choice, str) and choice.isdigit():
+                book_state(state)["intent_target"] = {
+                    "round": round_number,
+                    "member_id": int(choice),
+                }
+        elif effect == "book_swap_b1":
+            # 첫 칸을 이 전투 동안 다른 책으로 바꿔 낀다. 대신 바꾼 라운드에는
+            # 스킬을 쓸 수 없다. 스냅샷은 건드리지 않아 런이 끝나면 원래 장착이다.
+            if isinstance(choice, str) and choice:
+                member_state["b1_override"] = choice
+                member_state["skill_blocked_round"] = round_number
         elif effect == "book_revive_one":
             # HP 0 대원 1명을 HP 1로 복귀. 정액이라 등급·tier로 자라지 않는다.
             downed = sorted(
@@ -1801,6 +2051,9 @@ def _apply_member_command(
             "damage": damage,
             "enemy_guard_before": enemy_before,
             "enemy_guard_after": int(state["enemy_guard"]),
+            # 이 장벽이 무슨 결이었는지. `장벽 3종 열기` 같은 조건은 횟수가
+            # 아니라 가짓수를 묻는데, 전투가 끝나면 이 값이 사라진다.
+            "enemy_weak_kel": state.get("weak_kel"),
             "focus_after": focus,
             "caption": caption,
         },
@@ -1860,6 +2113,17 @@ def _finalize_round(
         )
         damage_cap = max(1, (int(target["max_hp"]) * hit_cap_bp + 9_999) // 10_000)
         damage = min(raw_damage, damage_cap)
+        # 흔들리지 않는 축 — 적이 **전원을 노릴 때만** 정액 1을 덜어 낸다.
+        # 상한을 적용한 뒤에 뺀다. `피해 −1`은 실제로 깎이는 체력에 대한
+        # 약속이고, 상한 앞에서 빼면 상한에 먹혀 아무 일도 안 일어난다.
+        if intent.get("target") == "all":
+            damage = max(
+                0,
+                damage
+                - all_hit_reduction(
+                    (profile_by_id.get(int(target["member_id"])) or {}).get("snapshot")
+                ),
+            )
         target["guard"] = max(0, guard_before - target_power)
         target["hp"] = max(0, int(target["hp"]) - damage)
         # 빈틈은 다음으로 실제 적중한 공격 한 번에만 소비한다.
@@ -2078,7 +2342,9 @@ def resolve_guardian_round(
     round_over = False
     for command in commands:
         phase_before = int(state.get("boss_phase_index", 0))
-        events.append(_apply_member_command(state, command, profile_by_id))
+        events.append(
+            _apply_member_command(state, command, profile_by_id, encounter)
+        )
         if int(state["enemy_guard"]) <= 0:
             events.extend(_enemy_cleared_events(state))
             round_over = True
@@ -2115,7 +2381,7 @@ def submit_guardian_action(
         raise CombatRuleError("EXPEDITION_COMBAT_FINISHED", "이미 끝난 전투예요.")
     profile_by_id = {int(profile["id"]): profile for profile in profiles}
     phase_before = int(state.get("boss_phase_index", 0))
-    events = [_apply_member_command(state, command, profile_by_id)]
+    events = [_apply_member_command(state, command, profile_by_id, encounter)]
     if int(state["enemy_guard"]) <= 0:
         events.extend(_enemy_cleared_events(state))
     else:

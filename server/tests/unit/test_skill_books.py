@@ -818,28 +818,36 @@ def test_short_cheer_can_only_be_used_once_per_battle():
 
 
 def test_books_without_a_mechanic_stay_locked_and_say_so():
-    """효과가 없는 command 책은 누를 수 없다. 있는 척하지 않는다."""
+    """기믹이 없는 책은 이름만 보이고 누를 수 없다. 있는 척하지 않는다.
+
+    카탈로그가 아직 `combat_effect: false`로 둔 책 전부를 훑는다. 예시 하나를
+    박아 두면 그 책이 연결되는 날 테스트를 고치느라 계약이 흐려진다.
+    """
 
     from app.content.expeditions.combat import member_battle_kit
 
-    kit = member_battle_kit(
-        _profile(
-            {
-                "skill_loadout": {
-                    "slots": {
-                        "B1": {"source": "skillbook", "code": "nine_tail_afterimage"},
-                        "B2": {"source": "emotion", "code": "emotion.primary"},
+    unwired = [
+        code for code, book in SKILL_BOOK_CATALOG.items() if not book["combat_effect"]
+    ]
+    for code in unwired:
+        kit = member_battle_kit(
+            _profile(
+                {
+                    "skill_loadout": {
+                        "slots": {
+                            "B1": {"source": "skillbook", "code": code},
+                            "B2": {"source": "emotion", "code": "emotion.primary"},
+                        }
                     }
                 }
-            }
+            )
         )
-    )
-    slot = next(
-        item for item in kit["selected_skills"] if item["slot"] == "selected_1"
-    )
-    assert slot["available"] is False
-    assert slot["lock_reason"] == "효과를 준비하고 있어요"
-    assert slot["equipped_book"]["code"] == "nine_tail_afterimage"
+        slot = next(
+            item for item in kit["selected_skills"] if item["slot"] == "selected_1"
+        )
+        assert slot["available"] is False, code
+        assert slot["lock_reason"] == "효과를 준비하고 있어요", code
+        assert slot["equipped_book"]["code"] == code
 
 
 def test_reviving_root_brings_one_downed_member_back_at_one_hp():
@@ -1170,3 +1178,689 @@ def test_resonance_tuner_is_a_once_per_battle_command():
         )
     assert caught.value.code == "EXPEDITION_COMBAT_COOLDOWN"
     assert "한 번만" in caught.value.message
+
+
+def _b2_party(code: str, *, owned: list[str] | None = None) -> list[dict]:
+    """3등급 책을 **두 번째 칸**에 끼운 파티.
+
+    아홉 꼬리의 잔상과 마음결 대백과는 3등급이라 B2에서만 펼쳐진다(7.2). 대백과가
+    바꾸는 대상은 첫 칸이므로, 책이 첫 칸에 있으면 자기 자신을 바꾸는 이상한
+    상황이 된다. 실제 장착 규칙대로 두고 시험한다.
+    """
+
+    party = _party_book(code)
+    party[0]["snapshot"]["skill_loadout"] = {
+        "slots": {
+            "B1": {"source": "skillbook", "code": "clear_aim"},
+            "B2": {"source": "skillbook", "code": code},
+        },
+        "owned_codes": owned or [],
+    }
+    return party
+
+
+def test_afterimage_hands_the_telegraphed_hit_to_someone_else():
+    """예고된 공격을 고른 대원이 대신 받는다. 그 라운드에만."""
+
+    from app.content.expeditions.combat import (
+        _retargeted_member_id,
+        new_guardian_battle,
+        submit_guardian_action,
+    )
+
+    encounter = _encounter_fixture()
+
+    # 책이 없으면 먼저 행동한 대원(1번)이 front 예고를 받는다.
+    bare = _party_book("clear_aim")
+    plain = new_guardian_battle("bare", encounter, bare)
+    for member_id in (1, 2):
+        plain = submit_guardian_action(
+            plain, {"member_id": member_id, "action": "attack"}, encounter, bare
+        )
+    assert [int(member["hp"]) for member in plain["party"]] == [7, 8]
+
+    # 잔상을 쓰면 2번이 대신 받는다.
+    profiles = _b2_party("nine_tail_afterimage")
+    state = new_guardian_battle("fox", encounter, profiles)
+    state = submit_guardian_action(
+        state,
+        {"member_id": 1, "action": "selected_2", "choice": "2"},
+        encounter,
+        profiles,
+    )
+    state = submit_guardian_action(
+        state, {"member_id": 2, "action": "attack"}, encounter, profiles
+    )
+    assert [int(member["hp"]) for member in state["party"]] == [8, 7]
+    # 라운드가 넘어가면 저절로 풀린다 — 다음 라운드까지 끌고 가지 않는다.
+    assert int(state["round"]) == 2
+    assert _retargeted_member_id(state) is None
+
+
+def test_afterimage_target_cannot_guard_that_round():
+    """반대급부 — 잔상을 대신 받은 대원은 그 라운드에 몸을 뺄 수 없다."""
+
+    import pytest
+
+    from app.content.expeditions.combat import (
+        CombatRuleError,
+        new_guardian_battle,
+        submit_guardian_action,
+    )
+
+    encounter = _encounter_fixture()
+    profiles = _b2_party("nine_tail_afterimage")
+    state = new_guardian_battle("fox", encounter, profiles)
+    state = submit_guardian_action(
+        state,
+        {"member_id": 1, "action": "selected_2", "choice": "2"},
+        encounter,
+        profiles,
+    )
+    with pytest.raises(CombatRuleError) as caught:
+        submit_guardian_action(
+            state, {"member_id": 2, "action": "guard"}, encounter, profiles
+        )
+    assert caught.value.code == "EXPEDITION_COMBAT_GUARD_BLOCKED"
+    # 다른 행동은 막지 않는다. `최소 한 행동은 항상 합법`이 지켜진다.
+    submit_guardian_action(
+        state, {"member_id": 2, "action": "attack"}, encounter, profiles
+    )
+
+
+def test_afterimage_offers_everyone_but_the_current_target():
+    """지금 노려지는 대원은 후보에서 빠진다 — 넘길 곳이 아니다."""
+
+    from app.content.expeditions.combat import (
+        guardian_battle_payload,
+        new_guardian_battle,
+    )
+
+    encounter = _encounter_fixture()
+    profiles = _b2_party("nine_tail_afterimage")
+    payload = guardian_battle_payload(
+        new_guardian_battle("fox", encounter, profiles), encounter, profiles
+    )
+    slot = [
+        item
+        for item in payload["party"][0]["kit"]["selected_skills"]
+        if item["slot"] == "selected_2"
+    ][0]
+
+    assert slot["available"] is True
+    assert slot["choice_kind"] == "member"
+    assert slot["choice_current"] == "1"
+    # 이름표는 서버가 준다. 앱이 대원 이름을 따로 찾아 붙이지 않는다.
+    assert slot["choice_options"] == [{"value": "2", "label": "볕이"}]
+
+
+def test_afterimage_stays_locked_against_an_attack_on_everyone():
+    """전체 공격은 넘길 대상이 없다. 눌러 본 뒤 거절하는 대신 미리 잠근다."""
+
+    from app.content.expeditions.combat import (
+        guardian_battle_payload,
+        new_guardian_battle,
+    )
+
+    encounter = {
+        **_encounter_fixture(),
+        "intents": [
+            {
+                "code": "sweep",
+                "name": "장부 쓸기",
+                "telegraph": "모두를 노려요.",
+                "target": "all",
+                "power": 1,
+            }
+        ],
+    }
+    profiles = _b2_party("nine_tail_afterimage")
+    payload = guardian_battle_payload(
+        new_guardian_battle("fox", encounter, profiles), encounter, profiles
+    )
+    slot = [
+        item
+        for item in payload["party"][0]["kit"]["selected_skills"]
+        if item["slot"] == "selected_2"
+    ][0]
+
+    assert slot["available"] is False
+    assert slot["lock_reason"] == "넘길 다른 대원이 없어요."
+    assert slot["choice_options"] == []
+
+
+def test_encyclopedia_swaps_the_first_slot_for_the_rest_of_the_battle():
+    """바꿔 낀 책은 슬롯에도 보이고 그 책의 수치도 실제로 붙는다."""
+
+    from app.content.expeditions.combat import (
+        guardian_battle_payload,
+        new_guardian_battle,
+        submit_guardian_action,
+    )
+
+    encounter = _encounter_fixture()
+    profiles = _b2_party("heart_encyclopedia", owned=["leaf_greave"])
+    state = new_guardian_battle("book", encounter, profiles)
+
+    def first_slot(current: dict) -> dict:
+        member = guardian_battle_payload(current, encounter, profiles)["party"][0]
+        return [
+            item
+            for item in member["kit"]["selected_skills"]
+            if item["slot"] == "selected_1"
+        ][0]
+
+    def guard_of(current: dict) -> int:
+        member = guardian_battle_payload(current, encounter, profiles)["party"][0]
+        return int(member["kit"]["guard"]["guard"])
+
+    assert first_slot(state)["equipped_book"]["code"] == "clear_aim"
+    guard_before = guard_of(state)
+
+    state = submit_guardian_action(
+        state,
+        {"member_id": 1, "action": "selected_2", "choice": "leaf_greave"},
+        encounter,
+        profiles,
+    )
+
+    assert first_slot(state)["equipped_book"]["code"] == "leaf_greave"
+    # 이름만 바뀌고 효과는 안 붙는 상태를 만들지 않는다 — 잎사귀 각반의 +1이
+    # 실제 방어량에 실린다.
+    assert guard_of(state) == guard_before + 1
+    # 스냅샷은 건드리지 않는다. 런이 끝나면 원래 장착 그대로다.
+    assert profiles[0]["snapshot"]["skill_loadout"]["slots"]["B1"]["code"] == "clear_aim"
+
+
+def test_encyclopedia_locks_skills_for_the_round_it_swapped():
+    """반대급부 — 바꿔 끼는 라운드에는 기본 공격과 마음 지키기만 남는다."""
+
+    import pytest
+
+    from app.content.expeditions.combat import (
+        CombatRuleError,
+        new_guardian_battle,
+        submit_guardian_action,
+    )
+
+    encounter = _encounter_fixture()
+    profiles = _b2_party("heart_encyclopedia", owned=["leaf_greave"])
+    state = new_guardian_battle("book", encounter, profiles)
+    state = submit_guardian_action(
+        state,
+        {"member_id": 1, "action": "selected_2", "choice": "leaf_greave"},
+        encounter,
+        profiles,
+    )
+    state = submit_guardian_action(
+        state, {"member_id": 2, "action": "attack"}, encounter, profiles
+    )
+    # 라운드가 바뀌었으니 잠금은 풀려 있다.
+    assert int(state["round"]) == 2
+    submit_guardian_action(
+        state, {"member_id": 1, "action": "unique_1"}, encounter, profiles
+    )
+
+    # 같은 라운드였다면 막혔다.
+    same_round = new_guardian_battle("book2", encounter, profiles)
+    same_round["party"][0]["skill_blocked_round"] = 1
+    with pytest.raises(CombatRuleError) as caught:
+        submit_guardian_action(
+            same_round, {"member_id": 1, "action": "unique_1"}, encounter, profiles
+        )
+    assert caught.value.code == "EXPEDITION_COMBAT_SKILL_BLOCKED"
+    submit_guardian_action(
+        same_round, {"member_id": 1, "action": "attack"}, encounter, profiles
+    )
+
+
+def test_encyclopedia_only_offers_books_frozen_at_departure():
+    """후보는 출발 스냅샷이 정한다. 런 도중에 산 책은 끼어들지 않는다."""
+
+    from app.content.expeditions.combat import (
+        guardian_battle_payload,
+        new_guardian_battle,
+    )
+
+    encounter = _encounter_fixture()
+    # 이미 끼고 있는 책과 3등급 책은 후보가 아니다(첫 칸에 들어갈 수 없다).
+    profiles = _b2_party(
+        "heart_encyclopedia",
+        owned=["clear_aim", "leaf_greave", "first_breath"],
+    )
+    payload = guardian_battle_payload(
+        new_guardian_battle("book", encounter, profiles), encounter, profiles
+    )
+    slot = [
+        item
+        for item in payload["party"][0]["kit"]["selected_skills"]
+        if item["slot"] == "selected_2"
+    ][0]
+
+    assert slot["choice_kind"] == "book"
+    assert slot["choice_current"] == "clear_aim"
+    # 지금 낀 clear_aim은 빠지고 나머지만 남는다. 순서는 스냅샷이 얼린 순서가
+    # 아니라 이름순이라 화면에서 늘 같은 자리에 있다.
+    assert [option["label"] for option in slot["choice_options"]] == [
+        "잎사귀 각반",
+        "첫 호흡",
+    ]
+    assert all(option["label"] for option in slot["choice_options"])
+
+    # 가진 책이 없으면 바꿔 낄 것이 없어 잠긴다.
+    bare = _b2_party("heart_encyclopedia")
+    empty = guardian_battle_payload(
+        new_guardian_battle("book", encounter, bare), encounter, bare
+    )
+    empty_slot = [
+        item
+        for item in empty["party"][0]["kit"]["selected_skills"]
+        if item["slot"] == "selected_2"
+    ][0]
+    assert empty_slot["available"] is False
+    assert empty_slot["lock_reason"] == "바꿔 낄 다른 기록서가 없어요."
+
+
+def test_choice_is_judged_against_the_list_the_app_was_given():
+    """화면에 없던 값은 거절한다 — 목록과 판정이 같은 곳에서 나온다."""
+
+    import pytest
+
+    from app.content.expeditions.combat import (
+        CombatRuleError,
+        new_guardian_battle,
+        submit_guardian_action,
+    )
+
+    encounter = _encounter_fixture()
+    profiles = _b2_party("heart_encyclopedia", owned=["leaf_greave"])
+
+    for bad in ("clear_aim", "double_leaf", "없는책"):
+        state = new_guardian_battle("book", encounter, profiles)
+        with pytest.raises(CombatRuleError) as caught:
+            submit_guardian_action(
+                state,
+                {"member_id": 1, "action": "selected_2", "choice": bad},
+                encounter,
+                profiles,
+            )
+        assert caught.value.code == "EXPEDITION_COMBAT_CHOICE_REQUIRED"
+
+    # 파티의 다른 대원이 들고 있는 책도 후보가 아니다 — 파티 내 중복 금지는
+    # 전투 중 교체에도 그대로 적용된다.
+    shared = _b2_party("heart_encyclopedia", owned=["field_note_echo"])
+    state = new_guardian_battle("book", encounter, shared)
+    with pytest.raises(CombatRuleError):
+        submit_guardian_action(
+            state,
+            {"member_id": 1, "action": "selected_2", "choice": "field_note_echo"},
+            encounter,
+            shared,
+        )
+
+
+def test_final_resolve_only_fires_under_a_fifth_of_the_barrier():
+    """마무리 결심 — 장벽 20% 이하에서만 +5. 경계 바로 위에서는 붙지 않는다."""
+
+    from app.content.expeditions.combat import member_battle_kit
+
+    profile = _party_book("final_resolve")[0]
+    bare = _party_book("clear_aim")[0]
+
+    def raw_power(target: dict, guard_bp: int) -> int:
+        return int(
+            member_battle_kit(target, enemy_guard_bp=guard_bp)["basic"]["raw_power"]
+        )
+
+    full = raw_power(profile, 10_000)
+    # 20%를 갓 넘으면 아직 아니다.
+    assert raw_power(profile, 2_001) == full
+    # 정확히 20%부터 붙는다 — 경계는 포함이다.
+    assert raw_power(profile, 2_000) == full + 5
+    assert raw_power(profile, 0) == full + 5
+
+    # 책이 없으면 장벽이 아무리 낮아도 그대로다.
+    assert raw_power(bare, 0) == raw_power(bare, 10_000)
+
+
+def test_final_resolve_is_visible_before_the_button_is_pressed():
+    """확정 전에 이미 오른 위력이 보인다. 눌러 봐야 아는 효과가 아니다."""
+
+    from app.content.expeditions.combat import (
+        guardian_battle_payload,
+        new_guardian_battle,
+    )
+
+    encounter = _encounter_fixture()
+    profiles = _party_book("final_resolve")
+
+    # 장벽은 전투 시작에서 난이도 계수로 조정된다. 20%는 fixture의 400이 아니라
+    # **실제로 세워진 장벽**을 기준으로 세야 한다.
+    opened = new_guardian_battle("resolve", encounter, profiles)
+    threshold = int(opened["enemy_max_guard"]) * 2_000 // 10_000
+
+    def shown_power(guard: int) -> int:
+        state = new_guardian_battle("resolve", encounter, profiles)
+        state["enemy_guard"] = guard
+        payload = guardian_battle_payload(state, encounter, profiles)
+        return int(payload["party"][0]["kit"]["basic"]["power"])
+
+    assert shown_power(threshold + 1) < shown_power(threshold)
+
+
+def test_steady_axis_only_softens_attacks_on_everyone():
+    """흔들리지 않는 축 — 전체 공격만 정액 1을 덜어 낸다. 단일기는 그대로."""
+
+    from app.content.expeditions.combat import (
+        new_guardian_battle,
+        submit_guardian_action,
+    )
+
+    def hp_after(intent_target: str, code: str) -> list[int]:
+        encounter = {
+            **_encounter_fixture(),
+            "intents": [
+                {
+                    "code": "sweep",
+                    "name": "장부 쓸기",
+                    "telegraph": "노려요.",
+                    "target": intent_target,
+                    # 방어를 안 하면 그대로 들어올 만큼만.
+                    "power": 3,
+                }
+            ],
+        }
+        profiles = _party_book(code)
+        state = new_guardian_battle("axis", encounter, profiles)
+        for member_id in (1, 2):
+            state = submit_guardian_action(
+                state, {"member_id": member_id, "action": "attack"}, encounter, profiles
+            )
+        return [int(member["hp"]) for member in state["party"]]
+
+    # 전체 공격 — 책을 든 1번만 1 덜 맞는다. 2번은 그대로다.
+    assert hp_after("all", "clear_aim") == [5, 5]
+    assert hp_after("all", "steady_axis") == [6, 5]
+
+    # 단일 공격에는 붙지 않는다. `all 공격 피해 −1`이라고 적혀 있다.
+    assert hp_after("front", "clear_aim") == hp_after("front", "steady_axis")
+
+
+def test_ringcount_record_lifts_the_whole_party_and_costs_the_holder_their_guard():
+    """고리수 기록부 — 파티 전원 고유 II +4, 장착자는 그 전투 내내 방어 불가."""
+
+    import pytest
+
+    from app.content.expeditions.combat import (
+        CombatRuleError,
+        guardian_battle_payload,
+        new_guardian_battle,
+        submit_guardian_action,
+    )
+
+    encounter = _encounter_fixture()
+
+    def unique_powers(code: str) -> list[tuple[int, int]]:
+        profiles = _b2_party(code)
+        payload = guardian_battle_payload(
+            new_guardian_battle("ring", encounter, profiles), encounter, profiles
+        )
+        return [
+            (
+                int(member["kit"]["unique_skills"][0]["raw_power"]),
+                int(member["kit"]["unique_skills"][1]["raw_power"]),
+            )
+            for member in payload["party"]
+        ]
+
+    bare = unique_powers("clear_aim")
+    ringed = unique_powers("ringcount_record")
+
+    for (bare_one, bare_two), (ring_one, ring_two) in zip(bare, ringed, strict=True):
+        # 고유 I은 그대로, 고유 II만 정확히 +4다.
+        assert ring_one == bare_one
+        assert ring_two - bare_two == 4
+    # 장착자뿐 아니라 파티 전원이다 — 두 번째 대원도 받았다.
+    assert len(ringed) == 2
+
+    # 반대급부는 그 전투 내내다. 라운드가 지나도 풀리지 않는다.
+    profiles = _b2_party("ringcount_record")
+    state = new_guardian_battle("ring", encounter, profiles)
+    for round_number in (1, 2):
+        with pytest.raises(CombatRuleError) as caught:
+            submit_guardian_action(
+                state, {"member_id": 1, "action": "guard"}, encounter, profiles
+            )
+        assert caught.value.code == "EXPEDITION_COMBAT_GUARD_LOCKED"
+        # 기본 공격은 언제나 남는다 — 최소 한 행동은 항상 합법이다.
+        state = submit_guardian_action(
+            state, {"member_id": 1, "action": "attack"}, encounter, profiles
+        )
+        # 책을 안 든 대원은 멀쩡히 몸을 뺀다.
+        state = submit_guardian_action(
+            state, {"member_id": 2, "action": "guard"}, encounter, profiles
+        )
+        assert int(state["round"]) == round_number + 1
+
+
+def test_shadow_oath_sharpens_weakness_and_dulls_neutral_without_touching_resist():
+    """그림자 맹세 — 약점 1.50 → 1.70, 중립 1.00 → 0.60, 내성은 그대로."""
+
+    from app.content.expeditions.combat import MATCHUP_POWER_BP, member_battle_kit
+
+    assert MATCHUP_POWER_BP == {
+        "weak": 15_000,
+        "prism_weak": 13_000,
+        "neutral": 10_000,
+        "resist": 6_000,
+    }
+
+    from app.content.expeditions.combat_identity import scaled_power
+
+    # 비교 상대는 **행동 수치를 건드리지 않는** 책이어야 한다. `또렷한 겨냥`은
+    # 기본 공격 위력을 +3 하므로 여기서는 기준이 될 수 없다.
+    def basic(code: str, **kwargs) -> dict:
+        return member_battle_kit(_b2_party(code)[0], **kwargs)["basic"]
+
+    # 기본 캐릭터의 결은 sunny다. fire(=ember)를 약점으로 두면 중립,
+    # light(=sunny)를 약점으로 두면 약점이 된다.
+    neutral_bare = basic("first_breath", current_weak_element="fire")
+    neutral_oath = basic("shadow_oath", current_weak_element="fire")
+    assert neutral_bare["matchup"] == neutral_oath["matchup"] == "neutral"
+    assert neutral_bare["matchup_bp"] == 10_000
+    assert neutral_oath["matchup_bp"] == 6_000
+    assert neutral_oath["power"] < neutral_bare["power"]
+
+    weak_bare = basic("first_breath", current_weak_element="light")
+    weak_oath = basic("shadow_oath", current_weak_element="light")
+    assert weak_bare["matchup"] == weak_oath["matchup"] == "weak"
+    assert weak_bare["matchup_bp"] == 15_000
+    assert weak_oath["matchup_bp"] == 17_000
+    assert weak_oath["power"] > weak_bare["power"]
+    # 배율이 실제로 위력에 곱해졌는지까지 본다. 표만 바뀌고 계산이 안 바뀌는
+    # 상태를 잡기 위해서다.
+    assert weak_oath["power"] == scaled_power(weak_oath["power_neutral"], 17_000)
+    assert neutral_oath["power"] == scaled_power(neutral_oath["power_neutral"], 6_000)
+
+    # 내성은 덮지 않는다. `원래 내성과 중복하지 않음` — 덮으면 중립 0.60과
+    # 내성 0.60이 겹쳐 두 배로 아프다.
+    resist_bare = basic("first_breath", current_resist_element="light")
+    resist_oath = basic("shadow_oath", current_resist_element="light")
+    assert resist_bare["matchup"] == resist_oath["matchup"] == "resist"
+    assert resist_bare["matchup_bp"] == resist_oath["matchup_bp"] == 6_000
+    assert resist_oath["power"] == resist_bare["power"]
+
+
+def test_shadow_oath_is_the_holders_alone():
+    """맹세는 장착자 한 명의 것이다. 파티 전원 문구가 없는 책이다."""
+
+    from app.content.expeditions.combat import (
+        guardian_battle_payload,
+        new_guardian_battle,
+    )
+
+    encounter = {**_encounter_fixture(), "weak_element": "light"}
+    profiles = _b2_party("shadow_oath")
+    payload = guardian_battle_payload(
+        new_guardian_battle("oath", encounter, profiles), encounter, profiles
+    )
+    holder, other = payload["party"]
+    assert int(holder["kit"]["basic"]["matchup_bp"]) == 17_000
+    assert int(other["kit"]["basic"]["matchup_bp"]) == 15_000
+
+
+# ── 파는데 아무 일도 안 하는 책은 없어야 한다 ────────────────────────────────
+#
+# `first_signal`(선제 신호)이 그런 상태였다. 효과 문장이 `적 의도 공개 후 1라운드
+# 명령 순서 재배치`인데, 순차 명령 독(stage-battle-v2.0)에서는 **모든 플레이어가
+# 이미 매 라운드 공짜로 하는 일**이다. 순서를 미리 제출하고 잠그던 예약형 패널
+# 시절 설계라, 그 패널이 교체되면서 팔 것이 사라졌다. 0038에서 상점에서 내렸다.
+#
+# 예외 목록을 손으로 들고 있지 않는다. `is_active`가 곧 답이라 새 책이 같은
+# 상태가 되면 목록을 고치지 않아도 바로 걸린다.
+
+
+def test_no_active_book_is_sold_while_doing_nothing_in_combat():
+    """씨앗을 받는 책은 전투에서 실제로 무언가 해야 한다.
+
+    파는데 아무 일도 안 하는 책은 환불 사유다. 효과를 연결하거나 상점에서
+    내리거나 둘 중 하나여야 하고, 어중간한 상태로 출시되지 않는다.
+    """
+
+    sold_and_inert = {
+        code
+        for code, book in SKILL_BOOK_CATALOG.items()
+        if book["is_active"]
+        and book["acquire_kind"] == "shop"
+        and book["price_seeds"]
+        and not book["combat_effect"]
+    }
+    assert sold_and_inert == set()
+
+
+def test_a_retired_book_says_why_and_keeps_its_price_history():
+    """내린 책은 이유를 남긴다. 조용히 사라지면 산 사람이 영문을 모른다."""
+
+    retired = {
+        code for code, book in SKILL_BOOK_CATALOG.items() if not book["is_active"]
+    }
+    assert retired == {"first_signal"}
+    for code in retired:
+        book = SKILL_BOOK_CATALOG[code]
+        assert book["retired_reason"], code
+        # 값은 지우지 않는다. 이미 산 사람의 구매 이력과 맞춰 봐야 한다.
+        assert book["price_seeds"] == 120
+        # 서고에서 사라지지도 않는다 — 카탈로그에 그대로 남아 있다.
+        assert book["name"] == "선제 신호"
+
+
+def test_a_live_book_never_carries_a_retirement_reason():
+    """살아 있는 책에 내린 이유가 붙어 있으면 둘 중 하나가 거짓말이다."""
+
+    for code, book in SKILL_BOOK_CATALOG.items():
+        if book["is_active"]:
+            assert book["retired_reason"] is None, code
+
+
+def test_the_retired_book_is_at_least_honest_in_the_slot():
+    """열지 않은 이상, 슬롯은 효과가 없다고 정직하게 말해야 한다."""
+
+    from app.content.expeditions.combat import member_battle_kit
+
+    for code, book in SKILL_BOOK_CATALOG.items():
+        if book["combat_effect"]:
+            continue
+        kit = member_battle_kit(
+            _profile(
+                {
+                    "skill_loadout": {
+                        "slots": {
+                            "B1": {"source": "skillbook", "code": code},
+                            "B2": {"source": "emotion", "code": "emotion.primary"},
+                        }
+                    }
+                }
+            )
+        )
+        slot = next(
+            item for item in kit["selected_skills"] if item["slot"] == "selected_1"
+        )
+        assert slot["available"] is False, code
+        assert slot["lock_reason"] == "효과를 준비하고 있어요", code
+
+
+def test_node_layout_is_pinned_because_the_app_mirrors_it():
+    """지도 노드 자리는 함부로 옮길 수 없다.
+
+    앱이 이 좌표를 **손으로 베껴** 걸을 수 있는 땅과 대조한다
+    (`expedition_models_test.dart`의 `_nodeLayout`). 서버에서 조용히 옮기면
+    앱은 옛 자리를 기준으로 `노드가 땅 안에 있다`고 통과시키고, 실제 화면에서는
+    벽 속에 박힌 노드가 된다.
+
+    자리를 옮기려면 이 표와 앱의 표를 **함께** 고쳐야 한다. 그러라고 여기 박아 둔다.
+    """
+
+    import importlib.util
+    import pathlib
+
+    spec = importlib.util.spec_from_file_location(
+        "build_region_packs",
+        pathlib.Path(__file__).resolve().parents[2] / "scripts" / "build_region_packs.py",
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    layout = {
+        code: (round(x, 3), round(y, 3))
+        for code, _kind, x, y, _cost, _threat in module.NODE_LAYOUT
+    }
+    assert layout == {
+        "entrance": (0.08, 0.50),
+        "first_event": (0.27, 0.30),
+        "second_event": (0.27, 0.70),
+        "camp": (0.48, 0.50),
+        "discovery": (0.50, 0.20),
+        "guardian": (0.69, 0.50),
+        "objective": (0.86, 0.32),
+        "exit": (0.94, 0.62),
+    }
+
+
+def test_region_order_follows_the_story_not_the_alphabet():
+    """지역을 지나가는 순서는 이야기가 정한다.
+
+    알파벳순으로 정렬하면 관측실이 보관고보다 먼저 열리는데, 보관고의 마지막
+    장이 `다음 편지는 마음나무 관측실로 향해요`로 끝난다. 정반대다.
+
+    이 어긋남은 **걸어 보기 전에는 안 보인다** — 실제로 앱을 띄워 우물정원을
+    열어 보고서야 찾았다. 그래서 여기 못 박는다.
+    """
+
+    from app.services.expeditions import load_content, region_order
+
+    order = region_order()
+    assert order == [
+        "moss_archive",
+        "echo_well",
+        "starlight_seed_vault",
+        "heartwood_observatory",
+    ]
+
+    # 각 지역의 마지막 이야기가 **다음 지역의 이름**을 부른다. 순서가 바뀌면
+    # 이 대조가 깨진다.
+    following = {
+        "moss_archive": "메아리 우물정원",
+        "echo_well": "별빛 씨앗 보관고",
+        "starlight_seed_vault": "마음나무 관측실",
+    }
+    for index, code in enumerate(order[:-1]):
+        expected_name = load_content(order[index + 1])["region"]["name"]
+        assert following[code] == expected_name, code
+        caption = load_content(code)["stages"][-1]["story"]["caption"]
+        assert expected_name in caption, (
+            f"{code}의 마지막 이야기가 다음 지역({expected_name})을 가리키지 않습니다"
+        )
+
+    # 순서는 `recommended_stage`가 단일 원본이다. 손으로 든 목록이 아니다.
+    stages = [load_content(code)["region"]["recommended_stage"] for code in order]
+    assert stages == sorted(stages), "권장 단계가 순서와 어긋납니다"

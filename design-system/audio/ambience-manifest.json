@@ -1,0 +1,83 @@
+{
+  "loop_seconds": {
+    "a": 32.0,
+    "b": 40.0
+  },
+  "combined_period_seconds": 160,
+  "target_lufs": -28,
+  "true_peak_dbtp": -9.0,
+  "entries": [
+    {
+      "region": "moss_archive",
+      "layer": "a",
+      "name": "이끼 낀 기억서고",
+      "seconds": 32.0,
+      "master_sha256": "96e61eb57e202af2e77be3b0915057103b04b3d674883d7e0afae5d6e6ae798c",
+      "runtime": "app/assets/adventure/ambience/moss-archive-a.m4a",
+      "runtime_sha256": "9dee10943a133e89f6256026eb460e4c7d4c14c9558be426ab2b882f54d6685c"
+    },
+    {
+      "region": "moss_archive",
+      "layer": "b",
+      "name": "이끼 낀 기억서고",
+      "seconds": 40.0,
+      "master_sha256": "9c247d49deded988cd2c6f3085e62021c5d534143c6830e37abfb69834566fd3",
+      "runtime": "app/assets/adventure/ambience/moss-archive-b.m4a",
+      "runtime_sha256": "cefcaf651a6de4f75216c02eae2d7a5bd982e1d2e1d165367f588dc6857d5669"
+    },
+    {
+      "region": "echo_well",
+      "layer": "a",
+      "name": "메아리 우물정원",
+      "seconds": 32.0,
+      "master_sha256": "e71d24fda578d0b5a4b95ef61e024ed45d1fdaa5424f25cdc6b074de3c822dc6",
+      "runtime": "app/assets/adventure/ambience/echo-well-a.m4a",
+      "runtime_sha256": "c7bc0d5a2fefb4ab9311d63d2406e6e187e67d8eb52258881a80b90de657c45f"
+    },
+    {
+      "region": "echo_well",
+      "layer": "b",
+      "name": "메아리 우물정원",
+      "seconds": 40.0,
+      "master_sha256": "a174a6ff65f884c56fcc029e81bbf5c5c842388d992eb77a47ab1c0721d0e9e2",
+      "runtime": "app/assets/adventure/ambience/echo-well-b.m4a",
+      "runtime_sha256": "2fd0c89d755e5c7cee9d49dc6c3ae709dd226a95b423ea3736ab160596614cd2"
+    },
+    {
+      "region": "starlight_seed_vault",
+      "layer": "a",
+      "name": "별빛 씨앗 보관고",
+      "seconds": 32.0,
+      "master_sha256": "7fdb5725c86a9ff3dcd9028e7745726a1a2f9eef6983cdcad04c4fc22ed210f3",
+      "runtime": "app/assets/adventure/ambience/starlight-seed-vault-a.m4a",
+      "runtime_sha256": "d4a27602d19dc54f929792b12a0ef4e8b5797c21cf1c5481fb17cb65f6116f32"
+    },
+    {
+      "region": "starlight_seed_vault",
+      "layer": "b",
+      "name": "별빛 씨앗 보관고",
+      "seconds": 40.0,
+      "master_sha256": "6d091d3193a1a6399a06f8177a3d3c7871bec8d43384d394a0aa6993292758c7",
+      "runtime": "app/assets/adventure/ambience/starlight-seed-vault-b.m4a",
+      "runtime_sha256": "0d73129d746c49267e6ab10319e25c5c64c4816c874e28d4d23ff62fe5447841"
+    },
+    {
+      "region": "heartwood_observatory",
+      "layer": "a",
+      "name": "마음나무 관측실",
+      "seconds": 32.0,
+      "master_sha256": "d25ea7c44195d6216ff1ca8da683225cbff391d82e2a713c226df4d771275f1e",
+      "runtime": "app/assets/adventure/ambience/heartwood-observatory-a.m4a",
+      "runtime_sha256": "2518c38492a776edb8dfcda7b598fa22b079ed7ac6f0e04363217e2a9a3f4016"
+    },
+    {
+      "region": "heartwood_observatory",
+      "layer": "b",
+      "name": "마음나무 관측실",
+      "seconds": 40.0,
+      "master_sha256": "8eade21a57c278d7db0494d0aba447ac350efbfb9a41e83d1e5eb7360b8f3b9d",
+      "runtime": "app/assets/adventure/ambience/heartwood-observatory-b.m4a",
+      "runtime_sha256": "c5859bed8cdbe926543bc8afacc113f5a161e41c46d077eba0bc3253cc014be8"
+    }
+  ]
+}

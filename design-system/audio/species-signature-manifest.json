@@ -1,0 +1,262 @@
+{
+  "primary_loudness": 0.108,
+  "secondary_loudness": 0.126,
+  "files": [
+    {
+      "species": "baby-pot",
+      "skill": "sprout_cheer",
+      "slot": "unique_1",
+      "path": "skill-baby-pot-sprout-cheer.wav",
+      "seconds": 0.336,
+      "sha256": "80F83F16365581F703A1FD8945AAAE9EFDBBE9BB182E6A5148029B9526F9E41B"
+    },
+    {
+      "species": "baby-pot",
+      "skill": "root_embrace",
+      "slot": "unique_2",
+      "path": "skill-baby-pot-root-embrace.wav",
+      "seconds": 0.4133,
+      "sha256": "C9ABE06BC7041AFBC5CBBD0455AB1184CF578092313B500A5926E8A03A940955"
+    },
+    {
+      "species": "handsome-pot",
+      "skill": "command_blade",
+      "slot": "unique_1",
+      "path": "skill-handsome-pot-command-blade.wav",
+      "seconds": 1.1,
+      "sha256": "E942B6E70683FA580E0DD1445DC9528E11106AD2355A627E2312E3CB5F169CA8"
+    },
+    {
+      "species": "handsome-pot",
+      "skill": "command_crescendo",
+      "slot": "unique_2",
+      "path": "skill-handsome-pot-command-crescendo.wav",
+      "seconds": 1.1,
+      "sha256": "D2EDED09B36F5A6A1BC23F7F9F5B4F601D6F696B4015F69CDEDF1EF66C685C22"
+    },
+    {
+      "species": "pretty-pot",
+      "skill": "heart_spotlight",
+      "slot": "unique_1",
+      "path": "skill-pretty-pot-heart-spotlight.wav",
+      "seconds": 0.636,
+      "sha256": "95C16C0C585AEA5B76EB483FBD6A4954BCAC3ADC4C58CE1134F731AB043572CB"
+    },
+    {
+      "species": "pretty-pot",
+      "skill": "ribbon_encore",
+      "slot": "unique_2",
+      "path": "skill-pretty-pot-ribbon-encore.wav",
+      "seconds": 0.7973,
+      "sha256": "D7B5587C5B0AA3AF2ADB186B455C3057491C02275E40F17A31866491CD5D29F2"
+    },
+    {
+      "species": "tsundere-pot",
+      "skill": "blazing_counter",
+      "slot": "unique_1",
+      "path": "skill-tsundere-pot-blazing-counter.wav",
+      "seconds": 0.444,
+      "sha256": "7364487E18EAA4F19D3080ABDD87827B9FDBBD44F654A96ABE8A493596A03C75"
+    },
+    {
+      "species": "tsundere-pot",
+      "skill": "iron_uppercut",
+      "slot": "unique_2",
+      "path": "skill-tsundere-pot-iron-uppercut.wav",
+      "seconds": 0.5515,
+      "sha256": "A91FC4F5449B9EEDD9E40267FA8ED6EEC227EEC4DD36758AD4CD02990EC13C21"
+    },
+    {
+      "species": "zombie-pot",
+      "skill": "grave_gravity",
+      "slot": "unique_1",
+      "path": "skill-zombie-pot-grave-gravity.wav",
+      "seconds": 1.1,
+      "sha256": "A5AF5D826473C9BE9CD638EDB30132558548A6FEDCF19685402483590370AF5D"
+    },
+    {
+      "species": "zombie-pot",
+      "skill": "undying_chain",
+      "slot": "unique_2",
+      "path": "skill-zombie-pot-undying-chain.wav",
+      "seconds": 1.1,
+      "sha256": "72E9CCB2C6153135936C57BA689A26AABA95226FBC47DFFC589C217ABFC4129C"
+    },
+    {
+      "species": "gumiho-pot",
+      "skill": "heart_moon_charm",
+      "slot": "unique_1",
+      "path": "skill-gumiho-pot-heart-moon-charm.wav",
+      "seconds": 0.768,
+      "sha256": "B8C3359025EC6A5DB759DA3D8F6F0DEB628A451508148BCFD79BFC73558BDD0A"
+    },
+    {
+      "species": "gumiho-pot",
+      "skill": "nine_tail_eclipse",
+      "slot": "unique_2",
+      "path": "skill-gumiho-pot-nine-tail-eclipse.wav",
+      "seconds": 0.9662,
+      "sha256": "947702FE8C827A2BBD38F5E8737F54A61B199AAFD66A14DD94F9B009FB6F00DF"
+    },
+    {
+      "species": "ninja-pot",
+      "skill": "venom_seam",
+      "slot": "unique_1",
+      "path": "skill-ninja-pot-venom-seam.wav",
+      "seconds": 0.228,
+      "sha256": "4864FFDD67B1F6B076D4DF2EF77D47A3248108093AD350617DFF994D1A71A7D5"
+    },
+    {
+      "species": "ninja-pot",
+      "skill": "shadow_execution",
+      "slot": "unique_2",
+      "path": "skill-ninja-pot-shadow-execution.wav",
+      "seconds": 0.275,
+      "sha256": "4B268D14398155110CF0F73FF9376FA5AD0A22CB8AFFA63BCD8DB18E8F585F84"
+    },
+    {
+      "species": "magical-pot",
+      "skill": "prism_meteor",
+      "slot": "unique_1",
+      "path": "skill-magical-pot-prism-meteor.wav",
+      "seconds": 1.1,
+      "sha256": "24B734B884F8DABB306D2D5EB7AE05BD6491316808677E87A824067A0186B619"
+    },
+    {
+      "species": "magical-pot",
+      "skill": "timefold_comet",
+      "slot": "unique_2",
+      "path": "skill-magical-pot-timefold-comet.wav",
+      "seconds": 1.1,
+      "sha256": "0DC104E0F727D9107145376B4996F90F0A2BD2571D6FF732296C068116FF8EA9"
+    },
+    {
+      "species": "aloof-pot",
+      "skill": "absolute_zero_read",
+      "slot": "unique_1",
+      "path": "skill-aloof-pot-absolute-zero-read.wav",
+      "seconds": 0.564,
+      "sha256": "29692BCD8144C8FB8B05C6D3F4DF52154B1E2B200F5FC73E86C030651D96ECDB"
+    },
+    {
+      "species": "aloof-pot",
+      "skill": "steel_verdict",
+      "slot": "unique_2",
+      "path": "skill-aloof-pot-steel-verdict.wav",
+      "seconds": 0.7051,
+      "sha256": "55225D49F16ECE39EFD307EA783EDCD0F6ADCB06F6637C176A295BB52FA938B7"
+    },
+    {
+      "species": "student-pot",
+      "skill": "ink_formula_burst",
+      "slot": "unique_1",
+      "path": "skill-student-pot-ink-formula-burst.wav",
+      "seconds": 0.504,
+      "sha256": "D079BB9939FAE23C315AF487E9098B48614DA1F767C25C8B2AA84265AD1B246D"
+    },
+    {
+      "species": "student-pot",
+      "skill": "seal_rewrite",
+      "slot": "unique_2",
+      "path": "skill-student-pot-seal-rewrite.wav",
+      "seconds": 0.6283,
+      "sha256": "76CD49122D29C3263C2C118D2340ED8AFAC27BF68463967C52597BC4C9280B90"
+    },
+    {
+      "species": "nurse-pot",
+      "skill": "triage_bloom",
+      "slot": "unique_1",
+      "path": "skill-nurse-pot-triage-bloom.wav",
+      "seconds": 1.068,
+      "sha256": "917B3B81D6882E3B50473D50AE607E034E3F740B79E39E7835AD3496CBC3AE1E"
+    },
+    {
+      "species": "nurse-pot",
+      "skill": "white_garden_oath",
+      "slot": "unique_2",
+      "path": "skill-nurse-pot-white-garden-oath.wav",
+      "seconds": 1.1,
+      "sha256": "00C7C14C76611CE255EA1F725EBC9F273EAD9514074F4C841F23685B3C6F1EED"
+    },
+    {
+      "species": "maestro-pot",
+      "skill": "golden_downbeat",
+      "slot": "unique_1",
+      "path": "skill-maestro-pot-golden-downbeat.wav",
+      "seconds": 1.1,
+      "sha256": "8AC8607494C888E355B4AE650416EC33DEEB10B33748DB7C42B80BB283689019"
+    },
+    {
+      "species": "maestro-pot",
+      "skill": "silent_coda",
+      "slot": "unique_2",
+      "path": "skill-maestro-pot-silent-coda.wav",
+      "seconds": 1.1,
+      "sha256": "376E7F3161A76C7488C133774B105640502F199C34F87DB8C78DA2DAA87AE3B7"
+    },
+    {
+      "species": "restorer-pot",
+      "skill": "patina_parry",
+      "slot": "unique_1",
+      "path": "skill-restorer-pot-patina-parry.wav",
+      "seconds": 0.996,
+      "sha256": "50AE2AE458440DE51ECCD2E7A4CB4740C2D797DE9ED3B247C158F43C0D5949F0"
+    },
+    {
+      "species": "restorer-pot",
+      "skill": "golden_seam",
+      "slot": "unique_2",
+      "path": "skill-restorer-pot-golden-seam.wav",
+      "seconds": 1.1,
+      "sha256": "AD619F0FEC5EDB6049296B65A744C4ACD1A61653DF9AA96F9C5C363572DD2D25"
+    },
+    {
+      "species": "marten-pot",
+      "skill": "softpaw_rush",
+      "slot": "unique_1",
+      "path": "skill-marten-pot-softpaw-rush.wav",
+      "seconds": 0.96,
+      "sha256": "62717B74D08A70DDFE6F97725E52637BBC2DB1191C2AA738FB42A302779786E3"
+    },
+    {
+      "species": "marten-pot",
+      "skill": "den_guardian_roar",
+      "slot": "unique_2",
+      "path": "skill-marten-pot-den-guardian-roar.wav",
+      "seconds": 1.1,
+      "sha256": "D907B1D65ADFD49A94D0B43DFCA0F92EE0266F6D8CE4248B91BB29D2817F308F"
+    },
+    {
+      "species": "gal-pot",
+      "skill": "patchwork_relay",
+      "slot": "unique_1",
+      "path": "skill-gal-pot-patchwork-relay.wav",
+      "seconds": 0.384,
+      "sha256": "D8CD30DDCA2F937A4B0903F445B09D8D51DC6A51221A9811C0547019E28C789A"
+    },
+    {
+      "species": "gal-pot",
+      "skill": "runway_reversal",
+      "slot": "unique_2",
+      "path": "skill-gal-pot-runway-reversal.wav",
+      "seconds": 0.4747,
+      "sha256": "2106D826F13B263BE5AC7AB2DA78D8E9ED2E3CAEBCCB269D4DC460F8031A6B2E"
+    },
+    {
+      "species": "archive_guide",
+      "skill": "archive_lantern",
+      "slot": "unique_1",
+      "path": "skill-archive_guide-archive-lantern.wav",
+      "seconds": 1.1,
+      "sha256": "674995663AF292EEAA3C9810ED9BDE19A22393F5440C8A5C68A3AABD9E3AEB2E"
+    },
+    {
+      "species": "archive_guide",
+      "skill": "archive_seal",
+      "slot": "unique_2",
+      "path": "skill-archive_guide-archive-seal.wav",
+      "seconds": 1.1,
+      "sha256": "7D132C2BE534296E51B95AC2C7001371C1B87193CB7A824190DE47FF36FA8C55"
+    }
+  ]
+}

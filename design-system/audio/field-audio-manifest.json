@@ -1,0 +1,55 @@
+{
+  "step_loudness": 0.052,
+  "discover_loudness": 0.105,
+  "files": [
+    {
+      "role": "step",
+      "key": "leaf",
+      "path": "step-leaf.wav",
+      "seconds": 0.14,
+      "sha256": "2AE611096C90AE6EA8D8D746D38711EEF87D885A0E99CB809097DA3074A6F25B"
+    },
+    {
+      "role": "step",
+      "key": "pot",
+      "path": "step-pot.wav",
+      "seconds": 0.18,
+      "sha256": "BFA65DFF1EB7FB7DB446C1C2EF074B88CBC7918AF083FE17E082D641386A28E9"
+    },
+    {
+      "role": "step",
+      "key": "wood",
+      "path": "step-wood.wav",
+      "seconds": 0.16,
+      "sha256": "74D049422E04573BE0505FAD17AD9C205DA432F8C9786BEFB84A3489C688B2CD"
+    },
+    {
+      "role": "step",
+      "key": "stone",
+      "path": "step-stone.wav",
+      "seconds": 0.11,
+      "sha256": "929171B6F221C0ECF88B30BC57886D851AFA21EDCD86D302B785CA8434CD2263"
+    },
+    {
+      "role": "discover",
+      "key": "normal",
+      "path": "discover-normal.wav",
+      "seconds": 1.85,
+      "sha256": "0AC3660F621432C0AA468EABC364CDC28E1186EA119E1622C0DE3BD5F390D2EC"
+    },
+    {
+      "role": "discover",
+      "key": "story",
+      "path": "discover-story.wav",
+      "seconds": 2.655,
+      "sha256": "76B1D606B659216C355A3F99776CFDB8A7CEF36F948BE47E6158C18736C5DEE2"
+    },
+    {
+      "role": "discover",
+      "key": "target",
+      "path": "discover-target.wav",
+      "seconds": 4.54,
+      "sha256": "21DD2F7BBE8643AFFF5C0F0448CF6790B488E840F1D96D56E8AAF0E7BCAB2183"
+    }
+  ]
+}

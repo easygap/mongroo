@@ -15,8 +15,20 @@ docs/screenshots/web/
 ├─ 06-museum-detail-wide.webp
 ├─ 07-reports-wide.webp
 ├─ 08-character-growth-atlas-wide.webp
-└─ 09-expedition-battle-wide.webp
+├─ 09-expedition-battle-wide.webp
+├─ 10-expedition-walk-heartwood-wide.webp
+├─ 11-region-moss-archive-wide.webp
+├─ 12-region-echo-well-wide.webp
+├─ 13-region-starlight-vault-wide.webp
+├─ 14-expedition-screen-wide.webp
+├─ 15-adventure-hub-wide.webp
+└─ 16-expedition-free-walk.gif
 ```
+
+10~16번은 2026-08-14 출시 후보 빌드를 1280×860 데스크톱 뷰포트에서 실행해 촬영했다.
+네 지역 지형과 그 위를 걷는 캐릭터, 지나온 발자국이 모두 실제 렌더링이며 지도
+영역만 잘라 냈다. 16번은 가상 스틱을 눌러 회랑을 따라 걷는 장면을 무편집으로 녹화한
+뒤 12fps GIF로 옮긴 것이고, 프레임을 덧그리거나 이어 붙이지 않았다.
 
 웹 화면은 1280px 이상의 데스크톱 뷰포트에서 촬영하고 WebP로 저장한다. 같은
 화면을 다시 찍을 때는 파일명을 유지해 README 링크가 바뀌지 않게 한다.
@@ -49,6 +61,8 @@ docs/screenshots/web/
 29-blend-backgrounds.webp        (미촬영) 네 지역 밝음/어두움 alpha fringe·depth·shadow QA
 30-store-gameplay-15s.mp4        (미촬영) 실제 빌드 준비→접촉→피격→환경 복원 15초 무편집 증빙
 31-skill-book-library.webp       마음결 기록서 프리셋·두 선택 칸·서고 실제 화면
+32-expedition-map.webp           지도 위 자유 이동 시작 자리(마음나무 관측실)
+33-expedition-free-walk.webp     가상 스틱으로 회랑을 걸은 뒤 남은 발자국
 ```
 
 8~10번은 스테이지 개편 이전, 14·15·17~19번은 v2.0 기능 prototype 기록이다.
@@ -70,6 +84,10 @@ ImageGen으로 만든 배치 기준안이며 실제 앱 캡처가 아니다. 26~
 `docs/readme/mongroo-emotion-growth-hero.webp`는 기능 증빙 화면이 아니라 README
 첫 화면에 사용하는 콘셉트 일러스트다. 실제 기능 설명에는 항상 `screenshots/`
 아래의 실행 화면이나 녹화를 사용한다.
+
+32~33번은 2026-08-14 출시 후보를 390×844 모바일 뷰포트에서 실행해 촬영했다.
+같은 세션에서 가상 스틱을 실제로 밀어 이동한 전후이며, 캐릭터 자리와 발자국은
+합성이 아니라 앱이 그린 것이다.
 
 31번은 2026-08-13 출시 후보의 실제 `SkillBookScreen`을 QA 데이터로 렌더링하고,
 Playwright에서 390×844 모바일 뷰포트로 촬영했다. 프리셋·등급·슬롯 제한·잠금

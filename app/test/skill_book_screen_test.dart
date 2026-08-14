@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mongroo/core/error/api_exception.dart';
+import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/expedition/data/skill_book_repository.dart';
 import 'package:mongroo/features/expedition/domain/expedition_models.dart';
 import 'package:mongroo/features/expedition/domain/skill_book_models.dart';
@@ -191,6 +192,8 @@ Future<_FakeSkillBookRepository> _pump(
 }
 
 void main() {
+  _activationGlyphTests();
+  _retiredBookTests();
   testWidgets('두 칸의 현재 내용과 서고 전체를 함께 보여 준다', (tester) async {
     await _pump(tester);
 
@@ -431,4 +434,137 @@ void main() {
     expect(legacy.name, 'double_leaf');
     expect(legacy.sourceLabel, '조건 달성');
   });
+}
+
+void _retiredBookTests() {
+  test('내린 책은 값 대신 왜 못 얻는지를 말한다', () {
+    final retired = SkillBook.fromJson(const {
+      'code': 'first_signal',
+      'name': '선제 신호',
+      'grade': 2,
+      'acquire_kind': 'shop',
+      'price_seeds': 120,
+      'owned': false,
+      'combat_effect': false,
+      'is_active': false,
+      'retired_reason': '지금 전투에서는 순서를 언제든 바꿀 수 있어 상점에서 내렸어요',
+    });
+
+    expect(retired.isActive, isFalse);
+    // 살 수 없는데 `상점 씨앗 120`이라고 하면 어디서 사는지 찾아 헤맨다.
+    expect(retired.acquireLabel, isNot(contains('120')));
+    expect(retired.acquireLabel, contains('상점에서 내렸어요'));
+    // 서고에서 지우지는 않는다 — 이름은 그대로 읽힌다.
+    expect(retired.name, '선제 신호');
+  });
+
+  test('살아 있는 책은 지금까지처럼 획득처를 그대로 말한다', () {
+    final live = SkillBook.fromJson(const {
+      'code': 'clear_aim',
+      'name': '또렷한 겨냥',
+      'grade': 1,
+      'acquire_kind': 'shop',
+      'price_seeds': 40,
+      'owned': false,
+      'combat_effect': true,
+    });
+
+    expect(live.isActive, isTrue);
+    expect(live.retiredReason, isNull);
+    expect(live.acquireLabel, '상점 씨앗 40');
+  });
+}
+
+void _activationGlyphTests() {
+  test('발동 방식이 세 가지로 갈리고 문구가 판단을 돕는다', () {
+    // 서고에서 가장 먼저 알아야 할 것은 효과가 아니라 `내가 눌러야 하나`다.
+    expect(
+      skillBookActivationIcon('command'),
+      isNot(skillBookActivationIcon('opening')),
+    );
+    expect(
+      skillBookActivationIcon('trigger'),
+      isNot(skillBookActivationIcon('opening')),
+    );
+    expect(
+      skillBookActivationIcon('command'),
+      isNot(skillBookActivationIcon('trigger')),
+    );
+
+    // 명령형은 대원 행동을 먹는다는 사실이 문구에 있어야 편성 판단이 된다.
+    expect(skillBookActivationLabel('command'), contains('행동 1회'));
+    expect(skillBookActivationLabel('opening'), contains('저절로'));
+    expect(skillBookActivationLabel('trigger'), contains('저절로'));
+
+    // 모르는 값은 가장 조심스러운 쪽(눌러야 하는 쪽)으로 떨어진다 —
+    // 저절로 된다고 잘못 알려 주면 행동을 낭비한다.
+    expect(skillBookActivationIcon('없는모드'), skillBookActivationIcon('command'));
+  });
+
+  testWidgets('서고 줄이 등급과 발동 방식을 함께 읽어 준다', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: Scaffold(
+          body: ListView(
+            children: const [
+              _BookRowProbe(
+                grade: 3,
+                activationMode: 'command',
+                name: '마음결 대백과',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('마음결 대백과'), findsOneWidget);
+    expect(find.textContaining('3등급'), findsOneWidget);
+    expect(find.textContaining('행동 1회'), findsOneWidget);
+    expect(
+      find.byIcon(skillBookActivationIcon('command')),
+      findsOneWidget,
+    );
+  });
+}
+
+/// 서고 줄의 표시만 확인하는 최소 위젯. 화면 전체를 띄우면 컨트롤러·네트워크가
+/// 딸려 와서 무엇을 보는 테스트인지 흐려진다.
+class _BookRowProbe extends StatelessWidget {
+  const _BookRowProbe({
+    required this.grade,
+    required this.activationMode,
+    required this.name,
+  });
+
+  final int grade;
+  final String activationMode;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Icon(
+          skillBookActivationIcon(activationMode),
+          color: skillBookGradeColor(grade, theme.colorScheme),
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: theme.textTheme.titleSmall),
+              Text(
+                '$grade등급 · ${skillBookActivationLabel(activationMode)}',
+                style: theme.textTheme.labelSmall,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }

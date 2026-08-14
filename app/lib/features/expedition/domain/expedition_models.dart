@@ -19,6 +19,8 @@ class ExpeditionCatalog {
     required this.diaryReady,
     required this.heartResonanceAvailable,
     required this.freeExploreAvailable,
+    required this.deepAvailable,
+    required this.deepLockedReason,
     required this.suspended,
     required this.tutorialCompleted,
     required this.regions,
@@ -29,6 +31,13 @@ class ExpeditionCatalog {
   final bool diaryReady;
   final bool heartResonanceAvailable;
   final bool freeExploreAvailable;
+
+  /// 깊은 조사가 열렸는가. 지역 8스테이지를 모두 마쳐야 열린다.
+  final bool deepAvailable;
+
+  /// 왜 아직 잠겼는지. 서버 문장을 그대로 쓴다 — 앱이 조건을 다시 세면
+  /// 두 곳이 어긋나고, 사용자는 채운 줄 알았는데 안 열린다.
+  final String? deepLockedReason;
   final bool suspended;
   final bool tutorialCompleted;
   final List<ExpeditionRegion> regions;
@@ -43,6 +52,8 @@ class ExpeditionCatalog {
       diaryReady: entry['diary_ready'] == true,
       heartResonanceAvailable: entry['heart_resonance_available'] == true,
       freeExploreAvailable: entry['free_explore_available'] == true,
+      deepAvailable: entry['deep_available'] == true,
+      deepLockedReason: entry['deep_locked_reason'] as String?,
       suspended: entry['suspended'] == true,
       tutorialCompleted: entry['tutorial_completed'] == true,
       regions: _maps(json['regions'])

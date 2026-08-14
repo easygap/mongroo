@@ -82,6 +82,12 @@ _IMPLEMENTED_EFFECT_CODES = frozenset(
         "echo_read",
         "weakness_engrave",
         "resonance_tuner",
+        "nine_tail_afterimage",
+        "heart_encyclopedia",
+        "final_resolve",
+        "steady_axis",
+        "ringcount_record",
+        "shadow_oath",
     }
 )
 
@@ -98,6 +104,8 @@ def _book(
     price_seeds: int | None = None,
     unlock_hint: str | None = None,
     tradeoff: str | None = None,
+    is_active: bool = True,
+    retired_reason: str | None = None,
 ) -> dict[str, Any]:
     return {
         "code": code,
@@ -117,7 +125,10 @@ def _book(
         "tradeoff": tradeoff,
         # 어떤 기록서도 XP·씨앗·수집품 수량을 바꾸지 않는다(7.1). 상수다.
         "reward_affecting": False,
-        "is_active": True,
+        # 내린 책. 새로 얻을 수는 없지만 이미 가진 사람에게는 서고에 남는다 —
+        # 산 것을 조용히 지우지 않는다.
+        "is_active": is_active,
+        "retired_reason": retired_reason,
         # 전투 판정에 연결됐는지. `skill_book_effects.py`가 실제 수치를 갖고
         # 있고, 아직 전용 기믹이 필요한 책은 `False`로 남아 벨트에서 잠금과
         # 이유로 읽힌다. 효과를 지어내지 않는다.
@@ -251,6 +262,11 @@ SKILL_BOOK_CATALOG: dict[str, dict[str, Any]] = {
         acquire_kind="unlock",
         unlock_hint="수호자 장벽 3종 열기",
     ),
+    # 내린 책(0038). 효과 문장은 `적 의도 공개 후 1라운드 명령 순서 재배치`인데,
+    # 순차 명령 독에서는 **모든 플레이어가 이미 매 라운드 공짜로 하는 일**이다.
+    # 적 의도는 명령 전에 늘 공개되고, 대기 중인 대원은 아무나 골라 아무 순서로
+    # 행동시킬 수 있다. 순서를 미리 제출하고 잠그던 예약형 패널 시절 설계라,
+    # 그 패널이 교체되면서 팔 것이 사라졌다.
     "first_signal": _book(
         "first_signal",
         "선제 신호",
@@ -260,6 +276,8 @@ SKILL_BOOK_CATALOG: dict[str, dict[str, Any]] = {
         stack_group="order_swap",
         acquire_kind="shop",
         price_seeds=120,
+        is_active=False,
+        retired_reason="지금 전투에서는 순서를 언제든 바꿀 수 있어 상점에서 내렸어요",
     ),
     "steady_axis": _book(
         "steady_axis",

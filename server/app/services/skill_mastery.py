@@ -17,7 +17,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import AppError
 from app.core.timeutil import utcnow
-from app.models.plant import Plant
+from app.models.expedition import ExpeditionRun
+from app.models.plant import Plant, PlantSpecies
 from app.content.expeditions.skill_books import SKILL_BOOK_CATALOG
 from app.models.skill_book import PlantSkillMastery, UserSkillBook
 from app.services.skill_books import grant_skill_book
@@ -36,6 +37,28 @@ def mastery_level_for(use_count: int) -> int:
         else:
             break
     return min(MAX_MASTERY_LEVEL, level)
+
+
+# 행동 코드 옆에 함께 쌓는 **성취 기록**. 해금 조건이 `무엇을 얼마나 해 봤는가`를
+# 묻는데, 조건마다 카운터 테이블을 새로 만들면 같은 모양이 여섯 벌 생긴다.
+# 그래서 `plant_skill_mastery` 하나에 함께 적는다(모듈 도입부의 결정 그대로).
+#
+# 여섯 행동 코드와 섞이지 않게 `@` 접두사를 쓴다. 접두사가 붙은 코드는 숙련
+# 단계 계산에서 빠지므로, 회상 문장이 `약점 일치 3단계` 같은 말로 오염되지 않는다.
+ACHIEVEMENT_PREFIX = "@"
+
+# 약점을 실제로 맞힌 공격 한 번.
+WEAKNESS_HIT_CODE = f"{ACHIEVEMENT_PREFIX}weakness_hit"
+# 그 공격으로 수호자 장벽이 열린 순간.
+BARRIER_OPEN_CODE = f"{ACHIEVEMENT_PREFIX}barrier_open"
+# 어떤 결의 장벽을 열었는지. `3종 열기`는 횟수가 아니라 **가짓수**를 묻는다.
+BARRIER_KIND_PREFIX = f"{ACHIEVEMENT_PREFIX}barrier_kel:"
+
+
+def is_achievement_code(skill_code: str) -> bool:
+    """숙련 단계를 매기지 않는 성취 기록인가."""
+
+    return skill_code.startswith(ACHIEVEMENT_PREFIX)
 
 
 def _used_actions(
@@ -66,6 +89,18 @@ def _used_actions(
             # 길잡이는 캐릭터가 아니라 숙련이 쌓이지 않는다.
             continue
         used.append((plant_id, action))
+
+        # 같은 이벤트에서 성취도 함께 읽는다. 전투가 이미 싣고 있는 값이라
+        # 새로 계산하지 않는다 — 판정과 기록이 어긋날 여지를 안 만든다.
+        if event.get("weakness_hit"):
+            used.append((plant_id, WEAKNESS_HIT_CODE))
+        # 이 공격으로 장벽이 0이 된 순간만 센다. `열었다`는 마지막 한 방이다.
+        if int(event.get("enemy_guard_before", 0)) > 0 and (
+            int(event.get("enemy_guard_after", 1)) <= 0
+        ):
+            used.append((plant_id, BARRIER_OPEN_CODE))
+            if kel := event.get("enemy_weak_kel"):
+                used.append((plant_id, f"{BARRIER_KIND_PREFIX}{kel}"))
     return used
 
 
@@ -102,7 +137,11 @@ async def record_skill_uses(
             )
             db.add(row)
         row.use_count = int(row.use_count) + delta
-        row.mastery_level = mastery_level_for(row.use_count)
+        # 성취 기록에는 단계를 매기지 않는다. 숙련은 여섯 행동의 회상 문장을
+        # 여는 것이지 `약점 일치 3단계` 같은 말을 만드는 것이 아니다.
+        row.mastery_level = (
+            0 if is_achievement_code(skill_code) else mastery_level_for(row.use_count)
+        )
         row.updated_at = utcnow()
 
 
@@ -124,6 +163,62 @@ async def account_skill_use_count(
     return int(total or 0)
 
 
+async def account_species_count(
+    db: AsyncSession, user_id: int, skill_code: str, species_code: str
+) -> int:
+    """특정 품종의 캐릭터들만 모아 그 기록을 더한다.
+
+    `여우비로 장벽 10회`처럼 **누가 했는지**를 묻는 조건이 있다. 캐릭터를
+    수확해도 그 품종으로 쌓아 온 경험은 남는다.
+    """
+
+    total = await db.scalar(
+        sa.select(sa.func.coalesce(sa.func.sum(PlantSkillMastery.use_count), 0))
+        .select_from(PlantSkillMastery)
+        .join(Plant, Plant.id == PlantSkillMastery.plant_id)
+        .join(PlantSpecies, PlantSpecies.id == Plant.species_id)
+        .where(
+            Plant.user_id == user_id,
+            PlantSkillMastery.skill_code == skill_code,
+            PlantSpecies.code == species_code,
+        )
+    )
+    return int(total or 0)
+
+
+async def account_barrier_kinds(db: AsyncSession, user_id: int) -> int:
+    """연 적 있는 장벽의 **가짓수**. 횟수가 아니다."""
+
+    total = await db.scalar(
+        sa.select(sa.func.count(sa.distinct(PlantSkillMastery.skill_code)))
+        .select_from(PlantSkillMastery)
+        .join(Plant, Plant.id == PlantSkillMastery.plant_id)
+        .where(
+            Plant.user_id == user_id,
+            PlantSkillMastery.skill_code.startswith(BARRIER_KIND_PREFIX),
+        )
+    )
+    return int(total or 0)
+
+
+async def account_safe_returns(db: AsyncSession, user_id: int) -> int:
+    """무사히 돌아온 탐험 횟수.
+
+    `safe_returned`는 목표를 두고 스스로 돌아온 run이다. 도중에 물러난
+    `retreated`는 세지 않는다 — `안전 귀환`이 묻는 것과 다르다.
+    """
+
+    total = await db.scalar(
+        sa.select(sa.func.count())
+        .select_from(ExpeditionRun)
+        .where(
+            ExpeditionRun.user_id == user_id,
+            ExpeditionRun.status == "safe_returned",
+        )
+    )
+    return int(total or 0)
+
+
 # 해금·도전 조건 중 **지금 근거를 가진 것**만 여기 있다. 나머지는 조건을 세는
 # 기록이 아직 없어 넣지 않는다 — 영원히 안 열릴 조건을 열린 척하지 않는다.
 #
@@ -132,6 +227,78 @@ MASTERY_UNLOCKS = (
     # 마음 지키기 누적 30회
     ("double_leaf", "unlock", "guard", 30),
 )
+
+# 품종을 함께 보는 조건. (코드, 획득 경로, 세는 기록, 품종, 목표치)
+SPECIES_UNLOCKS = (
+    # 여우비로 수호자 장벽 10회 열기
+    ("nine_tail_afterimage", "challenge", BARRIER_OPEN_CODE, "gumiho-pot", 10),
+    # 그림싹으로 약점 일치 공격 30회
+    ("shadow_oath", "challenge", WEAKNESS_HIT_CODE, "ninja-pot", 30),
+)
+
+# 가짓수를 묻는 조건. (코드, 획득 경로, 목표 가짓수)
+BARRIER_KIND_UNLOCKS = (
+    # 수호자 장벽 3종 열기
+    ("weakness_engrave", "unlock", 3),
+)
+
+# 런 결과를 묻는 조건. (코드, 획득 경로, 목표 횟수)
+SAFE_RETURN_UNLOCKS = (
+    # 안전 귀환 5회
+    ("reviving_root", "unlock", 5),
+)
+
+# 지역 깊은 조사 최초 완주로 열리는 조건. (코드, 획득 경로, 지역 코드)
+#
+# **지역 콘텐츠가 있는 것만 사전 공개한다.** 아직 만들지 않은 지역의 조건을
+# 내보내면 진행도 0/1이 영영 멈춰 있고, 사용자는 채울 수 없는 목표를 본다.
+# 지역이 실리는 날 코드를 고칠 필요 없이 저절로 나타난다.
+DEEP_SURVEY_UNLOCKS = (
+    ("bellringer_chime", "challenge", "echo_well"),
+    ("germination_gear", "challenge", "starlight_seed_vault"),
+    ("ringcount_record", "challenge", "heartwood_observatory"),
+)
+
+
+async def account_deep_clears(
+    db: AsyncSession, user_id: int, region_code: str
+) -> int:
+    """그 지역 깊은 조사를 완주한 횟수.
+
+    새 카운터를 만들지 않는다 — 완주한 깊은 조사는 이미 `expedition_runs`에
+    `mode='deep'` · `status='completed'`로 남아 있다. 안전 귀환을 세는 방식과 같다.
+    """
+
+    total = await db.scalar(
+        sa.select(sa.func.count())
+        .select_from(ExpeditionRun)
+        .where(
+            ExpeditionRun.user_id == user_id,
+            ExpeditionRun.region_code == region_code,
+            ExpeditionRun.mode == "deep",
+            ExpeditionRun.status == "completed",
+        )
+    )
+    return int(total or 0)
+
+
+def _shipped_regions() -> frozenset[str]:
+    """지금 콘텐츠가 실려 있는 지역. 없는 지역의 조건은 광고하지 않는다."""
+
+    # 지연 import — `expeditions`가 이 모듈을 부르므로 위에서 부르면 순환한다.
+    from app.services.expeditions import shipped_region_codes
+
+    return shipped_region_codes()
+
+
+# ── 아직 근거가 없어 등록하지 않은 조건 ──────────────────────────────────────
+#
+# `bellringer_chime`(우물정원)·`germination_gear`(보관고)·`ringcount_record`
+# (관측실)는 모두 **깊은 조사 최초 완주**를 묻는다. 그런데 지금 구현에는 `deep`
+# 모드가 없고(`tutorial|heart_resonance|free_explore`가 전부), 지역도 기억서고
+# (`moss_archive`) 하나뿐이라 세 조건 모두 **영원히 참이 될 수 없다.** 등록하면
+# 진행도 0/1이 영영 멈춰 있는 채로 사전 공개되므로 넣지 않는다. 깊은 조사 모드와
+# 나머지 지역이 생기는 날 함께 연다.
 
 # 보유 권수로 열리는 조건. 스킬 사용이 아니라 서고 크기를 본다.
 COLLECTION_UNLOCKS = (
@@ -171,6 +338,44 @@ async def evaluate_skill_book_unlocks(
             continue
         await _grant_quietly(db, user_id, code, source, f"{skill_code}:{goal}")
         granted.append(_unlocked_payload(code, source, progress))
+
+    for code, source, skill_code, species_code, goal in SPECIES_UNLOCKS:
+        if code in owned:
+            continue
+        progress = await account_species_count(db, user_id, skill_code, species_code)
+        if progress < goal:
+            continue
+        await _grant_quietly(
+            db, user_id, code, source, f"{species_code}:{skill_code}:{goal}"
+        )
+        granted.append(_unlocked_payload(code, source, progress))
+
+    for code, source, goal in BARRIER_KIND_UNLOCKS:
+        if code in owned:
+            continue
+        progress = await account_barrier_kinds(db, user_id)
+        if progress < goal:
+            continue
+        await _grant_quietly(db, user_id, code, source, f"barrier_kinds:{goal}")
+        granted.append(_unlocked_payload(code, source, progress))
+
+    for code, source, goal in SAFE_RETURN_UNLOCKS:
+        if code in owned:
+            continue
+        progress = await account_safe_returns(db, user_id)
+        if progress < goal:
+            continue
+        await _grant_quietly(db, user_id, code, source, f"safe_returned:{goal}")
+        granted.append(_unlocked_payload(code, source, progress))
+
+    shipped = _shipped_regions()
+    for code, source, region_code in DEEP_SURVEY_UNLOCKS:
+        if code in owned or region_code not in shipped:
+            continue
+        if await account_deep_clears(db, user_id, region_code) < 1:
+            continue
+        await _grant_quietly(db, user_id, code, source, f"deep:{region_code}")
+        granted.append(_unlocked_payload(code, source, 1))
 
     for code, source, goal in COLLECTION_UNLOCKS:
         if code in owned or len(owned) < goal:
@@ -239,6 +444,55 @@ async def unlock_progress(db: AsyncSession, user_id: int) -> list[dict[str, Any]
                 "goal": goal,
                 "current": min(goal, await account_skill_use_count(db, user_id, skill_code)),
                 "owned": code in owned,
+            }
+        )
+    for code, source, skill_code, species_code, goal in SPECIES_UNLOCKS:
+        progress.append(
+            {
+                "code": code,
+                "source": source,
+                "goal": goal,
+                "current": min(
+                    goal,
+                    await account_species_count(
+                        db, user_id, skill_code, species_code
+                    ),
+                ),
+                "owned": code in owned,
+            }
+        )
+    for code, source, goal in BARRIER_KIND_UNLOCKS:
+        progress.append(
+            {
+                "code": code,
+                "source": source,
+                "goal": goal,
+                "current": min(goal, await account_barrier_kinds(db, user_id)),
+                "owned": code in owned,
+            }
+        )
+    for code, source, goal in SAFE_RETURN_UNLOCKS:
+        progress.append(
+            {
+                "code": code,
+                "source": source,
+                "goal": goal,
+                "current": min(goal, await account_safe_returns(db, user_id)),
+                "owned": code in owned,
+            }
+        )
+    shipped = _shipped_regions()
+    for code, source, region_code in DEEP_SURVEY_UNLOCKS:
+        if region_code not in shipped:
+            continue
+        progress.append(
+            {
+                "code": code,
+                "source": source,
+                "goal": 1,
+                "current": min(1, await account_deep_clears(db, user_id, region_code)),
+                "owned": code in owned,
+                "region_code": region_code,
             }
         )
     for code, source, goal in COLLECTION_UNLOCKS:

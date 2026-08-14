@@ -199,6 +199,11 @@
   따로 만들면 두 곳이 어긋나 사용자가 이유 없이 거절당한다. 안 골랐거나 지금과 같은
   것을 골랐으면 `EXPEDITION_COMBAT_CHOICE_REQUIRED`(422)로 사유 문장을 그대로 돌려주며,
   **집중력을 차감하기 전에** 막으므로 잘못 고른 선택이 자원을 태우지 않는다.
+  종류는 `kel`(성장결)·`member`(대원)·`book`(기록서) 셋이고, 후보가 비면 슬롯이
+  `available: false`와 사유 문장으로 잠긴다. 반대급부는 판정에서 강제한다 —
+  잔상을 넘겨받은 대원의 `guard`는 `EXPEDITION_COMBAT_GUARD_BLOCKED`, 기록서를
+  바꿔 낀 라운드의 스킬은 `EXPEDITION_COMBAT_SKILL_BLOCKED`로 거절하되 기본
+  공격은 언제나 남긴다.
 - 기존 guardian `choice`와 단독 `skill` API는 409로 거절한다. 구버전 결과형 우회로가 없어야 한다.
 - `expected_revision` 충돌 검사와 `client_action_id` 멱등 재생을 기존 탐험 행동과 같이 쓴다.
 - 런타임 전투 상태는 `runtime_effects_snapshot.guardian_battle`에 저장해 앱 종료·기기 변경 후에도 이어서 플레이한다.

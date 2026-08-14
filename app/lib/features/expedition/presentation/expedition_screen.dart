@@ -1,7 +1,9 @@
+import 'dart:math' as math;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,6 +19,9 @@ import 'expedition_battle_dock.dart';
 import 'expedition_battle_panel.dart';
 import 'expedition_combat_overlay.dart';
 import 'expedition_combat_audio.dart';
+import 'expedition_walk_path.dart';
+import 'expedition_free_walk.dart';
+import 'expedition_walk_area.dart';
 import 'expedition_scene.dart';
 import 'moss_archive_scene.dart';
 

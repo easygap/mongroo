@@ -1,0 +1,717 @@
+{
+  "schema_version": 1,
+  "content_version": "expedition-content-v2",
+  "region": {
+    "code": "echo_well",
+    "name": "메아리 우물정원",
+    "short_name": "우물정원",
+    "description": "물이 소리를 되돌려주는 정원이에요. 보낸 답장이 자꾸 돌아와, 어떻게 해야 말이 바깥으로 나가는지 배우게 돼요.",
+    "recommended_stage": 3,
+    "stat_cap": 8,
+    "reward": {
+      "exp": 7,
+      "seeds": 2,
+      "item_code": "echo_key"
+    }
+  },
+  "stages": [
+    {
+      "no": 1,
+      "kind": "battle",
+      "estimated_seconds": 75,
+      "story": {
+        "code": "echo_first_delay",
+        "chapter": 1,
+        "phase": "setup",
+        "title": "한 박자 늦은 인사",
+        "caption": "물목을 넘자 인사가 한 박자 늦게 돌아와요. 이 정원은 소리를 돌려주기만 해요.",
+        "scene_key": "dungeon_gate",
+        "codex_entry": "우물정원.chapter.1"
+      },
+      "title": "물목의 첫 매듭",
+      "summary": "주인을 못 찾은 메아리들이 문턱에서 서로 엉켜 웅웅거려요.",
+      "tangles": [
+        "knotted_echo"
+      ],
+      "weakness": "focus"
+    },
+    {
+      "no": 2,
+      "kind": "event",
+      "estimated_seconds": 45,
+      "story": {
+        "code": "echo_wet_address",
+        "chapter": 2,
+        "phase": "setup",
+        "title": "젖어도 남은 주소",
+        "caption": "젖은 편지에서 글자는 번졌는데 주소만 또렷해요. 받는 이는 여전히 마음정원의 친구들이에요.",
+        "scene_key": "flooded_cave",
+        "codex_entry": "우물정원.chapter.2"
+      },
+      "title": "잠긴 우편함",
+      "summary": "물이 차오르는 우편함에서 편지를 어떻게 꺼낼지 골라요.",
+      "event_code": "flooded_post"
+    },
+    {
+      "no": 3,
+      "kind": "battle",
+      "estimated_seconds": 75,
+      "story": {
+        "code": "echo_two_voices",
+        "chapter": 3,
+        "phase": "rising",
+        "title": "겹친 두 목소리",
+        "caption": "메아리와 진짜 목소리가 겹쳐 들려요. 누구의 말인지 가리는 법을 배워요.",
+        "scene_key": "echo_well",
+        "codex_entry": "우물정원.chapter.3"
+      },
+      "title": "튀는 물방울 떼",
+      "summary": "매듭 사이에서 물방울이 튀어 올라 발밑을 자꾸 흐트러뜨려요.",
+      "tangles": [
+        "knotted_echo",
+        "splashing_droplets"
+      ],
+      "weakness": "focus"
+    },
+    {
+      "no": 4,
+      "kind": "battle",
+      "estimated_seconds": 75,
+      "story": {
+        "code": "echo_bell_under",
+        "chapter": 4,
+        "phase": "turn",
+        "title": "물 아래의 박자",
+        "caption": "가라앉은 종이 물결마다 한 번씩 울려요. 정원 전체가 같은 박자로 숨 쉬고 있었어요.",
+        "scene_key": "echo_well",
+        "codex_entry": "우물정원.chapter.4"
+      },
+      "title": "소용돌이 종매듭",
+      "summary": "물살이 한자리를 맴돌다 종매듭 하나로 단단히 뭉쳤어요.",
+      "tangles": [
+        "bell_knot_swirl"
+      ],
+      "weakness": "care"
+    },
+    {
+      "no": 5,
+      "kind": "camp",
+      "estimated_seconds": 30,
+      "story": {
+        "code": "echo_quiet_rest",
+        "chapter": 5,
+        "phase": "rising",
+        "title": "잠깐 멎은 물",
+        "caption": "쉼터에서는 메아리가 쉬어요. 돌아오지 않는 잠깐 동안 서로의 말이 또렷해져요.",
+        "scene_key": "root_tunnel",
+        "codex_entry": "우물정원.chapter.5"
+      },
+      "title": "물뿌리 쉼터",
+      "summary": "숨을 고르고 오늘 본 것을 이야기해요."
+    },
+    {
+      "no": 6,
+      "kind": "event",
+      "estimated_seconds": 45,
+      "story": {
+        "code": "echo_why_returns",
+        "chapter": 6,
+        "phase": "truth",
+        "title": "돌아오는 이유",
+        "caption": "이 정원은 답장을 붙잡는 게 아니라, 받는 이를 못 찾아 되돌려보내고 있었어요.",
+        "scene_key": "echo_well",
+        "codex_entry": "우물정원.chapter.6"
+      },
+      "title": "되돌아온 목소리",
+      "summary": "메아리와 진짜 목소리를 가르는 방법을 골라요.",
+      "event_code": "returning_voice"
+    },
+    {
+      "no": 7,
+      "kind": "battle",
+      "estimated_seconds": 75,
+      "story": {
+        "code": "echo_open_the_throat",
+        "chapter": 7,
+        "phase": "climax",
+        "title": "물목을 여는 법",
+        "caption": "종지기의 박자를 어긋내면 물이 한 방향으로 흘러요. 길이 열리기 시작해요.",
+        "scene_key": "treasure_vault",
+        "codex_entry": "우물정원.chapter.7"
+      },
+      "title": "고요한 방 앞",
+      "summary": "물방울과 종매듭이 마지막 물목에 함께 모여 길을 막아요.",
+      "tangles": [
+        "splashing_droplets",
+        "bell_knot_swirl"
+      ],
+      "weakness": "courage"
+    },
+    {
+      "no": 8,
+      "kind": "boss",
+      "estimated_seconds": 150,
+      "story": {
+        "code": "echo_letter_leaves",
+        "chapter": 8,
+        "phase": "resolution",
+        "title": "떠난 답장",
+        "caption": "메아리 없는 방에서 목소리가 처음으로 돌아오지 않아요. 다음 편지는 별빛 씨앗 보관고로 향해요.",
+        "scene_key": "monster_den",
+        "codex_entry": "우물정원.chapter.8"
+      },
+      "title": "물결 종지기",
+      "summary": "물목 끝에서 종지기가 몸을 일으켜요. 종이 울리기 전에 물결의 결을 읽어야 해요.",
+      "event_code": "bell_ringer",
+      "weakness": "focus"
+    }
+  ],
+  "map": {
+    "code": "echo_well_main",
+    "name": "메아리 우물 물길",
+    "entrance": "entrance",
+    "nodes": [
+      {
+        "code": "entrance",
+        "name": "젖은 석문",
+        "type": "entrance",
+        "x": 0.08,
+        "y": 0.5,
+        "cost": 0,
+        "scene_key": "dungeon_gate",
+        "scene_label": "젖은 석문",
+        "scene_description": "이끼 계단이 끝나고 물소리가 시작돼요. 문턱을 넘자 발소리가 두 번씩 들려요.",
+        "depth_label": "지하 1층 · 물목",
+        "threat_level": 1
+      },
+      {
+        "code": "first_event",
+        "name": "잠긴 우편함",
+        "type": "event",
+        "x": 0.27,
+        "y": 0.3,
+        "cost": 1,
+        "scene_key": "flooded_cave",
+        "scene_label": "잠긴 우편함",
+        "scene_description": "물에 반쯤 잠긴 우편함이 기울어 있어요. 안의 편지가 젖지 않게 꺼내야 해요.",
+        "depth_label": "지하 2층 · 잠긴 우편",
+        "threat_level": 1,
+        "event_code": "flooded_post"
+      },
+      {
+        "code": "second_event",
+        "name": "되돌아온 목소리",
+        "type": "event",
+        "x": 0.27,
+        "y": 0.7,
+        "cost": 1,
+        "scene_key": "echo_well",
+        "scene_label": "되돌아온 목소리",
+        "scene_description": "우물 입구에서 누군가의 인사가 되돌아와요. 처음 낸 목소리가 누구 것인지 헷갈려요.",
+        "depth_label": "지하 2층 · 울림터",
+        "threat_level": 1,
+        "event_code": "returning_voice"
+      },
+      {
+        "code": "camp",
+        "name": "물뿌리 쉼터",
+        "type": "camp",
+        "x": 0.48,
+        "y": 0.5,
+        "cost": 1,
+        "scene_key": "root_tunnel",
+        "scene_label": "물뿌리 쉼터",
+        "scene_description": "젖은 뿌리 사이에 마른 자리가 있어요. 여기서는 메아리가 잠깐 쉬어요.",
+        "depth_label": "지하 3층 · 쉼터",
+        "threat_level": 1
+      },
+      {
+        "code": "sunken_bell",
+        "name": "가라앉은 종",
+        "type": "discovery",
+        "x": 0.5,
+        "y": 0.2,
+        "cost": 1,
+        "scene_key": "echo_well",
+        "scene_label": "가라앉은 종",
+        "scene_description": "우물 바닥에 작은 종이 가라앉아 있어요. 물결이 지날 때만 아주 옅게 울려요.",
+        "depth_label": "지하 3층 · 우물 바닥",
+        "threat_level": 2
+      },
+      {
+        "code": "guardian",
+        "name": "종지기의 물목",
+        "type": "guardian",
+        "x": 0.69,
+        "y": 0.5,
+        "cost": 1,
+        "scene_key": "monster_den",
+        "scene_label": "종지기의 물목",
+        "scene_description": "물이 한 방향으로만 흐르는 좁은 목이에요. 그 끝에 종지기가 앉아 있어요.",
+        "depth_label": "지하 4층 · 종지기의 목",
+        "threat_level": 3,
+        "event_code": "bell_ringer"
+      },
+      {
+        "code": "objective",
+        "name": "메아리 없는 방",
+        "type": "objective",
+        "x": 0.86,
+        "y": 0.32,
+        "cost": 1,
+        "scene_key": "treasure_vault",
+        "scene_label": "메아리 없는 방",
+        "scene_description": "이 방에서는 소리가 돌아오지 않아요. 처음으로 말이 바깥으로 나가요.",
+        "depth_label": "지하 5층 · 고요한 방",
+        "threat_level": 2
+      },
+      {
+        "code": "exit",
+        "name": "물길 바깥",
+        "type": "exit",
+        "x": 0.94,
+        "y": 0.62,
+        "cost": 0,
+        "scene_key": "dungeon_gate",
+        "scene_label": "물길 바깥",
+        "scene_description": "물소리가 등 뒤로 멀어져요. 답장이 정말 떠났어요.",
+        "depth_label": "지상 · 물길 밖",
+        "threat_level": 1
+      }
+    ],
+    "edges": [
+      [
+        "entrance",
+        "first_event"
+      ],
+      [
+        "entrance",
+        "second_event"
+      ],
+      [
+        "first_event",
+        "camp"
+      ],
+      [
+        "second_event",
+        "camp"
+      ],
+      [
+        "camp",
+        "sunken_bell"
+      ],
+      [
+        "camp",
+        "guardian"
+      ],
+      [
+        "guardian",
+        "objective"
+      ],
+      [
+        "objective",
+        "exit"
+      ]
+    ],
+    "initial_revealed": [
+      "entrance",
+      "first_event",
+      "second_event"
+    ]
+  },
+  "map_templates": [
+    {
+      "code": "echo_well_crossroads_b",
+      "name": "우물정원 갈래길",
+      "edges": [
+        [
+          "entrance",
+          "first_event"
+        ],
+        [
+          "entrance",
+          "second_event"
+        ],
+        [
+          "first_event",
+          "camp"
+        ],
+        [
+          "first_event",
+          "sunken_bell"
+        ],
+        [
+          "second_event",
+          "camp"
+        ],
+        [
+          "second_event",
+          "sunken_bell"
+        ],
+        [
+          "camp",
+          "guardian"
+        ],
+        [
+          "sunken_bell",
+          "guardian"
+        ],
+        [
+          "guardian",
+          "objective"
+        ],
+        [
+          "objective",
+          "exit"
+        ]
+      ],
+      "coordinate_overrides": {
+        "discovery": {
+          "x": 0.5,
+          "y": 0.78
+        }
+      }
+    },
+    {
+      "code": "echo_well_ring_c",
+      "name": "우물정원 고리길",
+      "edges": [
+        [
+          "entrance",
+          "first_event"
+        ],
+        [
+          "entrance",
+          "second_event"
+        ],
+        [
+          "first_event",
+          "second_event"
+        ],
+        [
+          "first_event",
+          "sunken_bell"
+        ],
+        [
+          "second_event",
+          "camp"
+        ],
+        [
+          "camp",
+          "sunken_bell"
+        ],
+        [
+          "sunken_bell",
+          "guardian"
+        ],
+        [
+          "camp",
+          "guardian"
+        ],
+        [
+          "guardian",
+          "objective"
+        ],
+        [
+          "objective",
+          "exit"
+        ]
+      ],
+      "coordinate_overrides": {
+        "camp": {
+          "x": 0.44,
+          "y": 0.66
+        }
+      }
+    }
+  ],
+  "events": {
+    "flooded_post": {
+      "title": "잠긴 우편함",
+      "text": "우편함이 기울어 물이 차오르고 있어요. 편지를 어떻게 꺼낼까요?",
+      "tags": [
+        "puzzle",
+        "mystery"
+      ],
+      "choices": [
+        {
+          "code": "tilt_slowly",
+          "label": "기울기를 천천히 되돌려 물을 흘려보낸다",
+          "stat": "focus",
+          "difficulty": 8,
+          "resolve_cost": 1
+        },
+        {
+          "code": "read_first",
+          "label": "젖기 전에 겉면부터 읽어 둔다",
+          "stat": "insight",
+          "difficulty": 8,
+          "resolve_cost": 1
+        },
+        {
+          "code": "leave_mark",
+          "label": "표식만 남기고 물러선다",
+          "stat": null,
+          "difficulty": 0,
+          "resolve_cost": 0,
+          "safe": true
+        }
+      ]
+    },
+    "returning_voice": {
+      "title": "되돌아온 목소리",
+      "text": "우물이 방금 낸 목소리를 그대로 돌려줘요. 어느 쪽이 진짜인지 어떻게 가릴까요?",
+      "tags": [
+        "puzzle",
+        "mystery"
+      ],
+      "choices": [
+        {
+          "code": "count_beats",
+          "label": "돌아오는 박자를 세어 거리를 잰다",
+          "stat": "focus",
+          "difficulty": 8,
+          "resolve_cost": 1
+        },
+        {
+          "code": "call_name",
+          "label": "서로의 이름을 불러 답을 맞춰 본다",
+          "stat": "care",
+          "difficulty": 8,
+          "resolve_cost": 1
+        },
+        {
+          "code": "stay_quiet",
+          "label": "아무 말도 하지 않고 지나간다",
+          "stat": null,
+          "difficulty": 0,
+          "resolve_cost": 0,
+          "safe": true
+        }
+      ]
+    },
+    "bell_ringer": {
+      "title": "물결 종지기",
+      "text": "물목 끝에서 종지기가 몸을 일으켜요. 종이 울리기 전에 물결의 결을 읽어야 해요.",
+      "tags": [
+        "guardian",
+        "social"
+      ],
+      "encounter": {
+        "kind": "guardian",
+        "enemy_name": "물결 종지기",
+        "enemy_max_guard": 100,
+        "attack_name": "되울림 물결",
+        "telegraph": "종의 테두리가 젖어 번들거리면 되울림이 밀려와요.",
+        "damage_target": "탐험대",
+        "max_rounds": 8,
+        "starting_focus": 3,
+        "max_focus": 5,
+        "difficulty_code": "stage_8",
+        "weak_element": "steel",
+        "resist_element": "sound",
+        "weakness_cycle": [
+          "focus",
+          "insight",
+          "care",
+          "courage"
+        ],
+        "boss_phases": [
+          {
+            "code": "still_water",
+            "name": "잔물 수호",
+            "threshold_bp": 10000,
+            "weak_element": "steel",
+            "resist_element": "sound",
+            "weakness_cycle": [
+              "focus",
+              "insight",
+              "care",
+              "courage"
+            ],
+            "intent_power_bonus": 0,
+            "focus_reward": 0,
+            "tone": "rainy",
+            "rule_name": "잔물 수호",
+            "rule_summary": "약점을 맞히지 못한 라운드에는 수호 장벽이 2 회복돼요.",
+            "phase_gate": "resolve_intent",
+            "intro_caption": "종 아래 물이 거울처럼 잔잔해졌어요.",
+            "intents": [
+              {
+                "code": "toll_sweep",
+                "name": "종 돌리기",
+                "telegraph": "종이 천천히 돌아요. 맨 앞 대원을 노려요.",
+                "target": "front",
+                "power": 2,
+                "contact_material": "wood",
+                "mechanic_code": "expose",
+                "mechanic_unlock": 2
+              },
+              {
+                "code": "drown_peal",
+                "name": "깊은 타종",
+                "telegraph": "낮은 울림이 물 전체로 번져요. 탐험대 전체를 덮쳐요.",
+                "target": "all",
+                "power": 1,
+                "contact_material": "stone",
+                "mechanic_code": "repairing_index",
+                "mechanic_unlock": 1
+              }
+            ]
+          },
+          {
+            "code": "ring_tide",
+            "name": "울림 밀물",
+            "threshold_bp": 6600,
+            "weak_element": "steel",
+            "resist_element": "sound",
+            "weakness_cycle": [
+              "focus",
+              "insight",
+              "care",
+              "courage"
+            ],
+            "intent_power_bonus": 0,
+            "focus_reward": 1,
+            "tone": "moonlit",
+            "rule_name": "울림 밀물",
+            "rule_summary": "전체 공격의 위력이 한 단계 높아져요.",
+            "phase_gate": "resolve_intent",
+            "intro_caption": "종소리가 물을 밀어 올리기 시작했어요.",
+            "intents": [
+              {
+                "code": "drown_peal",
+                "name": "깊은 타종",
+                "telegraph": "낮은 울림이 물 전체로 번져요. 탐험대 전체를 덮쳐요.",
+                "target": "all",
+                "power": 1,
+                "contact_material": "stone",
+                "mechanic_code": "repairing_index",
+                "mechanic_unlock": 1
+              },
+              {
+                "code": "undertow",
+                "name": "되감는 물살",
+                "telegraph": "물이 발목을 잡아끌어요. 가장 지친 대원을 노려요.",
+                "target": "lowest",
+                "power": 2,
+                "contact_material": "water",
+                "mechanic_code": "focus_leak",
+                "mechanic_unlock": 3
+              }
+            ]
+          },
+          {
+            "code": "last_toll",
+            "name": "마지막 타종",
+            "threshold_bp": 3300,
+            "weak_element": "steel",
+            "resist_element": "sound",
+            "weakness_cycle": [
+              "focus",
+              "insight",
+              "care",
+              "courage"
+            ],
+            "intent_power_bonus": 1,
+            "focus_reward": 1,
+            "tone": "sparkling",
+            "rule_name": "마지막 타종",
+            "rule_summary": "장벽이 얇아질수록 예고가 짧아져요.",
+            "phase_gate": "resolve_intent",
+            "intro_caption": "종지기가 손잡이를 두 손으로 붙잡았어요.",
+            "intents": [
+              {
+                "code": "undertow",
+                "name": "되감는 물살",
+                "telegraph": "물이 발목을 잡아끌어요. 가장 지친 대원을 노려요.",
+                "target": "lowest",
+                "power": 2,
+                "contact_material": "water",
+                "mechanic_code": "focus_leak",
+                "mechanic_unlock": 3
+              },
+              {
+                "code": "toll_sweep",
+                "name": "종 돌리기",
+                "telegraph": "종이 천천히 돌아요. 맨 앞 대원을 노려요.",
+                "target": "front",
+                "power": 2,
+                "contact_material": "wood",
+                "mechanic_code": "expose",
+                "mechanic_unlock": 2
+              }
+            ]
+          }
+        ],
+        "intents": [
+          {
+            "code": "toll_sweep",
+            "name": "종 돌리기",
+            "telegraph": "종이 천천히 돌아요. 맨 앞 대원을 노려요.",
+            "target": "front",
+            "power": 2
+          },
+          {
+            "code": "drown_peal",
+            "name": "깊은 타종",
+            "telegraph": "낮은 울림이 물 전체로 번져요. 탐험대 전체를 덮쳐요.",
+            "target": "all",
+            "power": 1
+          },
+          {
+            "code": "undertow",
+            "name": "되감는 물살",
+            "telegraph": "물이 발목을 잡아끌어요. 가장 지친 대원을 노려요.",
+            "target": "lowest",
+            "power": 2
+          }
+        ]
+      },
+      "choices": [
+        {
+          "code": "read_ripples",
+          "label": "물결의 결을 읽어 종의 박자를 어긋낸다",
+          "stat": "insight",
+          "difficulty": 10,
+          "resolve_cost": 1,
+          "effect_key": "insight_arc",
+          "guard_damage": 68
+        },
+        {
+          "code": "hold_together",
+          "label": "손을 맞잡아 되울림을 함께 버틴다",
+          "stat": "care",
+          "difficulty": 10,
+          "resolve_cost": 1,
+          "effect_key": "care_vines",
+          "guard_damage": 68
+        },
+        {
+          "code": "step_back",
+          "label": "안전한 자리까지 물러난다",
+          "stat": null,
+          "difficulty": 0,
+          "resolve_cost": 0,
+          "safe": true,
+          "effect_key": "safe_guard",
+          "guard_damage": 0
+        }
+      ]
+    }
+  },
+  "discoveries": {
+    "sunken_bell": {
+      "title": "가라앉은 종",
+      "text": "우물 바닥의 작은 종은 물결이 지날 때만 울려요. 탐험대는 그 박자를 손등으로 따라 두드려 봐요."
+    }
+  },
+  "run_threads": [
+    {
+      "code": "echo_returning_letter",
+      "seed": "보낸 인사가 한 박자 늦게 돌아와요. 아직 아무 데도 가지 못한 소리예요.",
+      "echo": "우편함과 우물에서 같은 늦음이 반복돼요. 이 정원은 무엇도 내보내지 않아요.",
+      "payoff": "메아리 없는 방에서 처음으로 목소리가 돌아오지 않아요. 답장이 정말 떠났어요."
+    }
+  ]
+}

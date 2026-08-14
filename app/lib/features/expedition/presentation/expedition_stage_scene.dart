@@ -41,7 +41,8 @@ class _ImmersiveStageScene extends ConsumerWidget {
       (item) => item.code == expedition.run.currentNodeCode,
     );
     final event = expedition.currentEvent;
-    final scene = expeditionSceneTheme(node.sceneKey);
+    final scene =
+        expeditionSceneTheme(node.sceneKey, regionCode: expedition.region.code);
     final actor = expedition.party
             .where(
               (member) =>
@@ -118,6 +119,8 @@ class _ImmersiveStageScene extends ConsumerWidget {
                     borderColor: scene.accent.withAlpha(105),
                     child: ExpeditionSceneBackdrop(
                       scene: scene,
+                      regionCode: expedition.region.code,
+                      sceneKey: node.sceneKey,
                       borderRadius: BorderRadius.circular(18),
                       semanticLabel:
                           '${node.sceneLabel}. ${node.sceneDescription}',

@@ -603,3 +603,246 @@ or any use of {key_color} inside the attack object.
 - 두 family 모두 코드 생성 공격 픽셀은 0이며 light/dark contact sheet를 통과했다.
 - 실제 기기 합성, actor attack/hit, contact SFX·햅틱, profile 전에는
   `production_ready:false`다. `record_wave`·`seal_crush`는 아직 기존 prototype fallback이다.
+
+## 지역 2~4 전용 장면 원화 v1
+
+지역 카드 배경(`dungeon-*.webp`)은 네 지역 모두 있다. 없는 것은 **탐험 안에서 쓰는
+장면 원화**(`expedition-{장면}-v3.webp`)의 지역별 판본이다. 지금은 일곱 장을 네
+지역이 공유해서, 우물정원의 침수 동굴과 보관고의 침수 동굴이 같은 그림이다.
+
+**스물한 장을 다 만들지 않는다.** 재사용이 실제로 거슬리는 자리만 여덟 장이다.
+
+| 자리 | 왜 필요한가 |
+|---|---|
+| 수호자 소굴 3장 | 보스방은 가장 오래 보는 화면인데 수호자 넷이 같은 굴에 앉아 있다 |
+| 지역 입구 3장 | 새 지역에 들어선 첫 화면이라 여기서 안 갈리면 지역이 바뀐 줄 모른다 |
+| 보관고 선반실 · 관측실 층계 2장 | 각 지역의 상징 공간인데 기억서고의 보물고·달탑을 그대로 쓰고 있다 |
+
+나머지(뿌리 굴, 침수 동굴 등)는 색 보정으로 갈라 두고 뒤로 미룬다 —
+`expeditionRegionGrades`가 물빛·성에빛·나무빛을 얹는다. 원화가 들어오면
+`expeditionRegionSceneAssets`에 `{지역}/{장면}` 한 줄을 더하면 끝이고, 번들
+테스트가 파일 존재를 강제한다.
+
+- 공통 규칙: 이 문서 앞의 `직접 탐험 공통 생성 규칙`을 그대로 따른다.
+- 출력 규격: 1920×1080 master → 1440×810 WebP, 모바일 판본 960px.
+- 스타일 참조는 항상 `app/assets/adventure/expedition-monster-den-v3.webp`와
+  해당 지역의 `dungeon-*.webp` 두 장을 넣는다. 새 지역이라고 화풍을 다시
+  해석하지 않는다.
+
+### 수호자 소굴 3장
+
+프로젝트 출력: `app/assets/adventure/expedition-monster-den-{echo-well|starlight-seed-vault|heartwood-observatory}-v1.webp`
+
+```text
+Use case: stylized-concept
+Asset type: 16:9 mobile game guardian arena background
+Input images: Image 1 is the approved guardian den scene for visual language. Image 2 is the region card art for palette and material. Style references only; do not copy layouts.
+Primary request: the guardian arena of the Echo Well Garden — a narrow stone water-throat where the current runs one way only.
+Scene/backdrop: a low vaulted wet-stone chamber, a single channel of moving water cutting through the floor from left to right, worn rope-marks on the walls, one large empty bell cradle hanging at the far end with its bell missing, shallow standing pools reflecting the ceiling.
+Style/medium: hand-inked outlines, matte gouache/cel shading, restrained paper texture, cozy storybook mobile game environment.
+Composition/framing: 16:9, eye-level, deep empty center-stage for the guardian sprite, clear lower third for Flutter UI overlays, strong silhouette read at 360px wide.
+Lighting/mood: cool blue-green ambient from the water, one warm lantern high on the right, patient and expectant rather than threatening.
+Constraints: no people, no characters, no creatures, no readable text, no letters, no logos, no UI, no watermark.
+Avoid: photorealism, horror, skulls, neon, glowing portals, magical particle clutter, gore, chains, cages.
+```
+
+같은 프롬프트에서 `Primary request`·`Scene/backdrop`·`Lighting/mood`만 지역에 맞춰
+바꾼다. 나머지 줄은 세 장이 공유해야 한 화면에서 이어 봤을 때 같은 세계로 읽힌다.
+
+- **별빛 씨앗 보관고**: `the guardian arena of the Starlight Seed Vault — the one
+  warm room in a frozen storehouse.` / `a circular seed-germination chamber, frost
+  receding in a ring on the floor, tall brass shelf-columns of sealed seed drawers,
+  a great wall clock with its hands stopped, one shallow bed of dark soil at the
+  center with nothing grown yet.` / `cold blue-white ambient with a single warm
+  amber pool at the center, still and held-breath quiet.`
+- **마음나무 관측실**: `the guardian arena of the Heartwood Observatory — the
+  highest floor inside a living tree.` / `a wide round wooden platform of exposed
+  growth rings, a domed opening in the canopy above, loose observation pages
+  drifting in the air, a large unused brass viewing lens tilted toward the opening,
+  bark walls lined with unread record spines.` / `moonlight falling straight down
+  through the canopy opening, warm wood tones at the edges, watchful and long-patient.`
+
+### 지역 입구 3장
+
+프로젝트 출력: `app/assets/adventure/expedition-dungeon-gate-{echo-well|starlight-seed-vault|heartwood-observatory}-v1.webp`
+
+```text
+Use case: stylized-concept
+Asset type: 16:9 mobile game dungeon entrance background
+Input images: Image 1 is the approved dungeon gate scene for visual language. Image 2 is the region card art for palette and material. Style references only; do not copy layouts.
+Primary request: the entrance threshold of the Echo Well Garden, read at a glance as a different place from a moss archive gate.
+Scene/backdrop: a wet stone doorway at the bottom of a mossy stair, water beginning to run across the threshold, two plain copper listening tubes set into the doorframe, a narrow flooded corridor continuing beyond.
+Style/medium: hand-inked outlines, matte gouache/cel shading, restrained paper texture, cozy storybook mobile game environment.
+Composition/framing: 16:9, eye-level, the doorway offset left of center, open lower-center floor for Flutter UI overlays.
+Lighting/mood: cool damp blue with one warm lantern inside the doorway, arrival and quiet curiosity.
+Constraints: no people, no characters, no creatures, no readable text, no letters, no logos, no UI, no watermark.
+Avoid: photorealism, horror, neon, glowing portals, magical particle clutter, ornate gold.
+```
+
+- **별빛 씨앗 보관고**: `a frost-rimed vault door at the top of a dry stair, white
+  frost feathering from the hinges, one drawer-front visibly thawed and dark, a
+  long cold corridor of shelf-columns beyond.` / `cold blue-white with one distant
+  warm point deep inside, held breath.`
+- **마음나무 관측실**: `an arched opening in living bark at the foot of a spiral
+  stair, growth rings visible in the cut edge, worn wooden treads winding upward
+  and out of frame, faint sky light from far above.` / `warm wood ambient with pale
+  daylight falling from high above, upward pull.`
+
+### 상징 공간 2장
+
+프로젝트 출력: `app/assets/adventure/expedition-treasure-vault-starlight-seed-vault-v1.webp`,
+`app/assets/adventure/expedition-moon-tower-heartwood-observatory-v1.webp`
+
+```text
+Use case: stylized-concept
+Asset type: 16:9 mobile game interior background
+Input images: Image 1 is the approved treasure vault scene for visual language. Image 2 is the region card art for palette and material. Style references only; do not copy layouts.
+Primary request: the shelf hall of the Starlight Seed Vault — a storehouse where everything waits and nothing has started.
+Scene/backdrop: long rows of brass-fronted seed drawers running into depth, every drawer labelled with a blank plate, thin star-dust settled along the shelf edges, one drawer standing slightly open with warm light inside, a small step-stool left where someone sat.
+Style/medium: hand-inked outlines, matte gouache/cel shading, restrained paper texture, cozy storybook mobile game environment.
+Composition/framing: 16:9, one-point perspective down the shelf aisle, open lower-center floor for Flutter UI overlays.
+Lighting/mood: cold blue-white ambient, a single warm drawer glow as the only living light, patient stillness that is almost sad.
+Constraints: no people, no characters, no creatures, no readable text, no letters, no logos, no UI, no watermark. Label plates must be visibly blank, not written.
+Avoid: photorealism, horror, neon, treasure piles, gold coins, ornate jewels, magical particle clutter.
+```
+
+- **마음나무 관측실 층계**: 참조 이미지 1을 `expedition-moon-tower-v3.webp`로 바꾸고,
+  `the observation stair of the Heartwood Observatory — a spiral of growth rings
+  rising toward an opening in the canopy.` / `a wooden spiral stair cut through
+  living heartwood, each tread a visible growth ring, loose record pages caught
+  against the railing, a brass lens on a stand at the landing, canopy opening
+  showing night sky above.` / `moonlight from directly above the stairwell, warm
+  bark tones below, upward and unfinished.`
+
+### 생성 결과 (2026-08-13)
+
+여덟 장 모두 ChatGPT ImageGen으로 1536×1024에 생성해 적용했다.
+
+- 원본 보관: `design-system/concepts/region-scene-art-v1/` (화질 95 WebP, 원본 해상도)
+- 앱 산출물: `import_scene_art.py`가 1600×900 + 960×540 WebP 두 벌로 변환
+- 등록: `expedition_scene.dart`의 `expeditionRegionSceneAssets` 8줄
+
+**원본 PNG를 저장소에 두지 않되 보관본 WebP는 추적한다.** 오디오 마스터를 지우는
+것과 사정이 다르다 — 오디오는 스크립트가 같은 바이트로 되살리지만 이미지는 같은
+프롬프트로도 같은 그림이 안 나온다. 앱 산출물은 세로를 잘라 낸 것이라 크롭을 다시
+잡으려면 원본 해상도 사본이 필요하다.
+
+전용 원화가 있는 장면에는 **지역 색 보정을 얹지 않는다.** 보정은 공용 원화를
+지역별로 갈라 주려고 있는 것이라, 이미 그 지역 색으로 그려진 그림에 또 얹으면 두 번
+물든다(`expeditionRegionGrade`가 장면 키를 함께 본다).
+
+## 지역 2~4 전용 장면 원화 v2 — 남은 3장
+
+v1 여덟 장이 16노드를 덮었다. 남은 공용 자리는 6조합 8노드인데, **그중 셋만
+만든다.** 나머지 셋은 이미 글과 그림이 같은 말을 하고 있어서 새로 그릴 이유가 없다.
+
+| 조합 | 노드 | 판단 |
+|---|---:|---|
+| `starlight_seed_vault/root_tunnel` | 2 | **만든다** — 글은 `벽시계가 거꾸로 돌아요`인데 그림은 젖은 뿌리 굴이다 |
+| `echo_well/echo_well` | 2 | **만든다** — 지역 이름이 우물인데 우물 장면이 공용이고, 핵심 소품인 가라앉은 종이 안 보인다 |
+| `echo_well/treasure_vault` | 1 | **만든다** — `메아리 없는 방`이 보물고로 나온다. 답장이 처음 떠나는 절정 장면이다 |
+| `echo_well/flooded_cave` | 1 | 안 만든다 — 물 지역의 침수 동굴. 주제가 맞는다 |
+| `echo_well/root_tunnel` | 1 | 안 만든다 — `젖은 뿌리 사이` 쉼터라 뿌리 굴 그림이 그대로 맞는다 |
+| `heartwood_observatory/root_tunnel` | 1 | 안 만든다 — `어긋난 나이테`는 나무 속이라 뿌리 굴로 읽힌다 |
+
+**`scene_key`는 슬롯 이름이지 그림의 약속이 아니다.** `root_tunnel` 자리에 시계
+복도 그림을 넣어도 된다 — 키는 그 지역 지도에서 그 노드가 어느 칸인지를 가리킬
+뿐이고, 무엇이 그려질지는 지역이 정한다. 보관고에 뿌리를 그리지 않는 이유다.
+
+공통 규칙·출력 규격·참조 이미지는 v1 절과 같다.
+
+### 1. 보관고의 태엽 복도 — `root_tunnel__starlight_seed_vault.png`
+
+두 노드가 쓴다: `거꾸로 도는 태엽`(사건), `온기 남은 선반`(쉼터). 한 그림이 둘을
+다 받아야 하므로 **시계와 앉을 자리를 한 화면에** 둔다.
+
+```text
+Create a 16:9-friendly wide landscape game background. Save as root_tunnel__starlight_seed_vault.png
+
+Asset type: mobile game interior corridor background, cozy storybook adventure.
+Style: hand-inked outlines, matte gouache / cel shading, restrained paper texture. Match expedition-treasure-vault-starlight-seed-vault-v1.webp for line weight, palette and material. Do not copy its layout.
+
+Scene: a service corridor inside the Starlight Seed Vault, running between the shelf halls. A large wall clock is mounted on the left wall and its hands are visibly turning backwards. Exposed brass clockwork — gears, escapements, a long mainspring housing — runs along the wall beside it like plumbing. On the right there is a low worn wooden bench set into an alcove, with a folded blanket left on it and a faint warm glow lingering on the seat. Frost covers the corridor everywhere except around that bench.
+
+Composition: eye-level, corridor receding to the right, the clock on the left and the bench alcove on the right so both read in one frame. Open floor across the lower-center for UI overlay. Keep important detail in the middle 70% of frame height — top and bottom will be cropped.
+
+Lighting: cold blue-white throughout, one small warm pool at the bench alcove — the only warm light in the room. Mood is a room where time is being taken back, and someone waited here a long time.
+
+Must not include: people, characters, creatures, text, letters, numbers, clock numerals, logos, UI, watermarks. The clock face must be blank — no numbers or markings.
+Avoid: photorealism, horror, neon, tree roots, organic vines, glowing portals, magic particle clutter, steampunk brass excess.
+```
+
+### 2. 우물정원의 우물 — `echo_well__echo_well.png`
+
+두 노드가 쓴다: `되돌아온 목소리`(사건), `가라앉은 종`(발견). 우물 입구와 물속의
+종이 **한 화면에 같이** 보여야 한다.
+
+```text
+Create a 16:9-friendly wide landscape game background. Save as echo_well__echo_well.png
+
+Asset type: mobile game water shrine background, cozy storybook adventure.
+Style: hand-inked outlines, matte gouache / cel shading, restrained paper texture. Match expedition-monster-den-echo-well-v1.webp for line weight, palette and material. Do not copy its layout.
+
+Scene: the mouth of the Echo Well itself. A low circular stone well rises from a shallow flooded floor, its rim worn smooth by hands. The water inside is clear enough to see the bottom, and a small bronze bell lies sunken there, half-buried in silt, tilted on its side. Concentric ripples spread outward from the well across the flooded floor. Plain copper listening tubes lean against the well rim at angles, pointed outward like they are waiting for an answer. Wet moss and small ferns edge the stone.
+
+Composition: eye-level, the well offset left of center so the sunken bell is clearly visible through the water, open flooded floor across the lower-center and right for UI overlay. Keep important detail in the middle 70% of frame height.
+
+Lighting: cool moon-blue from above falling into the well, faint blue-green light rising off the water, one small warm lantern far to the right. Mood is quiet listening, gentle and unfinished.
+
+Must not include: people, characters, creatures, text, letters, numbers, logos, UI, watermarks.
+Avoid: photorealism, horror, bottomless dark pit, neon, glowing portals, magic particle clutter, coins, treasure.
+```
+
+### 3. 우물정원의 목표 지점 — `treasure_vault__echo_well.png`
+
+한 노드가 쓴다: `메아리 없는 방`(목표). 이 지역 이야기의 절정이다 — 처음으로
+말이 돌아오지 않는 방. **소리가 죽는다는 것을 그림으로** 보여야 한다.
+
+```text
+Create a 16:9-friendly wide landscape game background. Save as treasure_vault__echo_well.png
+
+Asset type: mobile game interior chamber background, cozy storybook adventure.
+Style: hand-inked outlines, matte gouache / cel shading, restrained paper texture. Match expedition-monster-den-echo-well-v1.webp for line weight, palette and material. Do not copy its layout.
+
+Scene: the Room Without Echo — the one chamber in the Echo Well Garden where sound does not come back. A small dry stone room at the end of the water route. Every wall is lined floor to ceiling with thick soft moss and hanging woven mats that swallow sound. The floor is dry stone, and the water channel stops dead at a low sill in the doorway behind. On the far wall there is a single narrow slot opening to the outside night, with cool air visibly drifting through it. One plain wooden letter-shelf stands empty beneath the slot.
+
+Composition: eye-level, the outside slot centered on the far wall as the focal point, open dry floor across the lower-center for UI overlay. Keep important detail in the middle 70% of frame height. The room should feel small and still after the wet corridors.
+
+Lighting: very soft and even with almost no reflections — the mossy walls absorb the light the way they absorb sound. Cool night air-light through the far slot, one warm lantern low on the left. Mood is a held quiet that finally opens outward.
+
+Must not include: people, characters, creatures, text, letters, numbers, logos, UI, watermarks, treasure chests, gold, coins, jewels.
+Avoid: photorealism, horror, neon, glowing portals, magic particle clutter, vaults, safes, locks.
+```
+
+### 받은 뒤
+
+```bash
+python design-system/scripts/import_scene_art.py <폴더> --all
+```
+
+`import_scene_art.py`의 `PLANNED`에 세 조합이 이미 들어 있고, 변환 후 등록할 줄을
+그대로 출력한다.
+
+### 원화 검수 — 무엇을 어떻게 재나 (2026-08-13)
+
+`자글자글하다`는 지적을 수치로 확인하려다 **측정을 한 번 틀렸다.** 기록해 둔다.
+
+처음에는 `이미지 − 흐린 이미지`의 **전체 RMS**를 썼다. 이 값은 **또렷한 선과
+자글거리는 질감을 구분하지 못한다.** 밝고 각진 그림은 잡티가 하나도 없어도 값이
+커진다. 실제로 가장 깨끗하게 나온 보관고 입구가 이 척도에서 10.46으로 최악이었고,
+하마터면 멀쩡한 그림을 버릴 뻔했다.
+
+**타일별 중앙값**이 맞다. 64px 타일로 나눠 각 타일의 고주파를 재고 그 중앙값을
+본다. 사람이 `자글자글하다`고 느끼는 것은 평균이 아니라 **대부분의 면이 어떤가**다.
+디테일이 몇 군데 몰려 있으면 중앙값은 낮게 남고, 화면 전체에 깔려 있어야 올라간다.
+
+| | 타일 중앙값 |
+|---|---:|
+| 기존 프로젝트 원화 8장 | 4.26 ~ 8.40 |
+| 신규 11장 | 1.44 ~ 7.54 |
+
+재생성이 실제로 통했다 — 보관고 태엽 복도는 **8.48 → 2.20**, 조용한 면 **1% → 63%**.
+효과가 있었던 지시는 추상적인 `평평하게`가 아니라 **이미 잘 나온 그림을 가리키는
+것**이었다: `expedition-treasure-vault-echo-well-v1.webp가 벽과 바닥을 다루는 방식을
+그대로 따르라`. 그 뒤에 `돌 한 장 한 장에 질감을 채우지 말고, 디테일은 물건에만
+붙이고, 화면 절반 이상은 조용한 면으로 남겨라`를 덧붙였다.
