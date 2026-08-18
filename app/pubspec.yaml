@@ -41,6 +41,7 @@ flutter:
     - assets/wardrobe/previews/
     - assets/rooms/
     - assets/adventure/
+    - assets/adventure/overworld/
     - assets/adventure/tangles/
     - assets/adventure/effects/care-vines/
     - assets/adventure/effects/care-vines-v2/

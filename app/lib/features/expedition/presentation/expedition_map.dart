@@ -11,7 +11,7 @@ class _ExpeditionMap extends ConsumerStatefulWidget {
 }
 
 class _ExpeditionMapState extends ConsumerState<_ExpeditionMap>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _travel;
   late Offset _from;
   late Offset _to;
@@ -29,6 +29,10 @@ class _ExpeditionMapState extends ConsumerState<_ExpeditionMap>
   /// 직접 걸을 때의 자리. 노드를 눌러 이동할 때는 경로 애니메이션이 쓰이고
   /// 이 값은 도착 자리로 다시 맞춰진다.
   Offset? _freePosition;
+
+  /// 직접 걷기의 보폭 위상. 서버 경로 애니메이션과 별개로 캐릭터의 들썩임,
+  /// 그림자와 발소리가 실제 이동 거리를 따라가게 한다.
+  double _freeStride = 0;
 
   /// 프레임마다 걸음을 옮기는 시계.
   Ticker? _walkTicker;
@@ -98,10 +102,10 @@ class _ExpeditionMapState extends ConsumerState<_ExpeditionMap>
     }
     unawaited(
       _steps!.play(
-            ExpeditionCombatAudio.stepSoundFor(node?.sceneKey),
-            // 배경보다 조용하다. 걸음은 계속 나는 소리라 앞에 나서면 지친다.
-            volume: .34,
-          ),
+        ExpeditionCombatAudio.stepSoundFor(node?.sceneKey),
+        // 배경보다 조용하다. 걸음은 계속 나는 소리라 앞에 나서면 지친다.
+        volume: .34,
+      ),
     );
   }
 
@@ -166,27 +170,34 @@ class _ExpeditionMapState extends ConsumerState<_ExpeditionMap>
     if (direction == Offset.zero) return;
 
     final area = expeditionWalkAreaFor(widget.expedition.region.code);
+    final previous = _freePosition ?? _currentPosition(widget.expedition);
+    final aspect = size.height <= 0 ? 1.0 : size.width / size.height;
     final next = expeditionWalkStep(
       area: area,
-      from: _freePosition ?? _currentPosition(widget.expedition),
+      from: previous,
       direction: direction,
       seconds: seconds,
-      aspect: size.height <= 0 ? 1 : size.width / size.height,
+      aspect: aspect,
     );
-    if (next == _freePosition) return;
-    setState(() => _freePosition = next);
-    _tickFreeSteps();
+    if (next == previous) return;
+    final delta = next - previous;
+    final distance = math.sqrt(
+      math.pow(delta.dx * aspect, 2) + math.pow(delta.dy, 2),
+    );
+    setState(() {
+      _freePosition = next;
+      _freeStride = (_freeStride + distance * 9) % 2;
+    });
+    _tickFreeSteps(distance);
     _enterNodeIfReached(next);
   }
 
   /// 직접 걸을 때의 발소리. 지나온 거리로 세어 스틱을 살살 밀어도 보폭이 같다.
   double _freeStepMark = 0;
 
-  void _tickFreeSteps() {
-    final here = _freePosition;
-    if (here == null) return;
-    _freeStepMark += .012;
-    if (_freeStepMark < .09) return;
+  void _tickFreeSteps(double distance) {
+    _freeStepMark += distance;
+    if (_freeStepMark < .06) return;
     _freeStepMark = 0;
     _stepSound(widget.expedition);
   }
@@ -200,8 +211,9 @@ class _ExpeditionMapState extends ConsumerState<_ExpeditionMap>
     final expedition = widget.expedition;
     final positions = <String, Offset>{
       for (final node in expedition.nodes)
-        if (node.isPositioned && expedition.availableMoveCodes.contains(node.code))
-          node.code: Offset(node.x!, node.y!),
+        if (node.isPositioned &&
+            expedition.availableMoveCodes.contains(node.code))
+          node.code: _standAt(node),
     };
     final code = expeditionNodeAt(positions, position);
     if (code == null || code == expedition.run.currentNodeCode) return;
@@ -210,11 +222,11 @@ class _ExpeditionMapState extends ConsumerState<_ExpeditionMap>
     try {
       final moved =
           await ref.read(expeditionControllerProvider.notifier).move(code);
-      if (moved) {
+      if (moved && mounted) {
         HapticFeedback.selectionClick();
         // 이동이 받아들여지면 경로 애니메이션이 이어받는다. 자유 걸음 자리는
         // 비워 두어 도착 자리에서 다시 시작한다.
-        if (mounted) setState(() => _freePosition = null);
+        setState(() => _freePosition = null);
         _stickUp();
       }
     } finally {
@@ -277,6 +289,12 @@ class _ExpeditionMapState extends ConsumerState<_ExpeditionMap>
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final expedition = widget.expedition;
+    final movementEnabled = expedition.run.phase == 'exploring' &&
+        !ref.watch(
+          expeditionControllerProvider.select(
+            (state) => state.interactionLocked,
+          ),
+        );
     final nodes = expedition.nodes.where((node) => node.isPositioned).toList();
     final current = nodes.firstWhere(
       (node) => node.code == expedition.run.currentNodeCode,
@@ -308,14 +326,40 @@ class _ExpeditionMapState extends ConsumerState<_ExpeditionMap>
                   ),
                 ),
               ),
+              // 직접 걷는 조작은 노드와 HUD보다 먼저 둔다. Stack은 뒤에 그린
+              // 자식을 먼저 hit-test하므로 이 순서여야 랜드마크 탭을 가로막지
+              // 않으면서 빈 땅을 끌어 가상 스틱을 쓸 수 있다.
+              Positioned.fill(
+                child: Semantics(
+                  excludeSemantics: true,
+                  child: Listener(
+                    key: const ValueKey('expedition-walk-surface'),
+                    behavior: HitTestBehavior.translucent,
+                    onPointerDown: movementEnabled
+                        ? (event) => _stickDown(
+                              event.localPosition,
+                              Size(
+                                constraints.maxWidth,
+                                constraints.maxHeight,
+                              ),
+                            )
+                        : null,
+                    onPointerMove: movementEnabled
+                        ? (event) => _stickMove(event.localPosition)
+                        : null,
+                    onPointerUp: movementEnabled ? (_) => _stickUp() : null,
+                    onPointerCancel: movementEnabled ? (_) => _stickUp() : null,
+                  ),
+                ),
+              ),
               for (final node in nodes)
                 Positioned(
-                  left: (node.x! * constraints.maxWidth - 22)
-                      .clamp(0.0, constraints.maxWidth - 44),
-                  top: (node.y! * constraints.maxHeight - 22)
-                      .clamp(0.0, constraints.maxHeight - 44),
-                  width: 44,
-                  height: 44,
+                  left: (node.x! * constraints.maxWidth - 24)
+                      .clamp(0.0, constraints.maxWidth - 48),
+                  top: (node.y! * constraints.maxHeight - 24)
+                      .clamp(0.0, constraints.maxHeight - 48),
+                  width: 48,
+                  height: 48,
                   child: _InteractiveLandmarkBeacon(
                     node: node,
                     current: node.code == expedition.run.currentNodeCode,
@@ -355,40 +399,27 @@ class _ExpeditionMapState extends ConsumerState<_ExpeditionMap>
                         .clamp(0.0, constraints.maxHeight - tokenSize),
                     width: tokenSize,
                     height: tokenSize,
-                    child: _PartyTrailMarker(
-                      moving: _travel.isAnimating,
-                      ambient: expeditionRegionGrade(
-                        expedition.region.code,
+                    child: IgnorePointer(
+                      child: _PartyTrailMarker(
+                        moving: _freePosition != null
+                            ? expeditionStickVector(
+                                  _stickCenter ?? Offset.zero,
+                                  _stickTouch ?? Offset.zero,
+                                ) !=
+                                Offset.zero
+                            : _travel.isAnimating,
+                        ambient: expeditionRegionGrade(
+                          expedition.region.code,
+                        ),
+                        facing: _stickFacing() ??
+                            expeditionPathFacing(_route, progress),
+                        stride: _freePosition != null ? _freeStride : progress,
+                        label: '현재 위치 ${current.name}',
+                        party: expedition.party,
                       ),
-                      facing: _stickFacing() ??
-                          expeditionPathFacing(_route, progress),
-                      stride: progress,
-                      label: '현재 위치 ${current.name}',
-                      party: expedition.party,
                     ),
                   );
                 },
-              ),
-              // 직접 걷는 조작. 노드 표식보다 아래에 두어 노드를 누르는
-              // 길이 막히지 않는다 — 스크린리더 사용자는 스틱을 쓸 수
-              // 없으므로 탭 이동이 반드시 살아 있어야 한다.
-              Positioned.fill(
-                child: Semantics(
-                  // 스틱 자체는 읽어 주지 않는다. 같은 이동을 노드 표식이
-                  // 이미 버튼으로 제공한다.
-                  excludeSemantics: true,
-                  child: Listener(
-                    behavior: HitTestBehavior.translucent,
-                    onPointerDown: (event) => _stickDown(
-                      event.localPosition,
-                      Size(constraints.maxWidth, constraints.maxHeight),
-                    ),
-                    onPointerMove: (event) =>
-                        _stickMove(event.localPosition),
-                    onPointerUp: (_) => _stickUp(),
-                    onPointerCancel: (_) => _stickUp(),
-                  ),
-                ),
               ),
               if (_stickCenter != null && _stickTouch != null)
                 Positioned.fill(
@@ -500,7 +531,7 @@ class _LandmarkBeacon extends StatelessWidget {
           color: Colors.transparent,
           child: InkResponse(
             onTap: enabled ? onTap : null,
-            radius: 22,
+            radius: 24,
             containedInkWell: true,
             highlightShape: BoxShape.circle,
             child: Center(
@@ -722,15 +753,18 @@ class _PartyTrailMarker extends StatelessWidget {
                       (index == 1 ? 3 : 0) +
                       (moving
                           ? 2.2 *
-                              math.sin(
-                                (stride * 9 + index * .7) * math.pi,
-                              ).abs()
+                              math
+                                  .sin(
+                                    (stride * 9 + index * .7) * math.pi,
+                                  )
+                                  .abs()
                           : 0),
                   width: 52,
                   height: 76,
                   child: Transform(
                     alignment: Alignment.center,
-                    transform: Matrix4.identity()..scaleByDouble(facing, 1, 1, 1),
+                    transform: Matrix4.identity()
+                      ..scaleByDouble(facing, 1, 1, 1),
                     child: ColorFiltered(
                       colorFilter: ColorFilter.mode(
                         ambient,

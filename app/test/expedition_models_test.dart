@@ -190,8 +190,19 @@ Map<String, dynamic> _snapshotJson() => {
         {'type': 'choice'},
         {'type': 'skill'},
       ],
-      'run_thread': {'current_text': '서고 전체가 천천히 숨 쉬어요.'},
-      'memory': {'discoveries': [], 'outcomes': []},
+      'run_thread': {
+        'title': '숨을 쉬는 장부',
+        'stage': 'seed',
+        'current_text': '서고 전체가 천천히 숨 쉬어요.',
+      },
+      'memory': {
+        'discoveries': [],
+        'outcomes': [],
+        'relationship_cue': {
+          'title': '출발 전의 약속',
+          'caption': '새싹몬과 기록 안내자가 같은 속도로 첫 길을 걸어요.',
+        },
+      },
       'loot': [],
       'summary': null,
     };
@@ -612,7 +623,7 @@ void main() {
       expect(data.getUint32(12, Endian.big), 0x56503858, reason: asset);
       expect(data.getUint8(20) & 0x10, 0x10, reason: '$asset 알파 채널');
     }
-    expect(expeditionTangleCombatAssets, hasLength(12));
+    expect(expeditionTangleCombatAssets, hasLength(48));
     for (final asset in expeditionTangleCombatAssets) {
       expect(asset, endsWith('.webp'));
       final data = await rootBundle.load(asset);
@@ -1765,7 +1776,10 @@ void main() {
     expect(find.text('새싹 응원'), findsOneWidget);
     expect(find.text('온기 나누기'), findsOneWidget);
     expect(find.textContaining('관찰 5 · 기준 8'), findsOneWidget);
-    expect(find.byTooltip('침수 표찰 동굴'), findsOneWidget);
+    final landmark = find.byTooltip('침수 표찰 동굴');
+    expect(landmark, findsOneWidget);
+    expect(tester.getSize(landmark).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(landmark).height, greaterThanOrEqualTo(48));
     expect(find.byType(MossArchiveScene), findsOneWidget);
     expect(find.byType(ExpeditionSceneBackdrop), findsOneWidget);
     expect(find.textContaining('침수 동굴'), findsWidgets);
@@ -1775,6 +1789,59 @@ void main() {
     expect(find.textContaining('쓰러뜨리는 전투가 아니에요'), findsOneWidget);
     expect(find.text('장벽 -68'), findsOneWidget);
     expect(find.text('현재 · 침수 표찰 동굴'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('야영지 짝 대화는 320px·200% 글자에서도 네 줄을 보존한다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final raw = _snapshotJson();
+    final memory = raw['memory'] as Map<String, dynamic>;
+    memory['duet_story'] = {
+      'code': 'story.duet.baby-pot__handsome-pot.core',
+      'pair_code': 'baby-pot__handsome-pot',
+      'variant': 'core',
+      'title': '불빛 곁의 깊은 이야기',
+      'narration': '야영지의 불빛이 낮아지자 두 대원이 미뤄 둔 질문을 꺼내요.',
+      'lines': [
+        {'speaker_name': '새싹몬', 'text': '나도 누군가를 지켜 주는 쪽이 될 수 있을까?'},
+        {'speaker_name': '로제온', 'text': '네가 고른 길이라면 내가 뒤를 정리하지.'},
+        {'speaker_name': '로제온', 'text': '점검표에 없는 일이 생기면 내 판단을 믿어도 될까?'},
+        {'speaker_name': '새싹몬', 'text': '아직 몰라도 같이 해 보면 돼!'},
+      ],
+    };
+    final snapshot = ExpeditionSnapshot.fromJson(raw);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          expeditionControllerProvider.overrideWith(
+            () => _FakeExpeditionController(
+              ExpeditionUiState(
+                loading: false,
+                expedition: snapshot,
+                selectedMemberId: 11,
+              ),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: const TextScaler.linear(2),
+            ),
+            child: child!,
+          ),
+          home: const ExpeditionScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('불빛 곁의 깊은 이야기'), findsOneWidget);
+    expect(find.textContaining('누군가를 지켜 주는 쪽'), findsOneWidget);
+    expect(find.textContaining('내 판단을 믿어도 될까'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -2663,8 +2730,7 @@ void main() {
     var guardianCount = 0;
     for (final entry in guardians.entries) {
       for (final attack in entry.value) {
-        final asset =
-            'assets/adventure/sfx/guardian-${entry.key}-$attack.wav';
+        final asset = 'assets/adventure/sfx/guardian-${entry.key}-$attack.wav';
         final data = await rootBundle.load(asset);
         expect(data.getUint32(0, Endian.big), 0x52494646, reason: asset);
         guardianCount++;
@@ -3154,8 +3220,7 @@ void _regionSceneTests() {
     }
   });
 
-  testWidgets('지역 지형 지도 네 장이 번들에 있고 통행 마스크와 짝이 맞는다',
-      (tester) async {
+  testWidgets('지역 지형 지도 네 장이 번들에 있고 통행 마스크와 짝이 맞는다', (tester) async {
     // 지형은 걷는 내내 보는 화면이고, 통행 마스크는 그 그림에서 뽑은 것이다.
     // 그림이 없어지거나 마스크만 남으면 캐릭터가 검은 화면 위를 걷는다.
     final terrain = <String, String>{
@@ -3187,7 +3252,8 @@ void _regionSceneTests() {
       0,
     );
     expect(
-      expeditionRegionGrade('starlight_seed_vault', sceneKey: 'treasure_vault').a,
+      expeditionRegionGrade('starlight_seed_vault', sceneKey: 'treasure_vault')
+          .a,
       0,
     );
     // 전용 원화가 없는 장면은 여전히 보정을 받는다.
@@ -3261,8 +3327,8 @@ void _walkRouteTests() {
     final nodes = _layoutFor('heartwood_observatory');
     final from = expeditionStandPoint(area, nodes['entrance']!);
     final to = expeditionStandPoint(area, nodes['objective']!);
-    expect(expeditionWalkPath(area, from, to),
-        expeditionWalkPath(area, from, to));
+    expect(
+        expeditionWalkPath(area, from, to), expeditionWalkPath(area, from, to));
   });
 
   test('걸음은 굽은 곳에서도 일정한 속도로 나아간다', () {
@@ -3431,7 +3497,8 @@ void _walkAreaTests() {
 
   test('걸을 수 있는 땅은 길만큼이지 지도 전체가 아니다', () {
     for (final region in _regionsWithTerrain) {
-      final coverage = expeditionWalkAreaCoverage(expeditionWalkAreaFor(region));
+      final coverage =
+          expeditionWalkAreaCoverage(expeditionWalkAreaFor(region));
       // 너무 좁으면 걸어 다닐 곳이 없다.
       expect(coverage, greaterThan(.10), reason: '$region이 너무 좁습니다');
       // 지도 전체를 덮으면 경계가 없는 것과 같다 — 개울 위를 걷던 시절로
@@ -3581,12 +3648,18 @@ void _freeWalkTests() {
     final area = expeditionWalkAreaFor('echo_well');
     final from = _openGround(area);
     final right = expeditionWalkStep(
-      area: area, from: from, direction: const Offset(1, 0),
-      seconds: .02, aspect: 2,
+      area: area,
+      from: from,
+      direction: const Offset(1, 0),
+      seconds: .02,
+      aspect: 2,
     );
     final down = expeditionWalkStep(
-      area: area, from: from, direction: const Offset(0, 1),
-      seconds: .02, aspect: 2,
+      area: area,
+      from: from,
+      direction: const Offset(0, 1),
+      seconds: .02,
+      aspect: 2,
     );
     // 가로가 세로의 두 배인 지도에서 세로로 걸으면, 정규화 좌표로는 두 배를
     // 움직여야 화면에서 같은 거리가 된다.
@@ -3600,8 +3673,11 @@ void _freeWalkTests() {
     // 스틱을 놓으면 제자리다.
     expect(
       expeditionWalkStep(
-        area: area, from: position, direction: Offset.zero,
-        seconds: .1, aspect: 1.6,
+        area: area,
+        from: position,
+        direction: Offset.zero,
+        seconds: .1,
+        aspect: 1.6,
       ),
       position,
     );
@@ -3609,8 +3685,11 @@ void _freeWalkTests() {
     // 위로 계속 밀어도 벽을 넘지 않는다.
     for (var i = 0; i < 40; i++) {
       position = expeditionWalkStep(
-        area: area, from: position, direction: const Offset(0, -1),
-        seconds: .05, aspect: 1.6,
+        area: area,
+        from: position,
+        direction: const Offset(0, -1),
+        seconds: .05,
+        aspect: 1.6,
       );
     }
     expect(area.contains(position), isTrue);

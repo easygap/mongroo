@@ -99,6 +99,24 @@ class _MapColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final threadText = expedition.runThread['current_text'] as String?;
+    final threadTitle = expedition.runThread['title'] as String?;
+    final threadStage = switch (expedition.runThread['stage']) {
+      'echo' => '이어진 단서',
+      'payoff' => '이번 탐험의 결말',
+      _ => '새로운 이야기',
+    };
+    final relationshipCue =
+        expedition.memory['relationship_cue'] is Map<String, dynamic>
+            ? expedition.memory['relationship_cue'] as Map<String, dynamic>
+            : null;
+    final relationshipCaption = relationshipCue?['caption'] as String?;
+    final duetStory = expedition.memory['duet_story'] is Map<String, dynamic>
+        ? expedition.memory['duet_story'] as Map<String, dynamic>
+        : null;
+    final duetNarration = duetStory?['narration'] as String? ?? '';
+    final duetLines = (duetStory?['lines'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .toList();
     final current = expedition.nodes.firstWhere(
       (node) => node.code == expedition.run.currentNodeCode,
     );
@@ -115,8 +133,120 @@ class _MapColumn extends StatelessWidget {
               children: [
                 const Icon(Icons.auto_stories_outlined, size: 20),
                 const SizedBox(width: 8),
-                Expanded(child: Text(threadText)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (threadTitle != null && threadTitle.isNotEmpty) ...[
+                        Text(
+                          '$threadStage · $threadTitle',
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                        ),
+                        const SizedBox(height: 3),
+                      ],
+                      Text(threadText),
+                    ],
+                  ),
+                ),
               ],
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+        if (relationshipCaption != null && relationshipCaption.isNotEmpty) ...[
+          MongrooPanel(
+            color: Theme.of(context).colorScheme.secondaryContainer,
+            shadowOffset: Offset.zero,
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.group_outlined, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        relationshipCue?['title'] as String? ?? '탐험대 이야기',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(relationshipCaption),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+        if (duetStory != null && duetLines.isNotEmpty) ...[
+          Semantics(
+            container: true,
+            label: '야영지에서 이어진 두 탐험대원의 관계 이야기',
+            child: MongrooPanel(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              shadowOffset: Offset.zero,
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.local_fire_department_outlined, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          duetStory['title'] as String? ?? '불빛 곁의 이야기',
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                        ),
+                        if (duetNarration.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            duetNarration,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(fontStyle: FontStyle.italic),
+                          ),
+                        ],
+                        const SizedBox(height: 6),
+                        for (final line in duetLines)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Text.rich(
+                              TextSpan(
+                                style: Theme.of(context).textTheme.bodyMedium,
+                                children: [
+                                  TextSpan(
+                                    text:
+                                        '${line['speaker_name'] as String? ?? '탐험대원'}  ',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: line['text'] as String? ?? '',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -230,14 +360,15 @@ class _CurrentLocationScene extends ConsumerWidget {
             interaction.actionCue?.isGuardianExchange == true);
     final scene = guardianBattle
         ? expeditionGuardianBattleScene
-        : expeditionSceneTheme(node.sceneKey, regionCode: expedition.region.code);
+        : expeditionSceneTheme(node.sceneKey,
+            regionCode: expedition.region.code);
     final nextSnapshot = interaction.pendingExpedition ?? expedition;
     final preloadScenes = nextSnapshot.nodes
         .where((item) => nextSnapshot.availableMoveCodes.contains(item.code))
         .map((item) => expeditionSceneTheme(
-          item.sceneKey,
-          regionCode: nextSnapshot.region.code,
-        ))
+              item.sceneKey,
+              regionCode: nextSnapshot.region.code,
+            ))
         .toList(growable: false);
     final explored = expedition.nodes
         .where((item) => item.status == 'visited' || item.status == 'resolved')

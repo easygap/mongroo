@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "tangle_code": "ring-shard-tangle",
+  "states": [
+    "idle",
+    "attack",
+    "hit",
+    "release"
+  ],
+  "frame_size": [
+    768,
+    768
+  ],
+  "mobile_size": [
+    576,
+    576
+  ],
+  "source_sha256": "5ED2BABB3CDB1D9B1984A5AFA9F8C4600CCFB0E1CFC5EDE67B13FC39725B11E4",
+  "production_candidate": true,
+  "production_ready": false,
+  "frames": [
+    {
+      "state": "idle",
+      "bbox": [
+        47,
+        110,
+        613,
+        621
+      ],
+      "coverage": 0.6075,
+      "runtime_sha256": "462EAAA08DB0056D746A961F01D8D4D8755682F868B5616C7DCA27425CFE9B3D",
+      "mobile_sha256": "8802A85A7279466506DBCF0EA61F5DD592E0054A391A7E1801A9A622962B686A"
+    },
+    {
+      "state": "attack",
+      "bbox": [
+        7,
+        129,
+        601,
+        595
+      ],
+      "coverage": 0.4353,
+      "runtime_sha256": "8768B6954E5189B83FFED449A7FA3924F2278BF41D6FA0E0F83C42D5F3C940CA",
+      "mobile_sha256": "466D430183F0E3C3A78856BFC3E860BC0454C450ACF3C56D6E1738C9DD6EB408"
+    },
+    {
+      "state": "hit",
+      "bbox": [
+        58,
+        63,
+        576,
+        512
+      ],
+      "coverage": 0.5363,
+      "runtime_sha256": "171CB1C99616AC5BCCCC28E07DD0AF212ECF88C751EE2D8AAC58E922EC7391A7",
+      "mobile_sha256": "1392A76C8D9C273193558D2F55E96AFD82FE79FBE4AF63845E93818B238E5B10"
+    },
+    {
+      "state": "release",
+      "bbox": [
+        30,
+        135,
+        535,
+        509
+      ],
+      "coverage": 0.499,
+      "runtime_sha256": "B94EE5D8DA2FAF8939467DA4C9741204E5DE1313722FC2D6E7C8151D32ABB7C9",
+      "mobile_sha256": "213C2AAE9541119E2D49BE5732755DE8CCA8CA82FB3FAB24BA418B526C5916A2"
+    }
+  ]
+}

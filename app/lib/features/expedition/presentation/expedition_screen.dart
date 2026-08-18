@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,6 +36,7 @@ part 'expedition_map.dart';
 part 'expedition_preparation.dart';
 part 'expedition_stage_map.dart';
 part 'expedition_stage_scene.dart';
+part 'expedition_tile_world.dart';
 part 'expedition_summary.dart';
 
 class ExpeditionScreen extends ConsumerWidget {
@@ -67,7 +69,9 @@ class ExpeditionScreen extends ConsumerWidget {
               duration: const Duration(seconds: 6),
             ),
           );
-        ref.read(expeditionControllerProvider.notifier).clearUnlockedSkillBooks();
+        ref
+            .read(expeditionControllerProvider.notifier)
+            .clearUnlockedSkillBooks();
       },
     );
     final shell = ref.watch(
