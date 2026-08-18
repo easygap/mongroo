@@ -114,8 +114,8 @@ def validate_content(content: dict[str, Any]) -> None:
     _validate_stages(content, events, errors)
 
     threads = content.get("run_threads")
-    if not isinstance(threads, list) or not threads:
-        errors.append("run_threads: 한 개 이상의 seed/echo/payoff가 필요합니다")
+    if not isinstance(threads, list) or len(threads) != 3:
+        errors.append("run_threads: 지역마다 정확히 3개의 완결 thread가 필요합니다")
     else:
         thread_codes: set[str] = set()
         for index, thread in enumerate(threads):
@@ -129,9 +129,34 @@ def validate_content(content: dict[str, Any]) -> None:
             elif code in thread_codes:
                 errors.append(f"{prefix}.code: {code}가 중복됩니다")
             thread_codes.add(code)
-            for key in ("seed", "echo", "payoff"):
-                if not isinstance(thread.get(key), str) or not thread[key].strip():
-                    errors.append(f"{prefix}.{key}: 비어 있지 않은 문장이 필요합니다")
+            title = thread.get("title")
+            if not isinstance(title, str) or not title.strip():
+                errors.append(f"{prefix}.title: 비어 있지 않은 제목이 필요합니다")
+            for key in ("seed_variants", "echo_variants"):
+                variants = thread.get(key)
+                if (
+                    not isinstance(variants, list)
+                    or len(variants) != 2
+                    or any(
+                        not isinstance(item, str) or not item.strip()
+                        for item in variants
+                    )
+                ):
+                    errors.append(f"{prefix}.{key}: 정확히 2개의 문장이 필요합니다")
+            payoff_variants = thread.get("payoff_variants")
+            if not isinstance(payoff_variants, dict) or set(payoff_variants) != {
+                "careful",
+                "bold",
+                "relational",
+            }:
+                errors.append(
+                    f"{prefix}.payoff_variants: careful/bold/relational 문장이 필요합니다"
+                )
+            elif any(
+                not isinstance(item, str) or not item.strip()
+                for item in payoff_variants.values()
+            ):
+                errors.append(f"{prefix}.payoff_variants: 빈 문장을 쓸 수 없습니다")
 
     if errors:
         raise ContentValidationError(errors)
@@ -169,7 +194,9 @@ def _validate_stages(
             errors.append(f"{prefix}.no: {index + 1}이어야 합니다")
         kind = stage.get("kind")
         if kind not in ALLOWED_STAGE_KINDS:
-            errors.append(f"{prefix}.kind: {sorted(ALLOWED_STAGE_KINDS)} 중 하나여야 합니다")
+            errors.append(
+                f"{prefix}.kind: {sorted(ALLOWED_STAGE_KINDS)} 중 하나여야 합니다"
+            )
         else:
             kind_counts[kind] = kind_counts.get(kind, 0) + 1
         for key in ("title", "summary"):
@@ -190,7 +217,9 @@ def _validate_stages(
             elif TANGLE_CATALOG[code]["region_code"] != region_code:
                 errors.append(f"{prefix}.tangles: {code}는 다른 지역의 엉킴입니다")
         if kind == "battle" and not 1 <= len(wave_codes) <= 3:
-            errors.append(f"{prefix}.tangles: 전투 스테이지는 웨이브 1~3개가 필요합니다")
+            errors.append(
+                f"{prefix}.tangles: 전투 스테이지는 웨이브 1~3개가 필요합니다"
+            )
         if kind == "battle" and wave_codes:
             first = TANGLE_CATALOG.get(wave_codes[0]) or {}
             expected = (first.get("weakness_cycle") or [None])[0]
@@ -206,7 +235,9 @@ def _validate_stages(
             )
         weakness = stage.get("weakness")
         if weakness is not None and weakness not in ALLOWED_STATS:
-            errors.append(f"{prefix}.weakness: {sorted(ALLOWED_STATS)} 중 하나여야 합니다")
+            errors.append(
+                f"{prefix}.weakness: {sorted(ALLOWED_STATS)} 중 하나여야 합니다"
+            )
         _validate_stage_story(
             stage.get("story"),
             expected_chapter=index + 1,
@@ -291,9 +322,10 @@ def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:
                 "telegraph",
                 "damage_target",
             ):
-                if not isinstance(encounter.get(field), str) or not encounter[
-                    field
-                ].strip():
+                if (
+                    not isinstance(encounter.get(field), str)
+                    or not encounter[field].strip()
+                ):
                     errors.append(f"{prefix}.encounter.{field}: 값이 필요합니다")
             max_guard = encounter.get("enemy_max_guard")
             if (
@@ -323,9 +355,11 @@ def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:
                 errors.append(
                     f"{prefix}.encounter.difficulty_code: 지원하지 않는 위협 프로필입니다"
                 )
-            if isinstance(encounter.get("starting_focus"), int) and isinstance(
-                encounter.get("max_focus"), int
-            ) and encounter["starting_focus"] > encounter["max_focus"]:
+            if (
+                isinstance(encounter.get("starting_focus"), int)
+                and isinstance(encounter.get("max_focus"), int)
+                and encounter["starting_focus"] > encounter["max_focus"]
+            ):
                 errors.append(
                     f"{prefix}.encounter.starting_focus: max_focus 이하여야 합니다"
                 )
@@ -361,9 +395,10 @@ def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:
                         errors.append(f"{intent_prefix}.code: {code}가 중복됩니다")
                     intent_codes.add(code)
                     for field in ("name", "telegraph"):
-                        if not isinstance(intent.get(field), str) or not intent[
-                            field
-                        ].strip():
+                        if (
+                            not isinstance(intent.get(field), str)
+                            or not intent[field].strip()
+                        ):
                             errors.append(f"{intent_prefix}.{field}: 값이 필요합니다")
                     if intent.get("target") not in {"front", "all", "lowest"}:
                         errors.append(
@@ -391,15 +426,21 @@ def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:
                             errors.append(f"{phase_prefix}: 객체가 필요합니다")
                             continue
                         for field in ("code", "name", "intro_caption"):
-                            if not isinstance(phase.get(field), str) or not phase[
-                                field
-                            ].strip():
-                                errors.append(f"{phase_prefix}.{field}: 값이 필요합니다")
+                            if (
+                                not isinstance(phase.get(field), str)
+                                or not phase[field].strip()
+                            ):
+                                errors.append(
+                                    f"{phase_prefix}.{field}: 값이 필요합니다"
+                                )
                         for field in ("rule_name", "rule_summary"):
-                            if not isinstance(phase.get(field), str) or not phase[
-                                field
-                            ].strip():
-                                errors.append(f"{phase_prefix}.{field}: 값이 필요합니다")
+                            if (
+                                not isinstance(phase.get(field), str)
+                                or not phase[field].strip()
+                            ):
+                                errors.append(
+                                    f"{phase_prefix}.{field}: 값이 필요합니다"
+                                )
                         if phase.get("phase_gate") not in {None, "resolve_intent"}:
                             errors.append(
                                 f"{phase_prefix}.phase_gate: resolve_intent만 지원합니다"
@@ -454,7 +495,10 @@ def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:
                                     f"{phase_prefix}.{field}: 0 이상의 정수가 필요합니다"
                                 )
                         phase_intents = phase.get("intents")
-                        if not isinstance(phase_intents, list) or len(phase_intents) < 2:
+                        if (
+                            not isinstance(phase_intents, list)
+                            or len(phase_intents) < 2
+                        ):
                             errors.append(
                                 f"{phase_prefix}.intents: 페이즈 전용 예고 2개 이상이 필요합니다"
                             )

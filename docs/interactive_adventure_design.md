@@ -2103,7 +2103,8 @@ validator가 바뀌면 실행한다. 다음 위반은 하나라도 있으면 실
 - 지역당 run thread 3개 또는 thread별 `seed|echo|payoff` 누락, payoff 변형 3개 미만
 - thread가 관람하지 않은 선택을 전제로 하거나 허용된 run memory 세 키 밖을 참조
 - 실제 파티원별 spotlight target 1개 미만 또는 두 멤버의 동일 target 중복
-- 55개 관계 조합 파일, 조합별 `departure|camp|return`, 비언어 fallback 중 하나라도 누락
+- 같은 품종 포함 120개 관계 조합의 `departure|camp|return`, 서로 다른 품종 105쌍의
+  `core|reprise` 문답, 비언어 fallback 중 하나라도 누락
 - 성장형 6종 × 사건 태그 7개의 tone_variant 또는 표정·동작 fallback 누락
 - 사건 3회 연속, 무정보 단순 이동 4회 연속, 90초 분량의 새 결정·정보·반응 공백
 - 미관람 콘텐츠가 있는데 한 run의 새로움 예산 2개 미만
@@ -2215,7 +2216,7 @@ wardrobe 고해상도 에셋을 재사용한다.
 |---|---|---:|
 | 통합 지형 배경 | 1600×900 WebP, 실제 랜드마크·보행로가 이어진 고정 좌표 원화 | 1 |
 | 현재 장소 배경 | 1600×900 WebP, 중앙/하단 UI 안전영역 | 6~8 |
-| 발견 비콘 | 44px 터치 영역 안의 지면 광륜, 추상 노드 도형 없음 | 1세트 |
+| 발견 비콘 | 48px 터치 영역 안의 지면 광륜, 추상 노드 도형 없음 | 1세트 |
 | 발자국·시야 안개 | 코드 렌더, 테마 팔레트 manifest | 1세트 |
 | 수호자 | 256px 셀 8프레임, idle/reveal/respond/resolve | 4 |
 | 목표 아이템 | 512×512 투명 WebP | 1 |
@@ -2463,7 +2464,8 @@ app/lib/features/expedition/
 - 도구 효과 예산 1, 보상 영향 false, 기존 도구의 완전 상위 호환 0개
 - 지역 thread 12개가 모두 seed/echo/payoff·payoff 3변형을 가지고 허용 memory key만 참조
 - 1~3명 실제 파티의 생성 지도마다 멤버별 서로 다른 spotlight target 1개 이상
-- 같은 품종 포함 관계 조합 55개 × departure/camp/return = 165 beat와 fallback 존재
+- 같은 품종 포함 관계 조합 120개 × departure/camp/return = 360 beat와 fallback 존재
+- 서로 다른 품종 105쌍 × core/reprise = 210개의 2인 문답과 최근 노출 원장 존재
 - 성장형 6종이 사건 태그 7개에서 수치·보상 차이 없이 tone·표정·동작으로 구분됨
 
 ### 18.2 서버 integration
@@ -2645,7 +2647,7 @@ flag를 off로 되돌려도 기존 active run의 조회·행동·귀환 endpoint
 
 - 나머지 지역 템플릿·40개 일반 사건·20개 발견 사건
 - 140개 품종 문장·84개 성장형 문장
-- 지역 thread 12개와 55개 관계 조합 beat 165개, 귀환 사진 구도 16개
+- 지역 thread 12개, 관계 조합 beat 360개, 2인 문답 210개, 귀환 사진 구도 16개
 - 실제 파티원별 spotlight 생성과 30판 중복 방지 원장
 - 지역 장치와 수호자
 - 최근 사건 회피와 자유 탐험
@@ -2715,7 +2717,8 @@ flag를 off로 되돌려도 기존 active run의 조회·행동·귀환 endpoint
 - [ ] 네 지역 모두 목표까지 두 경로 이상이고 무료 되돌아가기가 된다.
 - [ ] 모든 필수 사건에 능력치 2종 이상과 안전 우회가 있다.
 - [ ] 모든 run에 seed/echo/payoff 지역 thread와 실제 파티원별 spotlight 기회가 있다.
-- [ ] 55개 품종 관계 조합의 departure/camp/return beat 165개가 검수돼 있다.
+- [ ] 같은 품종 포함 120개 관계 조합의 departure/camp/return beat 360개와 서로 다른
+  품종 105쌍의 core/reprise 문답 210개가 검수돼 있다.
 - [ ] 캐릭터 10종 고유 스킬과 성장형 6종 스킬이 실제 지도 결과를 바꾼다.
 - [ ] 10품종의 뿌리 10개·배분 노드 90개가 있고 실제 stage 3~5에서 1~3포인트가 열린다.
 - [ ] 탐사 현장은 유효한 문맥 아이콘만, 전투는 기본·고유 I·II·선택 I·II·지키기

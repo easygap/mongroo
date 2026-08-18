@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import deque
 import hashlib
 import json
 from pathlib import Path
@@ -15,6 +16,72 @@ from PIL import Image, ImageDraw, ImageFilter
 RUNTIME_SIZE = (768, 768)
 MOBILE_SIZE = (576, 576)
 STATES = ("idle", "attack", "hit", "release")
+
+
+def _remove_edge_bleed(image: Image.Image) -> Image.Image:
+    """Drop small chroma-cell fragments that touch a top/side crop boundary.
+
+    Image generation can let a neighbouring 2x2 cell leak a few opaque pixels over
+    the gutter.  The real subject may legitimately sit on the bottom baseline, so
+    only small components on the top and side edges are removed.
+    """
+    alpha = np.asarray(image.getchannel("A"), dtype=np.uint8)
+    foreground = alpha > 128
+    height, width = foreground.shape
+    visited = np.zeros_like(foreground)
+    components: list[list[tuple[int, int]]] = []
+
+    for start_y, start_x in zip(*np.where(foreground & ~visited)):
+        if visited[start_y, start_x]:
+            continue
+        queue = deque([(int(start_y), int(start_x))])
+        visited[start_y, start_x] = True
+        component: list[tuple[int, int]] = []
+        while queue:
+            y, x = queue.popleft()
+            component.append((y, x))
+            for neighbour_y, neighbour_x in (
+                (y - 1, x),
+                (y + 1, x),
+                (y, x - 1),
+                (y, x + 1),
+            ):
+                if (
+                    0 <= neighbour_y < height
+                    and 0 <= neighbour_x < width
+                    and foreground[neighbour_y, neighbour_x]
+                    and not visited[neighbour_y, neighbour_x]
+                ):
+                    visited[neighbour_y, neighbour_x] = True
+                    queue.append((neighbour_y, neighbour_x))
+        components.append(component)
+
+    if not components:
+        return image
+    main_area = max(len(component) for component in components)
+    removal = np.zeros_like(foreground)
+    gutter = 7
+    for component in components:
+        if len(component) >= main_area * 0.03:
+            continue
+        touches_crop_edge = any(
+            x <= gutter or x >= width - gutter - 1 or y <= gutter
+            for y, x in component
+        )
+        if touches_crop_edge:
+            for y, x in component:
+                removal[y, x] = True
+
+    if not np.any(removal):
+        return image
+    removal_mask = Image.fromarray((removal * 255).astype(np.uint8)).filter(
+        ImageFilter.MaxFilter(size=9)
+    )
+    cleaned = image.copy()
+    cleaned_alpha = np.asarray(cleaned.getchannel("A"), dtype=np.uint8).copy()
+    cleaned_alpha[np.asarray(removal_mask) > 0] = 0
+    cleaned.putalpha(Image.fromarray(cleaned_alpha))
+    return cleaned
 
 
 def _args() -> argparse.Namespace:
@@ -137,7 +204,7 @@ def main() -> int:
                 (row + 1) * cell_height,
             )
         )
-        alpha = _remove_cyan(cell)
+        alpha = _remove_edge_bleed(_remove_cyan(cell))
         alpha_path = alpha_root / f"{args.tangle_code}-{state}.png"
         alpha.save(alpha_path, "PNG", optimize=True)
         frame, bbox, coverage = _fit(alpha, RUNTIME_SIZE)

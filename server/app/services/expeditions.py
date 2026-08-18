@@ -10,6 +10,7 @@ import base64
 import hashlib
 import hmac
 import json
+from itertools import combinations
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +27,10 @@ from app.content.expeditions.combat import (
 )
 from app.content.expeditions.skills import skill_definition
 from app.content.expeditions.tangles import tangle_definition
+from app.content.expeditions.relationship_story import (
+    relationship_beat,
+    relationship_duet,
+)
 from app.content.expeditions.validator import (
     STAGE_COUNT,
     expand_map_templates,
@@ -80,10 +85,173 @@ _OUTCOME_LABELS = {
     "detour": "뜻밖의 우회로가 생겼어요",
     "safe": "안전한 선택으로 물러났어요",
 }
+_STAT_APPROACH = {
+    "focus": "careful",
+    "insight": "careful",
+    "courage": "bold",
+    "care": "relational",
+}
 
 
 # 첫 지역. 콘텐츠가 하나뿐이던 시절의 호출부가 지역을 안 넘기면 여기로 온다.
 DEFAULT_REGION_CODE = "moss_archive"
+
+
+async def _select_run_thread(
+    db: AsyncSession,
+    *,
+    user_id: int,
+    region_code: str,
+    threads: list[dict[str, Any]],
+    map_seed: str,
+) -> dict[str, Any]:
+    """Prefer a thread absent from the player's five most recent exposures.
+
+    A region contains three threads, so a player staying in one region can
+    eventually exhaust that window. In that case least-recently-shown wins;
+    this still prevents an immediate repeat and gives every arc equal airtime.
+    """
+    recent = list(
+        (
+            await db.scalars(
+                sa.select(ExpeditionContentExposure.content_code)
+                .where(
+                    ExpeditionContentExposure.user_id == user_id,
+                    ExpeditionContentExposure.content_kind == "run_thread",
+                    ExpeditionContentExposure.context_code == region_code,
+                )
+                .order_by(
+                    ExpeditionContentExposure.shown_at.desc(),
+                    ExpeditionContentExposure.id.desc(),
+                )
+                .limit(5)
+            )
+        ).all()
+    )
+    fresh = [thread for thread in threads if thread["code"] not in recent]
+    if fresh:
+        candidates = fresh
+    else:
+        recent_rank = {code: index for index, code in enumerate(recent)}
+        oldest_rank = max(
+            recent_rank.get(thread["code"], len(recent)) for thread in threads
+        )
+        candidates = [
+            thread
+            for thread in threads
+            if recent_rank.get(thread["code"], len(recent)) == oldest_rank
+        ]
+    return candidates[int(map_seed[:8], 16) % len(candidates)]
+
+
+async def _select_relationship_duet(
+    db: AsyncSession,
+    *,
+    run: ExpeditionRun,
+    members: list[ExpeditionPartyMember],
+) -> dict[str, Any] | None:
+    """Choose an unseen distinct-species camp scene, then an old reprise.
+
+    The party has at most three members, so there are at most three candidate
+    pairs. Core scenes never repeat for an account; after all current pairs
+    have been seen, the least recently shown pair receives its two-line
+    reprise. The exposure ledger, rather than client state, owns that choice.
+    """
+    candidates: list[tuple[list[dict[str, str]], dict[str, Any]]] = []
+    for left, right in combinations(members, 2):
+        pair = [
+            {
+                "name": str(member.snapshot["name"]),
+                "species_code": str(member.snapshot["species"]["code"]),
+            }
+            for member in (left, right)
+        ]
+        core = relationship_duet(pair)
+        if core is not None:
+            candidates.append((pair, core))
+    if not candidates:
+        return None
+
+    core_codes = [core["code"] for _, core in candidates]
+    seen_core = set(
+        (
+            await db.scalars(
+                sa.select(ExpeditionContentExposure.content_code).where(
+                    ExpeditionContentExposure.user_id == run.user_id,
+                    ExpeditionContentExposure.content_kind == "relationship_duet",
+                    ExpeditionContentExposure.content_code.in_(core_codes),
+                )
+            )
+        ).all()
+    )
+    fresh = [(pair, core) for pair, core in candidates if core["code"] not in seen_core]
+    selection_seed = hashlib.sha256(
+        f"{run.map_seed}:{run.current_node_code}:duet".encode()
+    ).digest()
+    if fresh:
+        return fresh[int.from_bytes(selection_seed[:4]) % len(fresh)][1]
+
+    pair_codes = [core["pair_code"] for _, core in candidates]
+    recent_pairs = list(
+        (
+            await db.scalars(
+                sa.select(ExpeditionContentExposure.context_code)
+                .where(
+                    ExpeditionContentExposure.user_id == run.user_id,
+                    ExpeditionContentExposure.content_kind == "relationship_duet",
+                    ExpeditionContentExposure.context_code.in_(pair_codes),
+                )
+                .order_by(ExpeditionContentExposure.id.desc())
+            )
+        ).all()
+    )
+    recency = {pair_code: index for index, pair_code in enumerate(recent_pairs)}
+    oldest_rank = max(
+        recency.get(core["pair_code"], len(recent_pairs)) for _, core in candidates
+    )
+    oldest = [
+        pair
+        for pair, core in candidates
+        if recency.get(core["pair_code"], len(recent_pairs)) == oldest_rank
+    ]
+    pair = oldest[int.from_bytes(selection_seed[4:8]) % len(oldest)]
+    return relationship_duet(pair, reprise=True)
+
+
+def _resolve_run_thread(thread: dict[str, Any], *, map_code: str) -> dict[str, Any]:
+    """Freeze seed/echo variants to the selected map template."""
+    variant_seed = hashlib.sha256(f"{map_code}:{thread['code']}".encode()).digest()
+    seed = thread["seed_variants"][variant_seed[0] % 2]
+    echo = thread["echo_variants"][variant_seed[1] % 2]
+    return {
+        **thread,
+        "seed": seed,
+        "echo": echo,
+        "stage": "seed",
+        "current_text": seed,
+    }
+
+
+def _run_approach(run: ExpeditionRun) -> str:
+    """Resolve a payoff from actions the player actually took in this run."""
+    approaches = [
+        _STAT_APPROACH[stat]
+        for item in run.run_memory_snapshot.get("outcomes", [])
+        if (stat := item.get("stat")) in _STAT_APPROACH
+    ]
+    if not approaches:
+        return "careful"
+    counts = {approach: approaches.count(approach) for approach in set(approaches)}
+    best_count = max(counts.values())
+    tied = {approach for approach, count in counts.items() if count == best_count}
+    return next(approach for approach in reversed(approaches) if approach in tied)
+
+
+def _run_thread_payoff(run: ExpeditionRun) -> str:
+    variants = run.run_thread_snapshot.get("payoff_variants")
+    if isinstance(variants, dict):
+        return str(variants[_run_approach(run)])
+    return str(run.run_thread_snapshot.get("payoff", ""))
 
 
 def load_content(region_code: str | None = None) -> dict[str, Any]:
@@ -165,6 +333,7 @@ def _base_map_node(
     *,
     event_code: str | None = None,
     node_type: str | None = None,
+    scene_key: str | None = None,
 ) -> dict[str, Any] | None:
     """기본 지도에서 장면 정보를 빌려 올 노드를 찾는다."""
 
@@ -173,18 +342,100 @@ def _base_map_node(
             return node
         if node_type is not None and node.get("type") == node_type:
             return node
+        if scene_key is not None and node.get("scene_key") == scene_key:
+            return node
     return None
+
+
+_STAGE_FIELD_TONES = {
+    "moss_archive": "등불이 젖은 종이 냄새를 따라 하나씩 켜지고, 서가 사이의 흙길이 모습을 드러내요.",
+    "echo_well": "얕은 물결이 돌계단 가장자리를 두드리며, 오래 잠긴 메아리의 방향을 알려 줘요.",
+    "starlight_seed_vault": "서리 낀 유리와 금속 바닥 사이로 별빛이 번져, 얼어 있던 통로를 가늘게 밝혀요.",
+    "heartwood_observatory": "나이테 복도에 매달린 등불이 숨 쉬듯 흔들리고, 뿌리 난간 너머의 길이 이어져요.",
+}
+
+_STAGE_KIND_APPROACHES = {
+    "battle": "길 끝에서 엉킴이 바닥을 긁는 소리가 들려요. 가까이 가면 탐험대가 직접 마주하게 돼요.",
+    "event": "목적지의 흔적은 가까이서 살펴봐야 읽혀요. 아직 답을 고르지 말고 먼저 그곳까지 걸어가요.",
+    "camp": "멀리 작은 불빛이 숨을 고를 자리를 비춰요. 불가에 닿으면 오늘의 이야기가 이어져요.",
+    "boss": "가장 깊은 랜드마크에서 수호자의 기척이 길 전체를 울려요. 준비가 됐을 때 그 앞에 서요.",
+}
+
+
+def _stage_field_anchor(content: dict[str, Any], stage: dict[str, Any]) -> dict[str, Any]:
+    """스테이지 목적지를 실제 지역 지형의 랜드마크에 고정한다."""
+
+    nodes = list(content["map"]["nodes"])
+    walk_targets = [
+        node for node in nodes if node.get("type") not in ("entrance", "exit")
+    ]
+    event_code = stage.get("event_code")
+    if event_code:
+        exact = next(
+            (node for node in walk_targets if node.get("event_code") == event_code),
+            None,
+        )
+        if exact is not None:
+            return exact
+
+    preferred_type = {"camp": "camp", "boss": "guardian"}.get(stage["kind"])
+    if preferred_type:
+        exact = next(
+            (node for node in walk_targets if node.get("type") == preferred_type),
+            None,
+        )
+        if exact is not None:
+            return exact
+
+    story_scene = (stage.get("story") or {}).get("scene_key")
+    if story_scene:
+        exact = next(
+            (node for node in walk_targets if node.get("scene_key") == story_scene),
+            None,
+        )
+        if exact is not None:
+            return exact
+
+    if not walk_targets:
+        raise RuntimeError("스테이지가 걸어갈 목적 랜드마크를 찾지 못했습니다")
+    return walk_targets[(int(stage["no"]) - 1) % len(walk_targets)]
+
+
+def _stage_field_memory(
+    content: dict[str, Any], stage: dict[str, Any], destination: dict[str, Any]
+) -> dict[str, Any]:
+    """전투·선택 전에 걷는 짧은 서사 다리를 만든다.
+
+    완료 보상인 stage story의 caption은 여기서 노출하지 않는다. 출발에서는
+    분위기와 목적지만 알려 주고, 결말은 실제 사건을 끝낸 뒤에만 열린다.
+    """
+
+    region = content["region"]
+    story = stage.get("story") or {}
+    return {
+        "stage_no": int(stage["no"]),
+        "chapter": int(story.get("chapter", stage["no"])),
+        "title": stage["title"],
+        "approach": _STAGE_FIELD_TONES.get(
+            region["code"], "랜드마크 사이의 길이 천천히 모습을 드러내요."
+        ),
+        "objective": stage["summary"],
+        "destination_name": destination.get("name", stage["title"]),
+        "destination_hint": _STAGE_KIND_APPROACHES.get(
+            stage["kind"], "표식에 닿으면 다음 장면이 시작돼요."
+        ),
+    }
 
 
 def _stage_arena(
     content: dict[str, Any], stage: dict[str, Any]
-) -> tuple[dict[str, Any], dict[str, Any], str | None]:
-    """스테이지 세션의 아레나 지도와 사건을 합성한다.
+) -> tuple[dict[str, Any], dict[str, Any], str | None, dict[str, Any]]:
+    """스테이지 세션의 보행 필드와 목적 사건을 합성한다.
 
-    스테이지 세션은 노드 그래프를 걷지 않고 그 스테이지의 한 장면으로 바로
-    들어간다(개편 설계서 4.1·5.4). 전투는 엉킴 웨이브, 보스는 pack의 수호전,
-    사건은 pack의 해당 사건, 쉼터는 회복 장면 하나다. run의 map_snapshot에
-    저장되므로 진행 중 세션은 이후 콘텐츠 패치의 영향을 받지 않는다.
+    모든 스테이지는 지역 입구에서 시작해 실제 지형의 목적 랜드마크까지 걷는다.
+    도착 뒤 전투는 엉킴 웨이브, 보스는 pack의 수호전, 사건은 pack의 해당 사건,
+    쉼터는 회복 장면으로 이어진다. run의 map_snapshot에 저장되므로 진행 중
+    세션은 이후 콘텐츠 패치의 영향을 받지 않는다.
     """
 
     stage_no = int(stage["no"])
@@ -192,25 +443,27 @@ def _stage_arena(
     region = content["region"]
     kind = stage["kind"]
     events = content["events"]
+    entrance = _base_map_node(content, node_type="entrance") or {}
+    destination = _stage_field_anchor(content, stage)
     if kind == "boss":
         event_code = stage["event_code"]
-        scene = _base_map_node(content, event_code=event_code) or {}
+        scene = _base_map_node(content, event_code=event_code) or destination
         node_type = "guardian"
         threat_level = 3
     elif kind == "event":
         event_code = stage["event_code"]
-        scene = _base_map_node(content, event_code=event_code) or {}
+        scene = _base_map_node(content, event_code=event_code) or destination
         node_type = "event"
         threat_level = 1
     elif kind == "camp":
         event_code = None
-        scene = _base_map_node(content, node_type="camp") or {}
+        scene = _base_map_node(content, node_type="camp") or destination
         node_type = "camp"
         threat_level = 0
     else:
         event_code = f"stage_wave_{stage_no}"
         wave_codes = list(stage.get("tangles") or [])
-        scene = {"scene_key": "monster_den", "scene_label": "스테이지 전투"}
+        scene = destination
         node_type = "guardian"
         threat_level = 3
         events = {
@@ -234,19 +487,37 @@ def _stage_arena(
             },
         }
     map_data = {
-        "code": f"stage_arena_{stage_no}",
+        "code": f"stage_field_{stage_no}",
         "name": stage["title"],
-        "entrance": "stage_den",
-        "initial_revealed": ["stage_den"],
+        "entrance": "stage_entry",
+        "initial_revealed": ["stage_entry", "stage_den"],
         "nodes": [
+            {
+                "code": "stage_entry",
+                "name": f"{region.get('short_name') or region['name']} 들머리",
+                "type": "entrance",
+                "x": float(entrance.get("x", 0.08)),
+                "y": float(entrance.get("y", 0.5)),
+                "cost": 0,
+                "scene_key": entrance.get("scene_key", "dungeon_gate"),
+                "scene_label": "직접 걷는 들머리",
+                "scene_description": _STAGE_FIELD_TONES.get(
+                    region["code"], "랜드마크 사이의 길이 천천히 모습을 드러내요."
+                ),
+                "depth_label": (
+                    f"{region.get('short_name') or region['name']} {stage_no} · 입구"
+                ),
+                "threat_level": 0,
+            },
             {
                 "code": "stage_den",
                 "name": stage["title"],
                 "type": node_type,
-                "x": 0.5,
-                "y": 0.55,
+                "x": float(destination.get("x", 0.72)),
+                "y": float(destination.get("y", 0.5)),
                 "cost": 0,
-                "scene_key": scene.get("scene_key", "dungeon_gate"),
+                "scene_key": (stage.get("story") or {}).get("scene_key")
+                or scene.get("scene_key", "dungeon_gate"),
                 "scene_label": scene.get("scene_label", "스테이지 현장"),
                 "scene_description": stage["summary"],
                 "depth_label": (
@@ -256,9 +527,11 @@ def _stage_arena(
                 **({"event_code": event_code} if event_code else {}),
             }
         ],
-        "edges": [],
+        "edges": [["stage_entry", "stage_den"]],
     }
-    return map_data, events, event_code
+    return map_data, events, event_code, _stage_field_memory(
+        content, stage, destination
+    )
 
 
 def _node_defs(run: ExpeditionRun) -> dict[str, dict]:
@@ -329,7 +602,6 @@ def _plant_snapshot(
     }
 
 
-
 async def _party_skill_loadouts(
     db: AsyncSession, user_id: int, plant_ids: list[int]
 ) -> dict[int, dict]:
@@ -390,11 +662,7 @@ async def _party_skill_loadouts(
             ),
             # 스냅샷에는 결정만 남긴다. 카탈로그 본문은 키트가 다시 읽는다.
             "slots": {
-                slot: {
-                    key: value
-                    for key, value in decision.items()
-                    if key != "book"
-                }
+                slot: {key: value for key, value in decision.items() if key != "book"}
                 for slot, decision in slots.items()
             },
         }
@@ -541,9 +809,7 @@ async def catalog_payload(db: AsyncSession, user_id: int) -> dict:
                 "modes": ["tutorial", "heart_resonance", "free_explore", "deep"],
                 "deep_available": cleared,
                 "unlocked": unlocked,
-                "locked_reason": (
-                    None if unlocked else "앞 지역을 완주하면 열려요"
-                ),
+                "locked_reason": (None if unlocked else "앞 지역을 완주하면 열려요"),
             }
         )
 
@@ -1121,9 +1387,12 @@ async def start_run(
         get_settings().jwt_secret.encode(), seed_source.encode(), hashlib.sha256
     ).hexdigest()
     arena_event_code: str | None = None
+    stage_field: dict[str, Any] | None = None
     is_arena = stage_data is not None
     if is_arena:
-        map_data, map_events, arena_event_code = _stage_arena(content, stage_data)
+        map_data, map_events, arena_event_code, stage_field = _stage_arena(
+            content, stage_data
+        )
     else:
         map_data = select_map_template(content, map_seed, mode)
         map_events = content["events"]
@@ -1133,7 +1402,10 @@ async def start_run(
         # 얼려 두는 것과 같은 이유다.
         map_events = {
             code: (
-                {**event, "encounter": {**event["encounter"], "difficulty_code": "deep"}}
+                {
+                    **event,
+                    "encounter": {**event["encounter"], "difficulty_code": "deep"},
+                }
                 if isinstance(event.get("encounter"), dict)
                 else event
             )
@@ -1149,21 +1421,31 @@ async def start_run(
         "discoveries": content["discoveries"],
         "region": content["region"],
     }
-    thread = content["run_threads"][int(map_seed[:2], 16) % len(content["run_threads"])]
+    thread = await _select_run_thread(
+        db,
+        user_id=user_id,
+        region_code=region_code,
+        threads=content["run_threads"],
+        map_seed=map_seed,
+    )
+    resolved_thread = _resolve_run_thread(thread, map_code=map_data["code"])
     run = ExpeditionRun(
         user_id=user_id,
         region_code=region_code,
         mode=mode,
         stage_no=stage_no,
-        # 아레나 스테이지는 이동 없이 바로 그 장면을 마주한다. 쉼터만
-        # 사건이 없어 탐색 상태로 시작한다.
-        phase="awaiting_event" if arena_event_code is not None else "exploring",
+        # 스테이지도 입구에서 목적 랜드마크까지 직접 걸은 뒤 사건을 만난다.
+        phase="exploring",
         local_date=today,
         content_version=content["content_version"],
         map_seed=map_seed,
         map_snapshot=map_snapshot,
-        run_thread_snapshot={**thread, "stage": "seed", "current_text": thread["seed"]},
-        run_memory_snapshot={"discoveries": [], "outcomes": []},
+        run_thread_snapshot=resolved_thread,
+        run_memory_snapshot={
+            "discoveries": [],
+            "outcomes": [],
+            **({"stage_field": stage_field} if stage_field is not None else {}),
+        },
         spotlight_snapshot=[],
         runtime_effects_snapshot={},
         current_node_code=map_data["entrance"],
@@ -1226,6 +1508,38 @@ async def start_run(
     await db.flush()
 
     real_members = [member for member in members if not member.is_guide] or members
+    relationship_members = real_members if len(real_members) >= 2 else members
+    relationship_moment = "departure"
+    relationship_cue = relationship_beat(
+        [
+            {
+                "name": member.snapshot["name"],
+                "species_code": member.snapshot["species"]["code"],
+            }
+            for member in relationship_members
+        ],
+        moment=relationship_moment,
+        seed=map_seed,
+    )
+    duet_story = (
+        await _select_relationship_duet(
+            db,
+            run=run,
+            members=real_members,
+        )
+        if relationship_moment == "camp" and len(real_members) >= 2
+        else None
+    )
+    if relationship_cue is not None:
+        run.run_memory_snapshot = {
+            **run.run_memory_snapshot,
+            "relationship_cue": relationship_cue,
+        }
+    if duet_story is not None:
+        run.run_memory_snapshot = {
+            **run.run_memory_snapshot,
+            "duet_story": duet_story,
+        }
     if is_arena:
         run.spotlight_snapshot = (
             [
@@ -1288,25 +1602,30 @@ async def start_run(
             exposure_index=0,
         )
     )
-    await db.flush()
-
-    if is_arena and stage_data is not None and stage_data["kind"] == "camp":
-        # 쉼터 스테이지는 도착이 곧 휴식이다. 숨을 고른 것으로 걸음이
-        # 완성되고, 이야기와 함께 그 자리에서 귀환할 수 있다.
-        den_state = await db.scalar(
-            sa.select(ExpeditionNodeState).where(
-                ExpeditionNodeState.run_id == run.id,
-                ExpeditionNodeState.node_code == run.current_node_code,
+    if relationship_cue is not None:
+        db.add(
+            ExpeditionContentExposure(
+                user_id=user_id,
+                run_id=run.id,
+                content_kind="relationship_beat",
+                content_code=relationship_cue["code"],
+                context_code=relationship_moment,
+                exposure_index=0,
             )
         )
-        if den_state is not None:
-            den_state.status = "resolved"
-            den_state.resolved_at = utcnow()
-            den_state.outcome_code = "rested"
-        run.trail_light = min(12, run.trail_light + 2)
-        run.resolve = min(6, run.resolve + 1)
-        _secure_stage_objective(db, run)
-        await db.flush()
+    if duet_story is not None:
+        db.add(
+            ExpeditionContentExposure(
+                user_id=user_id,
+                run_id=run.id,
+                content_kind="relationship_duet",
+                content_code=duet_story["code"],
+                context_code=duet_story["pair_code"],
+                exposure_index=0,
+            )
+        )
+    await db.flush()
+
     return await run_payload(db, run)
 
 
@@ -1321,7 +1640,7 @@ def _secure_stage_objective(db: AsyncSession, run: ExpeditionRun) -> None:
         return
     run.objective_secured = True
     thread = dict(run.run_thread_snapshot)
-    thread.update({"stage": "payoff", "current_text": thread["payoff"]})
+    thread.update({"stage": "payoff", "current_text": _run_thread_payoff(run)})
     run.run_thread_snapshot = thread
     reward = run.map_snapshot["region"]["reward"]
     db.add(
@@ -1475,6 +1794,61 @@ async def move(
         state.status = "resolved"
         state.resolved_at = utcnow()
         state.outcome_code = "rested"
+        party = await _party_rows(db, run.id)
+        real_party = [member for member in party if not member.is_guide] or party
+        relationship_party = real_party if len(real_party) >= 2 else party
+        camp_cue = relationship_beat(
+            [
+                {
+                    "name": member.snapshot["name"],
+                    "species_code": member.snapshot["species"]["code"],
+                }
+                for member in relationship_party
+            ],
+            moment="camp",
+            seed=run.map_seed,
+        )
+        if camp_cue is not None:
+            run.run_memory_snapshot = {
+                **run.run_memory_snapshot,
+                "relationship_cue": camp_cue,
+            }
+            db.add(
+                ExpeditionContentExposure(
+                    user_id=run.user_id,
+                    run_id=run.id,
+                    content_kind="relationship_beat",
+                    content_code=camp_cue["code"],
+                    context_code="camp",
+                    exposure_index=0,
+                )
+            )
+        duet_story = (
+            await _select_relationship_duet(
+                db,
+                run=run,
+                members=real_party,
+            )
+            if len(real_party) >= 2
+            else None
+        )
+        if duet_story is not None:
+            run.run_memory_snapshot = {
+                **run.run_memory_snapshot,
+                "duet_story": duet_story,
+            }
+            db.add(
+                ExpeditionContentExposure(
+                    user_id=run.user_id,
+                    run_id=run.id,
+                    content_kind="relationship_duet",
+                    content_code=duet_story["code"],
+                    context_code=duet_story["pair_code"],
+                    exposure_index=0,
+                )
+            )
+        if run.stage_no is not None:
+            _secure_stage_objective(db, run)
     elif node_type == "discovery" and state.resolved_at is None:
         discovery = run.map_snapshot["discoveries"][node_code]
         state.status = "resolved"
@@ -1493,7 +1867,7 @@ async def move(
         state.resolved_at = utcnow()
         state.outcome_code = "secured"
         thread = dict(run.run_thread_snapshot)
-        thread.update({"stage": "payoff", "current_text": thread["payoff"]})
+        thread.update({"stage": "payoff", "current_text": _run_thread_payoff(run)})
         run.run_thread_snapshot = thread
         reward = run.map_snapshot["region"]["reward"]
         db.add(
@@ -2116,7 +2490,17 @@ async def _return_scene(db: AsyncSession, run: ExpeditionRun) -> dict[str, Any]:
             }
         )
     names = [member["name"] for member in payload_members if not member["is_guide"]]
-    return {
+    relationship_members = [
+        member for member in payload_members if not member["is_guide"]
+    ]
+    if len(relationship_members) < 2:
+        relationship_members = payload_members
+    return_cue = relationship_beat(
+        relationship_members,
+        moment="return",
+        seed=run.map_seed,
+    )
+    scene = {
         "code": f"{run.region_code}.homeward.{min(len(names), 3)}",
         "title": "함께 돌아온 탐험대",
         "caption": (
@@ -2126,6 +2510,9 @@ async def _return_scene(db: AsyncSession, run: ExpeditionRun) -> dict[str, Any]:
         ),
         "members": payload_members,
     }
+    if return_cue is not None:
+        scene["relationship_cue"] = return_cue
+    return scene
 
 
 async def _safe_return(db: AsyncSession, run: ExpeditionRun, reason: str) -> None:

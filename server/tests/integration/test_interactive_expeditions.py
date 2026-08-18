@@ -8,7 +8,7 @@ from app.models.expedition import (
     UserRegionProgress,
 )
 from app.models.game import FarmLayout, Item, UserItem
-from app.models.plant import Plant
+from app.models.plant import Plant, PlantSpecies
 from app.models.reward import RewardEvent
 
 from tests.conftest import auth_headers
@@ -235,6 +235,11 @@ async def test_expedition_map_actions_are_authoritative_and_replayable(
 
     run = await _start(client, headers, plant_id, mode="free_explore")
     assert run["run"]["revision"] == 0
+    assert run["run_thread"]["title"]
+    assert run["run_thread"]["stage"] == "seed"
+    assert len(run["run_thread"]["seed_variants"]) == 2
+    assert run["memory"]["relationship_cue"]["moment"] == "departure"
+    assert run["memory"]["relationship_cue"]["caption"]
     entrance = next(node for node in run["map"]["nodes"] if node["code"] == "entrance")
     assert entrance["scene_key"] == "dungeon_gate"
     assert entrance["scene_label"] == "폐허 던전"
@@ -296,6 +301,35 @@ async def test_expedition_map_actions_are_authoritative_and_replayable(
             )
         )
         assert action_count == 2
+
+
+async def test_run_threads_rotate_before_the_oldest_story_returns(
+    client, user_tokens, session_factory
+):
+    headers = auth_headers(user_tokens)
+    plant_id = await _prepare_stage_two(session_factory, user_tokens["user"]["id"])
+    thread_codes = []
+
+    for index in range(4):
+        run = await _start(
+            client,
+            headers,
+            plant_id,
+            mode="free_explore",
+            key=f"story-rotation-start-{index:04d}",
+        )
+        thread_codes.append(run["run_thread"]["code"])
+        await _action(
+            client,
+            headers,
+            run,
+            "retreat",
+            {},
+            f"story-rotation-retreat-{index:04d}",
+        )
+
+    assert len(set(thread_codes[:3])) == 3
+    assert thread_codes[3] == thread_codes[0]
 
 
 async def test_tutorial_uses_fixed_visible_map_and_active_character_with_guide(
@@ -375,6 +409,121 @@ async def test_tutorial_uses_fixed_visible_map_and_active_character_with_guide(
     assert completed["run"]["status"] == "completed"
     catalog = await client.get("/adventure/expeditions/catalog", headers=headers)
     assert catalog.json()["entry"]["tutorial_completed"] is True
+
+
+async def test_distinct_party_unlocks_core_camp_duet_then_uses_reprise(
+    client, user_tokens, session_factory
+):
+    headers = auth_headers(user_tokens)
+    user_id = user_tokens["user"]["id"]
+    first_id = await _prepare_stage_two(session_factory, user_id)
+    async with session_factory() as db:
+        first = await db.get(Plant, first_id)
+        story_species = await db.scalar(
+            sa.select(PlantSpecies).where(PlantSpecies.code == "baby-pot")
+        )
+        partner_species = await db.scalar(
+            sa.select(PlantSpecies).where(PlantSpecies.code == "handsome-pot")
+        )
+        assert first is not None
+        if story_species is None:
+            story_species = PlantSpecies(
+                code="baby-pot",
+                name="뽀또",
+                persona_key="baby",
+                asset_manifest={},
+                rarity=1,
+                unlock_price=0,
+            )
+            db.add(story_species)
+            await db.flush()
+        first.species_id = story_species.id
+        if partner_species is None:
+            partner_species = PlantSpecies(
+                code="handsome-pot",
+                name="로제온",
+                persona_key="handsome",
+                asset_manifest={},
+                rarity=2,
+                unlock_price=50,
+            )
+            db.add(partner_species)
+            await db.flush()
+        partner = Plant(
+            user_id=user_id,
+            species_id=partner_species.id,
+            name="둘째",
+            exp=20,
+            status="harvested",
+            planted_at=first.planted_at,
+        )
+        db.add(partner)
+        await db.commit()
+        partner_id = partner.id
+
+    async def start(key: str) -> dict:
+        response = await client.post(
+            "/adventure/expeditions",
+            headers={**headers, "Idempotency-Key": key},
+            json={
+                "region_code": "moss_archive",
+                "mode": "free_explore",
+                "plant_ids": [first_id, partner_id],
+                "guide_count": 0,
+            },
+        )
+        assert response.status_code == 201, response.text
+        return response.json()
+
+    async def reach_camp(run: dict, prefix: str) -> dict:
+        run = await _action(
+            client,
+            headers,
+            run,
+            "move",
+            {"node_code": "wet_labels"},
+            f"{prefix}-wet",
+        )
+        run = await _action(
+            client,
+            headers,
+            run,
+            "choices",
+            {
+                "choice_code": "mark_return",
+                "acting_member_id": run["party"][0]["id"],
+            },
+            f"{prefix}-choice",
+        )
+        return await _action(
+            client,
+            headers,
+            run,
+            "move",
+            {"node_code": "quiet_camp"},
+            f"{prefix}-camp",
+        )
+
+    started = await start("duet-start-core")
+    assert {member["species"]["code"] for member in started["party"]} == {
+        "baby-pot",
+        "handsome-pot",
+    }
+    first_run = await reach_camp(started, "duet-core")
+    core = first_run["memory"]["duet_story"]
+    assert core["variant"] == "core"
+    assert len(core["lines"]) == 4
+    first_run = await _action(
+        client, headers, first_run, "retreat", {}, "duet-core-retreat"
+    )
+    assert first_run["run"]["status"] == "retreated"
+
+    reprise_run = await reach_camp(await start("duet-start-reprise"), "duet-reprise")
+    reprise = reprise_run["memory"]["duet_story"]
+    assert reprise["variant"] == "reprise"
+    assert len(reprise["lines"]) == 2
+    assert reprise["pair_code"] == core["pair_code"]
+    assert reprise["code"] != core["code"]
 
 
 async def test_species_signature_skill_uses_its_own_name_and_effect(
@@ -538,6 +687,10 @@ async def test_heart_resonance_rewards_only_after_objective_and_return(
         "stage": None,
     }
     assert completed["summary"]["return_scene"]["title"] == "함께 돌아온 탐험대"
+    assert completed["summary"]["return_scene"]["relationship_cue"]["moment"] == (
+        "return"
+    )
+    assert completed["summary"]["return_scene"]["relationship_cue"]["caption"]
     returned = completed["summary"]["return_scene"]["members"]
     assert any(member["plant_id"] == plant_id for member in returned)
     assert all(member["contribution"] for member in returned)

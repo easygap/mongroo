@@ -1305,6 +1305,7 @@ async def test_new_region_battle_stages_start_in_their_own_fight(
 
     from app.content.expeditions.tangles import TANGLE_CATALOG
     from app.services.expeditions import load_content
+    from tests.integration.test_expedition_stages import _enter_stage_field
 
     headers = auth_headers(user_tokens)
     user_id = user_tokens["user"]["id"]
@@ -1328,6 +1329,9 @@ async def test_new_region_battle_stages_start_in_their_own_fight(
     )
     assert started.status_code == 201, started.text
     run = started.json()
+    run = await _enter_stage_field(
+        client, headers, run, f"stage-{region_code}-field"
+    )
 
     battle = run["current_event"]["battle"]
     assert battle is not None, f"{region_code}: 전투 스테이지인데 전투가 없습니다"

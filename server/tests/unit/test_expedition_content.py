@@ -6,12 +6,25 @@ from pathlib import Path
 import pytest
 
 from app.content.expeditions.skills import FORM_SKILLS, SIGNATURE_SKILLS
+from app.content.expeditions.combat_identity import SPECIES_SKILLS
+from app.content.expeditions.relationship_story import (
+    RELATIONSHIP_MOMENTS,
+    SPECIES_DUET_VOICES,
+    SPECIES_RELATIONSHIP_LINES,
+    relationship_beat,
+    relationship_duet,
+)
 from app.content.expeditions.validator import (
     ContentValidationError,
     expand_map_templates,
     validate_content,
 )
-from app.services.expeditions import select_map_template
+from app.services.expeditions import (
+    _stage_arena,
+    load_content,
+    select_map_template,
+    shipped_region_codes,
+)
 
 
 CONTENT_PATH = (
@@ -46,13 +59,135 @@ def test_moss_archive_has_three_valid_reachable_topologies():
     )
 
 
+def test_every_region_ships_three_complete_branching_story_threads():
+    regions = (
+        "moss_archive",
+        "echo_well",
+        "starlight_seed_vault",
+        "heartwood_observatory",
+    )
+    threads = [
+        thread
+        for region_code in regions
+        for thread in load_content(region_code)["run_threads"]
+    ]
+
+    assert len(threads) == 12
+    assert len({thread["code"] for thread in threads}) == 12
+    assert (
+        sum(
+            len(thread["seed_variants"])
+            + len(thread["echo_variants"])
+            + len(thread["payoff_variants"])
+            for thread in threads
+        )
+        == 84
+    )
+    assert all(
+        set(thread["payoff_variants"])
+        == {
+            "careful",
+            "bold",
+            "relational",
+        }
+        for thread in threads
+    )
+
+
+def test_every_stage_builds_a_walkable_two_landmark_field():
+    for region_code in shipped_region_codes():
+        content = load_content(region_code)
+        landmark_positions = {
+            (float(node["x"]), float(node["y"]))
+            for node in content["map"]["nodes"]
+            if node["type"] not in {"entrance", "exit"}
+        }
+        for stage in content["stages"]:
+            field, _events, event_code, story = _stage_arena(content, stage)
+            nodes = {node["code"]: node for node in field["nodes"]}
+
+            assert field["entrance"] == "stage_entry"
+            assert field["initial_revealed"] == ["stage_entry", "stage_den"]
+            assert field["edges"] == [["stage_entry", "stage_den"]]
+            assert set(nodes) == {"stage_entry", "stage_den"}
+            assert (nodes["stage_entry"]["x"], nodes["stage_entry"]["y"]) != (
+                nodes["stage_den"]["x"],
+                nodes["stage_den"]["y"],
+            )
+            assert (nodes["stage_den"]["x"], nodes["stage_den"]["y"]) in (
+                landmark_positions
+            )
+            assert story["stage_no"] == stage["no"]
+            assert story["title"] == stage["title"]
+            assert story["approach"] and story["objective"]
+            assert story["destination_name"] and story["destination_hint"]
+            if stage["kind"] == "camp":
+                assert event_code is None
+            else:
+                assert event_code
+
+
+def test_every_current_species_pair_has_three_relationship_beats():
+    species_codes = sorted(set(SPECIES_SKILLS) - {"archive_guide"})
+
+    assert set(SPECIES_RELATIONSHIP_LINES) == set(species_codes)
+    rendered = []
+    for left_index, left_code in enumerate(species_codes):
+        for right_code in species_codes[left_index:]:
+            members = [
+                {"name": "하나", "species_code": left_code},
+                {"name": "두리", "species_code": right_code},
+            ]
+            for moment in RELATIONSHIP_MOMENTS:
+                beat = relationship_beat(members, moment=moment, seed="story-test")
+                assert beat is not None
+                assert "하나" in beat["caption"] or "두리" in beat["caption"]
+                assert "{" not in beat["caption"]
+                rendered.append(beat)
+
+    assert len(rendered) == 360
+
+
+def test_every_distinct_species_pair_has_a_core_and_reprise_duet():
+    species_codes = sorted(set(SPECIES_SKILLS) - {"archive_guide"})
+
+    assert set(SPECIES_DUET_VOICES) == set(species_codes)
+    core_codes: set[str] = set()
+    reprise_codes: set[str] = set()
+    for left_index, left_code in enumerate(species_codes):
+        for right_code in species_codes[left_index + 1 :]:
+            members = [
+                {"name": "하나", "species_code": left_code},
+                {"name": "두리", "species_code": right_code},
+            ]
+            core = relationship_duet(members)
+            reprise = relationship_duet(members, reprise=True)
+
+            assert core is not None
+            assert reprise is not None
+            assert core["variant"] == "core"
+            assert len(core["lines"]) == 4
+            assert core["narration"]
+            assert reprise["variant"] == "reprise"
+            assert len(reprise["lines"]) == 2
+            assert reprise["narration"] == ""
+            assert all(
+                line["speaker_name"] in {"하나", "두리"}
+                and line["text"]
+                and len(line["text"]) <= 60
+                for line in [*core["lines"], *reprise["lines"]]
+            )
+            core_codes.add(core["code"])
+            reprise_codes.add(reprise["code"])
+
+    assert len(core_codes) == 105
+    assert len(reprise_codes) == 105
+
+
 def test_map_templates_keep_landmarks_locked_to_the_region_art():
     templates = expand_map_templates(_content())
     coordinates = [
-        {
-            node["code"]: (node["x"], node["y"])
-            for node in template["nodes"]
-        }
+        {node["code"]: (node["x"], node["y"]) for node in template["nodes"]}
         for template in templates
     ]
 

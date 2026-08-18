@@ -16,6 +16,10 @@ class _ExpeditionSummary extends ConsumerWidget {
     final returnScene = summary['return_scene'] is Map<String, dynamic>
         ? summary['return_scene'] as Map<String, dynamic>
         : null;
+    final returnRelationship =
+        returnScene?['relationship_cue'] is Map<String, dynamic>
+            ? returnScene!['relationship_cue'] as Map<String, dynamic>
+            : null;
     final storyCue = summary['story_cue'] is Map<String, dynamic>
         ? summary['story_cue'] as Map<String, dynamic>
         : null;
@@ -93,6 +97,58 @@ class _ExpeditionSummary extends ConsumerWidget {
                               ),
                               const SizedBox(height: 5),
                               Text(returnScene['caption'] as String? ?? ''),
+                              if (returnRelationship != null) ...[
+                                const SizedBox(height: 10),
+                                DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surface
+                                        .withAlpha(145),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(10),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Icon(
+                                          Icons.group_outlined,
+                                          size: 19,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                returnRelationship['title']
+                                                        as String? ??
+                                                    '함께 돌아온 순간',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .labelLarge
+                                                    ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                              ),
+                                              const SizedBox(height: 3),
+                                              Text(
+                                                returnRelationship['caption']
+                                                        as String? ??
+                                                    '',
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                               const SizedBox(height: 8),
                               for (final member
                                   in (returnScene['members'] as List? ??

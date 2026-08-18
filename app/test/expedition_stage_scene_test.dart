@@ -194,11 +194,60 @@ Map<String, dynamic> _campSnapshotJson() => _snapshotBase(
       ],
     );
 
+Map<String, dynamic> _walkingSnapshotJson() {
+  final den = _stageDen(status: 'revealed');
+  final raw = _snapshotBase(
+    den: den,
+    availableActions: [
+      {'type': 'move', 'node_code': 'stage_den', 'cost': 0},
+      {'type': 'retreat'},
+    ],
+  );
+  final run = raw['run'] as Map<String, dynamic>;
+  run['current_node_code'] = 'stage_entry';
+  final map = raw['map'] as Map<String, dynamic>;
+  map['nodes'] = [
+    {
+      'code': 'stage_entry',
+      'name': '기억서고 들머리',
+      'type': 'entrance',
+      'status': 'visited',
+      'x': .08,
+      'y': .50,
+      'cost': 0,
+      'scene_key': 'dungeon_gate',
+      'scene_label': '직접 걷는 들머리',
+      'scene_description': '등불 아래의 길이 모습을 드러내요.',
+      'depth_label': '기억서고 2 · 입구',
+      'threat_level': 0,
+    },
+    den,
+  ];
+  map['edges'] = [
+    ['stage_entry', 'stage_den'],
+  ];
+  raw['memory'] = {
+    'discoveries': [],
+    'outcomes': [],
+    'stage_field': {
+      'stage_no': 2,
+      'chapter': 2,
+      'title': '번진 이름들',
+      'approach': '등불이 젖은 종이 냄새를 따라 하나씩 켜져요.',
+      'objective': '젖은 표찰의 글자를 어떤 방식으로 되살릴지 골라요.',
+      'destination_name': '침수 표찰 동굴',
+      'destination_hint': '현장의 흔적은 가까이서 살펴봐야 읽혀요.',
+    },
+  };
+  return raw;
+}
+
 class _FakeSceneController extends ExpeditionController {
   _FakeSceneController(this.initial);
 
   final ExpeditionUiState initial;
   final List<String> chosen = [];
+  final List<String> moved = [];
   int extractCalls = 0;
 
   @override
@@ -207,6 +256,12 @@ class _FakeSceneController extends ExpeditionController {
   @override
   Future<bool> choose(String choiceCode) async {
     chosen.add(choiceCode);
+    return true;
+  }
+
+  @override
+  Future<bool> move(String nodeCode) async {
+    moved.add(nodeCode);
     return true;
   }
 
@@ -248,6 +303,90 @@ Future<_FakeSceneController> _pump(
 }
 
 void main() {
+  testWidgets('스테이지는 지역 지형 위를 직접 걷고 목적 표식으로 사건에 진입한다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = await _pump(tester, _walkingSnapshotJson());
+
+    expect(find.byKey(const ValueKey('stage-field-story')), findsOneWidget);
+    expect(find.byKey(const ValueKey('stage-field-map')), findsOneWidget);
+    expect(find.text('번진 이름들'), findsWidgets);
+    expect(find.textContaining('누른 채 원하는 방향'), findsOneWidget);
+    expect(find.textContaining('가까이서 살펴봐야'), findsOneWidget);
+
+    // 빈 길을 끌면 파티가 월드 좌표 안에서 실제로 이동한다. 카메라 추적형이라
+    // 캐릭터는 화면 중앙에 머물 수 있으므로 스크린 픽셀이 아니라 좌표를 본다.
+    final mapRect = tester.getRect(
+      find.byKey(const ValueKey('expedition-walk-surface')),
+    );
+    String playerPosition() => tester
+        .widget<Semantics>(
+          find.byKey(const ValueKey('tile-world-player-position')),
+        )
+        .properties
+        .value!;
+    final beforeY = double.parse(playerPosition().split(',').last);
+    final gesture = await tester.startGesture(
+      Offset(mapRect.left + mapRect.width * .34,
+          mapRect.top + mapRect.height * .78),
+    );
+    // 기억서고 들머리의 첫 통로는 아래쪽으로 열린다. 실제 보행 마스크의
+    // 통로를 따라 한 걸음 내려간다.
+    await gesture.moveBy(const Offset(0, 52));
+    for (var frame = 0; frame < 12; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    final afterY = double.parse(playerPosition().split(',').last);
+    expect(afterY, greaterThan(beforeY));
+    await gesture.up();
+    await tester.pump();
+
+    // 전체 42×30 맵 이미지를 한 번에 그리지 않고 가시 타일만 그리며,
+    // 위치 파악용 미니맵은 별도 저비용 데이터 레이어다.
+    expect(find.textContaining('/1260'), findsOneWidget);
+    expect(find.byKey(const ValueKey('tile-world-minimap')), findsOneWidget);
+
+    // 표식 탭은 아래의 가상 스틱 레이어에 막히지 않고 같은 move로 모인다.
+    final landmark = find.byTooltip('번진 이름들');
+    expect(tester.getSize(landmark).width, greaterThanOrEqualTo(48));
+    await tester.tap(landmark);
+    await tester.pump();
+    expect(controller.moved, ['stage_den']);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('타일 월드 경계는 캐릭터를 막고 벽을 따라 미끄러지게 한다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await _pump(tester, _walkingSnapshotJson());
+
+    String position() => tester
+        .widget<Semantics>(
+          find.byKey(const ValueKey('tile-world-player-position')),
+        )
+        .properties
+        .value!;
+    double x() => double.parse(position().split(',').first);
+    final map = tester.getRect(
+      find.byKey(const ValueKey('expedition-walk-surface')),
+    );
+    final before = x();
+    final gesture = await tester.startGesture(map.center);
+    await gesture.moveBy(const Offset(-70, 0));
+    for (var frame = 0; frame < 75; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    await gesture.up();
+    await tester.pump();
+
+    expect(x(), lessThan(before));
+    // 캐릭터 반지름과 바깥 테두리를 포함한 서쪽 충돌 경계.
+    expect(x(), greaterThanOrEqualTo(1.35));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('사건 스테이지는 말풍선과 성공 예상이 붙은 선택 카드를 보여 준다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -269,7 +408,8 @@ void main() {
     expect(find.textContaining('기준 8'), findsNothing);
 
     // 길게 누르면 수치 상세가 열린다.
-    await tester.longPress(find.byKey(const ValueKey('stage-choice-trace_ink')));
+    await tester
+        .longPress(find.byKey(const ValueKey('stage-choice-trace_ink')));
     await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('관찰 7 · 기준 8'), findsOneWidget);
     tester.state<NavigatorState>(find.byType(Navigator)).pop();
@@ -347,6 +487,47 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('stage-scene-stage')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('320px과 200% 글자에서도 직접 걷기 지도가 깨지지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final snapshot = ExpeditionSnapshot.fromJson(_walkingSnapshotJson());
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          expeditionControllerProvider.overrideWith(
+            () => _FakeSceneController(
+              ExpeditionUiState(
+                loading: false,
+                expedition: snapshot,
+                selectedMemberId: 11,
+              ),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: const TextScaler.linear(2),
+            ),
+            child: child!,
+          ),
+          home: const ExpeditionScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('stage-field-story')), findsOneWidget);
+    expect(find.byKey(const ValueKey('stage-field-map')), findsOneWidget);
+    final mapSize =
+        tester.getSize(find.byKey(const ValueKey('expedition-walk-surface')));
+    expect(mapSize.width, closeTo(296, .01));
+    expect(mapSize.width / mapSize.height, closeTo(1.45, .01));
     expect(tester.takeException(), isNull);
   });
 }

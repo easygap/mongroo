@@ -35,15 +35,42 @@ async def _seed_cleared_stages(session_factory, user_id: int, upto: int) -> None
 
 
 async def _run_stage_to_completion(client, headers: dict, run: dict, key_prefix: str):
-    """아레나 스테이지를 전투 승리부터 현장 귀환까지 끝낸다."""
+    """보행 필드부터 전투 승리와 현장 귀환까지 끝낸다."""
 
     run, _ = await _fight_stage_battle(client, headers, run, f"{key_prefix}-fight")
     return await _action(client, headers, run, "extract", {}, f"{key_prefix}-extract")
 
 
+async def _enter_stage_field(client, headers: dict, run: dict, key: str) -> dict:
+    """입구에서 실제 목적 랜드마크까지 걸어 사건을 연다."""
+
+    if run.get("current_event") is not None or run["run"]["objective_secured"]:
+        return run
+    assert run["run"]["phase"] == "exploring"
+    assert run["run"]["current_node_code"] == "stage_entry"
+    assert run["map"]["edges"] == [["stage_entry", "stage_den"]]
+    assert {node["code"] for node in run["map"]["nodes"]} == {
+        "stage_entry",
+        "stage_den",
+    }
+    assert run["memory"]["stage_field"]["destination_hint"]
+    assert {action["type"] for action in run["available_actions"]} >= {"move"}
+    return await _action(
+        client,
+        headers,
+        run,
+        "move",
+        {"node_code": "stage_den"},
+        key,
+    )
+
+
 async def _fight_stage_battle(client, headers: dict, run: dict, key_prefix: str):
     """일반 웨이브는 기본 공격, 수호전은 공개된 최적 합법 스킬로 진행한다."""
 
+    run = await _enter_stage_field(
+        client, headers, run, f"{key_prefix}-field-arrival"
+    )
     turn = 1
     exchanges: list[dict] = []
     while (run.get("current_event") or {}).get("battle", {}).get("status") == "active":
@@ -237,7 +264,7 @@ async def test_story_seen_is_recorded_only_for_cleared_stages(
     assert missing.status_code == 404
 
 
-async def test_battle_stage_run_starts_directly_in_a_tangle_fight(
+async def test_battle_stage_walks_to_the_tangle_fight(
     client, user_tokens, session_factory
 ):
     headers = auth_headers(user_tokens)
@@ -251,8 +278,14 @@ async def test_battle_stage_run_starts_directly_in_a_tangle_fight(
         stage_no=1,
         key="stage-arena-0001",
     )
-    # 아레나 스테이지는 이동 없이 바로 전투를 마주한다.
-    assert run["run"]["phase"] == "awaiting_event"
+    # 모든 스테이지는 지역 원화의 들머리에서 시작해 목적지까지 직접 걷는다.
+    assert run["run"]["phase"] == "exploring"
+    assert run["current_event"] is None
+    assert run["map"]["code"] == "stage_field_1"
+    assert run["memory"]["stage_field"]["title"] == "서가 앞 첫 걸음"
+    run = await _enter_stage_field(
+        client, headers, run, "stage-arena-field-arrival"
+    )
     battle = run["current_event"]["battle"]
     assert battle["enemy_kind"] == "tangle"
     assert battle["enemy"]["name"] == "엉킨 장부 뭉치"
@@ -306,6 +339,7 @@ async def test_wave_stage_swaps_tangles_without_extra_rounds(
         stage_no=3,
         key="stage-wave-0001",
     )
+    run = await _enter_stage_field(client, headers, run, "stage-wave-field")
     battle = run["current_event"]["battle"]
     assert battle["wave"] == {
         "index": 1,
@@ -343,6 +377,7 @@ async def test_boss_stage_runs_the_guardian_in_the_arena(
         stage_no=8,
         key="stage-boss-0001",
     )
+    run = await _enter_stage_field(client, headers, run, "stage-boss-field")
     battle = run["current_event"]["battle"]
     # 보스 스테이지는 기존 수호전 사건을 그대로 아레나에서 치른다.
     assert battle["enemy_kind"] == "guardian"
@@ -363,7 +398,7 @@ async def test_boss_stage_runs_the_guardian_in_the_arena(
     assert payload["progress"]["next_stage_no"] is None
 
 
-async def test_event_stage_runs_the_pack_event_in_an_arena(
+async def test_event_stage_walks_to_the_pack_event(
     client, user_tokens, session_factory
 ):
     headers = auth_headers(user_tokens)
@@ -379,7 +414,10 @@ async def test_event_stage_runs_the_pack_event_in_an_arena(
         stage_no=2,
         key="stage-event-0001",
     )
-    # 사건 스테이지는 이동 없이 pack의 사건 장면으로 바로 들어간다.
+    # 사건도 먼저 현장까지 걸은 뒤에만 선택이 열린다.
+    assert run["run"]["phase"] == "exploring"
+    assert run["current_event"] is None
+    run = await _enter_stage_field(client, headers, run, "stage-event-field")
     assert run["run"]["phase"] == "awaiting_event"
     event = run["current_event"]
     assert event["code"] == "wet_label_order"
@@ -408,7 +446,7 @@ async def test_event_stage_runs_the_pack_event_in_an_arena(
     assert completed["summary"]["progress"]["stage"]["stage_no"] == 2
 
 
-async def test_camp_stage_rests_and_returns_on_the_spot(
+async def test_camp_stage_walks_to_the_fire_before_resting(
     client, user_tokens, session_factory
 ):
     headers = auth_headers(user_tokens)
@@ -424,10 +462,12 @@ async def test_camp_stage_rests_and_returns_on_the_spot(
         stage_no=5,
         key="stage-camp-0001",
     )
-    # 쉼터는 도착이 곧 휴식이다. 사건 없이 걸음이 완성되어 있다.
+    # 쉼터도 들머리에서는 아직 완료되지 않고, 불가에 걸어가야 휴식한다.
     assert run["run"]["phase"] == "exploring"
-    assert run["run"]["objective_secured"] is True
+    assert run["run"]["objective_secured"] is False
     assert run["current_event"] is None
+    run = await _enter_stage_field(client, headers, run, "stage-camp-field")
+    assert run["run"]["objective_secured"] is True
     den = next(node for node in run["map"]["nodes"] if node["code"] == "stage_den")
     assert den["type"] == "camp"
     assert den["status"] == "resolved"

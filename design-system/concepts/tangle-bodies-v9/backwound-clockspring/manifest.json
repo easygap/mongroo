@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "tangle_code": "backwound-clockspring",
+  "states": [
+    "idle",
+    "attack",
+    "hit",
+    "release"
+  ],
+  "frame_size": [
+    768,
+    768
+  ],
+  "mobile_size": [
+    576,
+    576
+  ],
+  "source_sha256": "D2B53AD7B594D2C07BEC876618EA181102CA435FB2EEF0C3F25DCEECB3BAD83C",
+  "production_candidate": true,
+  "production_ready": false,
+  "frames": [
+    {
+      "state": "idle",
+      "bbox": [
+        44,
+        107,
+        621,
+        621
+      ],
+      "coverage": 0.5212,
+      "runtime_sha256": "9B4C4F6BEBE23294CD8B1937CB3C41E3EFDD7D13F1E774784C1FB83323ECE390",
+      "mobile_sha256": "A0DF47FCA55396C59E920E9910AE438FFA6A3BA17E28356E91DF9C8247C96082"
+    },
+    {
+      "state": "attack",
+      "bbox": [
+        6,
+        113,
+        595,
+        591
+      ],
+      "coverage": 0.4382,
+      "runtime_sha256": "520EB21DE75ADF032D8B9E4CC4007BBBDC3AD5133C56D65969DB7DCDC38FE7E0",
+      "mobile_sha256": "6F032664507241A4D257F2D23FCC6222F84ED07E049DE5BA1A36EC8FE16C4889"
+    },
+    {
+      "state": "hit",
+      "bbox": [
+        34,
+        40,
+        571,
+        520
+      ],
+      "coverage": 0.5021,
+      "runtime_sha256": "D66F8F5731668F9EA1CF9D60EDE26CBC96691FFD8EC75996E686EC178FBD6DAD",
+      "mobile_sha256": "10C38BC19982BCBCE7F0B95E5D0C4239BF338D888F714195CDE1A421E5EA95CD"
+    },
+    {
+      "state": "release",
+      "bbox": [
+        21,
+        103,
+        567,
+        493
+      ],
+      "coverage": 0.4365,
+      "runtime_sha256": "D5A10938526027174BA91797CAF846C81299671F3B44D144AD4B332399BB2A48",
+      "mobile_sha256": "2571565ECAF65ABD52655496568BAB3B0D49F1ADF4B91F3BAB402AEF31EAA2C1"
+    }
+  ]
+}

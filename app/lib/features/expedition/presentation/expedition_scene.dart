@@ -51,6 +51,15 @@ const expeditionTangleCodes = <String>{
   'tangled_ledger',
   'drifting_pressings',
   'shelf_snarl',
+  'knotted_echo',
+  'splashing_droplets',
+  'bell_knot_swirl',
+  'snarled_stardust',
+  'rolling_seedbox',
+  'backwound_clockspring',
+  'ring_shard_tangle',
+  'scattered_records',
+  'matted_observatory',
 };
 
 const expeditionTangleStates = <String>{
@@ -498,9 +507,9 @@ class _ExpeditionSceneBackdropState extends State<ExpeditionSceneBackdrop>
               // 지역 색 보정. 원화 위, 가독성 그라디언트 아래에 둔다 — 글자
               // 대비를 만드는 층을 건드리면 안 되기 때문이다.
               if (expeditionRegionGrade(
-                widget.regionCode,
-                sceneKey: widget.sceneKey,
-              ).a >
+                    widget.regionCode,
+                    sceneKey: widget.sceneKey,
+                  ).a >
                   0)
                 Positioned.fill(
                   child: IgnorePointer(

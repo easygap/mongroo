@@ -1,6 +1,6 @@
 part of 'expedition_screen.dart';
 
-/// 스테이지 세션의 비전투 장면 — 사건·쉼터·전투 후 귀환.
+/// 스테이지 세션의 필드와 비전투 장면 — 직접 걷기·사건·쉼터·귀환.
 ///
 /// 개편 설계서 5.4의 필드 연출 계약을 따른다. 사건은 카드 텍스트 더미가
 /// 아니라 배경 장면 위의 말풍선 하나로 말하고, 선택지는 어울리는 힘과
@@ -41,6 +41,20 @@ class _ImmersiveStageScene extends ConsumerWidget {
       (item) => item.code == expedition.run.currentNodeCode,
     );
     final event = expedition.currentEvent;
+    final fieldStory = expedition.memory['stage_field'] is Map<String, dynamic>
+        ? expedition.memory['stage_field'] as Map<String, dynamic>
+        : const <String, dynamic>{};
+    final walkingField = event == null &&
+        !expedition.run.objectiveSecured &&
+        expedition.availableMoveCodes.isNotEmpty;
+    if (walkingField) {
+      return _StageWalkingField(
+        expedition: expedition,
+        story: fieldStory,
+        locked: state.interactionLocked,
+        onRetreat: () => _confirmRetreat(context, ref),
+      );
+    }
     final scene =
         expeditionSceneTheme(node.sceneKey, regionCode: expedition.region.code);
     final actor = expedition.party
@@ -232,6 +246,235 @@ class _ImmersiveStageScene extends ConsumerWidget {
                         label: const Text('기록을 안고 귀환'),
                       ),
                   ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 한 스테이지의 입구에서 목적 랜드마크까지 직접 걷는 필드.
+///
+/// 작은 모서리 미니맵이 아니라 지역 원화를 그대로 보행 공간으로 쓴다. 빈 길을
+/// 누른 채 끌면 그 자리에 스틱이 생기고, 스크린리더·키보드 사용자는 목적
+/// 랜드마크 버튼을 눌러 같은 서버 이동에 도달한다.
+class _StageWalkingField extends StatelessWidget {
+  const _StageWalkingField({
+    required this.expedition,
+    required this.story,
+    required this.locked,
+    required this.onRetreat,
+  });
+
+  final ExpeditionSnapshot expedition;
+  final Map<String, dynamic> story;
+  final bool locked;
+  final VoidCallback onRetreat;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final destination = expedition.nodes.firstWhere(
+      (node) => expedition.availableMoveCodes.contains(node.code),
+    );
+    final chapter = story['chapter'] is num
+        ? (story['chapter'] as num).toInt()
+        : expedition.run.stageNo;
+    final title = story['title'] as String? ?? destination.name;
+    final approach =
+        story['approach'] as String? ?? '랜드마크 사이의 길이 천천히 모습을 드러내요.';
+    final objective =
+        story['objective'] as String? ?? destination.sceneDescription;
+    final hint =
+        story['destination_hint'] as String? ?? '빛나는 표식에 닿으면 다음 장면이 시작돼요.';
+
+    return LayoutBuilder(
+      builder: (context, constraints) => ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(
+          constraints.maxWidth >= 720 ? 32 : 12,
+          8,
+          constraints.maxWidth >= 720 ? 32 : 12,
+          28,
+        ),
+        children: [
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(
+                    height: 48,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: LayoutBuilder(
+                              builder: (context, tagConstraints) => MongrooTag(
+                                label:
+                                    '${chapter == null ? '던전' : '$chapter장'} · 직접 걷기',
+                                icon: Icons.directions_walk_rounded,
+                                maxWidth: tagConstraints.maxWidth,
+                                backgroundColor:
+                                    scheme.secondaryContainer.withAlpha(138),
+                              ),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          key: const ValueKey('stage-field-retreat'),
+                          onPressed: locked ? null : onRetreat,
+                          tooltip: '지금 안전하게 돌아가기',
+                          icon: const Icon(Icons.keyboard_return_outlined),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Semantics(
+                    container: true,
+                    liveRegion: true,
+                    label: '$title. $approach $objective',
+                    child: MongrooPanel(
+                      key: const ValueKey('stage-field-story'),
+                      color: scheme.tertiaryContainer.withAlpha(150),
+                      borderColor: scheme.tertiary.withAlpha(70),
+                      shadowOffset: const Offset(0, 3),
+                      padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(approach),
+                          const SizedBox(height: 6),
+                          Text(
+                            objective,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: scheme.onTertiaryContainer,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  MongrooPanel(
+                    key: const ValueKey('stage-field-map'),
+                    padding: EdgeInsets.zero,
+                    radius: 20,
+                    borderColor: expeditionSceneTheme(
+                      destination.sceneKey,
+                      regionCode: expedition.region.code,
+                    ).accent.withAlpha(120),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        AspectRatio(
+                          aspectRatio:
+                              constraints.maxWidth < 520 ? 1.45 : 16 / 9,
+                          child: _ExpeditionTileWorld(
+                            expedition: expedition,
+                            destination: destination,
+                          ),
+                        ),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: scheme.surfaceContainerLow,
+                            borderRadius: const BorderRadius.vertical(
+                              bottom: Radius.circular(20),
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(13, 10, 13, 12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.touch_app_rounded,
+                                  size: 22,
+                                  color: scheme.primary,
+                                ),
+                                const SizedBox(width: 9),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '화면을 누른 채 원하는 방향으로 끌어 걸어요',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelLarge
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        '카메라가 따라오며, 벽·물·조형물은 통과할 수 없어요.',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: scheme.onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  MongrooPanel(
+                    color: scheme.secondaryContainer.withAlpha(120),
+                    shadowOffset: Offset.zero,
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.location_on_rounded,
+                          color: scheme.secondary,
+                        ),
+                        const SizedBox(width: 9),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                story['destination_name'] as String? ??
+                                    destination.name,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(fontWeight: FontWeight.w800),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(hint),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
