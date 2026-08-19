@@ -1210,53 +1210,79 @@ must not touch the frame. No border, no label, no caption, no watermark, no shad
 on the background.
 ```
 
-## 던전 걷기 스프라이트 v1 — ImageGen 프롬프트 (2026-08-19)
+## 던전 걷기 스프라이트 v2 — ImageGen 프롬프트 (2026-08-19)
 
 `app/assets/adventure/overworld/expedition-walker-v1.png`. 지금 들어 있는 것은
-`design-system/scripts/build_expedition_walker.py`가 그린 **자리표시**다. 도형을
-겹쳐 만든 것이라 걷는 맛이 없다. 아래로 진짜 도트를 뽑아 같은 규격으로 갈아
-끼우면 코드는 손댈 필요가 없다.
+`build_expedition_walker.py`가 도형을 겹쳐 만든 **자리표시**라 얼굴도 걸음도 없다.
+아래로 뽑아 반입 스크립트에 넣으면 검사를 거쳐 갈아 끼워진다.
 
-### 규격 — 이걸 어기면 코드가 어긋난다
+```powershell
+python design-system/scripts/import_expedition_walker.py <받은시트.png>
+```
+
+### 규격 — 어기면 코드가 어긋난다
 
 * 시트 **288 × 480**, 한 칸 **96 × 120**, 배경 투명.
-* 가로 3칸 = 걷기 3프레임(왼발 · 선 자세 · 오른발). 코드가 `1-2-3-2`로 돌린다.
-* 세로 4칸 = **아래 · 왼쪽 · 오른쪽 · 위**. 이 순서가 다트의 `_WalkFacing`과 같다.
-* 오른쪽을 왼쪽의 좌우 반전으로 만들지 않는다 — 어깨에 멘 가방이 반대로 붙는다.
-* 발은 칸 아래에서 12px 위에 둔다. 머리는 칸 위로 4px을 남긴다.
-* 색 **스물네 개 이하**, 알파는 **0 아니면 255**. 아틀라스가 24칸 격자 도트라
-  캐릭터만 매끈하면 오려 붙인 것처럼 뜬다.
+* 가로 3칸 = 왼발·선 자세·오른발. 코드가 `1-2-3-2`로 돌린다.
+* 세로 4칸 = **아래 · 왼쪽 · 오른쪽 · 위**. 다트의 `_WalkFacing` 순서다.
+* 오른쪽을 왼쪽의 반전으로 만들지 않는다 — 가방이 반대 어깨로 간다.
+* 발은 칸 아래에서 12px 위, 머리 위로 4px 이상 남긴다.
+
+### 받은 뒤 무엇을 재나
+
+반입 스크립트가 자동으로 잰다. 통과 못 하면 안 들어간다.
+
+| 항목 | 한계 | 무엇을 잡나 |
+|---|---:|---|
+| 자글거림 | 0.16 | 점묘·디더가 섞인 그림 |
+| 튀는 점 | 0.002 | 면 위에 홀로 튀는 픽셀 |
+| 칸 규격 | — | 빈 칸, 위아래 잘림 |
+
+통과하면 아틀라스와 **같은 방식으로** 굽는다 — 24칸 격자로 낮추고, 색 스물넷에
+맞추고, 알파를 0/255로 끊는다. 그래야 발밑 타일과 한 세계로 읽힌다.
+
+### 프롬프트
 
 ```
-A 4-direction walking sprite sheet for a top-down 2D RPG, in DS-era pixel art.
+A 4-direction walking sprite sheet for a top-down 2D RPG, in Nintendo DS era pixel art.
 
-CHARACTER: a small sprout child — a round pale head with three green leaves
-growing from the crown, wearing a moss-green cloak over a terracotta pot-shaped
-body, short legs, a tan satchel worn on one side.
+CHARACTER: a small sprout child. A round pale-cream head with three green leaves
+growing from the crown, two dark dot eyes and a small blush on each cheek. A
+moss-green hooded cloak over a terracotta pot-shaped body, short sturdy legs in
+dark green boots, a tan leather satchel worn on the LEFT hip.
 
-SHEET LAYOUT: exactly 3 columns by 4 rows, 12 cells total, each cell exactly
-96 x 120 pixels, total canvas exactly 288 x 480 pixels.
-Row 1 = facing the viewer (walking toward camera).
-Row 2 = facing left in profile.
-Row 3 = facing right in profile.
-Row 4 = facing away from the viewer (back view).
-Within each row: column 1 = left foot forward, column 2 = standing still with
-both feet together, column 3 = right foot forward.
+SHEET LAYOUT: exactly 3 columns by 4 rows, 12 cells, each cell exactly 96 x 120
+pixels, total canvas exactly 288 x 480 pixels.
+Row 1 = facing the viewer, walking toward camera (face visible).
+Row 2 = facing left, side profile.
+Row 3 = facing right, side profile.
+Row 4 = facing away, back view (no face, leaves and satchel visible).
+Within each row: column 1 = left foot forward, column 2 = both feet together
+standing, column 3 = right foot forward. The head bobs down one pixel on the two
+stepping frames.
 
-CONSISTENCY: the same character in all 12 cells — same height, same colors, same
-proportions, drawn at the same scale and standing on the same ground line. The
-satchel is on the character's left hip, so it is visible in the left-profile row
-and hidden in the right-profile row. Do not mirror one profile to make the other.
+CONSISTENCY: the same character in all 12 cells — identical height, identical
+colors, identical proportions, standing on the same ground line. The satchel is
+on the character's left hip, so it is visible in the left-profile row and hidden
+in the right-profile row. Do not mirror one profile to produce the other.
 
-FOOTING: the feet rest 12 pixels above the bottom edge of the cell. The leaves
+FOOTING: the feet rest 12 pixels above the bottom edge of each cell. The leaves
 stop at least 4 pixels below the top edge. Nothing is cut off by any cell edge.
 
-STYLE: true pixel art. Hard-edged pixels, no anti-aliasing, no gradients, no
-dithering, no blur, no glow, no outline glow. At most 24 colors in the whole
-sheet. Flat cel shading with a single light source from the upper left. A dark
-brown outline around the silhouette. Fully transparent background — no checker
-pattern, no white, no color fringe on the edges.
+STYLE: true pixel art drawn on a coarse grid. Hard-edged pixels. Flat cel shading
+with a single light source from the upper left: one base tone, one shadow tone,
+one highlight tone per material. A dark brown outline around the silhouette.
+At most 24 colors in the entire sheet.
 
-BACKGROUND: transparent. No grid lines, no cell borders, no labels, no captions,
-no watermark, no drop shadow outside the character.
+CRITICAL — the single most common failure to avoid: DO NOT stipple. Every flat
+area must be one solid unbroken color across at least a 3 x 3 pixel block. No
+dithering, no checkerboard patterns, no noise, no grain, no speckle, no scattered
+single pixels of a different shade inside a flat area, no gradients, no soft
+shading, no anti-aliasing, no blur, no glow, no JPEG-like artifacts. If a surface
+would be shaded, use a hard-edged block of a second flat tone, never a scatter of
+mixed pixels.
+
+BACKGROUND: fully transparent. No checker pattern, no white fill, no color fringe
+on the edges, no grid lines, no cell borders, no labels, no captions, no
+watermark, no drop shadow outside the character.
 ```

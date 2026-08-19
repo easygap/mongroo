@@ -26,7 +26,7 @@ void main() {
     }
   });
 
-  test('출시용 페인터리 아틀라스와 4지역 61종 스프라이트 표가 번들에서 열린다', () async {
+  test('출시용 도트 아틀라스와 4지역 85종 스프라이트 표가 번들에서 열린다', () async {
     final manifestText = await rootBundle.loadString(
       'assets/adventure/overworld/expedition-tile-atlas-v2.json',
     );
@@ -36,12 +36,22 @@ void main() {
     expect(manifest['gutter'], 2);
     expect(manifest['stride'], 100);
     expect(manifest['columns'], 8);
-    expect(manifest['sprites_per_region_padded'], 64);
+    expect(manifest['sprites_per_region_padded'], 88);
     final regions = manifest['regions'] as Map<String, dynamic>;
     expect(regions, hasLength(4));
     for (final sprites in regions.values) {
       final entries = sprites as Map<String, dynamic>;
-      expect(entries, hasLength(61));
+      expect(entries, hasLength(85));
+      // 오토타일에 필요한 조각이 다 있어야 한다. 하나라도 빠지면 그 자리에
+      // 아무것도 안 그려져 경계가 다시 직선으로 잘린다.
+      for (final key in <String>['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']) {
+        expect(entries.containsKey('rim_$key'), isTrue, reason: 'rim_$key');
+        expect(entries.containsKey('edge_$key'), isTrue, reason: 'edge_$key');
+        expect(entries.containsKey('shore_$key'), isTrue, reason: 'shore_$key');
+      }
+      for (final suffix in <String>['a', 'b', 'c', 'd']) {
+        expect(entries.containsKey('wall_top_$suffix'), isTrue);
+      }
       for (final value in entries.values) {
         final rect = value as Map<String, dynamic>;
         expect((rect['x'] as int) % 100, 2);
@@ -86,7 +96,7 @@ void main() {
     );
     // PNG IHDR stores width and height as big-endian uint32 at 16 and 20.
     expect(bytes.getUint32(16), 800);
-    expect(bytes.getUint32(20), 3200);
+    expect(bytes.getUint32(20), 4400);
 
     // 표만 믿지 않는다. 실제로 그림을 풀어서 도트 규칙이 지켜졌는지 본다.
     final decoded = await ui.instantiateImageCodec(

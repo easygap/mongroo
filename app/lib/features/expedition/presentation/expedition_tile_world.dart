@@ -66,6 +66,10 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
   bool _movePending = false;
   ExpeditionCombatAudio? _steps;
   ui.Image? _atlas;
+
+  /// 아틀라스 조각 표. 굽기가 내놓은 JSON을 그대로 읽는다.
+  Map<String, Rect> _atlasSlots = const <String, Rect>{};
+
   ui.Image? _walker;
 
   /// 지금 실내인가. 실내에서는 제단 판정을 하지 않는다.
@@ -120,6 +124,35 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
     }
   }
 
+  /// 조각 표를 읽는다.
+  ///
+  /// 굽는 쪽과 그리는 쪽이 배치를 각자 계산하면 언젠가 갈라진다. 실제로
+  /// 조각을 스물넷 더했을 때 화면이 새까맣게 나왔다.
+  Future<Map<String, Rect>> _loadAtlasSlots() async {
+    try {
+      final raw = await rootBundle.loadString(
+        'assets/adventure/overworld/expedition-tile-atlas-v2.json',
+      );
+      final manifest = json.decode(raw) as Map<String, dynamic>;
+      final regions = manifest['regions'] as Map<String, dynamic>;
+      final entries =
+          regions[widget.expedition.region.code] as Map<String, dynamic>?;
+      if (entries == null) return const <String, Rect>{};
+      return <String, Rect>{
+        for (final entry in entries.entries)
+          entry.key: Rect.fromLTWH(
+            ((entry.value as Map<String, dynamic>)['x'] as num).toDouble(),
+            (entry.value['y'] as num).toDouble(),
+            (entry.value['w'] as num).toDouble(),
+            (entry.value['h'] as num).toDouble(),
+          ),
+      };
+    } on Object catch (error) {
+      debugPrint('Expedition tile atlas manifest unreadable: $error');
+      return const <String, Rect>{};
+    }
+  }
+
   Future<void> _loadAtlas() async {
     try {
       final bytes = await rootBundle.load(
@@ -138,9 +171,15 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
         frame.image.dispose();
         return;
       }
+      final slots = await _loadAtlasSlots();
+      if (!mounted) {
+        frame.image.dispose();
+        return;
+      }
       setState(() {
         _atlas?.dispose();
         _atlas = frame.image;
+        if (slots.isNotEmpty) _atlasSlots = slots;
       });
       unawaited(_loadWalker());
     } on Object catch (error) {
@@ -469,6 +508,7 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                         key: const ValueKey('tile-world-visible-layer'),
                         painter: _TileWorldPainter(
                           atlas: _atlas,
+                          atlasSlots: _atlasSlots,
                           field: _field,
                           camera: camera,
                           playerY: _position.dy,
@@ -507,6 +547,7 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                       child: CustomPaint(
                         painter: _TileWorldPainter(
                           atlas: _atlas,
+                          atlasSlots: _atlasSlots,
                           field: _field,
                           camera: camera,
                           playerY: _position.dy,
@@ -813,7 +854,6 @@ class _WalkerPainter extends CustomPainter {
 }
 
 enum _TileObjectKind {
-  wall,
   shelf,
   lantern,
   chest,
@@ -853,7 +893,6 @@ class _TileObject {
   final Size? collisionSize;
 
   _TileObjectLayer get layer => switch (kind) {
-        _TileObjectKind.wall ||
         _TileObjectKind.shelf ||
         _TileObjectKind.lantern ||
         _TileObjectKind.root =>
@@ -950,7 +989,12 @@ class _FieldRandom {
   }
 }
 
-enum _TileTerrain { floor, moss, water }
+/// 칸의 재질.
+///
+/// 벽이 여기 들어온 것이 핵심이다. 앞 판은 벽을 **물건**으로 놓았는데, 물건은
+/// 이웃을 볼 수 없어서 윗면·앞면·모서리를 가려 쓸 수가 없었다. 그래서 같은
+/// 그림 하나를 늘어놓았고, 그게 쯔꾸르 기본 소재를 깐 화면처럼 보인 이유다.
+enum _TileTerrain { floor, moss, water, wall }
 
 class _TileCell {
   const _TileCell({
@@ -958,19 +1002,38 @@ class _TileCell {
     required this.y,
     required this.terrain,
     required this.variant,
-    required this.shoreMask,
+    required this.mask,
   });
 
-  static const shoreNorth = 1;
-  static const shoreEast = 2;
-  static const shoreSouth = 4;
-  static const shoreWest = 8;
+  /// 여덟 이웃이 **나와 같은 재질인가**. 오토타일은 이 한 값으로 정해진다.
+  ///
+  /// 변 넷과 대각선 넷을 함께 본다. 대각선은 양옆 변이 모두 같을 때만 뜻이
+  /// 있다 - 점 하나로만 닿은 이웃은 그릴 것이 없기 때문이다. 47조각 블롭
+  /// 오토타일이 256가지를 47가지로 줄이는 것도 같은 규칙이다.
+  static const north = 1;
+  static const east = 2;
+  static const south = 4;
+  static const west = 8;
+  static const northEast = 16;
+  static const southEast = 32;
+  static const southWest = 64;
+  static const northWest = 128;
 
   final int x;
   final int y;
   final _TileTerrain terrain;
   final int variant;
-  final int shoreMask;
+
+  /// 같은 재질인 이웃의 비트합.
+  final int mask;
+
+  bool same(int bit) => mask & bit != 0;
+
+  /// 그 대각선 자리에만 다른 재질이 물려 있는가.
+  ///
+  /// 양옆 변이 이미 다르면 변 조각이 그 자리를 덮으므로 모서리는 그리지 않는다.
+  bool cornerOnly(int corner, int sideA, int sideB) =>
+      !same(corner) && same(sideA) && same(sideB);
 }
 
 class _TileChunk {
@@ -1114,21 +1177,21 @@ class _TileField {
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
         final terrain = terrainAt(x, y);
-        var shoreMask = 0;
-        if (terrain == _TileTerrain.water) {
-          if (terrainAt(x, y - 1) != _TileTerrain.water) {
-            shoreMask |= _TileCell.shoreNorth;
-          }
-          if (terrainAt(x + 1, y) != _TileTerrain.water) {
-            shoreMask |= _TileCell.shoreEast;
-          }
-          if (terrainAt(x, y + 1) != _TileTerrain.water) {
-            shoreMask |= _TileCell.shoreSouth;
-          }
-          if (terrainAt(x - 1, y) != _TileTerrain.water) {
-            shoreMask |= _TileCell.shoreWest;
-          }
-        }
+        var mask = 0;
+        // 같은 재질만 같은 것으로 친다.
+        //
+        // 처음에는 벽과 이끼를 한 덩어리로 쳤는데, 그러면 벽 아래가 이끼일 때
+        // `이어져 있다`고 판단해 **앞면을 안 그린다.** 벽 덩어리의 바깥 경계도
+        // 엄연한 끝이라 음영과 앞면이 붙어야 한다.
+        bool alike(int nx, int ny) => terrainAt(nx, ny) == terrain;
+        if (alike(x, y - 1)) mask |= _TileCell.north;
+        if (alike(x + 1, y)) mask |= _TileCell.east;
+        if (alike(x, y + 1)) mask |= _TileCell.south;
+        if (alike(x - 1, y)) mask |= _TileCell.west;
+        if (alike(x + 1, y - 1)) mask |= _TileCell.northEast;
+        if (alike(x + 1, y + 1)) mask |= _TileCell.southEast;
+        if (alike(x - 1, y + 1)) mask |= _TileCell.southWest;
+        if (alike(x - 1, y - 1)) mask |= _TileCell.northWest;
         chunks[(y ~/ chunkSize) * chunkColumns + x ~/ chunkSize].cells.add(
               _TileCell(
                 x: x,
@@ -1138,7 +1201,7 @@ class _TileField {
                 // coordinates select its matching phase so natural brushwork
                 // crosses cell boundaries without a visible grid.
                 variant: (x & 3) | ((y & 3) << 2),
-                shoreMask: shoreMask,
+                mask: mask,
               ),
             );
       }
@@ -1304,9 +1367,13 @@ class _TileField {
     }
 
     // ── 복도 ──────────────────────────────────────────────────────────────
+    //
+    // 폭을 구간마다 바꾼다. 전부 세 칸이면 어디를 걷든 같은 느낌이라 길이
+    // 길기만 하고 기억에 안 남는다. 좁아졌다 넓어지면 리듬이 생긴다.
     for (var index = 0; index < rooms.length - 1; index++) {
       final from = rooms[index].center;
       final to = rooms[index + 1].center;
+      final half = random.next(2);
       final horizontalFirst = random.next(2) == 0;
       final turn =
           horizontalFirst ? Offset(to.dx, from.dy) : Offset(from.dx, to.dy);
@@ -1322,12 +1389,37 @@ class _TileField {
           final ratio = steps == 0 ? 0.0 : step / steps;
           final x = (a.dx + (b.dx - a.dx) * ratio).round();
           final y = (a.dy + (b.dy - a.dy) * ratio).round();
-          for (var dy = -1; dy <= 1; dy++) {
-            for (var dx = -1; dx <= 1; dx++) {
+          for (var dy = -half; dy <= half; dy++) {
+            for (var dx = -half; dx <= half; dx++) {
               carve(x + dx, y + dy);
             }
           }
         }
+      }
+    }
+
+    // ── 기둥 ──────────────────────────────────────────────────────────────
+    //
+    // 큰 방이 텅 빈 직사각형이면 `지나가는 곳`이지 `있는 곳`이 아니다. 기둥
+    // 몇 개만 세워도 시선이 걸리고 걷는 길이 생긴다. 아마추어 맵의 첫 징후가
+    // 빈 방이라는 지적은 여기에 대한 것이다.
+    //
+    // 출발 방과 제단 방은 건드리지 않는다 - 첫 걸음과 마지막 걸음이 막히면
+    // 조작이 고장 난 것처럼 보인다. 길이 끊기지 않는지는 검사가 지킨다
+    // (`expeditionTileWorldHasRoute`).
+    for (var index = 1; index < rooms.length - 1; index++) {
+      final room = rooms[index];
+      if (room.width < 8 || room.height < 6) continue;
+      final left = room.left.round();
+      final top = room.top.round();
+      final right = room.right.round() - 1;
+      final bottom = room.bottom.round() - 1;
+      for (final spot in <List<int>>[
+        <int>[left + 2, top + 2],
+        <int>[right - 2, bottom - 2],
+        if (random.next(2) == 0) <int>[right - 2, top + 2],
+      ]) {
+        walkable[spot[1] * width + spot[0]] = false;
       }
     }
 
@@ -1367,28 +1459,36 @@ class _TileField {
     // 걸을 수 있는 땅에 맞닿은 바깥 칸마다 벽을 세운다. 이게 있어야 방이
     // `안`으로 읽히고, 없으면 바닥에 색만 칠한 평지가 된다.
     final objects = <_TileObject>[];
-    for (var y = 1; y < height - 1; y++) {
-      for (var x = 1; x < width - 1; x++) {
-        if (open(x, y)) continue;
-        if (terrain[y * width + x] == _TileTerrain.water) continue;
-        final touches =
-            open(x - 1, y) || open(x + 1, y) || open(x, y - 1) || open(x, y + 1);
-        if (!touches) continue;
-        objects.add(
-          _TileObject(
-            kind: _TileObjectKind.wall,
-            position: Offset(x + .5, y + 1),
-            // 한 칸보다 높게 세운다. 발밑은 그대로 한 칸이라 걷는 느낌은
-            // 안 바뀌고, 뒤로 지나가면 머리가 가려져 벽 안쪽에 있는 것으로
-            // 읽힌다. 포켓몬의 벽이 그렇게 서 있다.
-            // 폭은 정확히 한 칸. 벽 그림이 칸을 꽉 채우고 좌우가 물려 있어서
-            // 조금이라도 넓히면 이음매가 겹쳐 두 번 그려진다.
-            size: const Size(1, 1.5),
-            label: '기록벽',
-            blocks: true,
-            collisionSize: const Size(1, 1),
-          ),
-        );
+    // 벽은 **두 겹**이다. 한 겹이면 위에서 봤을 때 선 하나라 두께가 안 읽히고,
+    // 안쪽 겹이 있어야 가장자리 음영을 두를 자리가 생긴다.
+    bool wallAt(int x, int y) =>
+        x >= 0 &&
+        y >= 0 &&
+        x < width &&
+        y < height &&
+        terrain[y * width + x] == _TileTerrain.wall;
+    for (var layer = 0; layer < 2; layer++) {
+      final added = <int>[];
+      for (var y = 1; y < height - 1; y++) {
+        for (var x = 1; x < width - 1; x++) {
+          if (open(x, y)) continue;
+          final here = terrain[y * width + x];
+          if (here == _TileTerrain.water || here == _TileTerrain.wall) continue;
+          final touches = layer == 0
+              ? open(x - 1, y) ||
+                  open(x + 1, y) ||
+                  open(x, y - 1) ||
+                  open(x, y + 1)
+              : wallAt(x - 1, y) ||
+                  wallAt(x + 1, y) ||
+                  wallAt(x, y - 1) ||
+                  wallAt(x, y + 1);
+          if (!touches) continue;
+          added.add(y * width + x);
+        }
+      }
+      for (final index in added) {
+        terrain[index] = _TileTerrain.wall;
       }
     }
 
@@ -1542,33 +1642,15 @@ class _TileField {
       }
     }
 
-    final objects = <_TileObject>[];
-    for (var y = 1; y < height - 1; y++) {
-      for (var x = 1; x < width - 1; x++) {
+    // 벽은 바깥 테두리 전체다. 실내는 밖이 없으니 두 겹을 통째로 벽으로 둔다.
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
         if (inside(x, y)) continue;
-        final touches = inside(x - 1, y) ||
-            inside(x + 1, y) ||
-            inside(x, y - 1) ||
-            inside(x, y + 1);
-        if (!touches) continue;
-        objects.add(
-          _TileObject(
-            kind: _TileObjectKind.wall,
-            position: Offset(x + .5, y + 1),
-            // 한 칸보다 높게 세운다. 발밑은 그대로 한 칸이라 걷는 느낌은
-            // 안 바뀌고, 뒤로 지나가면 머리가 가려져 벽 안쪽에 있는 것으로
-            // 읽힌다. 포켓몬의 벽이 그렇게 서 있다.
-            // 폭은 정확히 한 칸. 벽 그림이 칸을 꽉 채우고 좌우가 물려 있어서
-            // 조금이라도 넓히면 이음매가 겹쳐 두 번 그려진다.
-            size: const Size(1, 1.5),
-            label: '기록벽',
-            blocks: true,
-            collisionSize: const Size(1, 1),
-          ),
-        );
+        terrain[y * width + x] = _TileTerrain.wall;
       }
     }
 
+    final objects = <_TileObject>[];
     // 벽을 따라 서가와 등불. 안쪽이 비면 들어온 보람이 없다.
     for (var x = 3; x < width - 3; x += 3) {
       objects.add(
@@ -1626,6 +1708,10 @@ class _TileField {
     return terrain[y * width + x];
   }
 
+  /// 벽으로 채워진 칸 수. 방이 제대로 닫혔는지 세어 보는 데 쓴다.
+  int get wallTiles =>
+      terrain.where((cell) => cell == _TileTerrain.wall).length;
+
   bool isWater(Offset point) =>
       terrainAt(point.dx.floor(), point.dy.floor()) == _TileTerrain.water;
 
@@ -1650,6 +1736,14 @@ class _TileField {
       point - const Offset(diagonal, diagonal),
     ];
     if (samples.any(isWater)) return true;
+    // 벽은 이제 지형이다. 물건 목록을 뒤지지 않고 칸에서 바로 본다.
+    if (samples.any(
+      (sample) =>
+          terrainAt(sample.dx.floor(), sample.dy.floor()) ==
+          _TileTerrain.wall,
+    )) {
+      return true;
+    }
     return objectsIn(Rect.fromCircle(center: point, radius: 2.5)).any((object) {
       if (!object.blocks || object.kind == _TileObjectKind.altar) return false;
       final bounds = object.collisionBounds.inflate(.06);
@@ -1747,8 +1841,7 @@ class _TileField {
     var distance = 1.6;
     for (final object
         in objectsIn(Rect.fromCircle(center: player, radius: distance + 1))) {
-      if (object.kind == _TileObjectKind.wall ||
-          object.kind == _TileObjectKind.shelf ||
+      if (object.kind == _TileObjectKind.shelf ||
           object.kind == _TileObjectKind.lantern ||
           object.kind == _TileObjectKind.root) {
         continue;
@@ -1785,9 +1878,8 @@ Map<String, int> expeditionTileWorldTravelDiagnostics(
     'insideWarps': warps(inside),
     // 문이 막혀 있으면 들어갈 수가 없다.
     'blockingWarps': blockingWarps(outside) + blockingWarps(inside),
-    'insideWalls': inside.objects
-        .where((object) => object.kind == _TileObjectKind.wall)
-        .length,
+    // 벽은 물건이 아니라 지형이다. 칸을 세어 방이 닫혀 있는지 본다.
+    'insideWalls': inside.wallTiles,
     'insideSpawnBlocked': inside.blocked(inside.spawn) ? 1 : 0,
   };
 }
@@ -1902,6 +1994,7 @@ class _WorldCamera {
 class _TileWorldPainter extends CustomPainter {
   const _TileWorldPainter({
     required this.atlas,
+    required this.atlasSlots,
     required this.field,
     required this.camera,
     required this.playerY,
@@ -1911,7 +2004,14 @@ class _TileWorldPainter extends CustomPainter {
 
   static const double _atlasCell = 96;
   static const double _atlasGutter = 2;
-  static const double _atlasStride = 100;
+
+  /// 굽기가 내놓은 조각 표. 이름 → 아틀라스 안의 자리.
+  final Map<String, Rect> atlasSlots;
+
+  /// 벽 윗면 네 갈래. 바닥처럼 열여섯을 다 두면 아틀라스만 커지고, 벽은 넓게
+  /// 이어지는 면이라 네 갈래로도 무늬가 안 잡힌다.
+  static const List<String> _wallTopSuffixes = ['a', 'b', 'c', 'd'];
+
   static const List<String> _terrainSuffixes = [
     'a',
     'b',
@@ -1930,21 +2030,6 @@ class _TileWorldPainter extends CustomPainter {
     'o',
     'p',
   ];
-  static const Map<String, int> _atlasSpriteSlots = {
-    'shore_n': 48,
-    'shore_e': 49,
-    'shore_s': 50,
-    'shore_w': 51,
-    'wall': 52,
-    'shelf': 53,
-    'lantern': 54,
-    'chest': 55,
-    'item': 56,
-    'npc': 57,
-    'monster': 58,
-    'altar': 59,
-    'root': 60,
-  };
 
   final ui.Image? atlas;
   final _TileField field;
@@ -1994,6 +2079,10 @@ class _TileWorldPainter extends CustomPainter {
     final baseRects = <Rect>[];
     final shoreTransforms = <ui.RSTransform>[];
     final shoreRects = <Rect>[];
+    // 벽 앞면은 맨 나중에, 아래 칸을 덮으며 그린다. 이게 있어야 벽에 높이가
+    // 생긴다. 같은 무리에 섞어 그리면 옆 벽의 윗면이 앞면을 덮어 버린다.
+    final faceTransforms = <ui.RSTransform>[];
+    final faceRects = <Rect>[];
     final scale = (camera.tilePixels + .7) / _atlasCell;
 
     void addSprite(
@@ -2027,20 +2116,75 @@ class _TileWorldPainter extends CustomPainter {
           _TileTerrain.floor => 'floor_${_terrainSuffixes[variant]}',
           _TileTerrain.moss => 'moss_${_terrainSuffixes[variant]}',
           _TileTerrain.water => 'water_${_terrainSuffixes[variant]}',
+          // 벽 윗면도 위에서 내려다보는 수평면이라 네 갈래만 돌려 쓴다.
+          _TileTerrain.wall => 'wall_top_${_wallTopSuffixes[variant & 3]}',
         };
         addSprite(baseTransforms, baseRects, base, screen);
-        if (terrain != _TileTerrain.water) continue;
-        if (cell.shoreMask & _TileCell.shoreNorth != 0) {
-          addSprite(shoreTransforms, shoreRects, 'shore_n', screen);
+
+        // 다른 재질과 맞닿은 자리에 전환 조각을 얹는다.
+        void trim(String prefix) {
+          if (!cell.same(_TileCell.north)) {
+            addSprite(shoreTransforms, shoreRects, '${prefix}_n', screen);
+          }
+          if (!cell.same(_TileCell.east)) {
+            addSprite(shoreTransforms, shoreRects, '${prefix}_e', screen);
+          }
+          if (!cell.same(_TileCell.south)) {
+            addSprite(shoreTransforms, shoreRects, '${prefix}_s', screen);
+          }
+          if (!cell.same(_TileCell.west)) {
+            addSprite(shoreTransforms, shoreRects, '${prefix}_w', screen);
+          }
+          // 대각선은 양옆 변이 모두 같을 때만 그린다. 아니면 변 조각이 이미
+          // 그 자리를 덮고 있어 두 번 겹친다.
+          if (cell.cornerOnly(
+            _TileCell.northEast,
+            _TileCell.north,
+            _TileCell.east,
+          )) {
+            addSprite(shoreTransforms, shoreRects, '${prefix}_ne', screen);
+          }
+          if (cell.cornerOnly(
+            _TileCell.southEast,
+            _TileCell.south,
+            _TileCell.east,
+          )) {
+            addSprite(shoreTransforms, shoreRects, '${prefix}_se', screen);
+          }
+          if (cell.cornerOnly(
+            _TileCell.southWest,
+            _TileCell.south,
+            _TileCell.west,
+          )) {
+            addSprite(shoreTransforms, shoreRects, '${prefix}_sw', screen);
+          }
+          if (cell.cornerOnly(
+            _TileCell.northWest,
+            _TileCell.north,
+            _TileCell.west,
+          )) {
+            addSprite(shoreTransforms, shoreRects, '${prefix}_nw', screen);
+          }
         }
-        if (cell.shoreMask & _TileCell.shoreEast != 0) {
-          addSprite(shoreTransforms, shoreRects, 'shore_e', screen);
-        }
-        if (cell.shoreMask & _TileCell.shoreSouth != 0) {
-          addSprite(shoreTransforms, shoreRects, 'shore_s', screen);
-        }
-        if (cell.shoreMask & _TileCell.shoreWest != 0) {
-          addSprite(shoreTransforms, shoreRects, 'shore_w', screen);
+
+        switch (terrain) {
+          case _TileTerrain.water:
+            trim('shore');
+          case _TileTerrain.floor:
+            trim('edge');
+          case _TileTerrain.wall:
+            trim('rim');
+            // 아래가 벽이 아니면 그쪽이 화면을 향한 **앞면**이다.
+            if (!cell.same(_TileCell.south)) {
+              addSprite(
+                faceTransforms,
+                faceRects,
+                'wall',
+                screen + Offset(0, camera.tilePixels * .42),
+              );
+            }
+          case _TileTerrain.moss:
+            break;
         }
       }
     }
@@ -2071,32 +2215,30 @@ class _TileWorldPainter extends CustomPainter {
         paint,
       );
     }
+    if (faceRects.isNotEmpty) {
+      canvas.drawAtlas(
+        image,
+        faceTransforms,
+        faceRects,
+        null,
+        BlendMode.srcOver,
+        cullRect,
+        paint,
+      );
+    }
   }
 
-  Rect _atlasRect(String sprite) {
-    final region = switch (field.regionCode) {
-      'echo_well' => 1,
-      'starlight_seed_vault' => 2,
-      'heartwood_observatory' => 3,
-      _ => 0,
-    };
-    final slot = switch (sprite) {
-      final value when value.startsWith('floor_') =>
-        value.codeUnitAt(value.length - 1) - 97,
-      final value when value.startsWith('moss_') =>
-        16 + value.codeUnitAt(value.length - 1) - 97,
-      final value when value.startsWith('water_') =>
-        32 + value.codeUnitAt(value.length - 1) - 97,
-      _ => _atlasSpriteSlots[sprite]!,
-    };
-    final flatIndex = region * 64 + slot;
-    return Rect.fromLTWH(
-      (flatIndex % 8) * _atlasStride + _atlasGutter,
-      (flatIndex ~/ 8) * _atlasStride + _atlasGutter,
-      _atlasCell,
-      _atlasCell,
-    );
-  }
+  /// 조각의 자리. **표에서 읽는다.**
+  ///
+  /// 앞 판은 `지역 번호 × 64 + 칸 번호`로 계산하고 이름·번호 표를 코드에
+  /// 박아 두었다. 아틀라스에 조각을 스물넷 더하자 한 지역이 88칸이 되면서
+  /// 계산이 통째로 어긋났고, 화면이 새까맣게 나왔다. 굽는 쪽과 그리는 쪽이
+  /// 같은 숫자를 각자 들고 있으면 언젠가 반드시 갈라진다.
+  ///
+  /// 이제 굽기가 내놓는 표(`expedition-tile-atlas-v2.json`)를 그대로 읽는다.
+  Rect _atlasRect(String sprite) =>
+      atlasSlots[sprite] ??
+      Rect.fromLTWH(_atlasGutter, _atlasGutter, _atlasCell, _atlasCell);
 
   void _paintTile(Canvas canvas, int x, int y) {
     final p = camera.project(Offset(x.toDouble(), y.toDouble()));
@@ -2199,8 +2341,6 @@ class _TileWorldPainter extends CustomPainter {
       return;
     }
     switch (object.kind) {
-      case _TileObjectKind.wall:
-        _paintWall(canvas, bounds);
       case _TileObjectKind.shelf:
         _paintShelf(canvas, bounds);
       case _TileObjectKind.lantern:
@@ -2241,21 +2381,6 @@ class _TileWorldPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..strokeWidth = math.max(1.5, r.height * .045),
     );
-  }
-
-  void _paintWall(Canvas canvas, Rect r) {
-    final face = RRect.fromRectAndRadius(r, const Radius.circular(4));
-    canvas.drawRRect(face, Paint()..color = field.palette.stone);
-    canvas.drawRect(
-      Rect.fromLTWH(r.left + 2, r.top + 2, r.width - 4, r.height * .24),
-      Paint()..color = Color.lerp(field.palette.stone, Colors.white, .2)!,
-    );
-    canvas.drawLine(
-      Offset(r.center.dx, r.top + 3),
-      Offset(r.center.dx, r.bottom - 3),
-      Paint()..color = field.palette.voidColor.withAlpha(90),
-    );
-    canvas.drawRRect(face, Paint()..color = field.palette.moss.withAlpha(22));
   }
 
   void _paintShelf(Canvas canvas, Rect r) {
@@ -2453,6 +2578,7 @@ class _TileWorldPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TileWorldPainter oldDelegate) =>
+      oldDelegate.atlasSlots != atlasSlots ||
       oldDelegate.camera.origin != camera.origin ||
       oldDelegate.playerY != playerY ||
       oldDelegate.foreground != foreground ||

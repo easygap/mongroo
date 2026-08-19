@@ -47,10 +47,13 @@ SPRITES = (
     *(f"floor_{suffix}" for suffix in PHASE_SUFFIXES),
     *(f"moss_{suffix}" for suffix in PHASE_SUFFIXES),
     *(f"water_{suffix}" for suffix in PHASE_SUFFIXES),
-    "shore_n",
-    "shore_e",
-    "shore_s",
-    "shore_w",
+    # 물가: 변 넷과 대각선 넷. 대각선은 **모서리로만 맞닿을 때** 쓴다.
+    *(f"shore_{key}" for key in ("n", "e", "s", "w", "ne", "nw", "se", "sw")),
+    # 바닥에 이끼가 번지는 자리.
+    *(f"edge_{key}" for key in ("n", "e", "s", "w", "ne", "nw", "se", "sw")),
+    # 벽 윗면과 그 가장자리 음영.
+    *(f"wall_top_{suffix}" for suffix in ("a", "b", "c", "d")),
+    *(f"rim_{key}" for key in ("n", "e", "s", "w", "ne", "nw", "se", "sw")),
     "wall",
     "shelf",
     "lantern",
@@ -694,6 +697,177 @@ def _dot_pass(image: Image.Image, palette: Image.Image) -> Image.Image:
     return flat.resize((CELL, CELL), Image.Resampling.NEAREST)
 
 
+def _material_grade(image: Image.Image, kind: str) -> Image.Image:
+    """재질끼리 **밝기와 색을 벌린다.**
+
+    지역 보정만 걸었더니 바닥과 이끼의 평균 밝기 차가 1~3밖에 안 났다. 화면
+    전체가 한 가지 올리브색이라 어디가 길이고 어디가 못 가는 곳인지 눈으로
+    구분되지 않았다. 쯔꾸르 기본 소재를 깐 화면이 답답해 보이는 진짜 이유가
+    이것이다 - 조각 수가 아니라 값 대비가 없어서다.
+
+    DS 시절 타일은 팔레트를 재질마다 따로 썼다. 여기서는 팔레트를 지역 하나로
+    묶는 대신, 굽기 전에 재질을 서로 밀어 놓는다.
+
+    * 걷는 바닥은 **밝고 따뜻하게** - 눈이 먼저 길을 찾는다.
+    * 이끼는 **어둡고 푸르게** - 못 가는 곳이라는 신호다.
+    * 벽 윗면은 **가장 어둡고 채도를 뺀다** - 덩어리로 눌러앉는다.
+    """
+
+    saturation, brightness, warm = {
+        "floor": (1.06, 1.16, 10),
+        "moss": (1.34, 0.80, -12),
+        # 벽은 **돌빛**이다. 푸르게 밀면 이끼 덩어리로 보인다.
+        "wall": (0.22, 0.55, 4),
+        "water": (1.0, 1.0, 0),
+    }[kind]
+    alpha = image.getchannel("A")
+    rgb = image.convert("RGB")
+    rgb = ImageEnhance.Color(rgb).enhance(saturation)
+    rgb = ImageEnhance.Brightness(rgb).enhance(brightness)
+    if warm:
+        red, green, blue = rgb.split()
+        shift = abs(warm)
+        if warm > 0:
+            red = red.point(lambda v: min(255, v + shift))
+            blue = blue.point(lambda v: max(0, v - shift // 2))
+        else:
+            blue = blue.point(lambda v: min(255, v + shift))
+            red = red.point(lambda v: max(0, v - shift // 2))
+        rgb = Image.merge("RGB", (red, green, blue))
+    rgb.putalpha(alpha)
+    return rgb
+
+
+def _mean_luma(image: Image.Image) -> float:
+    return ImageStat.Stat(ImageOps.grayscale(image.convert("RGB"))).mean[0]
+
+# ── 오토타일 조각 ─────────────────────────────────────────────────────────
+# 앞 판은 벽이 딱 한 종이었다. 윗면도 앞면도 모서리도 없이 같은 그림을 늘어놓으니
+# 방을 둘러도 바닥에 그은 선처럼 보였고, 바닥과 이끼는 직사각형으로 딱 잘렸다.
+# 쯔꾸르 기본 소재를 그대로 깐 화면이 딱 이렇게 보인다.
+#
+# 닌텐도 계열이 다른 점은 두 가지다.
+#
+# * **벽에 높이가 있다.** 위에서 본 윗면과, 화면 쪽을 보는 앞면이 따로 있다.
+#   앞면이 아래 칸을 살짝 덮으면서 그림자를 떨어뜨려 `서 있는 것`이 된다.
+# * **경계가 이어진다.** 재질이 바뀌는 자리에 전환 조각을 얹어 직선을 지운다.
+#   47조각 블롭 오토타일이 정석이지만, 겹쳐 그리는 방식이면 변 4 + 모서리 4로
+#   같은 결과가 나온다. 그리는 양도 훨씬 적다.
+
+#: 한 칸을 몇 도트로 보는가. 도트 패스와 같아야 경계가 격자에 맞는다.
+EDGE_DOTS = 3
+
+#: 테두리 음영의 두께(도트). 두 도트면 24칸 격자에서 또렷하게 읽힌다.
+RIM_DOTS = 2
+
+
+def _side_alpha(side: str, depth: int, jitter: int = 2) -> Image.Image:
+    """한 변을 따라 들쭉날쭉한 띠를 만든다.
+
+    자로 그은 듯 곧으면 타일 경계가 그대로 보인다. 도트 단위로만 흔들어야
+    격자에 맞으면서도 손으로 그린 것처럼 읽힌다.
+    """
+
+    dot = CELL // 24
+    alpha = Image.new("L", (CELL, CELL), 0)
+    write = alpha.load()
+    for column in range(0, CELL, dot):
+        wobble = ((column // dot) * 7 + (column // (dot * 3)) * 5) % (jitter + 1)
+        limit = min(CELL, (depth + wobble) * dot)
+        for y in range(limit):
+            for x in range(column, min(CELL, column + dot)):
+                write[x, y] = 255
+    north = Image.new("L", (CELL, CELL), 0)
+    north.paste(alpha, (0, 0))
+    return {
+        "n": lambda image: image,
+        "s": ImageOps.flip,
+        "w": lambda image: image.transpose(Image.Transpose.TRANSPOSE),
+        "e": lambda image: ImageOps.mirror(
+            image.transpose(Image.Transpose.TRANSPOSE)
+        ),
+    }[side](north)
+
+
+def _corner_alpha(corner: str, depth: int) -> Image.Image:
+    """대각선으로만 맞닿은 자리에 놓을 작은 덩어리."""
+
+    dot = CELL // 24
+    alpha = Image.new("L", (CELL, CELL), 0)
+    write = alpha.load()
+    for row in range(depth):
+        span = depth - row
+        for column in range(span):
+            for y in range(row * dot, (row + 1) * dot):
+                for x in range(column * dot, (column + 1) * dot):
+                    write[x, y] = 255
+    return {
+        "nw": lambda image: image,
+        "ne": ImageOps.mirror,
+        "sw": ImageOps.flip,
+        "se": lambda image: ImageOps.mirror(ImageOps.flip(image)),
+    }[corner](alpha)
+
+
+def _overlay(material: Image.Image, alpha: Image.Image) -> Image.Image:
+    """재질에서 띠 모양만 오려 낸다."""
+
+    piece = material.convert("RGBA").copy()
+    piece.putalpha(alpha)
+    return piece
+
+
+def _stone_top(source: Image.Image) -> Image.Image:
+    """벽 윗면.
+
+    **바닥이 아니라 이끼 결에서 만든다.** 바닥의 판석 무늬를 어둡게만 하면
+    `어두운 바닥`으로 보여서 벽인지 그늘인지 구분이 안 된다. 이끼 쪽은 덩어리진
+    바위 결이라 같은 수평면이면서도 무늬가 달라, 값과 무늬 둘 다로 갈린다.
+    """
+
+    return _material_grade(source, "wall")
+
+
+def _rim(top: Image.Image, key: str) -> Image.Image:
+    """벽 윗면 가장자리에 얹을 음영.
+
+    빛은 왼쪽 위에서 온다. 위·왼쪽 가장자리는 밝고 아래·오른쪽은 어둡다.
+    부드러운 그라데이션이 아니라 **두 도트짜리 단단한 띠**다 — 도트 화면에서
+    그라데이션은 뭉개져 보이고, 실제 DS 타일도 이렇게 그렸다.
+    """
+
+    # 어두운 돌 위에 얹는 음영이라 세게 밀어야 보인다. 1.34배로는 묻혔다.
+    amount = 2.15 if key in {"n", "w", "nw"} else 0.45
+    alpha = (
+        _side_alpha(key, RIM_DOTS, jitter=0)
+        if len(key) == 1
+        else _corner_alpha(key, RIM_DOTS + 1)
+    )
+    rgb = ImageEnhance.Brightness(top.convert("RGB")).enhance(amount)
+    piece = rgb.convert("RGBA")
+    piece.putalpha(alpha)
+    return piece
+
+
+def _wall_face_with_shadow(face: Image.Image) -> Image.Image:
+    """앞면 아래에 접지 그림자를 붙인다.
+
+    그림자가 없으면 벽이 바닥 위에 붙인 스티커로 보인다. 아래로 세 도트만
+    깔아도 `서 있다`로 읽힌다.
+    """
+
+    dot = CELL // 24
+    shadow = Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0))
+    write = shadow.load()
+    for step, level in enumerate((132, 92, 46)):
+        y0 = CELL - (3 - step) * dot
+        for y in range(y0, min(CELL, y0 + dot)):
+            for x in range(dot, CELL - dot):
+                write[x, y] = (12, 14, 16, level)
+    out = shadow.copy()
+    out.alpha_composite(face)
+    return out
+
 def _masters() -> tuple[dict[str, tuple[Image.Image, ...]], dict[str, Image.Image]]:
     terrain = {name: _seamless_phases(name) for name in ("floor", "moss", "water")}
     props: dict[str, Image.Image] = {}
@@ -721,12 +895,15 @@ def build() -> tuple[bytes, bytes]:
     max_edge = max_speck = 0.0
     max_seam_error = 0
     max_spread = 0.0
+    min_material_gap = 999.0
     min_ground_alpha = 255
     min_prop_transparent = 255
 
     for region_index, region in enumerate(REGIONS):
         graded_terrain = {
-            name: tuple(_grade(phase, region) for phase in phases)
+            name: tuple(
+                _material_grade(_grade(phase, region), name) for phase in phases
+            )
             for name, phases in terrain.items()
         }
         graded_props = {name: _grade(sprite, region) for name, sprite in props.items()}
@@ -745,11 +922,47 @@ def build() -> tuple[bytes, bytes]:
                 terrain_name, suffix = name.rsplit("_", 1)
                 sprite = dotted_terrain[terrain_name][ord(suffix) - ord("a")]
                 min_ground_alpha = min(min_ground_alpha, sprite.getchannel("A").getextrema()[0])
+            elif name.startswith("wall_top_"):
+                # 벽 윗면은 바닥에서 만든다. 수평면이라 각도가 같다.
+                phase = ord(name[-1]) - ord("a")
+                sprite = _dot_pass(
+                    _stone_top(graded_terrain["moss"][phase * 5 % 16]),
+                    palette,
+                )
+            elif name.startswith("rim_"):
+                sprite = _dot_pass(
+                    _rim(_stone_top(graded_terrain["moss"][0]), name[4:]),
+                    palette,
+                )
+            elif name.startswith("edge_"):
+                # 바닥 위로 번지는 이끼. 매끈한 이끼에서 오려 내고 나서 굽는다.
+                key = name[5:]
+                mask = (
+                    _side_alpha(key, EDGE_DOTS)
+                    if len(key) == 1
+                    else _corner_alpha(key, EDGE_DOTS + 1)
+                )
+                sprite = _dot_pass(
+                    _overlay(graded_terrain["moss"][0], mask), palette
+                )
+            elif name.startswith("shore_") and len(name) > 7:
+                sprite = _dot_pass(
+                    _overlay(
+                        graded_terrain["moss"][0],
+                        _corner_alpha(name[6:], EDGE_DOTS + 1),
+                    ),
+                    palette,
+                )
             elif name.startswith("shore_"):
                 # 물가 띠는 매끈한 이끼에서 만들고 나서 굽는다. 구운 것에서
                 # 만들면 격자 위에 격자가 얹혀 계단이 두 겹으로 보인다.
                 sprite = _dot_pass(
                     _shore_overlay(graded_terrain["moss"][0], name[-1]), palette
+                )
+            elif name == "wall":
+                # 앞면. 아래에 접지 그림자를 붙여 바닥 위에 서게 한다.
+                sprite = _dot_pass(
+                    _wall_face_with_shadow(graded_props[name]), palette
                 )
             else:
                 sprite = _dot_pass(graded_props[name], palette)
@@ -763,6 +976,18 @@ def build() -> tuple[bytes, bytes]:
             _composite_with_gutter(atlas, sprite, cell_x, cell_y)
             entries[name] = {"x": cell_x + GUTTER, "y": cell_y + GUTTER, "w": CELL, "h": CELL}
         manifest["regions"][region] = entries  # type: ignore[index]
+        # 재질끼리 밝기가 얼마나 벌어졌나. 좁으면 어디가 길인지 안 보인다.
+        luma = {
+            name: _mean_luma(phases[0]) for name, phases in dotted_terrain.items()
+        }
+        wall_luma = _mean_luma(
+            _dot_pass(_stone_top(graded_terrain["moss"][0]), palette)
+        )
+        min_material_gap = min(
+            min_material_gap,
+            luma["floor"] - luma["moss"],
+            luma["floor"] - wall_luma,
+        )
         for phases in dotted_terrain.values():
             max_seam_error = max(max_seam_error, _seam_error(phases))
             max_spread = max(max_spread, _phase_mean_spread(phases))
@@ -786,6 +1011,9 @@ def build() -> tuple[bytes, bytes]:
     # 칸끼리 밝기가 벌어지면 네 칸 주기의 마름모 벽지가 된다.
     if max_spread > 6.0:
         raise RuntimeError(f"phase mean luma spread too wide: {max_spread:.2f}")
+    # 실측 34.8. 25 아래로 내려가면 걷는 바닥과 못 가는 곳이 눈으로 안 갈린다.
+    if min_material_gap < 25.0:
+        raise RuntimeError(f"material luma gap too narrow: {min_material_gap:.1f}")
 
     source_hashes = {
         path.name: hashlib.sha256(path.read_bytes()).hexdigest()
@@ -808,6 +1036,8 @@ def build() -> tuple[bytes, bytes]:
         "isolated_speck_limit": 0.0005,
         "max_phase_mean_spread": round(max_spread, 3),
         "phase_mean_spread_limit": 6.0,
+        "min_material_luma_gap": round(min_material_gap, 1),
+        "material_luma_gap_limit": 25.0,
     }
 
     png = io.BytesIO()
