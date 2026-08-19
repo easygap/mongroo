@@ -1494,22 +1494,26 @@
     "tangle-tangled-ledger-idle-v1.webp": "cb16434d0657960d4b8697f24337c75e303dfa8c4ec3eb7da2731bc3dbc0b7dc"
   },
   "texture_qa": {
-    "policy": "painted-broad-planes-no-stipple-no-dither",
-    "resampling": "lanczos-median-unsharp",
-    "max_opaque_high_frequency_ratio": 0.123424,
-    "max_isolated_speck_ratio": 0.001142,
-    "max_seam_channel_error": 34,
-    "seam_channel_limit": 40,
+    "policy": "ds-era-dot-one-palette-per-region-1bit-alpha",
+    "resampling": "lanczos-median-unsharp-then-alpha-weighted-box-and-nearest",
+    "dot_grid": 24,
+    "palette_colors": 32,
+    "max_opaque_high_frequency_ratio": 0.068507,
+    "max_isolated_speck_ratio": 0.0,
+    "max_seam_channel_error": 0,
+    "seam_channel_limit": 4,
     "ground_alpha_min": 255,
     "prop_alpha_min": 0,
-    "high_frequency_limit": 0.19,
-    "isolated_speck_limit": 0.0015
+    "high_frequency_limit": 0.1,
+    "isolated_speck_limit": 0.0005,
+    "max_phase_mean_spread": 3.552,
+    "phase_mean_spread_limit": 6.0
   },
   "atlas": {
     "path": "assets/adventure/overworld/expedition-tile-atlas-v2.png",
     "width": 800,
     "height": 3200,
-    "sha256": "75828c420203f73fb934c294820f99864ebf7b482de4bb46ef9fb2be300ff142",
+    "sha256": "46a0c0073500914b6a3467682449bb352c3a23ea0236dafc2dbd02221e57a6fd",
     "alpha_extrema": [
       0,
       255

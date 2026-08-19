@@ -357,7 +357,7 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('타일 월드 경계는 캐릭터를 막고 벽을 따라 미끄러지게 한다', (tester) async {
+  testWidgets('칸 단위로 걷고 경계에서 멈추며 늘 칸 한가운데에 선다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await _pump(tester, _walkingSnapshotJson());
@@ -384,6 +384,9 @@ void main() {
     expect(x(), lessThan(before));
     // 캐릭터 반지름과 바깥 테두리를 포함한 서쪽 충돌 경계.
     expect(x(), greaterThanOrEqualTo(1.35));
+    // 칸 단위 이동이므로 걸음이 끝나면 늘 칸 한가운데(x.5)에 선다. 아날로그로
+    // 미끄러지면 이 값이 아무 소수점이나 된다.
+    expect((x() - x().floor()), closeTo(.5, .001));
     expect(tester.takeException(), isNull);
   });
 

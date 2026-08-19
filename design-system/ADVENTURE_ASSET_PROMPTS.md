@@ -846,3 +846,417 @@ python design-system/scripts/import_scene_art.py <폴더> --all
 것**이었다: `expedition-treasure-vault-echo-well-v1.webp가 벽과 바닥을 다루는 방식을
 그대로 따르라`. 그 뒤에 `돌 한 장 한 장에 질감을 채우지 말고, 디테일은 물건에만
 붙이고, 화면 절반 이상은 조용한 면으로 남겨라`를 덧붙였다.
+
+
+## 던전 타일셋 원본 v2 — ImageGen 프롬프트 (2026-08-19)
+
+`app/assets/adventure/overworld/expedition-tile-atlas-v2.png`를 굽는 원본이다.
+`design-system/concepts/expedition-overworld-v2/sources/`에 **아래 파일 이름 그대로**
+두고 아래를 돌리면 아틀라스와 표가 다시 만들어진다.
+
+```powershell
+python design-system/scripts/build_expedition_tile_atlas_v2.py
+```
+
+### 지역별로 뽑지 않는다
+
+`design-system/concepts/region-tileset-art-v1/`에는 지역마다 여섯 장씩 스물네 장을
+뽑는 프롬프트가 있는데, **그 경로는 지금 쓰지 않는다.** 그때 쓰던 반입 스크립트가
+없어졌고, 지금 빌더는 **공용 열한 장**을 읽어 지역 색은 `REGION_GRADES`로 입힌다.
+그래서 원본은 **색 기운이 없는 중성**이어야 한다 — 원본에 초록이나 파랑이 이미
+들어 있으면 네 지역이 모두 그 색으로 물든다.
+
+### 굽는 과정에서 자동으로 되는 것
+
+프롬프트에 넣지 않아도 되는 것들이다. 넣으면 오히려 두 번 걸린다.
+
+* **이어 붙이기.** 바닥·이끼·물은 매크로 한 장에서 열여섯 칸을 떠서 쓰고,
+  가장자리는 빌더가 물린다(이음매 오차 실측 0).
+* **도트화.** 96px 칸을 24칸 격자로 낮추고 지역마다 색 서른두 개로 맞춘다.
+  그러니 원본은 512px로 넉넉히 그려도 된다.
+* **지역 색.** 네 지역의 색조·채도·대비는 빌더가 입힌다.
+* **배경 빼기.** 물건은 마젠타 배경을 빌더가 지운다.
+* **벽 쌓기.** 벽은 **한 켜만** 그리면 된다. 빌더가 세 켜로 쌓고 켜마다 좌우를
+  뒤집어 세로줄이 서지 않게 한다.
+
+### 검사 기준
+
+빌더가 통과시키지 않으면 원본이 잘못된 것이다. 실측값은 괄호 안이다.
+
+| 항목 | 한계 | 무엇을 잡나 |
+|---|---:|---|
+| 고주파 비율 | 0.10 (0.060) | 자글자글한 잡티 |
+| 고립 점 비율 | 0.0005 (0.0) | 튀는 픽셀 |
+| 이음매 오차 | 4 (0) | 이어 붙인 자리의 줄 |
+| 칸 밝기 벌어짐 | 6.0 (3.3) | 네 칸 주기 마름모 벽지 |
+
+### 바닥 돌 → `terrain-floor.png`
+
+```
+A seamless tileable top-down pixel-art ground texture for a 2D RPG dungeon.
+
+SURFACE: worn flagstones laid in an irregular grid with fine mortar seams, a few blades of moss caught in the joints.
+
+DETAIL: irregular hand-placed detail — the wear is NOT uniform. Some areas are
+smoother, some carry small chips, hairline cracks, or a scatter of tiny stones.
+Detail covers roughly one fifth of the surface; the rest stays calm. Avoid any
+regular repeating motif that the eye can lock onto. Keep the overall brightness
+even across the whole frame — no large bright or dark region, no vignette, no
+light falling off toward a corner.
+
+TILING: the texture must tile seamlessly — the left edge continues into the right
+edge, and the top edge into the bottom edge, with no visible seam.
+
+CANVAS: 512 x 512 pixels, filling the frame edge to edge.
+
+STYLE: true pixel art. Hard-edged pixels, no anti-aliasing, no gradients, no
+dithering noise, no blur, no glow, no photographic texture, no JPEG-like speckle,
+no lens flare. Flat cel shading with a single light source from the upper left.
+Every flat color region is at least 4x4 pixels. Neutral warm stone and earth
+tones only — desaturated, mid-value, no strong color cast of any kind. The result
+must read cleanly when scaled down to a 24x24 pixel tile.
+
+VIEW: strict top-down orthographic. No perspective, no vanishing point, no camera
+tilt, no drop shadow cast outside the tile.
+
+BACKGROUND: no border, no frame, no label, no caption, no watermark, no grid lines.
+```
+
+### 이끼 땅 → `terrain-moss.png`
+
+```
+A seamless tileable top-down pixel-art ground texture for a 2D RPG dungeon.
+
+SURFACE: a dense low carpet of moss and short grass over soft earth, with a scatter of small stones half-buried in it.
+
+DETAIL: irregular hand-placed detail — the wear is NOT uniform. Some areas are
+smoother, some carry small chips, hairline cracks, or a scatter of tiny stones.
+Detail covers roughly one fifth of the surface; the rest stays calm. Avoid any
+regular repeating motif that the eye can lock onto. Keep the overall brightness
+even across the whole frame — no large bright or dark region, no vignette, no
+light falling off toward a corner.
+
+TILING: the texture must tile seamlessly — the left edge continues into the right
+edge, and the top edge into the bottom edge, with no visible seam.
+
+CANVAS: 512 x 512 pixels, filling the frame edge to edge.
+
+STYLE: true pixel art. Hard-edged pixels, no anti-aliasing, no gradients, no
+dithering noise, no blur, no glow, no photographic texture, no JPEG-like speckle,
+no lens flare. Flat cel shading with a single light source from the upper left.
+Every flat color region is at least 4x4 pixels. Neutral warm stone and earth
+tones only — desaturated, mid-value, no strong color cast of any kind. The result
+must read cleanly when scaled down to a 24x24 pixel tile.
+
+VIEW: strict top-down orthographic. No perspective, no vanishing point, no camera
+tilt, no drop shadow cast outside the tile.
+
+BACKGROUND: no border, no frame, no label, no caption, no watermark, no grid lines.
+```
+
+### 물 → `terrain-water.png`
+
+```
+A seamless tileable top-down pixel-art ground texture for a 2D RPG dungeon.
+
+SURFACE: a shallow still pool over a stone bed, with gentle ripple lines in two or three tones.
+
+DETAIL: irregular hand-placed detail — the wear is NOT uniform. Some areas are
+smoother, some carry small chips, hairline cracks, or a scatter of tiny stones.
+Detail covers roughly one fifth of the surface; the rest stays calm. Avoid any
+regular repeating motif that the eye can lock onto. Keep the overall brightness
+even across the whole frame — no large bright or dark region, no vignette, no
+light falling off toward a corner.
+
+TILING: the texture must tile seamlessly — the left edge continues into the right
+edge, and the top edge into the bottom edge, with no visible seam.
+
+CANVAS: 512 x 512 pixels, filling the frame edge to edge.
+
+STYLE: true pixel art. Hard-edged pixels, no anti-aliasing, no gradients, no
+dithering noise, no blur, no glow, no photographic texture, no JPEG-like speckle,
+no lens flare. Flat cel shading with a single light source from the upper left.
+Every flat color region is at least 4x4 pixels. Neutral warm stone and earth
+tones only — desaturated, mid-value, no strong color cast of any kind. The result
+must read cleanly when scaled down to a 24x24 pixel tile.
+
+VIEW: strict top-down orthographic. No perspective, no vanishing point, no camera
+tilt, no drop shadow cast outside the tile.
+
+BACKGROUND: no border, no frame, no label, no caption, no watermark, no grid lines.
+```
+
+### 벽 한 켜 → `prop-wall.png`
+
+```
+A single top-down pixel-art prop for a 2D RPG dungeon, drawn as one object.
+
+OBJECT: a single horizontal course of dry-stacked stone blocks, seen straight from the front, wider than it is tall. The course must run edge to edge horizontally so that copies placed side by side join without a gap.
+
+DETAIL: the silhouette must read at a glance. Detail belongs on the object and
+nowhere else. No ground texture, no grass, no scattered debris around it.
+
+CANVAS: 512 x 512 pixels.
+
+STYLE: true pixel art. Hard-edged pixels, no anti-aliasing, no gradients, no
+dithering noise, no blur, no glow, no photographic texture, no JPEG-like speckle,
+no lens flare. Flat cel shading with a single light source from the upper left.
+Every flat color region is at least 4x4 pixels. Neutral warm stone and earth
+tones only — desaturated, mid-value, no strong color cast of any kind. The result
+must read cleanly when scaled down to a 24x24 pixel tile.
+
+VIEW: seen from a high three-quarter angle, the way objects are drawn on a
+top-down RPG map — the front face is visible and the top is slightly visible. No
+perspective distortion, no ground shadow.
+
+BACKGROUND: a single flat pure magenta (#FF00FF) field, edge to edge. The object
+must not touch the frame. No border, no label, no caption, no watermark, no shadow
+on the background.
+```
+
+### 서가 → `prop-shelf.png`
+
+```
+A single top-down pixel-art prop for a 2D RPG dungeon, drawn as one object.
+
+OBJECT: a tall wooden archive shelf, its boards sagging, half-empty, a few bound volumes leaning. The shelf stands upright and is taller than it is wide.
+
+DETAIL: the silhouette must read at a glance. Detail belongs on the object and
+nowhere else. No ground texture, no grass, no scattered debris around it.
+
+CANVAS: 512 x 512 pixels.
+
+STYLE: true pixel art. Hard-edged pixels, no anti-aliasing, no gradients, no
+dithering noise, no blur, no glow, no photographic texture, no JPEG-like speckle,
+no lens flare. Flat cel shading with a single light source from the upper left.
+Every flat color region is at least 4x4 pixels. Neutral warm stone and earth
+tones only — desaturated, mid-value, no strong color cast of any kind. The result
+must read cleanly when scaled down to a 24x24 pixel tile.
+
+VIEW: seen from a high three-quarter angle, the way objects are drawn on a
+top-down RPG map — the front face is visible and the top is slightly visible. No
+perspective distortion, no ground shadow.
+
+BACKGROUND: a single flat pure magenta (#FF00FF) field, edge to edge. The object
+must not touch the frame. No border, no label, no caption, no watermark, no shadow
+on the background.
+```
+
+### 등불 → `prop-lantern.png`
+
+```
+A single top-down pixel-art prop for a 2D RPG dungeon, drawn as one object.
+
+OBJECT: a hanging iron lantern with a warm lit pane, suspended from a short bracket. The lit pane is the only bright element.
+
+DETAIL: the silhouette must read at a glance. Detail belongs on the object and
+nowhere else. No ground texture, no grass, no scattered debris around it.
+
+CANVAS: 512 x 512 pixels.
+
+STYLE: true pixel art. Hard-edged pixels, no anti-aliasing, no gradients, no
+dithering noise, no blur, no glow, no photographic texture, no JPEG-like speckle,
+no lens flare. Flat cel shading with a single light source from the upper left.
+Every flat color region is at least 4x4 pixels. Neutral warm stone and earth
+tones only — desaturated, mid-value, no strong color cast of any kind. The result
+must read cleanly when scaled down to a 24x24 pixel tile.
+
+VIEW: seen from a high three-quarter angle, the way objects are drawn on a
+top-down RPG map — the front face is visible and the top is slightly visible. No
+perspective distortion, no ground shadow.
+
+BACKGROUND: a single flat pure magenta (#FF00FF) field, edge to edge. The object
+must not touch the frame. No border, no label, no caption, no watermark, no shadow
+on the background.
+```
+
+### 기록함 → `prop-chest.png`
+
+```
+A single top-down pixel-art prop for a 2D RPG dungeon, drawn as one object.
+
+OBJECT: a small banded wooden chest with an iron clasp, lid closed. The chest reads clearly as openable.
+
+DETAIL: the silhouette must read at a glance. Detail belongs on the object and
+nowhere else. No ground texture, no grass, no scattered debris around it.
+
+CANVAS: 512 x 512 pixels.
+
+STYLE: true pixel art. Hard-edged pixels, no anti-aliasing, no gradients, no
+dithering noise, no blur, no glow, no photographic texture, no JPEG-like speckle,
+no lens flare. Flat cel shading with a single light source from the upper left.
+Every flat color region is at least 4x4 pixels. Neutral warm stone and earth
+tones only — desaturated, mid-value, no strong color cast of any kind. The result
+must read cleanly when scaled down to a 24x24 pixel tile.
+
+VIEW: seen from a high three-quarter angle, the way objects are drawn on a
+top-down RPG map — the front face is visible and the top is slightly visible. No
+perspective distortion, no ground shadow.
+
+BACKGROUND: a single flat pure magenta (#FF00FF) field, edge to edge. The object
+must not touch the frame. No border, no label, no caption, no watermark, no shadow
+on the background.
+```
+
+### 기억 조각 → `prop-item.png`
+
+```
+A single top-down pixel-art prop for a 2D RPG dungeon, drawn as one object.
+
+OBJECT: a single small floating crystal shard, faceted, pale blue-green. It hovers just above the ground with no visible support.
+
+DETAIL: the silhouette must read at a glance. Detail belongs on the object and
+nowhere else. No ground texture, no grass, no scattered debris around it.
+
+CANVAS: 512 x 512 pixels.
+
+STYLE: true pixel art. Hard-edged pixels, no anti-aliasing, no gradients, no
+dithering noise, no blur, no glow, no photographic texture, no JPEG-like speckle,
+no lens flare. Flat cel shading with a single light source from the upper left.
+Every flat color region is at least 4x4 pixels. Neutral warm stone and earth
+tones only — desaturated, mid-value, no strong color cast of any kind. The result
+must read cleanly when scaled down to a 24x24 pixel tile.
+
+VIEW: seen from a high three-quarter angle, the way objects are drawn on a
+top-down RPG map — the front face is visible and the top is slightly visible. No
+perspective distortion, no ground shadow.
+
+BACKGROUND: a single flat pure magenta (#FF00FF) field, edge to edge. The object
+must not touch the frame. No border, no label, no caption, no watermark, no shadow
+on the background.
+```
+
+### 기록 지킴이 → `prop-npc.png`
+
+```
+A single top-down pixel-art prop for a 2D RPG dungeon, drawn as one object.
+
+OBJECT: a small hooded figure in a travelling cloak, standing still, facing the viewer, holding a staff. No face detail beyond a shadowed hood.
+
+DETAIL: the silhouette must read at a glance. Detail belongs on the object and
+nowhere else. No ground texture, no grass, no scattered debris around it.
+
+CANVAS: 512 x 512 pixels.
+
+STYLE: true pixel art. Hard-edged pixels, no anti-aliasing, no gradients, no
+dithering noise, no blur, no glow, no photographic texture, no JPEG-like speckle,
+no lens flare. Flat cel shading with a single light source from the upper left.
+Every flat color region is at least 4x4 pixels. Neutral warm stone and earth
+tones only — desaturated, mid-value, no strong color cast of any kind. The result
+must read cleanly when scaled down to a 24x24 pixel tile.
+
+VIEW: seen from a high three-quarter angle, the way objects are drawn on a
+top-down RPG map — the front face is visible and the top is slightly visible. No
+perspective distortion, no ground shadow.
+
+BACKGROUND: a single flat pure magenta (#FF00FF) field, edge to edge. The object
+must not touch the frame. No border, no label, no caption, no watermark, no shadow
+on the background.
+```
+
+### 제단 → `prop-altar.png`
+
+```
+A single top-down pixel-art prop for a 2D RPG dungeon, drawn as one object.
+
+OBJECT: a low round stone altar with a shallow basin on top holding a pale glow. The basin glow is the only bright element.
+
+DETAIL: the silhouette must read at a glance. Detail belongs on the object and
+nowhere else. No ground texture, no grass, no scattered debris around it.
+
+CANVAS: 512 x 512 pixels.
+
+STYLE: true pixel art. Hard-edged pixels, no anti-aliasing, no gradients, no
+dithering noise, no blur, no glow, no photographic texture, no JPEG-like speckle,
+no lens flare. Flat cel shading with a single light source from the upper left.
+Every flat color region is at least 4x4 pixels. Neutral warm stone and earth
+tones only — desaturated, mid-value, no strong color cast of any kind. The result
+must read cleanly when scaled down to a 24x24 pixel tile.
+
+VIEW: seen from a high three-quarter angle, the way objects are drawn on a
+top-down RPG map — the front face is visible and the top is slightly visible. No
+perspective distortion, no ground shadow.
+
+BACKGROUND: a single flat pure magenta (#FF00FF) field, edge to edge. The object
+must not touch the frame. No border, no label, no caption, no watermark, no shadow
+on the background.
+```
+
+### 뿌리 아치 → `prop-root.png`
+
+```
+A single top-down pixel-art prop for a 2D RPG dungeon, drawn as one object.
+
+OBJECT: a thick tree root grown into a low arch, wide enough to walk under, bark textured. The opening under the arch is clearly a passage.
+
+DETAIL: the silhouette must read at a glance. Detail belongs on the object and
+nowhere else. No ground texture, no grass, no scattered debris around it.
+
+CANVAS: 512 x 512 pixels.
+
+STYLE: true pixel art. Hard-edged pixels, no anti-aliasing, no gradients, no
+dithering noise, no blur, no glow, no photographic texture, no JPEG-like speckle,
+no lens flare. Flat cel shading with a single light source from the upper left.
+Every flat color region is at least 4x4 pixels. Neutral warm stone and earth
+tones only — desaturated, mid-value, no strong color cast of any kind. The result
+must read cleanly when scaled down to a 24x24 pixel tile.
+
+VIEW: seen from a high three-quarter angle, the way objects are drawn on a
+top-down RPG map — the front face is visible and the top is slightly visible. No
+perspective distortion, no ground shadow.
+
+BACKGROUND: a single flat pure magenta (#FF00FF) field, edge to edge. The object
+must not touch the frame. No border, no label, no caption, no watermark, no shadow
+on the background.
+```
+
+## 던전 걷기 스프라이트 v1 — ImageGen 프롬프트 (2026-08-19)
+
+`app/assets/adventure/overworld/expedition-walker-v1.png`. 지금 들어 있는 것은
+`design-system/scripts/build_expedition_walker.py`가 그린 **자리표시**다. 도형을
+겹쳐 만든 것이라 걷는 맛이 없다. 아래로 진짜 도트를 뽑아 같은 규격으로 갈아
+끼우면 코드는 손댈 필요가 없다.
+
+### 규격 — 이걸 어기면 코드가 어긋난다
+
+* 시트 **288 × 480**, 한 칸 **96 × 120**, 배경 투명.
+* 가로 3칸 = 걷기 3프레임(왼발 · 선 자세 · 오른발). 코드가 `1-2-3-2`로 돌린다.
+* 세로 4칸 = **아래 · 왼쪽 · 오른쪽 · 위**. 이 순서가 다트의 `_WalkFacing`과 같다.
+* 오른쪽을 왼쪽의 좌우 반전으로 만들지 않는다 — 어깨에 멘 가방이 반대로 붙는다.
+* 발은 칸 아래에서 12px 위에 둔다. 머리는 칸 위로 4px을 남긴다.
+* 색 **스물네 개 이하**, 알파는 **0 아니면 255**. 아틀라스가 24칸 격자 도트라
+  캐릭터만 매끈하면 오려 붙인 것처럼 뜬다.
+
+```
+A 4-direction walking sprite sheet for a top-down 2D RPG, in DS-era pixel art.
+
+CHARACTER: a small sprout child — a round pale head with three green leaves
+growing from the crown, wearing a moss-green cloak over a terracotta pot-shaped
+body, short legs, a tan satchel worn on one side.
+
+SHEET LAYOUT: exactly 3 columns by 4 rows, 12 cells total, each cell exactly
+96 x 120 pixels, total canvas exactly 288 x 480 pixels.
+Row 1 = facing the viewer (walking toward camera).
+Row 2 = facing left in profile.
+Row 3 = facing right in profile.
+Row 4 = facing away from the viewer (back view).
+Within each row: column 1 = left foot forward, column 2 = standing still with
+both feet together, column 3 = right foot forward.
+
+CONSISTENCY: the same character in all 12 cells — same height, same colors, same
+proportions, drawn at the same scale and standing on the same ground line. The
+satchel is on the character's left hip, so it is visible in the left-profile row
+and hidden in the right-profile row. Do not mirror one profile to make the other.
+
+FOOTING: the feet rest 12 pixels above the bottom edge of the cell. The leaves
+stop at least 4 pixels below the top edge. Nothing is cut off by any cell edge.
+
+STYLE: true pixel art. Hard-edged pixels, no anti-aliasing, no gradients, no
+dithering, no blur, no glow, no outline glow. At most 24 colors in the whole
+sheet. Flat cel shading with a single light source from the upper left. A dark
+brown outline around the silhouette. Fully transparent background — no checker
+pattern, no white, no color fringe on the edges.
+
+BACKGROUND: transparent. No grid lines, no cell borders, no labels, no captions,
+no watermark, no drop shadow outside the character.
+```

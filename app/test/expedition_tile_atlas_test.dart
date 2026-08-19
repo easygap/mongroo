@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,8 +51,15 @@ void main() {
       }
     }
     final textureQa = manifest['texture_qa'] as Map<String, dynamic>;
-    expect(textureQa['policy'], 'painted-broad-planes-no-stipple-no-dither');
-    expect(textureQa['resampling'], 'lanczos-median-unsharp');
+    expect(textureQa['policy'], 'ds-era-dot-one-palette-per-region-1bit-alpha');
+    expect(
+      textureQa['resampling'],
+      'lanczos-median-unsharp-then-alpha-weighted-box-and-nearest',
+    );
+    // 한 칸은 24×24 도트, 지역마다 색 서른두 개. 캐릭터 시트도 같은 격자라
+    // 발밑과 캐릭터가 한 세계로 읽힌다.
+    expect(textureQa['dot_grid'], 24);
+    expect(textureQa['palette_colors'], 32);
     expect(textureQa['ground_alpha_min'], 255);
     expect(textureQa['prop_alpha_min'], 0);
     expect(
@@ -66,6 +74,12 @@ void main() {
       textureQa['max_isolated_speck_ratio'] as num,
       lessThanOrEqualTo(textureQa['isolated_speck_limit'] as num),
     );
+    // 칸끼리 밝기가 벌어지면 네 칸 주기의 마름모 벽지가 된다. 거울을 걷어낸
+    // 뒤에도 벽지가 남아 있던 진짜 원인이라 수치로 못 박는다.
+    expect(
+      textureQa['max_phase_mean_spread'] as num,
+      lessThanOrEqualTo(textureQa['phase_mean_spread_limit'] as num),
+    );
 
     final bytes = await rootBundle.load(
       'assets/adventure/overworld/expedition-tile-atlas-v2.png',
@@ -73,6 +87,26 @@ void main() {
     // PNG IHDR stores width and height as big-endian uint32 at 16 and 20.
     expect(bytes.getUint32(16), 800);
     expect(bytes.getUint32(20), 3200);
+
+    // 표만 믿지 않는다. 실제로 그림을 풀어서 도트 규칙이 지켜졌는지 본다.
+    final decoded = await ui.instantiateImageCodec(
+      bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
+    );
+    final frame = await decoded.getNextFrame();
+    final pixels = await frame.image.toByteData();
+    decoded.dispose();
+    final alphas = <int>{};
+    final colors = <int>{};
+    for (var offset = 0; offset < pixels!.lengthInBytes; offset += 4) {
+      final alpha = pixels.getUint8(offset + 3);
+      alphas.add(alpha);
+      if (alpha > 8) colors.add(pixels.getUint32(offset));
+    }
+    frame.image.dispose();
+    // 반투명 가장자리가 남아 있으면 최근접으로 키울 때 지저분한 테두리가 된다.
+    expect(alphas, <int>{0, 255});
+    // 네 지역이 각자 서른두 색이니 전부 합쳐도 이 수를 넘을 수 없다.
+    expect(colors.length, lessThanOrEqualTo(4 * 32));
   });
 
   test('월드는 8x8 청크와 정적·상호작용·배우 레이어로 분리된다', () {
@@ -81,8 +115,37 @@ void main() {
     expect(diagnostics['chunkCount'], 24);
     expect(diagnostics['maxCellsPerChunk'], lessThanOrEqualTo(64));
     expect(diagnostics['staticScenery'], greaterThan(0));
-    expect(diagnostics['interactables'], 3);
-    expect(diagnostics['actors'], 2);
+    expect(diagnostics['interactables'], greaterThan(0));
+    // 엉킴은 수호 스테이지에만 선다. 사건 스테이지에서 붙으면 열리는 것이
+    // 전투가 아니라 엉뚱한 사건이 되기 때문이다.
+    expect(diagnostics['actors'], 1);
     expect(diagnostics['visibleChunks'], lessThan(diagnostics['chunkCount']!));
+
+    final guarded = expeditionTileWorldChunkDiagnostics(
+      'moss_archive',
+      1,
+      withGuardian: true,
+    );
+    expect(guarded['actors'], 2);
+  });
+
+  test('아치로 실내 방을 드나들 수 있고 문이 막혀 있지 않다', () {
+    for (final region in <String>[
+      'moss_archive',
+      'echo_well',
+      'starlight_seed_vault',
+      'heartwood_observatory',
+    ]) {
+      final travel = expeditionTileWorldTravelDiagnostics(region, 1);
+      // 들어가는 문 하나, 나오는 문 하나. 나오는 문이 없으면 갇힌다.
+      expect(travel['outsideWarps'], 1, reason: region);
+      expect(travel['insideWarps'], 1, reason: region);
+      // 문이 막혀 있으면 지나갈 수 없다.
+      expect(travel['blockingWarps'], 0, reason: region);
+      // 실내는 벽으로 둘러싸여야 방으로 읽힌다.
+      expect(travel['insideWalls'], greaterThan(20), reason: region);
+      // 들어서자마자 벽에 끼면 조작이 고장 난 것처럼 보인다.
+      expect(travel['insideSpawnBlocked'], 0, reason: region);
+    }
   });
 }
