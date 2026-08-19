@@ -129,6 +129,23 @@ void main() {
     expect(guarded['actors'], 2);
   });
 
+  test('지형 생성기는 어느 플랫폼에서나 같은 땅을 만든다', () {
+    // 웹에서 직접 걸어 보니 테스트가 보는 땅과 출발 칸부터 달랐다. 원인은
+    // `hash * 16777619`를 한 번에 곱한 것이었다 - dart2js에서 int는 double이라
+    // 2^53을 넘으면 아래 비트가 날아간다. 값으로 못 박아 다시 흔들리면 잡는다.
+    const expected = <String, List<int>>{
+      'moss_archive': <int>[7, 24],
+      'echo_well': <int>[7, 23],
+      'starlight_seed_vault': <int>[6, 23],
+      'heartwood_observatory': <int>[6, 23],
+    };
+    expected.forEach((region, spawn) {
+      final diagnostics = expeditionTileWorldTravelDiagnostics(region, 1);
+      expect(diagnostics['spawnX'], spawn.first, reason: region);
+      expect(diagnostics['spawnY'], spawn.last, reason: region);
+    });
+  });
+
   test('아치로 실내 방을 드나들 수 있고 문이 막혀 있지 않다', () {
     for (final region in <String>[
       'moss_archive',

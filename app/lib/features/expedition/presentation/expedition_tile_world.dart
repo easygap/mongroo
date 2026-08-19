@@ -174,11 +174,19 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
     _progress = 1;
   }
 
-  bool get _movementEnabled =>
-      _speech == null &&
+  /// 지금 이 화면이 서버에 무언가를 보낼 수 있는 상태인가.
+  ///
+  /// 말풍선이 떠 있는지는 **여기 넣지 않는다.** 말풍선은 걸음을 멈추라는
+  /// 뜻이지 조우를 취소하라는 뜻이 아니다. 넣어 두었더니 엉킴에 말을 걸 때
+  /// `_interact`가 말풍선을 먼저 띄우는 바람에 `_enterDestination`이 첫 줄에서
+  /// 되돌아가, 전투가 영영 열리지 않았다. 실기에서 걸어 보고서야 나왔다.
+  bool get _canReachServer =>
       widget.expedition.run.phase == 'exploring' &&
       !ref.read(expeditionControllerProvider).interactionLocked &&
       !_movePending;
+
+  /// 걸어도 되는가. 말풍선을 읽는 동안에는 멈춘다.
+  bool get _movementEnabled => _speech == null && _canReachServer;
 
   void _pointerDown(Offset local) {
     if (!_movementEnabled) return;
@@ -389,7 +397,7 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
   }
 
   Future<void> _enterDestination() async {
-    if (_movePending || !_movementEnabled) return;
+    if (_movePending || !_canReachServer) return;
     _movePending = true;
     _ticker.stop();
     try {
@@ -434,7 +442,14 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
             final playerScreen = camera.project(_position);
             final visibleTiles = camera.visibleTileCount(_field);
             final visibleChunks = camera.visibleChunkCount(_field);
-            const actorSize = Size(70, 82);
+            // 캐릭터 상자를 **타일에 비례**시킨다. 70px로 못 박아 두었더니
+            // 타일이 23px인 화면에서 캐릭터가 세 칸을 차지해 세계가 좁아
+            // 보였다. 96×120 칸 안에서 몸이 차지하는 폭이 60이므로, 몸이 딱
+            // 한 칸이 되려면 상자는 1.6칸이어야 한다.
+            final actorSize = Size(
+              camera.tilePixels * 1.6,
+              camera.tilePixels * 1.6 * _walkerCellHeight / _walkerCellWidth,
+            );
             return Focus(
               autofocus: true,
               onKeyEvent: _onKey,
@@ -465,7 +480,9 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                   ),
                   Positioned(
                     left: playerScreen.dx - actorSize.width / 2,
-                    top: playerScreen.dy - actorSize.height * .78,
+                    // 시트의 발 밑선이 칸 아래쪽에 닿게 맞춘 값이다. 발이
+                    // 칸 한가운데에 있으면 칸 위에 떠 있는 것으로 보인다.
+                    top: playerScreen.dy - actorSize.height * .725,
                     width: actorSize.width,
                     height: actorSize.height,
                     child: IgnorePointer(
@@ -902,9 +919,23 @@ class _FieldRandom {
     var hash = 2166136261;
     for (final unit in '$regionCode#$stageNo'.codeUnits) {
       hash ^= unit;
-      hash = (hash * 16777619) & 0xFFFFFFFF;
+      hash = _mul32(hash, 16777619);
     }
     _state = hash == 0 ? 1 : hash;
+  }
+
+  /// 32비트 곱셈. **한 번에 곱하지 않는다.**
+  ///
+  /// `(hash * 16777619) & 0xFFFFFFFF`로 쓰면 네이티브와 웹이 다른 땅을 만든다.
+  /// 곱은 최대 2^56인데 dart2js에서 int는 double이라 2^53을 넘는 순간 아래
+  /// 비트가 날아가고, 그 뒤에 마스크를 씌워 봐야 이미 다른 값이다. 실제로
+  /// 웹에서 걸어 보니 테스트가 보는 지형과 출발 칸부터 달랐다.
+  ///
+  /// 16비트씩 쪼개면 중간값이 2^40을 넘지 않아 어느 쪽에서도 정확하다.
+  static int _mul32(int a, int b) {
+    final low = (a & 0xFFFF) * b;
+    final high = ((a >> 16) * b) & 0xFFFF;
+    return (low + (high << 16)) & 0xFFFFFFFF;
   }
 
   late int _state;
@@ -1746,6 +1777,10 @@ Map<String, int> expeditionTileWorldTravelDiagnostics(
   int blockingWarps(_TileField field) =>
       field.objects.where((object) => object.warp && object.blocks).length;
   return <String, int>{
+    // 출발 칸을 값으로 못 박는다. 지형 생성기가 흔들리면 여기서 걸린다 —
+    // 특히 32비트 곱셈을 한 번에 하면 웹에서만 다른 값이 나온다.
+    'spawnX': outside.spawn.dx.floor(),
+    'spawnY': outside.spawn.dy.floor(),
     'outsideWarps': warps(outside),
     'insideWarps': warps(inside),
     // 문이 막혀 있으면 들어갈 수가 없다.
