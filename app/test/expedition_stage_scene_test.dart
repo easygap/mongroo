@@ -344,7 +344,7 @@ void main() {
 
     // 전체 42×30 맵 이미지를 한 번에 그리지 않고 가시 타일만 그리며,
     // 위치 파악용 미니맵은 별도 저비용 데이터 레이어다.
-    expect(find.textContaining('/1260'), findsOneWidget);
+    expect(find.textContaining('/2240'), findsOneWidget);
     expect(find.byKey(const ValueKey('tile-world-minimap')), findsOneWidget);
 
     // 표식 탭은 아래의 가상 스틱 레이어에 막히지 않고 같은 move로 모인다.

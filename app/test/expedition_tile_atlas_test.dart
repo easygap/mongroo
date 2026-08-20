@@ -122,13 +122,14 @@ void main() {
   test('월드는 8x8 청크와 정적·상호작용·배우 레이어로 분리된다', () {
     final diagnostics = expeditionTileWorldChunkDiagnostics('moss_archive', 1);
     expect(diagnostics['chunkSize'], 8);
-    expect(diagnostics['chunkCount'], 24);
+    expect(diagnostics['chunkCount'], 35);
     expect(diagnostics['maxCellsPerChunk'], lessThanOrEqualTo(64));
     expect(diagnostics['staticScenery'], greaterThan(0));
     expect(diagnostics['interactables'], greaterThan(0));
-    // 엉킴은 수호 스테이지에만 선다. 사건 스테이지에서 붙으면 열리는 것이
-    // 전투가 아니라 엉뚱한 사건이 되기 때문이다.
-    expect(diagnostics['actors'], 1);
+    // 배우는 기록지기와 길 잃은 기록원 둘이다. 엉킴은 수호 스테이지에만
+    // 선다 - 사건 스테이지에서 붙으면 열리는 것이 전투가 아니라 엉뚱한
+    // 사건이 되기 때문이다.
+    expect(diagnostics['actors'], 2);
     expect(diagnostics['visibleChunks'], lessThan(diagnostics['chunkCount']!));
 
     final guarded = expeditionTileWorldChunkDiagnostics(
@@ -136,7 +137,7 @@ void main() {
       1,
       withGuardian: true,
     );
-    expect(guarded['actors'], 2);
+    expect(guarded['actors'], 3);
   });
 
   test('지형 생성기는 어느 플랫폼에서나 같은 땅을 만든다', () {
@@ -144,16 +145,47 @@ void main() {
     // `hash * 16777619`를 한 번에 곱한 것이었다 - dart2js에서 int는 double이라
     // 2^53을 넘으면 아래 비트가 날아간다. 값으로 못 박아 다시 흔들리면 잡는다.
     const expected = <String, List<int>>{
-      'moss_archive': <int>[7, 24],
-      'echo_well': <int>[7, 23],
-      'starlight_seed_vault': <int>[6, 23],
-      'heartwood_observatory': <int>[6, 23],
+      'moss_archive': <int>[8, 33],
+      'echo_well': <int>[8, 33],
+      'starlight_seed_vault': <int>[8, 33],
+      'heartwood_observatory': <int>[9, 33],
     };
     expected.forEach((region, spawn) {
       final diagnostics = expeditionTileWorldTravelDiagnostics(region, 1);
       expect(diagnostics['spawnX'], spawn.first, reason: region);
       expect(diagnostics['spawnY'], spawn.last, reason: region);
     });
+  });
+
+  test('한 판에 걸을 곳과 볼 것이 충분히 있다', () {
+    // 앞 판은 1260칸 격자에 바닥이 279칸(22%)뿐이었고, 상호작용할 수 있는
+    // 것이 스테이지 전체에 셋이었다. 넓어 보이지만 실제로는 방 하나를 돌다
+    // 나오는 것이었다. 다시 휑해지면 여기서 걸린다.
+    for (final region in <String>[
+      'moss_archive',
+      'echo_well',
+      'starlight_seed_vault',
+      'heartwood_observatory',
+    ]) {
+      for (var stage = 1; stage <= 8; stage++) {
+        final chunk = expeditionTileWorldChunkDiagnostics(region, stage);
+        expect(
+          chunk['walkable'],
+          greaterThanOrEqualTo(480),
+          reason: '$region $stage장 바닥 칸',
+        );
+        expect(
+          chunk['interactables'],
+          greaterThanOrEqualTo(8),
+          reason: '$region $stage장 상호작용',
+        );
+        expect(
+          chunk['staticScenery'],
+          greaterThanOrEqualTo(12),
+          reason: '$region $stage장 조형물',
+        );
+      }
+    }
   });
 
   test('아치로 실내 방을 드나들 수 있고 문이 막혀 있지 않다', () {
