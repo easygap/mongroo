@@ -1210,79 +1210,237 @@ must not touch the frame. No border, no label, no caption, no watermark, no shad
 on the background.
 ```
 
-## 던전 걷기 스프라이트 v2 — ImageGen 프롬프트 (2026-08-19)
+## 던전 걷기 스프라이트 v3 — 방향별 ImageGen 프롬프트 (2026-08-19)
 
-`app/assets/adventure/overworld/expedition-walker-v1.png`. 지금 들어 있는 것은
-`build_expedition_walker.py`가 도형을 겹쳐 만든 **자리표시**라 얼굴도 걸음도 없다.
-아래로 뽑아 반입 스크립트에 넣으면 검사를 거쳐 갈아 끼워진다.
+### 왜 방향마다 따로 뽑나
+
+한 장에 열두 칸을 요구하면 일관성이 무너진다. **한 번에 한 방향, 세 프레임**만
+그리게 하면 훨씬 잘 나온다. 실제로 넉 장으로 나눠 받으니 코가 옆을 향하는 진짜
+옆모습이 나왔고, 뒷모습에서 얼굴이 사라졌고, 무엇보다 다리가 생겼다.
+
+판단은 **게임 배율**에서 한다. 가로 한 칸(약 35px)으로 줄여 놓고 네 방향을
+나란히 놓아 본다. 여기서 구분이 안 되면 아무리 예뻐도 못 쓴다 — 방향이 안
+읽히면 `바라보는 칸의 물건에만 말을 건다`는 규칙이 근거를 잃기 때문이다.
+
+코드로 그리는 `build_expedition_walker.py`도 같은 자리에서 비교했다. 얼굴과
+비례는 그쪽이 더 예뻤지만 옆·뒤가 전부 `큰 흰 머리`였고 다리가 없었다. 가장
+비슷한 두 방향의 픽셀 차이가 502 대 595. 그래서 뽑은 그림 쪽을 쓴다.
+
+### 받는 것
+
+| 파일 | 크기 | 내용 |
+|---|---|---|
+| `walk-down.png` | 288 × 120 | 정면(카메라 쪽으로 걸어옴) 3프레임 |
+| `walk-left.png` | 288 × 120 | 왼쪽 옆모습 3프레임 |
+| `walk-right.png` | 288 × 120 | 오른쪽 옆모습 3프레임 |
+| `walk-up.png` | 288 × 120 | 뒷모습 3프레임 |
 
 ```powershell
-python design-system/scripts/import_expedition_walker.py <받은시트.png>
+python design-system/scripts/import_expedition_walker.py --strips walk-down.png walk-left.png walk-right.png walk-up.png
 ```
 
-### 규격 — 어기면 코드가 어긋난다
+### 네 프롬프트에 공통으로 들어가는 것
 
-* 시트 **288 × 480**, 한 칸 **96 × 120**, 배경 투명.
-* 가로 3칸 = 왼발·선 자세·오른발. 코드가 `1-2-3-2`로 돌린다.
-* 세로 4칸 = **아래 · 왼쪽 · 오른쪽 · 위**. 다트의 `_WalkFacing` 순서다.
-* 오른쪽을 왼쪽의 반전으로 만들지 않는다 — 가방이 반대 어깨로 간다.
-* 발은 칸 아래에서 12px 위, 머리 위로 4px 이상 남긴다.
+각 프롬프트에 이미 포함돼 있다. 따로 붙일 필요 없다.
 
-### 받은 뒤 무엇을 재나
+* 한 칸 96 × 120, 가로 3칸, 캔버스 288 × 120, 배경 투명.
+* 발은 칸 아래에서 12px 위, 잎은 위에서 4px 아래.
+* **다리가 보이고 프레임마다 앞뒤가 바뀐다.** v2가 여기서 무너졌다.
+* 색 24개 이하, 평평한 면은 3×3 픽셀 이상 한 색(점묘 금지).
 
-반입 스크립트가 자동으로 잰다. 통과 못 하면 안 들어간다.
-
-| 항목 | 한계 | 무엇을 잡나 |
-|---|---:|---|
-| 자글거림 | 0.16 | 점묘·디더가 섞인 그림 |
-| 튀는 점 | 0.002 | 면 위에 홀로 튀는 픽셀 |
-| 칸 규격 | — | 빈 칸, 위아래 잘림 |
-
-통과하면 아틀라스와 **같은 방식으로** 굽는다 — 24칸 격자로 낮추고, 색 스물넷에
-맞추고, 알파를 0/255로 끊는다. 그래야 발밑 타일과 한 세계로 읽힌다.
-
-### 프롬프트
+### 정면 — 카메라 쪽으로 걸어온다 → `walk-down.png`
 
 ```
-A 4-direction walking sprite sheet for a top-down 2D RPG, in Nintendo DS era pixel art.
+A 3-frame walking animation strip for a top-down 2D RPG character, in
+Nintendo DS era pixel art.
 
-CHARACTER: a small sprout child. A round pale-cream head with three green leaves
-growing from the crown, two dark dot eyes and a small blush on each cheek. A
-moss-green hooded cloak over a terracotta pot-shaped body, short sturdy legs in
-dark green boots, a tan leather satchel worn on the LEFT hip.
+CHARACTER: a small sprout child, chibi proportions. A round pale-cream head with
+three green leaves growing from the crown, worn like a sprout. A moss-green
+hooded cloak over a small terracotta pot-shaped body. TWO SHORT LEGS in dark
+green boots are clearly visible below the pot. A tan leather satchel on a strap.
 
-SHEET LAYOUT: exactly 3 columns by 4 rows, 12 cells, each cell exactly 96 x 120
-pixels, total canvas exactly 288 x 480 pixels.
-Row 1 = facing the viewer, walking toward camera (face visible).
-Row 2 = facing left, side profile.
-Row 3 = facing right, side profile.
-Row 4 = facing away, back view (no face, leaves and satchel visible).
-Within each row: column 1 = left foot forward, column 2 = both feet together
-standing, column 3 = right foot forward. The head bobs down one pixel on the two
-stepping frames.
+VIEW: the character faces the viewer straight on. Both eyes visible as dark dots,
+a small blush on each cheek, a tiny mouth. The satchel hangs at the character's
+left hip, so it appears on the RIGHT side of the image.
 
-CONSISTENCY: the same character in all 12 cells — identical height, identical
-colors, identical proportions, standing on the same ground line. The satchel is
-on the character's left hip, so it is visible in the left-profile row and hidden
-in the right-profile row. Do not mirror one profile to produce the other.
+THE THREE FRAMES ARE A WALK CYCLE, seen from the front:
+Frame 1 — LEFT leg is forward and clearly lower, right leg is back and higher.
+          The whole body sits one pixel lower than frame 2.
+Frame 2 — standing, both legs together and level.
+Frame 3 — RIGHT leg is forward and clearly lower, left leg is back and higher.
+          The whole body sits one pixel lower than frame 2.
+The leg positions must be obviously different between the three frames — this is
+the point of the sheet. Do not draw three near-identical poses.
 
-FOOTING: the feet rest 12 pixels above the bottom edge of each cell. The leaves
-stop at least 4 pixels below the top edge. Nothing is cut off by any cell edge.
+CANVAS: exactly 288 x 120 pixels, 3 cells of exactly 96 x 120 side by side.
+Transparent background.
+
+FOOTING: in every frame the feet rest 12 pixels above the bottom edge, and the
+leaves stop at least 4 pixels below the top edge. Nothing is cut off.
 
 STYLE: true pixel art drawn on a coarse grid. Hard-edged pixels. Flat cel shading
-with a single light source from the upper left: one base tone, one shadow tone,
-one highlight tone per material. A dark brown outline around the silhouette.
-At most 24 colors in the entire sheet.
+with one light source from the upper left: one base tone, one shadow tone, one
+highlight tone per material. A dark brown outline around the silhouette. At most
+24 colors in the whole image.
 
-CRITICAL — the single most common failure to avoid: DO NOT stipple. Every flat
-area must be one solid unbroken color across at least a 3 x 3 pixel block. No
-dithering, no checkerboard patterns, no noise, no grain, no speckle, no scattered
-single pixels of a different shade inside a flat area, no gradients, no soft
-shading, no anti-aliasing, no blur, no glow, no JPEG-like artifacts. If a surface
-would be shaded, use a hard-edged block of a second flat tone, never a scatter of
-mixed pixels.
+CRITICAL — the most common failure to avoid: DO NOT stipple. Every flat area must
+be one solid unbroken color across at least a 3 x 3 pixel block. No dithering, no
+checkerboard, no noise, no grain, no speckle, no scattered single pixels of a
+different shade inside a flat area, no gradients, no soft shading, no
+anti-aliasing, no blur, no glow. If a surface needs shading, use a hard-edged
+block of a second flat tone, never a scatter of mixed pixels.
 
-BACKGROUND: fully transparent. No checker pattern, no white fill, no color fringe
-on the edges, no grid lines, no cell borders, no labels, no captions, no
-watermark, no drop shadow outside the character.
+BACKGROUND: fully transparent. No checker pattern, no white fill, no color fringe,
+no grid lines, no cell borders, no labels, no captions, no watermark, no drop
+shadow on the ground.
+```
+
+### 왼쪽 옆모습 → `walk-left.png`
+
+```
+A 3-frame walking animation strip for a top-down 2D RPG character, in
+Nintendo DS era pixel art.
+
+CHARACTER: a small sprout child, chibi proportions. A round pale-cream head with
+three green leaves growing from the crown, worn like a sprout. A moss-green
+hooded cloak over a small terracotta pot-shaped body. TWO SHORT LEGS in dark
+green boots are clearly visible below the pot. A tan leather satchel on a strap.
+
+VIEW: a TRUE SIDE PROFILE facing LEFT. The head is turned fully sideways: the
+nose and the tiny mouth point LEFT, off the left edge of the head. Only ONE eye is
+visible. The body is seen edge-on and is clearly NARROWER than a front view. The
+hood falls behind the head, toward the right of the image. The satchel is on the
+character's left hip, which is the side nearest the viewer, so it IS visible,
+hanging low on the LEFT half of the body.
+
+THE THREE FRAMES ARE A WALK CYCLE, seen from the side:
+Frame 1 — the near leg swings FORWARD (toward the left of the image), the far leg
+          trails BACK; a clear gap between the two legs.
+Frame 2 — standing, legs together directly under the body.
+Frame 3 — the near leg swings BACK, the far leg reaches FORWARD; again a clear gap.
+The two legs must visibly swap places across the frames. Do not draw three
+near-identical poses.
+
+CANVAS: exactly 288 x 120 pixels, 3 cells of exactly 96 x 120 side by side.
+Transparent background.
+
+FOOTING: in every frame the feet rest 12 pixels above the bottom edge, and the
+leaves stop at least 4 pixels below the top edge. Nothing is cut off.
+
+STYLE: true pixel art drawn on a coarse grid. Hard-edged pixels. Flat cel shading
+with one light source from the upper left: one base tone, one shadow tone, one
+highlight tone per material. A dark brown outline around the silhouette. At most
+24 colors in the whole image.
+
+CRITICAL — the most common failure to avoid: DO NOT stipple. Every flat area must
+be one solid unbroken color across at least a 3 x 3 pixel block. No dithering, no
+checkerboard, no noise, no grain, no speckle, no scattered single pixels of a
+different shade inside a flat area, no gradients, no soft shading, no
+anti-aliasing, no blur, no glow. If a surface needs shading, use a hard-edged
+block of a second flat tone, never a scatter of mixed pixels.
+
+BACKGROUND: fully transparent. No checker pattern, no white fill, no color fringe,
+no grid lines, no cell borders, no labels, no captions, no watermark, no drop
+shadow on the ground.
+```
+
+### 오른쪽 옆모습 → `walk-right.png`
+
+```
+A 3-frame walking animation strip for a top-down 2D RPG character, in
+Nintendo DS era pixel art.
+
+CHARACTER: a small sprout child, chibi proportions. A round pale-cream head with
+three green leaves growing from the crown, worn like a sprout. A moss-green
+hooded cloak over a small terracotta pot-shaped body. TWO SHORT LEGS in dark
+green boots are clearly visible below the pot. A tan leather satchel on a strap.
+
+VIEW: a TRUE SIDE PROFILE facing RIGHT. The head is turned fully sideways: the
+nose and the tiny mouth point RIGHT, off the right edge of the head. Only ONE eye
+is visible. The body is seen edge-on and is clearly NARROWER than a front view.
+The hood falls behind the head, toward the left of the image. The satchel is on
+the character's left hip, which is the FAR side from the viewer, so it is HIDDEN —
+only the thin strap crosses the shoulder. Do not draw the satchel bag itself.
+
+THE THREE FRAMES ARE A WALK CYCLE, seen from the side:
+Frame 1 — the near leg swings FORWARD (toward the right of the image), the far leg
+          trails BACK; a clear gap between the two legs.
+Frame 2 — standing, legs together directly under the body.
+Frame 3 — the near leg swings BACK, the far leg reaches FORWARD; again a clear gap.
+The two legs must visibly swap places across the frames. Do not draw three
+near-identical poses.
+
+This image must NOT be a mirror of the left-facing sheet: there the satchel bag is
+visible, here only the strap is.
+
+CANVAS: exactly 288 x 120 pixels, 3 cells of exactly 96 x 120 side by side.
+Transparent background.
+
+FOOTING: in every frame the feet rest 12 pixels above the bottom edge, and the
+leaves stop at least 4 pixels below the top edge. Nothing is cut off.
+
+STYLE: true pixel art drawn on a coarse grid. Hard-edged pixels. Flat cel shading
+with one light source from the upper left: one base tone, one shadow tone, one
+highlight tone per material. A dark brown outline around the silhouette. At most
+24 colors in the whole image.
+
+CRITICAL — the most common failure to avoid: DO NOT stipple. Every flat area must
+be one solid unbroken color across at least a 3 x 3 pixel block. No dithering, no
+checkerboard, no noise, no grain, no speckle, no scattered single pixels of a
+different shade inside a flat area, no gradients, no soft shading, no
+anti-aliasing, no blur, no glow. If a surface needs shading, use a hard-edged
+block of a second flat tone, never a scatter of mixed pixels.
+
+BACKGROUND: fully transparent. No checker pattern, no white fill, no color fringe,
+no grid lines, no cell borders, no labels, no captions, no watermark, no drop
+shadow on the ground.
+```
+
+### 뒷모습 — 카메라에서 멀어진다 → `walk-up.png`
+
+```
+A 3-frame walking animation strip for a top-down 2D RPG character, in
+Nintendo DS era pixel art.
+
+CHARACTER: a small sprout child, chibi proportions. A round pale-cream head with
+three green leaves growing from the crown, worn like a sprout. A moss-green
+hooded cloak over a small terracotta pot-shaped body. TWO SHORT LEGS in dark
+green boots are clearly visible below the pot. A tan leather satchel on a strap.
+
+VIEW: the BACK of the character, walking away from the camera. NO face at all —
+no eyes, no mouth, no blush. What is visible is the back of the pale-cream head
+and the back of the moss-green hood, which lies flat against the shoulders. The
+three leaves rise from the crown and are seen from behind. The satchel strap
+crosses the back diagonally, and the bag itself hangs at the character's left hip,
+which from behind appears on the LEFT side of the image.
+
+THE THREE FRAMES ARE A WALK CYCLE, seen from behind:
+Frame 1 — LEFT leg is forward (partly hidden by the body), right leg is back and
+          clearly visible. The whole body sits one pixel lower than frame 2.
+Frame 2 — standing, both legs together and level.
+Frame 3 — RIGHT leg is forward, left leg is back and clearly visible. The whole
+          body sits one pixel lower than frame 2.
+The leg positions must be obviously different between the three frames.
+
+CANVAS: exactly 288 x 120 pixels, 3 cells of exactly 96 x 120 side by side.
+Transparent background.
+
+FOOTING: in every frame the feet rest 12 pixels above the bottom edge, and the
+leaves stop at least 4 pixels below the top edge. Nothing is cut off.
+
+STYLE: true pixel art drawn on a coarse grid. Hard-edged pixels. Flat cel shading
+with one light source from the upper left: one base tone, one shadow tone, one
+highlight tone per material. A dark brown outline around the silhouette. At most
+24 colors in the whole image.
+
+CRITICAL — the most common failure to avoid: DO NOT stipple. Every flat area must
+be one solid unbroken color across at least a 3 x 3 pixel block. No dithering, no
+checkerboard, no noise, no grain, no speckle, no scattered single pixels of a
+different shade inside a flat area, no gradients, no soft shading, no
+anti-aliasing, no blur, no glow. If a surface needs shading, use a hard-edged
+block of a second flat tone, never a scatter of mixed pixels.
+
+BACKGROUND: fully transparent. No checker pattern, no white fill, no color fringe,
+no grid lines, no cell borders, no labels, no captions, no watermark, no drop
+shadow on the ground.
 ```

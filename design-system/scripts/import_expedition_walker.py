@@ -1,7 +1,8 @@
 """생성한 걷기 시트를 검수하고 앱 규격으로 들여온다.
 
-지금 들어 있는 `expedition-walker-v1.png`는 `build_expedition_walker.py`가 도형을
-겹쳐 만든 **자리표시**다. 진짜 도트를 뽑아 오면 이 스크립트로 갈아 끼운다.
+앱에 들어가는 `expedition-walker-v1.png`를 만드는 곳이 여기다. 코드로 그리는
+`build_expedition_walker.py`는 대체본으로 물러났다 — 게임 배율에서 방향이 구분되지
+않고 다리가 없어서다.
 
 받은 그림을 바로 넣지 않는다. 생성 이미지에서 반복해 나오는 결함이 있고, 그게
 그대로 들어가면 화면에서만 티가 난다. 그래서 넣기 전에 수치로 잰다.
@@ -16,9 +17,17 @@
 검사를 통과하면 아틀라스와 **같은 방식으로** 굽는다(24칸 격자, 알파 1비트,
 팔레트 고정). 그래야 발밑과 캐릭터가 한 세계로 읽힌다.
 
+한 장에 12칸을 요구하면 일관성이 무너진다. **방향마다 한 장씩** 받아 여기서
+잇는다. 실측으로도 그 편이 낫다 - 게임 배율에서 가장 비슷한 두 방향의 픽셀
+차이가 502에서 595로 벌어졌고, 무엇보다 다리가 생겨 걸음이 읽힌다.
+
 사용법:
+    # 방향마다 288×120 띠 네 장 (아래·왼쪽·오른쪽·위 순서)
+    python import_expedition_walker.py --strips 아래.png 왼쪽.png 오른쪽.png 위.png
+
+    # 한 장짜리 288×480 시트
     python import_expedition_walker.py <받은시트.png>
-    python import_expedition_walker.py <받은시트.png> --check   # 재지 않고 검사만
+    python import_expedition_walker.py <받은시트.png> --check   # 검사만
 """
 
 from __future__ import annotations
@@ -210,14 +219,46 @@ def bake(sheet: Image.Image) -> Image.Image:
     return out
 
 
+#: 방향 순서. 다트의 `_WalkFacing`과 같아야 한다.
+FACINGS = ("아래", "왼쪽", "오른쪽", "위")
+
+
+def stitch(paths: list[Path]) -> Image.Image:
+    """방향별 띠 넉 장을 한 시트로 잇는다."""
+
+    sheet = Image.new("RGBA", SHEET, (0, 0, 0, 0))
+    for row, path in enumerate(paths):
+        with Image.open(path) as opened:
+            strip = opened.convert("RGBA")
+        if strip.size != (COLUMNS * CELL_W, CELL_H):
+            raise SystemExit(
+                f"{FACINGS[row]} 띠가 {strip.size}입니다. "
+                f"{(COLUMNS * CELL_W, CELL_H)}이어야 합니다"
+            )
+        sheet.paste(strip, (0, row * CELL_H))
+    return sheet
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("source", type=Path)
+    parser.add_argument("source", type=Path, nargs="*")
+    parser.add_argument(
+        "--strips",
+        type=Path,
+        nargs=4,
+        metavar=("아래", "왼쪽", "오른쪽", "위"),
+        help="방향별 288×120 띠 네 장",
+    )
     parser.add_argument("--check", action="store_true", help="검사만 하고 쓰지 않는다")
     args = parser.parse_args()
 
-    with Image.open(args.source) as opened:
-        sheet = opened.convert("RGBA")
+    if args.strips:
+        sheet = stitch(list(args.strips))
+    elif args.source:
+        with Image.open(args.source[0]) as opened:
+            sheet = opened.convert("RGBA")
+    else:
+        parser.error("시트 한 장이나 --strips 넉 장이 필요합니다")
 
     problems = verify(sheet)
     metrics = measure(sheet)
