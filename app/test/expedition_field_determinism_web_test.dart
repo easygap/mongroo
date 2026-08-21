@@ -22,10 +22,10 @@ import 'package:mongroo/features/expedition/presentation/expedition_screen.dart'
 void main() {
   test('출발 칸이 네이티브와 같다', () {
     const expected = <String, List<int>>{
-      'moss_archive': <int>[8, 33],
-      'echo_well': <int>[8, 33],
-      'starlight_seed_vault': <int>[8, 33],
-      'heartwood_observatory': <int>[9, 33],
+      'moss_archive': <int>[9, 44],
+      'echo_well': <int>[9, 44],
+      'starlight_seed_vault': <int>[9, 44],
+      'heartwood_observatory': <int>[10, 44],
     };
     expected.forEach((region, spawn) {
       final diagnostics = expeditionTileWorldTravelDiagnostics(region, 1);

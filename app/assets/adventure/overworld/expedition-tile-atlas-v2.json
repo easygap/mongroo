@@ -516,6 +516,18 @@
         "y": 1002,
         "w": 96,
         "h": 96
+      },
+      "pillar": {
+        "x": 502,
+        "y": 1002,
+        "w": 96,
+        "h": 96
+      },
+      "crystal": {
+        "x": 602,
+        "y": 1002,
+        "w": 96,
+        "h": 96
       }
     },
     "echo_well": {
@@ -1025,6 +1037,18 @@
       },
       "root": {
         "x": 402,
+        "y": 2102,
+        "w": 96,
+        "h": 96
+      },
+      "pillar": {
+        "x": 502,
+        "y": 2102,
+        "w": 96,
+        "h": 96
+      },
+      "crystal": {
+        "x": 602,
         "y": 2102,
         "w": 96,
         "h": 96
@@ -1540,6 +1564,18 @@
         "y": 3202,
         "w": 96,
         "h": 96
+      },
+      "pillar": {
+        "x": 502,
+        "y": 3202,
+        "w": 96,
+        "h": 96
+      },
+      "crystal": {
+        "x": 602,
+        "y": 3202,
+        "w": 96,
+        "h": 96
       }
     },
     "heartwood_observatory": {
@@ -2052,6 +2088,18 @@
         "y": 4302,
         "w": 96,
         "h": 96
+      },
+      "pillar": {
+        "x": 502,
+        "y": 4302,
+        "w": 96,
+        "h": 96
+      },
+      "crystal": {
+        "x": 602,
+        "y": 4302,
+        "w": 96,
+        "h": 96
       }
     }
   },
@@ -2082,16 +2130,16 @@
     "prop_alpha_min": 0,
     "high_frequency_limit": 0.1,
     "isolated_speck_limit": 0.0005,
-    "max_phase_mean_spread": 3.887,
+    "max_phase_mean_spread": 3.3,
     "phase_mean_spread_limit": 6.0,
-    "min_material_luma_gap": 34.8,
+    "min_material_luma_gap": 35.5,
     "material_luma_gap_limit": 25.0
   },
   "atlas": {
     "path": "assets/adventure/overworld/expedition-tile-atlas-v2.png",
     "width": 800,
     "height": 4400,
-    "sha256": "5f7b88ed47fd08faea14e7b7742af1b95797614f7cfa0b0f8bd4e54b18088e5b",
+    "sha256": "fbc4f58bce8f053536cae2cb1b0dbcedac8a562763bad5c0f915f5b2cdb68410",
     "alpha_extrema": [
       0,
       255

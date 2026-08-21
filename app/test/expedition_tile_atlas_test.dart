@@ -26,7 +26,7 @@ void main() {
     }
   });
 
-  test('출시용 도트 아틀라스와 4지역 85종 스프라이트 표가 번들에서 열린다', () async {
+  test('출시용 도트 아틀라스와 4지역 87종 스프라이트 표가 번들에서 열린다', () async {
     final manifestText = await rootBundle.loadString(
       'assets/adventure/overworld/expedition-tile-atlas-v2.json',
     );
@@ -41,7 +41,11 @@ void main() {
     expect(regions, hasLength(4));
     for (final sprites in regions.values) {
       final entries = sprites as Map<String, dynamic>;
-      expect(entries, hasLength(85));
+      // 85종에 파생 조형물 둘(석주·기억 결정)을 더했다. 패딩 88 안이라
+      // 아틀라스 크기는 그대로다.
+      expect(entries, hasLength(87));
+      expect(entries.containsKey('pillar'), isTrue);
+      expect(entries.containsKey('crystal'), isTrue);
       // 오토타일에 필요한 조각이 다 있어야 한다. 하나라도 빠지면 그 자리에
       // 아무것도 안 그려져 경계가 다시 직선으로 잘린다.
       for (final key in <String>['n', 'e', 's', 'w', 'ne', 'nw', 'se', 'sw']) {
@@ -122,14 +126,16 @@ void main() {
   test('월드는 8x8 청크와 정적·상호작용·배우 레이어로 분리된다', () {
     final diagnostics = expeditionTileWorldChunkDiagnostics('moss_archive', 1);
     expect(diagnostics['chunkSize'], 8);
-    expect(diagnostics['chunkCount'], 35);
+    // 72×52 격자라 9×7 청크다.
+    expect(diagnostics['chunkCount'], 63);
     expect(diagnostics['maxCellsPerChunk'], lessThanOrEqualTo(64));
     expect(diagnostics['staticScenery'], greaterThan(0));
     expect(diagnostics['interactables'], greaterThan(0));
-    // 배우는 기록지기와 길 잃은 기록원 둘이다. 엉킴은 수호 스테이지에만
-    // 선다 - 사건 스테이지에서 붙으면 열리는 것이 전투가 아니라 엉뚱한
-    // 사건이 되기 때문이다.
-    expect(diagnostics['actors'], 2);
+    // 배우는 기록지기·물가 기록원·길 잃은 기록원·정원지기·견습 기록원
+    // 다섯이다. 엉킴은 수호 스테이지에만 선다 - 사건 스테이지에서 붙으면
+    // 열리는 것이 전투가 아니라 엉뚱한 사건이 되기 때문이다. 길 복구가
+    // 사람을 치우면 이 수가 깨진다 — 실제로 세 지역에서 그랬다.
+    expect(diagnostics['actors'], 5);
     expect(diagnostics['visibleChunks'], lessThan(diagnostics['chunkCount']!));
 
     final guarded = expeditionTileWorldChunkDiagnostics(
@@ -137,7 +143,21 @@ void main() {
       1,
       withGuardian: true,
     );
-    expect(guarded['actors'], 3);
+    expect(guarded['actors'], 6);
+  });
+
+  test('길 복구가 어느 지역·어느 판에서도 기록원을 지우지 않는다', () {
+    for (final region in <String>[
+      'moss_archive',
+      'echo_well',
+      'starlight_seed_vault',
+      'heartwood_observatory',
+    ]) {
+      for (var stage = 1; stage <= 8; stage++) {
+        final chunk = expeditionTileWorldChunkDiagnostics(region, stage);
+        expect(chunk['actors'], 5, reason: '$region $stage장 기록원 수');
+      }
+    }
   });
 
   test('지형 생성기는 어느 플랫폼에서나 같은 땅을 만든다', () {
@@ -145,10 +165,10 @@ void main() {
     // `hash * 16777619`를 한 번에 곱한 것이었다 - dart2js에서 int는 double이라
     // 2^53을 넘으면 아래 비트가 날아간다. 값으로 못 박아 다시 흔들리면 잡는다.
     const expected = <String, List<int>>{
-      'moss_archive': <int>[8, 33],
-      'echo_well': <int>[8, 33],
-      'starlight_seed_vault': <int>[8, 33],
-      'heartwood_observatory': <int>[9, 33],
+      'moss_archive': <int>[9, 44],
+      'echo_well': <int>[9, 44],
+      'starlight_seed_vault': <int>[9, 44],
+      'heartwood_observatory': <int>[10, 44],
     };
     expected.forEach((region, spawn) {
       final diagnostics = expeditionTileWorldTravelDiagnostics(region, 1);
@@ -158,9 +178,10 @@ void main() {
   });
 
   test('한 판에 걸을 곳과 볼 것이 충분히 있다', () {
-    // 앞 판은 1260칸 격자에 바닥이 279칸(22%)뿐이었고, 상호작용할 수 있는
-    // 것이 스테이지 전체에 셋이었다. 넓어 보이지만 실제로는 방 하나를 돌다
-    // 나오는 것이었다. 다시 휑해지면 여기서 걸린다.
+    // 56×40 판은 바닥이 480칸 남짓에 상호작용 여덟이었다. 방마다 볼 것은
+    // 생겼지만 갈림길이 없어 `길을 고른다`가 없었다. 72×52로 넓히고 본길
+    // 열 방 + 곁가지 셋 + 순환 복도를 깐 지금의 바닥선이다(실측 최저
+    // 1076·23·47). 다시 휑해지면 여기서 걸린다.
     for (final region in <String>[
       'moss_archive',
       'echo_well',
@@ -171,17 +192,17 @@ void main() {
         final chunk = expeditionTileWorldChunkDiagnostics(region, stage);
         expect(
           chunk['walkable'],
-          greaterThanOrEqualTo(480),
+          greaterThanOrEqualTo(1000),
           reason: '$region $stage장 바닥 칸',
         );
         expect(
           chunk['interactables'],
-          greaterThanOrEqualTo(8),
+          greaterThanOrEqualTo(18),
           reason: '$region $stage장 상호작용',
         );
         expect(
           chunk['staticScenery'],
-          greaterThanOrEqualTo(12),
+          greaterThanOrEqualTo(40),
           reason: '$region $stage장 조형물',
         );
       }

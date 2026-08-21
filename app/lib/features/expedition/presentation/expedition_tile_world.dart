@@ -332,14 +332,21 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
     final line = switch (object.kind) {
       _TileObjectKind.npc => object.speech ??
           '여기 기록은 아직 정리가 안 됐어요. 조심해서 지나가세요.',
+      // 상자·조각도 자리마다 다른 말을 할 수 있다. 같은 문장만 돌아오면
+      // 세 번째 상자부터는 열 이유가 사라진다.
       _TileObjectKind.chest => taken
           ? '이미 열어 본 기록함이에요. 안은 비어 있어요.'
-          : '기록함을 열었어요. 눅눅한 종이 냄새가 올라와요.',
-      _TileObjectKind.item =>
-        taken ? '아까 주운 자리예요.' : '기억 조각을 주웠어요. 손끝이 따뜻해져요.',
+          : object.speech ?? '기록함을 열었어요. 눅눅한 종이 냄새가 올라와요.',
+      _TileObjectKind.item => taken
+          ? '아까 주운 자리예요.'
+          : object.speech ?? '기억 조각을 주웠어요. 손끝이 따뜻해져요.',
       _TileObjectKind.shelf => '서가가 기울어 있어요. 책등의 글씨는 지워졌어요.',
       _TileObjectKind.altar => '제단이 희미하게 빛나요. 여기서 다음 장면이 열려요.',
       _TileObjectKind.monster => '엉킴과 눈이 마주쳤어요. 여기서 붙습니다.',
+      _TileObjectKind.pillar =>
+        object.speech ?? '석주에 오래된 문양이 남아 있어요. 이끼가 홈을 따라 자랐어요.',
+      _TileObjectKind.crystal => object.speech ??
+          '기억 결정이 은은하게 울려요. 가까이 서면 오래된 장면이 스쳐요.',
       _ => object.label,
     };
     HapticFeedback.selectionClick();
@@ -862,6 +869,12 @@ enum _TileObjectKind {
   monster,
   altar,
   root,
+
+  /// 돌기둥. 벽과 같은 돌 켜에서 파생한 조형물이라 같은 건물의 부재로 읽힌다.
+  pillar,
+
+  /// 기억 결정. 홀로 서면 이정표, 여럿이 모이면 정원이 된다.
+  crystal,
 }
 
 enum _TileObjectLayer { staticScenery, interactable, actor }
@@ -895,11 +908,13 @@ class _TileObject {
   _TileObjectLayer get layer => switch (kind) {
         _TileObjectKind.shelf ||
         _TileObjectKind.lantern ||
-        _TileObjectKind.root =>
+        _TileObjectKind.root ||
+        _TileObjectKind.pillar =>
           _TileObjectLayer.staticScenery,
         _TileObjectKind.chest ||
         _TileObjectKind.item ||
-        _TileObjectKind.altar =>
+        _TileObjectKind.altar ||
+        _TileObjectKind.crystal =>
           _TileObjectLayer.interactable,
         _TileObjectKind.npc ||
         _TileObjectKind.monster =>
@@ -935,6 +950,8 @@ class _TileObject {
         _TileObjectKind.monster => Icons.warning_amber_rounded,
         _TileObjectKind.altar => Icons.auto_stories_rounded,
         _TileObjectKind.root => Icons.park_rounded,
+        _TileObjectKind.pillar => Icons.view_column_rounded,
+        _TileObjectKind.crystal => Icons.auto_awesome_rounded,
         _ => Icons.place_rounded,
       };
 
@@ -945,6 +962,8 @@ class _TileObject {
         _TileObjectKind.monster => const Color(0xFFFFA08F),
         _TileObjectKind.altar => const Color(0xFF9AE8F0),
         _TileObjectKind.root => const Color(0xFF91A55B),
+        _TileObjectKind.pillar => const Color(0xFFBFB9A6),
+        _TileObjectKind.crystal => const Color(0xFF9FE8FF),
         _ => const Color(0xFFD8D4C4),
       };
 }
@@ -1267,16 +1286,16 @@ class _TileField {
     }
     for (final chunk in _chunks) {
       for (final object in chunk.objects.where((object) => object.blocks)) {
+        // 제단과 결정은 빛으로 찍는다. 미니맵에서 빛나는 점이 곧 가 볼 곳이다.
+        final lit = object.kind == _TileObjectKind.altar ||
+            object.kind == _TileObjectKind.crystal;
         canvas.drawCircle(
           Offset(
             padding + object.position.dx * sx,
             padding + object.position.dy * sy,
           ),
-          object.kind == _TileObjectKind.altar ? 2.5 : 1.1,
-          Paint()
-            ..color = object.kind == _TileObjectKind.altar
-                ? palette.glow
-                : palette.voidColor,
+          object.kind == _TileObjectKind.altar ? 2.5 : (lit ? 1.6 : 1.1),
+          Paint()..color = lit ? palette.glow : palette.voidColor,
         );
       }
     }
@@ -1291,12 +1310,11 @@ class _TileField {
 
   /// 한 스테이지의 땅을 짓는다.
   ///
-  /// 앞 판은 42×30 평지에 물웅덩이 셋을 파고 물건을 손으로 찍어 둔 것이었다.
-  /// 넓지만 텅 비어서 `던전 안`이 아니라 들판을 가로지르는 것으로 보였다.
-  ///
-  /// 이제는 **방과 복도**로 짓는다. 방 다섯을 출발점에서 제단까지 이어 놓고
-  /// 세 칸 폭 복도로 연결한 뒤, 걸을 수 있는 땅의 테두리에 벽을 세운다. 방마다
-  /// 벽을 따라 서가·등불을 앉히고 가운데에 상자·기록 조각을 둔다.
+  /// 방 여덟을 한 줄로 이은 판을 지나, 이제 **본길 열 방 + 곁가지 세 방**이다.
+  /// 순환 복도가 하나 있어 가운데에서 길을 고를 수 있고, 곁가지는 막다른
+  /// 데서 함·결정으로 끝난다. 방마다 성격이 다르다 — 주랑에는 석주가 두 줄로
+  /// 서고, 결정 정원에는 결정이 모여 자라고, 물뜰에는 못이 파여 있다. 벽 너머
+  /// 이끼 벌판에도 조형물을 흩어 화면 어디에도 빈 데가 없게 한다.
   ///
   /// 방 모양은 네 귀퉁이를 무작위로 베어 낸다. 대칭 직사각형은 아마추어 맵의
   /// 첫 번째 징후이고, 모서리만 어긋나도 `지어진 곳`으로 보인다.
@@ -1308,10 +1326,12 @@ class _TileField {
     int stageNo, {
     bool withGuardian = false,
   }) {
-    // 42×30이었다. 넓어 보였지만 걸을 수 있는 바닥이 279칸(22%)뿐이라 실제로
-    // 다닐 곳은 17×17 방 하나 크기였다. 격자를 키우고 방을 여덟으로 늘린다.
-    const width = 56;
-    const height = 40;
+    // 56×40에 방 여덟을 한 줄로 이은 판이었다. 방마다 볼 것은 생겼지만
+    // 갈림길이 없어서 `길을 고른다`가 없었고, 본길 밖은 통째로 빈 이끼였다.
+    // 격자를 키우고 본길 열 방에 곁가지 방 셋과 순환 복도 하나를 더한다.
+    const width = 72;
+    const height = 52;
+    const mainRooms = 10;
     final palette = _TilePalette.forRegion(regionCode);
     final random = _FieldRandom(regionCode, stageNo);
 
@@ -1323,27 +1343,39 @@ class _TileField {
 
     // ── 방 자리 ───────────────────────────────────────────────────────────
     //
-    // 왼쪽 아래에서 오른쪽 위로 흐르게 둔다. 출발점과 제단이 그 양 끝이다.
-    // 방끼리 두 칸은 떨어져야 한 덩어리로 안 붙는다. 처음에 (7,24)·(15,17)·
-    // (22,22)로 뒀더니 왼쪽 아래 셋이 붙어 큰 홀이 됐다.
+    // 앞 열 개가 본길이다. 왼쪽 아래에서 오른쪽 위로 흐르되 두 번 크게
+    // 되꺾는다 — 곧게만 이으면 복도가 그냥 통로가 되고, 되꺾여야 `어디까지
+    // 왔지`가 생긴다. 방끼리 두 칸은 떨어져야 한 덩어리로 안 붙는다.
     //
-    // 왼쪽 아래에서 오른쪽 위로 흐르되 한 번씩 되꺾는다. 곧게만 이으면 복도가
-    // 그냥 통로가 되고, 되꺾여야 `어디까지 왔지`가 생긴다.
+    // 뒤 셋은 곁가지다. 본길 방 하나에서 갈라져 나가 막다른 데서 끝난다.
+    // 굳이 안 가도 되지만 가면 함과 결정이 있다. 갈림길이 없는 던전은
+    // 탐험이 아니라 이동이다.
     const anchors = <Offset>[
-      Offset(8, 34),
-      Offset(18, 31),
-      Offset(14, 21),
-      Offset(25, 16),
-      Offset(34, 23),
-      Offset(43, 30),
-      Offset(48, 19),
-      Offset(49, 8),
+      Offset(9, 44),
+      Offset(21, 40),
+      Offset(15, 28),
+      Offset(28, 24),
+      Offset(24, 11),
+      Offset(38, 8),
+      Offset(45, 20),
+      Offset(58, 24),
+      Offset(63, 34),
+      Offset(64, 12),
+      // ── 곁가지: 보물 곁방, 명상 곁방, 침수 곁방 ─────────────────────────
+      Offset(6, 18),
+      Offset(48, 5),
+      Offset(52, 44),
     ];
+    // 곁가지가 어느 본길 방에서 갈라지는가.
+    const branchParents = <int>[2, 5, 8];
     final rooms = <Rect>[];
-    for (final anchor in anchors) {
-      // 방마다 크기를 벌린다. 다 비슷하면 여덟 개가 한 방처럼 느껴진다.
-      final w = 8 + random.next(3) * 2;
-      final h = 6 + random.next(3);
+    for (var index = 0; index < anchors.length; index++) {
+      final anchor = anchors[index];
+      // 방마다 크기를 벌린다. 다 비슷하면 열셋이 한 방처럼 느껴진다.
+      // 곁가지는 본길보다 작아야 `곁`으로 읽힌다.
+      final branch = index >= mainRooms;
+      final w = branch ? 7 + random.next(2) * 2 : 10 + random.next(3) * 2;
+      final h = branch ? 6 + random.next(2) : 7 + random.next(3);
       final left = (anchor.dx - w / 2).round().clamp(3, width - 3 - w);
       final top = (anchor.dy - h / 2).round().clamp(3, height - 3 - h);
       rooms.add(
@@ -1380,11 +1412,21 @@ class _TileField {
 
     // ── 복도 ──────────────────────────────────────────────────────────────
     //
-    // 폭을 구간마다 바꾼다. 전부 세 칸이면 어디를 걷든 같은 느낌이라 길이
+    // 본길 아홉 구간 + 곁가지 셋 + 순환 하나. 순환 복도(3↔6)가 있어야 위로
+    // 도는 서고 길과 가운데를 가로지르는 길 중에 **고를 수 있다.** 한 줄
+    // 던전과 지어진 던전을 가르는 것이 이 선 하나다.
+    //
+    // 폭은 구간마다 바꾼다. 전부 세 칸이면 어디를 걷든 같은 느낌이라 길이
     // 길기만 하고 기억에 안 남는다. 좁아졌다 넓어지면 리듬이 생긴다.
-    for (var index = 0; index < rooms.length - 1; index++) {
-      final from = rooms[index].center;
-      final to = rooms[index + 1].center;
+    final links = <(int, int)>[
+      for (var index = 0; index < mainRooms - 1; index++) (index, index + 1),
+      (3, 6),
+      for (var index = 0; index < branchParents.length; index++)
+        (branchParents[index], mainRooms + index),
+    ];
+    for (final link in links) {
+      final from = rooms[link.$1].center;
+      final to = rooms[link.$2].center;
       final half = random.next(2);
       final horizontalFirst = random.next(2) == 0;
       final turn =
@@ -1411,16 +1453,17 @@ class _TileField {
       }
     }
 
-    // ── 기둥 ──────────────────────────────────────────────────────────────
+    // ── 지형 기둥 ─────────────────────────────────────────────────────────
     //
-    // 큰 방이 텅 빈 직사각형이면 `지나가는 곳`이지 `있는 곳`이 아니다. 기둥
-    // 몇 개만 세워도 시선이 걸리고 걷는 길이 생긴다. 아마추어 맵의 첫 징후가
-    // 빈 방이라는 지적은 여기에 대한 것이다.
+    // 큰 방이 텅 빈 직사각형이면 `지나가는 곳`이지 `있는 곳`이 아니다. 벽
+    // 재질 기둥 몇 개만 박아도 시선이 걸리고 걷는 길이 생긴다.
     //
-    // 출발 방과 제단 방은 건드리지 않는다 - 첫 걸음과 마지막 걸음이 막히면
-    // 조작이 고장 난 것처럼 보인다. 길이 끊기지 않는지는 검사가 지킨다
+    // 출발 방(0)과 제단 방(9)은 건드리지 않는다 - 첫 걸음과 마지막 걸음이
+    // 막히면 조작이 고장 난 것처럼 보인다. 주랑 방(3)은 석주 조형물이 서고,
+    // 곁가지는 좁아서 뺀다. 길이 끊기지 않는지는 검사가 지킨다
     // (`expeditionTileWorldHasRoute`).
-    for (var index = 1; index < rooms.length - 1; index++) {
+    for (var index = 1; index < mainRooms - 1; index++) {
+      if (index == 3) continue;
       final room = rooms[index];
       if (room.width < 8 || room.height < 6) continue;
       final left = room.left.round();
@@ -1440,15 +1483,15 @@ class _TileField {
       }
     }
 
-    // ── 곁방 ────────────────────────────────────────────────────────────────
+    // ── 복도 골방 ───────────────────────────────────────────────────────────
     //
-    // 복도 중간에서 갈라져 나가 막다른 데서 끝난다. 굳이 안 가도 되지만 가면
-    // 함이 있다. 지나가는 길만 있으면 탐험이 아니라 이동이다.
+    // 복도 중간에서 세 칸짜리 홈이 파여 막다른 데서 끝난다. 곁가지 방보다
+    // 작은, 지나가다 흘낏 보고 줍는 자리다.
     //
     // **벽과 지형을 계산하기 전에** 판다. 나중에 파면 걷기 표만 바뀌고 그림은
     // 벽으로 남아, 지나갈 수 있다고 판단하면서 실제로는 막힌 칸이 생긴다.
     final sideChests = <List<int>>[];
-    for (var index = 1; index < rooms.length - 1; index += 3) {
+    for (var index = 1; index < mainRooms - 1; index += 3) {
       final from = rooms[index].center;
       final to = rooms[index + 1].center;
       final midX = ((from.dx + to.dx) / 2).round();
@@ -1479,9 +1522,12 @@ class _TileField {
       }
     }
     for (final pool in <List<int>>[
-      <int>[5, 6, 3],
-      <int>[34, 25, 3],
-      <int>[20, 4, 2],
+      <int>[6, 7, 3],
+      <int>[26, 4, 2],
+      <int>[36, 30, 3],
+      <int>[66, 46, 3],
+      <int>[34, 47, 3],
+      <int>[69, 26, 2],
     ]) {
       final radius = pool[2];
       for (var y = pool[1] - radius; y <= pool[1] + radius; y++) {
@@ -1646,21 +1692,23 @@ class _TileField {
           collisionSize: const Size(.4, .3),
           footOffset: 1.9,
         );
-    void chest(int x, int y, String label) => placeNear(
+    void chest(int x, int y, String label, {String? speech}) => placeNear(
           x,
           y,
           kind: _TileObjectKind.chest,
           size: const Size(1.1, 1.05),
           label: label,
           collisionSize: const Size(.7, .34),
+          speech: speech,
         );
-    void shard(int x, int y, String label) => place(
+    void shard(int x, int y, String label, {String? speech}) => place(
           x,
           y,
           kind: _TileObjectKind.item,
           size: const Size(.55, .55),
           label: label,
           blocks: false,
+          speech: speech,
         );
     void root(int x, int y, {String label = '기억의 뿌리'}) => place(
           x,
@@ -1671,9 +1719,29 @@ class _TileField {
           collisionSize: const Size(1.35, .36),
           footOffset: 1.6,
         );
+    // 1.15×1.95칸. 세로 늘림이 1.7배로 뿌리와 같다 — 더 홀쭉하게 늘리면
+    // 도트가 세로줄로 읽혀 캐릭터와 다른 세계가 된다.
+    void pillar(int x, int y, {String label = '이끼 낀 석주'}) => place(
+          x,
+          y,
+          kind: _TileObjectKind.pillar,
+          size: const Size(1.15, 1.95),
+          label: label,
+          collisionSize: const Size(.52, .34),
+          footOffset: 1.9,
+        );
+    void crystal(int x, int y, String label, {String? speech}) => placeNear(
+          x,
+          y,
+          kind: _TileObjectKind.crystal,
+          size: const Size(1.15, 1.7),
+          label: label,
+          collisionSize: const Size(.6, .36),
+          speech: speech,
+        );
 
     final spawn = rooms.first.center;
-    final goal = rooms.last.center;
+    final goal = rooms[mainRooms - 1].center;
     for (var index = 0; index < rooms.length; index++) {
       final room = rooms[index];
       final left = room.left.round();
@@ -1684,11 +1752,15 @@ class _TileField {
       final centerY = room.center.dy.round();
 
       // 벽을 따라 늘어놓는다. 방 한가운데 흩뿌리면 지나다닐 수가 없다.
-      for (var x = left + 1; x <= right - 1; x += 2 + random.next(2)) {
-        if (random.next(4) == 0) {
-          lantern(x, top + 1);
-        } else {
-          shelf(x, top + 1);
+      // 주랑(3)과 결정 정원(8)은 뺀다 — 제 조형물이 서는 방에 서가까지
+      // 얹으면 무엇의 방인지 흐려진다.
+      if (index != 3 && index != 8) {
+        for (var x = left + 1; x <= right - 1; x += 2 + random.next(2)) {
+          if (random.next(4) == 0) {
+            lantern(x, top + 1);
+          } else {
+            shelf(x, top + 1);
+          }
         }
       }
 
@@ -1737,8 +1809,36 @@ class _TileField {
           shard(left + 2, bottom - 2, '흩어진 낱장');
           lantern(right - 1, bottom - 2);
 
-        // ── 엉킴이 웅크린 방. 수호 스테이지에만 선다 ──────────────────────
+        // ── 주랑. 석주가 두 줄로 서고 끝에 결정이 빛난다 ──────────────────
+        //
+        // 순환 복도가 갈라지는 방이라 지나는 사람이 가장 많다. 기둥 사이로
+        // 걷는 길이 곧 방의 정체라, 다른 꾸밈은 걷어 낸다.
         case 3:
+          for (var x = left + 2; x <= right - 2; x += 3) {
+            pillar(x, centerY - 2, label: '주랑의 석주');
+            pillar(x, centerY + 2, label: '주랑의 석주');
+          }
+          crystal(
+            right - 2,
+            centerY,
+            '주랑의 기억 결정',
+            speech: '석주 사이를 지나간 발소리가 결정 안에 겹겹이 쌓여 있어요.',
+          );
+          shard(left + 2, centerY, '닳은 주춧돌 조각');
+
+        // ── 서고. 서가를 줄줄이 세워 통로를 만든다 ────────────────────────
+        case 4:
+          for (var y = top + 3; y <= bottom - 2; y += 2) {
+            for (var x = left + 2; x <= right - 2; x += 3) {
+              shelf(x, y);
+            }
+          }
+          shard(right - 1, bottom - 1, '색이 바랜 표찰');
+          chest(left + 2, top + 3, '서고 구석의 함',
+              speech: '서가 뒤에 밀려 들어가 있던 함이에요. 먼지가 손가락만큼 쌓였어요.');
+
+        // ── 큰 홀. 엉킴이 웅크리거나, 등불이 홀을 밝힌다 ──────────────────
+        case 5:
           if (withGuardian) {
             placeNear(
               centerX,
@@ -1748,6 +1848,8 @@ class _TileField {
               label: '기록을 먹는 얽힘',
               collisionSize: const Size(.62, .38),
             );
+            lantern(left + 2, top + 3);
+            lantern(right - 2, top + 3);
           } else {
             // 엉킴이 없으면 텅 빈 방이 된다. 등불을 둘러 홀로 만든다.
             for (final spot in <List<int>>[
@@ -1762,7 +1864,7 @@ class _TileField {
           }
 
         // ── 물뜰. 방 안에 못을 파서 걷는 결을 바꾼다 ──────────────────────
-        case 4:
+        case 6:
           // 못은 **구석에** 판다. 복도는 방 중심으로 들어오므로 가운데를 파면
           // 길이 물에 잠겨 제단까지 못 간다(실제로 끊겼다). 중심을 지나는
           // 가로줄·세로줄도 비워 둬 물을 돌아갈 수 있게 한다.
@@ -1778,20 +1880,28 @@ class _TileField {
           }
           root(left + 2, top + 2);
           chest(left + 2, bottom - 2, '물가에 젖은 함');
-
-        // ── 서고. 서가를 줄줄이 세워 통로를 만든다 ────────────────────────
-        case 5:
-          for (var y = top + 3; y <= bottom - 2; y += 2) {
-            for (var x = left + 2; x <= right - 2; x += 3) {
-              shelf(x, y);
-            }
-          }
-          shard(right - 1, bottom - 1, '색이 바랜 표찰');
+          placeNear(
+            centerX - 2,
+            top + 2,
+            kind: _TileObjectKind.npc,
+            size: const Size(.8, 1.2),
+            label: '물가 기록원',
+            collisionSize: const Size(.44, .32),
+            speech: switch (regionCode) {
+              'echo_well' => '우물물이 여기까지 올라와요. 발소리가 두 번 들리면 한 번은 물속 것이에요.',
+              'starlight_seed_vault' =>
+                '물에 별빛이 고여요. 씨앗들이 목을 축이러 내려오곤 해요.',
+              'heartwood_observatory' =>
+                '이 못은 관측소가 목이 마를 때 판 거예요. 나무는 물을 기억하거든요.',
+              _ => '젖은 기록은 급히 넘기면 찢어져요. 물가에서는 천천히 걸어요.',
+            },
+          );
 
         // ── 폐허. 뿌리가 무너져 들어온 방 ─────────────────────────────────
-        case 6:
+        case 7:
           root(left + 2, centerY, label: '무너진 뿌리');
           root(right - 3, bottom - 2, label: '갈라진 뿌리');
+          pillar(right - 2, top + 2, label: '옛 석주');
           shard(centerX, top + 2, '떨어진 나이테');
           chest(centerX + 2, bottom - 2, '흙에 묻힌 함');
           placeNear(
@@ -1804,15 +1914,152 @@ class _TileField {
             speech: '여기서부터는 발밑이 무너져요. 벽을 짚고 가세요.',
           );
 
-        // ── 제단 방 ────────────────────────────────────────────────────────
-        default:
+        // ── 결정 정원. 결정이 모여 자라는 뜰 ──────────────────────────────
+        case 8:
+          crystal(
+            centerX - 2,
+            centerY - 1,
+            '큰 기억 결정',
+            speech: '어른 키만 한 결정이에요. 안쪽에서 빛이 숨처럼 오르내려요.',
+          );
+          crystal(
+            centerX + 2,
+            centerY,
+            '갈라진 기억 결정',
+            speech: '금 간 자리로 오래된 장면이 새어 나와요. 아는 얼굴이 스친 것 같아요.',
+          );
+          crystal(
+            centerX,
+            bottom - 2,
+            '어린 기억 결정',
+            speech: '아직 무릎 높이예요. 여린 빛이 손끝을 따라와요.',
+          );
+          shard(left + 2, top + 3, '결정 부스러기');
+          shard(right - 2, bottom - 2, '맑은 결정 조각');
+          placeNear(
+            left + 2,
+            centerY,
+            kind: _TileObjectKind.npc,
+            size: const Size(.8, 1.2),
+            label: '정원지기 루',
+            collisionSize: const Size(.44, .32),
+            speech: switch (regionCode) {
+              'echo_well' => '결정마다 메아리가 하나씩 잠들어 있어요. 두드리면 깨요.',
+              'starlight_seed_vault' =>
+                '떨어진 별빛이 굳어 결정이 됐다고 해요. 정말인지는 저도 몰라요.',
+              'heartwood_observatory' =>
+                '나이테 사이에서 자란 결정이에요. 나무의 꿈이 굳은 거래요.',
+              _ => '결정은 함부로 캐면 빛이 죽어요. 눈으로만 담아 가세요.',
+            },
+          );
+          lantern(right - 2, top + 3);
+
+        // ── 제단 방. 석주가 제단으로 가는 길을 세운다 ─────────────────────
+        case 9:
+          pillar(centerX - 2, bottom - 1, label: '제단 앞 석주');
+          pillar(centerX + 2, bottom - 1, label: '제단 앞 석주');
           lantern(left + 2, centerY);
           lantern(right - 2, centerY);
+
+        // ── 보물 곁방. 막다른 데까지 온 값을 한다 ─────────────────────────
+        case 10:
+          chest(
+            centerX,
+            centerY,
+            '감춰 둔 기록함',
+            speech: '겹겹이 싸 둔 기록이 나왔어요. 숨긴 사람은 돌아오지 못했나 봐요.',
+          );
+          shard(left + 2, bottom - 2, '숨겨진 기억 조각');
+          lantern(right - 2, top + 3);
+
+        // ── 명상 곁방. 결정 하나가 방을 밝힌다 ────────────────────────────
+        case 11:
+          crystal(
+            centerX,
+            centerY,
+            '고요한 기억 결정',
+            speech: '이 방의 결정은 울리지 않고 듣기만 해요. 두고 간 말이 많이 쌓였대요.',
+          );
+          placeNear(
+            left + 2,
+            bottom - 2,
+            kind: _TileObjectKind.npc,
+            size: const Size(.8, 1.2),
+            label: '견습 기록원',
+            collisionSize: const Size(.44, .32),
+            speech: '여기 앉아 있으면 결정이 웅웅 울어요. 무섭지만... 조금 좋아요.',
+          );
+          shard(right - 2, centerY, '기도문 낱장');
+
+        // ── 침수 곁방. 물이 스며든 막다른 방 ──────────────────────────────
+        default:
+          for (var y = top + 1; y <= top + 3; y++) {
+            for (var x = left + 1; x <= left + 3; x++) {
+              if (!open(x, y)) continue;
+              if (y >= centerY - 1 && y <= centerY + 1) continue;
+              if (x >= centerX - 1 && x <= centerX + 1) continue;
+              terrain[y * width + x] = _TileTerrain.water;
+              walkable[y * width + x] = false;
+              taken.add(y * width + x);
+            }
+          }
+          chest(
+            right - 2,
+            top + 3,
+            '물에 잠긴 함',
+            speech: '함 안까지 물이 들었지만 글씨는 아직 읽을 수 있어요.',
+          );
+          shard(centerX, bottom - 2, '젖은 기억 조각');
+          root(right - 3, bottom - 2, label: '물을 마시는 뿌리');
       }
     }
 
     for (final spot in sideChests) {
-      chest(spot[0], spot[1], '곁방의 기록함');
+      chest(spot[0], spot[1], '골방의 기록함');
+    }
+
+    // ── 바깥 풍경 ─────────────────────────────────────────────────────────
+    //
+    // 벽 너머 이끼 벌판이 통째로 비어 있으면 방 안이 아무리 차도 화면
+    // 절반이 휑하다. 닿을 수 없는 자리라 충돌은 없지만 카메라에는 늘
+    // 담기므로, 뿌리·결정·석주를 드문드문 흩어 `던전 밖에도 세계가 있다`를
+    // 만든다. 벽에 붙은 칸은 피한다 — 조형물이 벽 윗면을 덮으면 지붕이
+    // 뚫린 것처럼 보인다.
+    for (var y = 4; y < height - 4; y += 2) {
+      for (var x = 4; x < width - 4; x += 2) {
+        if (random.next(8) != 0) continue;
+        bool mossAt(int nx, int ny) =>
+            terrain[ny * width + nx] == _TileTerrain.moss;
+        if (!mossAt(x, y) ||
+            !mossAt(x - 1, y) ||
+            !mossAt(x + 1, y) ||
+            !mossAt(x, y - 1) ||
+            !mossAt(x, y + 1)) {
+          continue;
+        }
+        final pick = random.next(6);
+        objects.add(
+          _TileObject(
+            kind: pick == 0
+                ? _TileObjectKind.crystal
+                : pick == 1
+                    ? _TileObjectKind.pillar
+                    : _TileObjectKind.root,
+            position: Offset(x + .5, y + 1),
+            size: pick == 0
+                ? const Size(1.15, 1.7)
+                : pick == 1
+                    ? const Size(1.15, 1.95)
+                    : const Size(2, 1.15),
+            label: pick == 0
+                ? '벌판의 기억 결정'
+                : pick == 1
+                    ? '쓰러질 듯한 석주'
+                    : '벌판의 뿌리',
+            blocks: false,
+          ),
+        );
+      }
     }
 
     // ── 길 복구 ─────────────────────────────────────────────────────────────
@@ -1866,7 +2113,14 @@ class _TileField {
         return kind != _TileObjectKind.monster && !objects[blockers[tile]!].warp;
       });
       if (removable.isEmpty) break;
-      removed.add(removable.reduce(math.min));
+      // 사람은 마지막에 치운다. 서가와 사람이 같이 길을 막고 있으면 서가를
+      // 치워야지 사람을 지우면 안 된다 — 방의 대사가 통째로 사라진다.
+      // 실제로 세 지역에서 기록원이 한둘씩 없어진 채 출시될 뻔했다.
+      final scenery = removable.where(
+        (tile) => objects[blockers[tile]!].kind != _TileObjectKind.npc,
+      );
+      final pool = scenery.isEmpty ? removable : scenery;
+      removed.add(pool.reduce(math.min));
     }
     if (removed.isNotEmpty) {
       final drop = removed.map((tile) => blockers[tile]!).toSet();
@@ -1957,6 +2211,40 @@ class _TileField {
         label: '안쪽 기록함',
         blocks: true,
         collisionSize: Size(.7, .34),
+        speech: '실내 공기 덕에 기록이 덜 상했어요. 필체가 또렷해요.',
+      ),
+    );
+    // 문 양옆의 석주와 구석의 결정. 안쪽 방은 창이 없어서, 결정 빛이
+    // 등불을 대신해 방을 데운다.
+    objects.add(
+      const _TileObject(
+        kind: _TileObjectKind.pillar,
+        position: Offset(5.5, 10.9),
+        size: Size(1.15, 1.95),
+        label: '문가의 석주',
+        blocks: true,
+        collisionSize: Size(.52, .34),
+      ),
+    );
+    objects.add(
+      const _TileObject(
+        kind: _TileObjectKind.pillar,
+        position: Offset(11.5, 10.9),
+        size: Size(1.15, 1.95),
+        label: '문가의 석주',
+        blocks: true,
+        collisionSize: Size(.52, .34),
+      ),
+    );
+    objects.add(
+      const _TileObject(
+        kind: _TileObjectKind.crystal,
+        position: Offset(13.5, 8.5),
+        size: Size(1.15, 1.7),
+        label: '실내의 기억 결정',
+        blocks: true,
+        collisionSize: Size(.6, .36),
+        speech: '집 안에서 자란 결정은 빛이 순해요. 오래 들여다보게 돼요.',
       ),
     );
     // 나가는 문.
@@ -2118,7 +2406,9 @@ class _TileField {
         _TileObjectKind.shelf ||
         _TileObjectKind.altar ||
         _TileObjectKind.monster ||
-        _TileObjectKind.root =>
+        _TileObjectKind.root ||
+        _TileObjectKind.pillar ||
+        _TileObjectKind.crystal =>
           true,
         _ => false,
       };
@@ -2130,7 +2420,8 @@ class _TileField {
         in objectsIn(Rect.fromCircle(center: player, radius: distance + 1))) {
       if (object.kind == _TileObjectKind.shelf ||
           object.kind == _TileObjectKind.lantern ||
-          object.kind == _TileObjectKind.root) {
+          object.kind == _TileObjectKind.root ||
+          object.kind == _TileObjectKind.pillar) {
         continue;
       }
       final next = (player - object.position).distance;
@@ -2648,7 +2939,50 @@ class _TileWorldPainter extends CustomPainter {
         _paintAltar(canvas, bounds);
       case _TileObjectKind.root:
         _paintRoot(canvas, bounds);
+      case _TileObjectKind.pillar:
+        _paintPillar(canvas, bounds);
+      case _TileObjectKind.crystal:
+        _paintCrystal(canvas, bounds);
     }
+  }
+
+  void _paintPillar(Canvas canvas, Rect r) {
+    final stone = field.palette.stone;
+    final base = Rect.fromLTWH(
+        r.left, r.bottom - r.height * .12, r.width, r.height * .12);
+    canvas.drawRRect(RRect.fromRectAndRadius(base, const Radius.circular(2)),
+        Paint()..color = Color.lerp(stone, Colors.black, .3)!);
+    final shaft = Rect.fromLTWH(r.left + r.width * .24, r.top + r.height * .1,
+        r.width * .52, r.height * .8);
+    canvas.drawRRect(RRect.fromRectAndRadius(shaft, const Radius.circular(2)),
+        Paint()..color = stone);
+    canvas.drawRect(
+        Rect.fromLTWH(shaft.left, shaft.top, shaft.width * .3, shaft.height),
+        Paint()..color = Colors.white.withAlpha(28));
+    final cap =
+        Rect.fromLTWH(r.left + r.width * .12, r.top, r.width * .76, r.height * .1);
+    canvas.drawRRect(RRect.fromRectAndRadius(cap, const Radius.circular(2)),
+        Paint()..color = Color.lerp(stone, Colors.white, .18)!);
+  }
+
+  void _paintCrystal(Canvas canvas, Rect r) {
+    final center = Offset(r.center.dx, r.top + r.height * .42);
+    final path = Path()
+      ..moveTo(center.dx, r.top)
+      ..lineTo(center.dx + r.width * .34, center.dy)
+      ..lineTo(center.dx + r.width * .1, r.bottom)
+      ..lineTo(center.dx - r.width * .1, r.bottom)
+      ..lineTo(center.dx - r.width * .34, center.dy)
+      ..close();
+    canvas.drawPath(path, Paint()..color = field.palette.glow);
+    canvas.drawPath(
+        Path()
+          ..moveTo(center.dx, r.top + r.height * .08)
+          ..lineTo(center.dx + r.width * .14, center.dy)
+          ..lineTo(center.dx, r.bottom - r.height * .08)
+          ..lineTo(center.dx - r.width * .14, center.dy)
+          ..close(),
+        Paint()..color = Colors.white.withAlpha(70));
   }
 
   void _paintRoot(Canvas canvas, Rect r) {
@@ -2840,19 +3174,25 @@ class _TileWorldPainter extends CustomPainter {
   }
 
   void _paintLighting(Canvas canvas, Size size) {
-    for (final lantern in field.objectsIn(camera.worldRect.inflate(2)).where(
+    // 등불은 넓고 밝게, 결정은 좁고 은은하게. 광원이 등불 하나뿐이면 방마다
+    // 같은 빛이라 밤 풍경이 단조롭다.
+    for (final source in field.objectsIn(camera.worldRect.inflate(2)).where(
         (o) =>
-            o.kind == _TileObjectKind.lantern &&
+            (o.kind == _TileObjectKind.lantern ||
+                o.kind == _TileObjectKind.crystal) &&
             camera.worldRect.inflate(2).contains(o.position))) {
-      final center = camera.project(lantern.position - const Offset(0, .85));
-      final rect =
-          Rect.fromCircle(center: center, radius: camera.tilePixels * 2.1);
+      final lantern = source.kind == _TileObjectKind.lantern;
+      final radius = camera.tilePixels * (lantern ? 2.1 : 1.55);
+      final center = camera.project(
+        source.position - Offset(0, lantern ? .85 : .6),
+      );
+      final rect = Rect.fromCircle(center: center, radius: radius);
       canvas.drawCircle(
           center,
-          camera.tilePixels * 2.1,
+          radius,
           Paint()
             ..shader = RadialGradient(colors: [
-              field.palette.glow.withAlpha(42),
+              field.palette.glow.withAlpha(lantern ? 42 : 30),
               Colors.transparent
             ]).createShader(rect));
     }

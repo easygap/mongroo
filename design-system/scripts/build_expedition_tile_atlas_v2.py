@@ -63,6 +63,11 @@ SPRITES = (
     "monster",
     "altar",
     "root",
+    # 파생 조형물. 새 원화를 만들지 않고 승인된 원화에서 세운다 — 원화가
+    # 늘수록 지역 팔레트가 흔들리고, 같은 돌·같은 빛에서 나와야 한 건물의
+    # 부재로 읽힌다. 85종에 둘을 더해도 패딩(88)이 남아 아틀라스 크기는 같다.
+    "pillar",
+    "crystal",
 )
 REGIONS = (
     "moss_archive",
@@ -479,6 +484,9 @@ def _normalise_sprite(image: Image.Image, kind: str) -> Image.Image:
         "monster": (84, 90),
         "altar": (89, 92),
         "root": (92, 81),
+        # 아이템 원화를 크게 키운 기억 결정. 같은 그림이라도 바닥에 서는
+        # 덩어리 크기가 되면 `줍는 것`이 아니라 `조형물`로 읽힌다.
+        "crystal": (72, 90),
     }
     max_width, max_height = margins[kind]
     scale = min(max_width / image.width, max_height / image.height)
@@ -868,6 +876,51 @@ def _wall_face_with_shadow(face: Image.Image) -> Image.Image:
     out.alpha_composite(face)
     return out
 
+def _pillar_sprite(source: Image.Image) -> Image.Image:
+    """돌기둥 조형물. 벽 원화의 돌 켜를 좁혀 쌓아 세운다.
+
+    벽 앞면과 같은 돌 켜에서 나와야 같은 건물의 기둥으로 읽힌다. 켜를 40%
+    폭으로 좁혀 넷 쌓고 위에 머리돌, 아래에 받침돌을 얹는다. 벽과 같은 규칙
+    둘을 지킨다 — 켜마다 좌우를 번갈아 뒤집어 이음매가 줄 서지 않게 하고,
+    빛이 위에서 오므로 아래 켜일수록 어둡다.
+    """
+
+    matted = _neutral_background_matte(source)
+    bbox = matted.getchannel("A").getbbox()
+    if bbox is None:
+        raise RuntimeError("empty alpha matte for pillar course")
+    course = matted.crop(bbox)
+
+    shaft_width = round(CELL * 0.40)
+    course_height = round(CELL * 0.17)
+    cap_size = (round(CELL * 0.54), round(CELL * 0.115))
+    base_size = (round(CELL * 0.58), round(CELL * 0.125))
+    courses = 4
+
+    def band(size: tuple[int, int], brightness: float, mirrored: bool) -> Image.Image:
+        piece = course.resize(size, Image.Resampling.LANCZOS)
+        if mirrored:
+            piece = ImageOps.mirror(piece)
+        alpha = piece.getchannel("A")
+        rgb = ImageEnhance.Brightness(piece.convert("RGB")).enhance(brightness)
+        rgb.putalpha(alpha)
+        return rgb
+
+    canvas = Image.new("RGBA", (CELL, CELL), (0, 0, 0, 0))
+    cursor = CELL - 2
+    cursor -= base_size[1]
+    canvas.alpha_composite(band(base_size, 0.76, False), ((CELL - base_size[0]) // 2, cursor))
+    for index in range(courses):
+        cursor -= course_height
+        canvas.alpha_composite(
+            band((shaft_width, course_height), 1.04 - 0.09 * (courses - 1 - index), index % 2 == 1),
+            ((CELL - shaft_width) // 2, cursor),
+        )
+    cursor -= cap_size[1]
+    canvas.alpha_composite(band(cap_size, 1.22, False), ((CELL - cap_size[0]) // 2, cursor))
+    return canvas
+
+
 def _masters() -> tuple[dict[str, tuple[Image.Image, ...]], dict[str, Image.Image]]:
     terrain = {name: _seamless_phases(name) for name in ("floor", "moss", "water")}
     props: dict[str, Image.Image] = {}
@@ -875,6 +928,9 @@ def _masters() -> tuple[dict[str, tuple[Image.Image, ...]], dict[str, Image.Imag
         props[kind] = _normalise_sprite(_source(kind), kind)
     with Image.open(MONSTER_SOURCE) as monster:
         props["monster"] = _normalise_sprite(monster.convert("RGBA"), "monster")
+    # 파생 조형물: 기둥은 벽 켜에서, 결정은 아이템 원화에서.
+    props["pillar"] = _pillar_sprite(_source("wall"))
+    props["crystal"] = _normalise_sprite(_source("item"), "crystal")
     return terrain, props
 
 
