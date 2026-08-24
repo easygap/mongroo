@@ -882,6 +882,33 @@ enum _TileObjectKind {
 
 enum _TileObjectLayer { staticScenery, interactable, actor }
 
+/// 그림이 **실제로 덮는 칸**.
+///
+/// 앞 판은 놓은 칸 하나만 적었다. 그런데 서가는 1.8칸 폭이라 양옆으로 0.4칸씩
+/// 걸치고 석주는 1.95칸 높이라 윗칸까지 덮는다. 그걸 안 적으니 두 칸 간격으로
+/// 놓은 서가끼리 그림이 파고들어, 늘어선 것이 아니라 하나의 얼룩으로 보였다.
+///
+/// 3할 미만으로 스치는 칸은 덮은 것으로 치지 않는다. 그렇게까지 세면 벽에
+/// 등을 붙이는 것조차 못 하게 된다.
+///
+/// 배치하는 쪽과 검사하는 쪽이 **같은 계산**을 봐야 한다. 각자 세면 언젠가
+/// 갈라지고, 그때는 검사가 통과하는데 화면에서만 겹친다.
+Iterable<(int, int)> _coveredTiles(Size size, int x, int y) sync* {
+  final left = x + .5 - size.width / 2;
+  final right = x + .5 + size.width / 2;
+  final top = y + 1 - size.height;
+  for (var ty = top.floor(); ty <= y; ty++) {
+    final overlapY = math.min(y + 1.0, ty + 1.0) - math.max(top, ty.toDouble());
+    if (overlapY < .3) continue;
+    for (var tx = left.floor(); tx < right.ceil(); tx++) {
+      final overlapX =
+          math.min(right, tx + 1.0) - math.max(left, tx.toDouble());
+      if (overlapX < .3) continue;
+      yield (tx, ty);
+    }
+  }
+}
+
 class _TileObject {
   const _TileObject({
     required this.kind,
@@ -923,6 +950,20 @@ class _TileObject {
         _TileObjectKind.monster =>
           _TileObjectLayer.actor,
       };
+
+  /// 발이 선 칸.
+  ///
+  /// 발은 언제나 그 칸의 **아래 모서리**(y + 1)에 놓는다. 앞 판은 종류마다
+  /// 발 높이가 달라서(서가 1.9, 뿌리 1.6, 상자 1.0) 놓았다고 적어 둔 칸과
+  /// 실제로 선 칸이 한 칸씩 어긋났다. 그래서 벽에 등을 붙이라고 세운 서가가
+  /// 방 한가운데 떠 있고, 서로 다른 칸에 놓은 두 물건이 같은 자리에 겹쳐
+  /// 섰다. 예약·판정·그림이 같은 칸을 가리켜야 배치가 의도대로 남는다.
+  int get tileX => position.dx.floor();
+  int get tileY => (position.dy - .5).floor();
+
+  /// 그림이 덮는 칸들.
+  Iterable<(int, int)> get coveredTiles =>
+      _coveredTiles(size, tileX, tileY);
 
   /// The sprite is anchored at its feet, not at its visual center.
   Rect get visualBounds => Rect.fromLTWH(
@@ -1229,8 +1270,10 @@ class _TileField {
       }
     }
     for (final object in objects) {
-      final x = object.position.dx.floor().clamp(0, width - 1);
-      final y = object.position.dy.floor().clamp(0, height - 1);
+      // **선 칸**으로 나눈다. 발끝 좌표를 그대로 내리면 아래 청크로 밀려
+      // 들어가, 바라보는 칸을 뒤질 때 바로 앞 물건이 안 잡힌다.
+      final x = object.tileX.clamp(0, width - 1);
+      final y = object.tileY.clamp(0, height - 1);
       chunks[(y ~/ chunkSize) * chunkColumns + x ~/ chunkSize]
           .addObject(object);
     }
@@ -1710,8 +1753,53 @@ class _TileField {
     // 길을 막는 물건이 어느 칸에 있는지 기억한다. 나중에 길이 끊기면 여기서
     // 되짚어 치운다.
     final blockers = <int, int>{};
-    bool free(int x, int y) =>
-        open(x, y) && !taken.contains(y * width + x);
+    // 홀쭉한 것이 숨 쉴 자리. 아래 `claimsSpace` 참고.
+    final spaced = <int>{};
+
+    /// 덮는 칸을 격자 번호로. 판 밖으로 나간 칸은 버린다.
+    List<int> footprint(Size size, int x, int y) => <int>[
+          for (final (tx, ty) in _coveredTiles(size, x, y))
+            if (tx >= 0 && ty >= 0 && tx < width && ty < height)
+              ty * width + tx,
+        ];
+
+    /// 좌우로 한 칸씩 비워 둬야 하는 종류인가.
+    ///
+    /// 서가와 뿌리는 폭이 2칸 가까이라 덮는 칸만으로 이미 석 칸 간격이
+    /// 벌어진다. 반대로 등불·석주·결정은 한 칸짜리라 바로 옆에 또 설 수
+    /// 있는데, 그러면 둘이 붙어 하나로 보인다. 조각은 바닥에 떨어진 반짝임이라
+    /// 무엇에든 붙어도 된다.
+    bool claimsSpace(_TileObjectKind kind) => switch (kind) {
+      _TileObjectKind.shelf ||
+      _TileObjectKind.root ||
+      _TileObjectKind.item =>
+        false,
+      _ => true,
+    };
+
+    /// 놓을 수 있는 자리인가. 실제로 놓기 전에 물어볼 수 있어야 한다 —
+    /// 짝으로 세우는 석주는 한쪽만 서면 주랑이 아니라 남은 기둥이 된다.
+    bool canPlace(
+      int x,
+      int y,
+      _TileObjectKind kind,
+      Size size, {
+      bool blocks = true,
+    }) {
+      if (!open(x, y)) return false;
+      final cells = footprint(size, x, y);
+      final wantsRoom = claimsSpace(kind);
+      for (final cell in cells) {
+        if (taken.contains(cell)) return false;
+        if (wantsRoom && spaced.contains(cell)) return false;
+      }
+      // 복도에는 막는 것을 두지 않는다. 한 칸 폭 복도가 섞여 있어서, 복도에
+      // 서가 하나만 놓여도 제단까지 못 간다. 발만 보지 않고 덮는 칸을 다
+      // 본다 — 발은 방 안이어도 어깨가 복도를 물면 길이 좁아진다.
+      if (blocks && cells.any(corridor.contains)) return false;
+      return true;
+    }
+
     bool place(
       int x,
       int y, {
@@ -1722,17 +1810,25 @@ class _TileField {
       Size? collisionSize,
       String? speech,
       bool warp = false,
-      double footOffset = 1.0,
     }) {
-      if (!free(x, y)) return false;
-      // 복도에는 막는 것을 두지 않는다. 한 칸 폭 복도가 섞여 있어서, 복도에
-      // 서가 하나만 놓여도 제단까지 못 간다. 나중에 치우는 것보다 애초에
-      // 안 놓는 편이 방이 헐거워지지 않는다.
-      if (blocks && corridor.contains(y * width + x)) return false;
-      taken.add(y * width + x);
+      if (!canPlace(x, y, kind, size, blocks: blocks)) return false;
+      final cells = footprint(size, x, y);
+      taken.addAll(cells);
+      if (claimsSpace(kind)) {
+        for (final cell in cells) {
+          final cy = cell ~/ width;
+          for (var dx = -1; dx <= 1; dx++) {
+            final nx = cell % width + dx;
+            if (nx < 0 || nx >= width) continue;
+            spaced.add(cy * width + nx);
+          }
+        }
+      }
       final object = _TileObject(
         kind: kind,
-        position: Offset(x + .5, y + footOffset),
+        // 발은 언제나 놓은 칸의 아래 모서리다. 종류마다 다르게 두었더니
+        // 적어 둔 칸과 선 칸이 어긋나 벽에 박히고 서로 겹쳤다.
+        position: Offset(x + .5, y + 1),
         size: size,
         label: label,
         blocks: blocks,
@@ -1792,25 +1888,31 @@ class _TileField {
       return false;
     }
 
-    void shelf(int x, int y, {String label = '무너진 서가'}) => place(
+    const shelfSize = Size(1.8, 1.15);
+    const lanternSize = Size(.9, 1.35);
+    const rootSize = Size(2, 1.15);
+    // 1.15×1.95칸. 세로 늘림이 1.7배로 뿌리와 같다 — 더 홀쭉하게 늘리면
+    // 도트가 세로줄로 읽혀 캐릭터와 다른 세계가 된다.
+    const pillarSize = Size(1.15, 1.95);
+    const crystalSize = Size(1.15, 1.7);
+
+    bool shelf(int x, int y, {String label = '무너진 서가'}) => place(
           x,
           y,
           kind: _TileObjectKind.shelf,
-          size: const Size(1.8, 1.15),
+          size: shelfSize,
           label: label,
           collisionSize: const Size(1.28, .4),
-          footOffset: 1.9,
         );
-    void lantern(int x, int y) => place(
+    bool lantern(int x, int y) => place(
           x,
           y,
           kind: _TileObjectKind.lantern,
-          size: const Size(.9, 1.35),
+          size: lanternSize,
           label: '기록 등불',
           collisionSize: const Size(.4, .3),
-          footOffset: 1.9,
         );
-    void chest(int x, int y, String label, {String? speech}) => placeNear(
+    bool chest(int x, int y, String label, {String? speech}) => placeNear(
           x,
           y,
           kind: _TileObjectKind.chest,
@@ -1819,7 +1921,7 @@ class _TileField {
           collisionSize: const Size(.7, .34),
           speech: speech,
         );
-    void shard(int x, int y, String label, {String? speech}) => place(
+    bool shard(int x, int y, String label, {String? speech}) => place(
           x,
           y,
           kind: _TileObjectKind.item,
@@ -1828,38 +1930,71 @@ class _TileField {
           blocks: false,
           speech: speech,
         );
-    void root(int x, int y, {String label = '기억의 뿌리'}) => place(
+    bool root(int x, int y, {String label = '기억의 뿌리'}) => place(
           x,
           y,
           kind: _TileObjectKind.root,
-          size: const Size(2, 1.15),
+          size: rootSize,
           label: label,
           collisionSize: const Size(1.35, .36),
-          footOffset: 1.6,
         );
-    // 1.15×1.95칸. 세로 늘림이 1.7배로 뿌리와 같다 — 더 홀쭉하게 늘리면
-    // 도트가 세로줄로 읽혀 캐릭터와 다른 세계가 된다.
-    void pillar(int x, int y, {String label = '이끼 낀 석주'}) => place(
+    bool pillar(int x, int y, {String label = '이끼 낀 석주'}) => place(
           x,
           y,
           kind: _TileObjectKind.pillar,
-          size: const Size(1.15, 1.95),
+          size: pillarSize,
           label: label,
           collisionSize: const Size(.52, .34),
-          footOffset: 1.9,
         );
-    void crystal(int x, int y, String label, {String? speech}) => placeNear(
+    bool crystal(int x, int y, String label, {String? speech}) => placeNear(
           x,
           y,
           kind: _TileObjectKind.crystal,
-          size: const Size(1.15, 1.7),
+          size: crystalSize,
           label: label,
           collisionSize: const Size(.6, .36),
           speech: speech,
         );
 
+    /// 그 방에서 **등 뒤가 막힌** 칸들. 실제로 깎인 바닥만 본다.
+    ///
+    /// 앞 판은 방을 직사각형으로 알고 `top + 1` 줄에 늘어놓았다. 그런데 방은
+    /// 귀퉁이를 베어 냈고 복도가 뚫고 들어와서, 그 줄은 벽에 붙어 있지도
+    /// 않고 전부 바닥도 아니다. 지형에서 직접 찾아야 벽을 따라 선다.
+    List<(int, int)> backedSpots(Rect room, int dx, int dy) {
+      final spots = <(int, int)>[];
+      for (var y = room.top.round(); y < room.bottom.round(); y++) {
+        for (var x = room.left.round(); x < room.right.round(); x++) {
+          if (!open(x, y)) continue;
+          if (open(x + dx, y + dy)) continue;
+          spots.add((x, y));
+        }
+      }
+      return spots;
+    }
+
+    /// 벽을 따라 늘어놓는다. 간격은 예약이 알아서 벌린다 — 서가는 석 칸,
+    /// 등불은 두 칸이 최소가 되도록 덮는 칸이 계산되어 있다.
+    void lineWall(Rect room, int dx, int dy, {int skipOneIn = 3}) {
+      for (final spot in backedSpots(room, dx, dy)) {
+        // 벽 한 줄을 빈틈없이 채우면 진열장으로 보인다. 셋에 하나쯤은
+        // 비워 둬야 `놓여 있다`로 읽힌다.
+        if (random.next(skipOneIn) == 0) continue;
+        if (random.next(4) == 0) {
+          lantern(spot.$1, spot.$2);
+        } else {
+          shelf(spot.$1, spot.$2);
+        }
+      }
+    }
+
     final spawn = rooms.first.center;
     final goal = rooms[mainRooms - 1].center;
+
+    // 제단 자리는 **미리** 잡아 둔다. 제단은 길 복구가 끝난 뒤에 세우는데,
+    // 그때는 예약이 이미 끝나 있어 먼저 놓인 물건과 겹칠 수 있다.
+    const altarSize = Size(1.5, 1.6);
+    taken.addAll(footprint(altarSize, goal.dx.floor(), goal.dy.floor()));
     for (var index = 0; index < rooms.length; index++) {
       final room = rooms[index];
       final left = room.left.round();
@@ -1872,14 +2007,35 @@ class _TileField {
       // 벽을 따라 늘어놓는다. 방 한가운데 흩뿌리면 지나다닐 수가 없다.
       // 주랑(3)과 결정 정원(8)은 뺀다 — 제 조형물이 서는 방에 서가까지
       // 얹으면 무엇의 방인지 흐려진다.
-      if (index != 3 && index != 8) {
-        for (var x = left + 1; x <= right - 1; x += 2 + random.next(2)) {
-          if (random.next(4) == 0) {
-            lantern(x, top + 1);
-          } else {
-            shelf(x, top + 1);
+      //
+      // 북쪽 벽은 촘촘히, 남쪽 벽은 성기게 붙인다. 위쪽 벽은 화면에서 물건의
+      // 몸통이 다 보이는 자리라 방의 인상을 만들고, 아래쪽 벽은 물건이
+      // 캐릭터를 가리는 자리라 많이 세우면 답답하다.
+      //
+      // 문은 그보다 **먼저** 세운다. 벽을 따라 서가를 다 놓고 나면 문 자리가
+      // 남지 않아 안쪽 방으로 드나들 수 없게 된다 — 남쪽 벽까지 꾸미기
+      // 시작하면서 실제로 네 지역 모두 문이 사라졌다.
+      if (index == 1) {
+        bool arch(int x, int y) => place(
+              x,
+              y,
+              kind: _TileObjectKind.root,
+              size: rootSize,
+              label: '안쪽으로 난 아치',
+              blocks: false,
+              speech: '아치 안쪽에 작은 방이 있어요.',
+              warp: true,
+            );
+        if (!arch(left + 2, bottom - 1)) {
+          for (final spot in backedSpots(room, 0, 1)) {
+            if (arch(spot.$1, spot.$2)) break;
           }
         }
+      }
+
+      if (index != 3 && index != 8) {
+        lineWall(room, 0, -1);
+        lineWall(room, 0, 1, skipOneIn: 2);
       }
 
       switch (index) {
@@ -1889,19 +2045,8 @@ class _TileField {
           shard(right - 2, bottom - 2, '떨어진 이름표');
           lantern(right - 1, centerY);
 
-        // ── 문이 있는 방. 아치로 안쪽 방에 든다 ───────────────────────────
+        // ── 문이 있는 방. 아치는 위에서 이미 세웠다 ───────────────────────
         case 1:
-          place(
-            left + 2,
-            bottom - 1,
-            kind: _TileObjectKind.root,
-            size: const Size(2, 1.15),
-            label: '안쪽으로 난 아치',
-            blocks: false,
-            speech: '아치 안쪽에 작은 방이 있어요.',
-            warp: true,
-            footOffset: 1.6,
-          );
           chest(centerX, centerY, '잠긴 기록함');
           shard(right - 2, top + 3, '눅눅한 쪽지');
 
@@ -1932,17 +2077,46 @@ class _TileField {
         // 순환 복도가 갈라지는 방이라 지나는 사람이 가장 많다. 기둥 사이로
         // 걷는 길이 곧 방의 정체라, 다른 꾸밈은 걷어 낸다.
         case 3:
-          for (var x = left + 2; x <= right - 2; x += 3) {
-            pillar(x, centerY - 2, label: '주랑의 석주');
-            pillar(x, centerY + 2, label: '주랑의 석주');
+          // 석주는 **짝으로만** 세운다. 한쪽만 서면 주랑이 아니라 남은
+          // 기둥이다. 자리는 벽에 등을 붙인 줄에서 고른다 — 방 한가운데는
+          // 복도가 지나가서 짝이 자꾸 깨졌고, 그래서 한 쌍만 덩그러니 남았다.
+          final northRow = <int, int>{
+            for (final spot in backedSpots(room, 0, -1)) spot.$1: spot.$2,
+          };
+          final southRow = <int, int>{
+            for (final spot in backedSpots(room, 0, 1)) spot.$1: spot.$2,
+          };
+          var lastPair = left - 3;
+          for (var x = left + 1; x <= right - 1; x++) {
+            if (x - lastPair < 3) continue;
+            final northY = northRow[x];
+            final southY = southRow[x];
+            if (northY == null || southY == null) continue;
+            // 두 줄 사이가 좁으면 기둥이 길을 다 먹는다. 걸어 지나갈 폭을
+            // 남길 수 있을 때만 세운다.
+            if (southY - northY < 4) continue;
+            if (!canPlace(x, northY, _TileObjectKind.pillar, pillarSize) ||
+                !canPlace(x, southY, _TileObjectKind.pillar, pillarSize)) {
+              continue;
+            }
+            pillar(x, northY, label: '주랑의 석주');
+            pillar(x, southY, label: '주랑의 석주');
+            lastPair = x;
           }
+          if (lastPair < left) {
+            // 주랑이 못 서는 방이면 빈 방으로 두지 않는다.
+            lineWall(room, 0, -1);
+            lineWall(room, 0, 1, skipOneIn: 2);
+          }
+          // 결정은 석주 줄이 끝난 **다음**에 놓는다. 기둥 옆에 바로 붙으면
+          // 둘이 한 덩어리로 뭉쳐 무엇이 빛나는지 알 수 없다.
           crystal(
-            right - 2,
+            math.min(math.max(lastPair, left) + 3, right - 1),
             centerY,
             '주랑의 기억 결정',
             speech: '석주 사이를 지나간 발소리가 결정 안에 겹겹이 쌓여 있어요.',
           );
-          shard(left + 2, centerY, '닳은 주춧돌 조각');
+          shard(left + 1, centerY, '닳은 주춧돌 조각');
 
         // ── 서고. 서가를 줄줄이 세워 통로를 만든다 ────────────────────────
         case 4:
@@ -1991,6 +2165,9 @@ class _TileField {
               if (!open(x, y)) continue;
               if (y >= centerY - 1 && y <= centerY + 1) continue;
               if (x >= centerX - 1 && x <= centerX + 1) continue;
+              // 이미 무엇이 선 칸은 비켜서 판다. 물을 먼저 채우고 나면 벽을
+              // 따라 세워 둔 서가가 못 한가운데 잠겨 서 있게 된다.
+              if (taken.contains(y * width + x)) continue;
               terrain[y * width + x] = _TileTerrain.water;
               walkable[y * width + x] = false;
               taken.add(y * width + x);
@@ -2072,12 +2249,22 @@ class _TileField {
           );
           lantern(right - 2, top + 3);
 
-        // ── 제단 방. 석주가 제단으로 가는 길을 세운다 ─────────────────────
+        // ── 제단 방. 석주가 제단을 감싼다 ─────────────────────────────────
+        //
+        // 자리는 **제단에서** 잰다. 앞 판은 방 아래쪽 모서리를 기준으로 잡아
+        // 석주가 제단에서 네 칸이나 떨어져 섰다 — 감싼 것이 아니라 각자 서
+        // 있는 것으로 보였다.
+        //
+        // 네 자리 모두 제단에서 **두 축으로 두 칸씩** 물러나 있다. 복도는
+        // 제단 방 한가운데로 들어오고 폭이 최대 세 칸이라, 한 축이라도 제단과
+        // 같은 줄에 두면 그 자리가 통째로 복도가 되어 아무것도 못 선다.
         case 9:
-          pillar(centerX - 2, bottom - 1, label: '제단 앞 석주');
-          pillar(centerX + 2, bottom - 1, label: '제단 앞 석주');
-          lantern(left + 2, centerY);
-          lantern(right - 2, centerY);
+          final altarX = goal.dx.floor();
+          final altarY = goal.dy.floor();
+          pillar(altarX - 2, altarY + 2, label: '제단 앞 석주');
+          pillar(altarX + 2, altarY + 2, label: '제단 앞 석주');
+          lantern(altarX - 2, altarY - 2);
+          lantern(altarX + 2, altarY - 2);
 
         // ── 보물 곁방. 막다른 데까지 온 값을 한다 ─────────────────────────
         case 10:
@@ -2116,6 +2303,7 @@ class _TileField {
               if (!open(x, y)) continue;
               if (y >= centerY - 1 && y <= centerY + 1) continue;
               if (x >= centerX - 1 && x <= centerX + 1) continue;
+              if (taken.contains(y * width + x)) continue;
               terrain[y * width + x] = _TileTerrain.water;
               walkable[y * width + x] = false;
               taken.add(y * width + x);
@@ -2139,45 +2327,64 @@ class _TileField {
     // ── 바깥 풍경 ─────────────────────────────────────────────────────────
     //
     // 벽 너머 이끼 벌판이 통째로 비어 있으면 방 안이 아무리 차도 화면
-    // 절반이 휑하다. 닿을 수 없는 자리라 충돌은 없지만 카메라에는 늘
-    // 담기므로, 뿌리·결정·석주를 드문드문 흩어 `던전 밖에도 세계가 있다`를
-    // 만든다. 벽에 붙은 칸은 피한다 — 조형물이 벽 윗면을 덮으면 지붕이
-    // 뚫린 것처럼 보인다.
-    for (var y = 4; y < height - 4; y += 2) {
-      for (var x = 4; x < width - 4; x += 2) {
-        if (random.next(8) != 0) continue;
-        bool mossAt(int nx, int ny) =>
-            terrain[ny * width + nx] == _TileTerrain.moss;
-        if (!mossAt(x, y) ||
-            !mossAt(x - 1, y) ||
-            !mossAt(x + 1, y) ||
-            !mossAt(x, y - 1) ||
-            !mossAt(x, y + 1)) {
-          continue;
+    // 절반이 휑하다. 닿을 수 없는 자리라 충돌은 없지만 카메라에는 늘 담긴다.
+    //
+    // 앞 판은 두 칸마다 1/8 확률로 하나씩 흩뿌렸다. 그래서 넓은 이끼밭에
+    // 뿌리 하나가 덩그러니 서 있는 그림이 나왔다 — 벌판에서 그렇게 혼자
+    // 서 있는 것은 없다. 이제 **무리로** 심는다. 자리를 몇 군데 고르고 그
+    // 둘레에 둘셋을 붙이면 덤불이나 돌무더기처럼 뭉쳐 보인다.
+    bool mossAt(int nx, int ny) =>
+        nx >= 0 &&
+        ny >= 0 &&
+        nx < width &&
+        ny < height &&
+        terrain[ny * width + nx] == _TileTerrain.moss;
+
+    for (var clump = 0; clump < 34; clump++) {
+      final cx = 3 + random.next(width - 6);
+      final cy = 3 + random.next(height - 6);
+      // 무리 하나는 한 종류로 간다. 뿌리와 석주가 섞여 서면 무리가 아니라
+      // 잡동사니로 보인다.
+      final (kind, size, label) = switch (random.next(6)) {
+        0 => (_TileObjectKind.crystal, crystalSize, '벌판의 기억 결정'),
+        1 => (_TileObjectKind.pillar, pillarSize, '쓰러질 듯한 석주'),
+        _ => (_TileObjectKind.root, rootSize, '벌판의 뿌리'),
+      };
+      final before = objects.length;
+      final claimed = <int>[];
+
+      /// 벌판에 하나 심는다. 덮는 칸이 **전부** 이끼여야 한다 — 한 칸이라도
+      /// 벽이면 조형물이 벽 윗면을 덮어 지붕이 뚫린 것처럼 보인다.
+      void plant(int x, int y) {
+        final cells = footprint(size, x, y);
+        if (cells.isEmpty) return;
+        for (final cell in cells) {
+          if (taken.contains(cell)) return;
+          if (!mossAt(cell % width, cell ~/ width)) return;
         }
-        final pick = random.next(6);
+        taken.addAll(cells);
+        claimed.addAll(cells);
         objects.add(
           _TileObject(
-            kind: pick == 0
-                ? _TileObjectKind.crystal
-                : pick == 1
-                    ? _TileObjectKind.pillar
-                    : _TileObjectKind.root,
+            kind: kind,
             position: Offset(x + .5, y + 1),
-            size: pick == 0
-                ? const Size(1.15, 1.7)
-                : pick == 1
-                    ? const Size(1.15, 1.95)
-                    : const Size(2, 1.15),
-            label: pick == 0
-                ? '벌판의 기억 결정'
-                : pick == 1
-                    ? '쓰러질 듯한 석주'
-                    : '벌판의 뿌리',
+            size: size,
+            label: label,
             blocks: false,
           ),
         );
       }
+
+      plant(cx, cy);
+      // 흔들림을 좁게 준다. 넓게 흩으면 무리가 아니라 따로 선 것들이 된다.
+      for (var more = 0; more < 3 + random.next(3); more++) {
+        plant(cx + random.next(5) - 2, cy + random.next(3) - 1);
+      }
+      // **둘 이상 서지 못하면 아예 심지 않는다.** 넓은 이끼밭 한가운데
+      // 뿌리 하나가 서 있으면 무리가 아니라 덩그러니 버려진 것으로 보인다.
+      if (objects.length - before >= 2) continue;
+      objects.removeRange(before, objects.length);
+      taken.removeAll(claimed);
     }
 
     // ── 길 복구 ─────────────────────────────────────────────────────────────
@@ -2254,8 +2461,10 @@ class _TileField {
     objects.add(
       _TileObject(
         kind: _TileObjectKind.altar,
-        position: goal,
-        size: const Size(1.5, 1.6),
+        // 제단도 칸에 선다. 방 중심점을 그대로 쓰면 칸 사이에 걸쳐 서서
+        // 앞에 마주 서도 말이 안 걸린다.
+        position: Offset(goal.dx.floor() + .5, goal.dy.floor() + 1),
+        size: altarSize,
         label: '빛나는 기록 제단',
         blocks: true,
         collisionSize: const Size(.9, .42),
@@ -2307,24 +2516,27 @@ class _TileField {
 
     final objects = <_TileObject>[];
     // 벽을 따라 서가와 등불. 안쪽이 비면 들어온 보람이 없다.
+    //
+    // 발은 바깥 들판과 같은 규약이다 — 놓은 칸의 아래 모서리(y + 1). 앞
+    // 판은 3.9처럼 어중간한 값을 박아 두어 실제로 선 칸이 한 칸 아래였고,
+    // 등불도 서가 크기로 그려져 부풀어 있었다.
     for (var x = 3; x < width - 3; x += 3) {
+      final lit = random.next(3) == 0;
       objects.add(
         _TileObject(
-          kind: random.next(3) == 0
-              ? _TileObjectKind.lantern
-              : _TileObjectKind.shelf,
-          position: Offset(x + .5, 3.9),
-          size: const Size(1.8, 1.15),
-          label: '안쪽 서가',
+          kind: lit ? _TileObjectKind.lantern : _TileObjectKind.shelf,
+          position: Offset(x + .5, 3),
+          size: lit ? const Size(.9, 1.35) : const Size(1.8, 1.15),
+          label: lit ? '안쪽 등불' : '안쪽 서가',
           blocks: true,
-          collisionSize: const Size(1.28, .4),
+          collisionSize: lit ? const Size(.4, .3) : const Size(1.28, .4),
         ),
       );
     }
     objects.add(
       const _TileObject(
         kind: _TileObjectKind.chest,
-        position: Offset(8.5, 7.5),
+        position: Offset(8.5, 8),
         size: Size(1.1, 1.05),
         label: '안쪽 기록함',
         blocks: true,
@@ -2369,7 +2581,7 @@ class _TileField {
     objects.add(
       const _TileObject(
         kind: _TileObjectKind.root,
-        position: Offset(8.5, 10.5),
+        position: Offset(8.5, 11),
         size: Size(2, 1.15),
         label: '바깥으로 난 아치',
         blocks: false,
@@ -2506,12 +2718,9 @@ class _TileField {
       Rect.fromLTWH(targetX - .5, targetY - .5, 2, 2),
     )) {
       if (!_canTalkTo(object.kind)) continue;
-      // 물건의 발이 그 칸 안에 있으면 그 칸의 물건이다.
-      if (object.position.dx.floor() != targetX) continue;
-      if (object.position.dy.floor() != targetY &&
-          (object.position.dy - 1).floor() != targetY) {
-        continue;
-      }
+      // 그 칸에 선 물건인가. 종류마다 발 높이가 달랐을 때는 두 줄을 다
+      // 뒤져야 했고, 그래서 옆 칸 물건이 집히기도 했다. 이제 한 칸이다.
+      if (object.tileX != targetX || object.tileY != targetY) continue;
       return object;
     }
     return null;
@@ -2583,6 +2792,103 @@ Map<String, int> expeditionTileWorldTravelDiagnostics(
 
 bool expeditionTileWorldHasRoute(String regionCode, int stageNo) =>
     _TileField.forStage(regionCode, stageNo).hasRouteToGoal;
+
+/// 배치가 의도대로 남았는지.
+///
+/// 넓히고 채우는 것만으로는 부족하다. 물건이 벽에 박히거나 둘이 같은 자리에
+/// 겹쳐 서면, 아무리 많이 놓아도 `대충 흩뿌린` 것으로 보인다. 실제로 발 높이가
+/// 종류마다 달라 예약한 칸과 선 칸이 한 칸씩 어긋나 있었고, 한 판에 여덟 군데가
+/// 그랬다. 눈으로는 못 세니 수치로 못 박는다.
+@visibleForTesting
+Map<String, int> expeditionTileWorldPlacementDiagnostics(
+  String regionCode,
+  int stageNo, {
+  bool withGuardian = false,
+}) {
+  final field = _TileField.forStage(
+    regionCode,
+    stageNo,
+    withGuardian: withGuardian,
+  );
+  try {
+    final owner = <int, int>{};
+    var overlapping = 0;
+    var standingOffFloor = 0;
+    for (var index = 0; index < field.objects.length; index++) {
+      final object = field.objects[index];
+      // 던전 안에 서는 것은 바닥을 딛는다. 벽 너머 벌판 조형물은 이끼 위에
+      // 서므로 여기서 제외한다(`blocks`가 갈라 준다).
+      if (object.blocks &&
+          field.terrainAt(object.tileX, object.tileY) != _TileTerrain.floor) {
+        standingOffFloor++;
+      }
+      var clashed = false;
+      for (final (tx, ty) in object.coveredTiles) {
+        final cell = ty * field.width + tx;
+        final previous = owner[cell];
+        if (previous != null && previous != index) clashed = true;
+        owner[cell] = index;
+      }
+      if (clashed) overlapping++;
+    }
+
+    // 벌판에 혼자 선 조형물. 벌판에서 그렇게 서 있는 것은 없어서, 하나만
+    // 있으면 `무리`가 아니라 덩그러니 버려진 것으로 읽힌다.
+    final field_ = field.objects
+        .where(
+          (object) =>
+              !object.blocks &&
+              !object.warp &&
+              object.kind != _TileObjectKind.item &&
+              field.terrainAt(object.tileX, object.tileY) == _TileTerrain.moss,
+        )
+        .toList();
+    var lonely = 0;
+    for (final one in field_) {
+      final hasCompany = field_.any(
+        (other) =>
+            !identical(other, one) &&
+            (other.tileX - one.tileX).abs() <= 4 &&
+            (other.tileY - one.tileY).abs() <= 4,
+      );
+      if (!hasCompany) lonely++;
+    }
+
+    // 서가와 등불은 벽에 등을 붙여야 한다. 방 한가운데 떠 있으면 놓은 것이
+    // 아니라 빠뜨린 것으로 보인다.
+    var wallBacked = 0;
+    var freeStanding = 0;
+    for (final object in field.objects) {
+      if (object.kind != _TileObjectKind.shelf &&
+          object.kind != _TileObjectKind.lantern) {
+        continue;
+      }
+      final backed = field.terrainAt(object.tileX, object.tileY - 1) !=
+              _TileTerrain.floor ||
+          field.terrainAt(object.tileX, object.tileY + 1) !=
+              _TileTerrain.floor;
+      if (backed) {
+        wallBacked++;
+      } else {
+        freeStanding++;
+      }
+    }
+
+    return <String, int>{
+      'objects': field.objects.length,
+      'overlapping': overlapping,
+      'standingOffFloor': standingOffFloor,
+      'lonelyScenery': lonely,
+      'wallBackedProps': wallBacked,
+      'freeStandingProps': freeStanding,
+      'pillars': field.objects
+          .where((object) => object.kind == _TileObjectKind.pillar)
+          .length,
+    };
+  } finally {
+    field.dispose();
+  }
+}
 
 @visibleForTesting
 Map<String, int> expeditionTileWorldChunkDiagnostics(

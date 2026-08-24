@@ -209,6 +209,40 @@ void main() {
     }
   });
 
+  test('물건이 겹치거나 벽에 박히거나 혼자 서 있지 않다', () {
+    // 넓히고 채우는 것만으로는 부족했다. 발 높이가 종류마다 달라서 예약한
+    // 칸과 실제로 선 칸이 한 칸씩 어긋나 있었고, 그래서 서가가 벽에 박히고
+    // 두 물건이 같은 자리에 겹쳐 섰다. 한 판에 여덟 군데가 그랬다.
+    // 눈으로는 못 세니 여기서 센다.
+    for (final region in <String>[
+      'moss_archive',
+      'echo_well',
+      'starlight_seed_vault',
+      'heartwood_observatory',
+    ]) {
+      for (var stage = 1; stage <= 8; stage++) {
+        final metrics = expeditionTileWorldPlacementDiagnostics(
+          region,
+          stage,
+          // 엉킴이 서는 판과 안 서는 판을 섞어 본다.
+          withGuardian: stage.isEven,
+        );
+        final where = '$region $stage장';
+        expect(metrics['overlapping'], 0, reason: '$where 겹친 물건');
+        expect(metrics['standingOffFloor'], 0, reason: '$where 바닥 밖에 선 물건');
+        // 벌판에 하나만 선 조형물은 무리가 아니라 버려진 것으로 보인다.
+        expect(metrics['lonelyScenery'], 0, reason: '$where 혼자 선 조형물');
+        // 서가와 등불은 벽에 등을 붙인다. 방 한가운데 떠 있는 쪽이 많아지면
+        // 벽을 따라 세운다는 규칙이 깨진 것이다.
+        expect(
+          metrics['wallBackedProps']!,
+          greaterThan(metrics['freeStandingProps']! * 4),
+          reason: '$where 벽에 붙은 물건',
+        );
+      }
+    }
+  });
+
   test('아치로 실내 방을 드나들 수 있고 문이 막혀 있지 않다', () {
     for (final region in <String>[
       'moss_archive',
