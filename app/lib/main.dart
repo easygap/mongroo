@@ -7,11 +7,15 @@ import 'package:flutter/services.dart';
 import 'core/routing/app_router.dart';
 import 'core/session/session_boundary.dart';
 import 'core/theme/app_theme.dart';
+import 'features/home/presentation/plant_view.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _registerBundledFontLicenses();
   await _primeBundledWebFallbackFont();
+  // 캐릭터 그림 목록을 첫 화면 전에 읽어 둔다. 늦게 읽으면 그 사이의 첫
+  // 프레임이 없는 파일을 한 번 요청한다.
+  await PlantSpriteBundle.ensureLoaded();
   runApp(const ProviderScope(child: MongrooApp()));
 }
 

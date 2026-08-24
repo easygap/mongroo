@@ -3,8 +3,52 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../domain/plant.dart';
+
+/// 번들에 실제로 들어 있는 캐릭터 그림 목록.
+///
+/// 후보 경로는 `종-화풍-단계-결` 조합을 규칙으로 만든다. 조합은 완전한데
+/// 그림은 그렇지 않아서(세렌·백화는 만개만, 가시니·해바라기는 한 장도 없다)
+/// 없는 파일을 요청하는 후보가 늘 섞인다. 그대로 두면 도감 한 번 여는 데
+/// 수십 건의 404가 나고, 폴백도 그 실패를 다 기다린 뒤에야 뜬다.
+///
+/// 종별 목록을 손으로 들고 있으면 그림을 추가한 날 반드시 한쪽을 잊는다.
+/// 그래서 번들 매니페스트를 단일 원본으로 삼는다.
+class PlantSpriteBundle {
+  const PlantSpriteBundle._();
+
+  static Set<String>? _assets;
+  static Future<Set<String>>? _loading;
+
+  /// 매니페스트를 아직 못 읽었으면 `null`. 이때는 걸러 내지 않고 그대로
+  /// 시도한다 — 첫 프레임에 캐릭터가 사라지는 것보다 404 한 번이 낫다.
+  static Set<String>? get assetsOrNull => _assets;
+
+  static Future<void> ensureLoaded() {
+    final pending = _loading;
+    if (pending != null) return pending;
+    return _loading = AssetManifest.loadFromAssetBundle(rootBundle)
+        .then((manifest) => _assets = manifest.listAssets().toSet())
+        // 매니페스트를 못 읽는 환경(일부 위젯 테스트)에서는 거르지 않는다.
+        .onError<Object>((_, __) => _assets = <String>{});
+  }
+
+  /// 번들에 있는 경로만 남긴다. 매니페스트를 못 읽었으면 원본 그대로.
+  static List<String> filter(List<String> paths) {
+    final assets = _assets;
+    if (assets == null || assets.isEmpty) return paths;
+    final kept = paths.where(assets.contains).toList(growable: false);
+    return kept.isEmpty ? const <String>[] : kept;
+  }
+
+  @visibleForTesting
+  static void overrideAssetsForTest(Set<String>? assets) {
+    _assets = assets;
+    _loading = assets == null ? null : Future<Set<String>>.value(assets);
+  }
+}
 
 /// 잠깐 보여 주는 UI 반응. 성장 형태와 기본 표정은 일기 분석
 /// 분기가 결정하며, 수동 mood level을 여기에 연결하지 않는다.
@@ -434,6 +478,20 @@ class PlantGrowthAssetResolver {
     5: 'full-bloom',
   };
 
+  /// 결이 아직 정해지지 않았을 때 쓰는 그림.
+  ///
+  /// 씨앗을 뺀 네 단계는 종마다 여섯 감정 파일로만 그려져 있고 접미사 없는
+  /// 공통 파일은 몇 종에만 있다. 그런데 앱은 **2단계에서 언제나** 결을 null로
+  /// 두고(`ActivePlant.fromJson`), 3단계 이후에도 서버가 최소 표본을 못 채우면
+  /// 계속 null을 준다. 그대로 두면 그 구간 내내 없는 파일 두 개를 요청하고
+  /// 벡터 폴백으로 떨어져서, 그려 둔 배경 위에 혼자 다른 화풍의 캐릭터가 선다.
+  ///
+  /// 모자이크(mixed)를 쓴다. 서버가 분기를 확정할 때의 기본값이 `mixed`이고
+  /// (`final_form_from_profile`), 탐험 로스터도 결이 없으면 이미 모자이크로
+  /// 읽는다. 새로 고르는 값이 아니라 이미 정해져 있던 값을 그림에도 맞추는
+  /// 것이다.
+  static const _undecidedForm = PlantGrowthForm.mosaic;
+
   static List<String> candidates({
     required String speciesCode,
     required int stage,
@@ -487,6 +545,13 @@ class PlantGrowthAssetResolver {
           paths.add('assets/plants/$family-$phase-${form.code}.webp');
         }
         paths.add('assets/plants/$family-$phase.webp');
+        if (clamped >= 2 && form == null) {
+          // 접미사 없는 공통 파일이 있는 종은 위에서 이미 걸린다. 없는 종만
+          // 여기로 내려와 중립 그림을 집는다.
+          paths.add(
+            'assets/plants/$family-$phase-${_undecidedForm.code}.webp',
+          );
+        }
       }
     }
     return paths.toSet().toList(growable: false);
@@ -619,7 +684,7 @@ class _PlantSpritePreloader {
     required List<String> paths,
     required int cacheWidth,
   }) {
-    for (final path in paths) {
+    for (final path in PlantSpriteBundle.filter(paths)) {
       final token = '$path@$cacheWidth';
       if (!_scheduled.add(token)) continue;
       final provider = ResizeImage.resizeIfNeeded(
@@ -673,12 +738,20 @@ class _RasterPlantArtworkState extends State<_RasterPlantArtwork> {
   List<String>? _displayedPaths;
   int _loadVersion = 0;
   double? _devicePixelRatio;
+  bool _awaitedBundle = false;
+
+  /// 애니메이션을 끈 경로에서 바로 보여 줄 한 장.
+  ///
+  /// 매니페스트를 읽기 전이면 걸러지지 않으므로 예전과 같은 첫 후보가 된다.
+  List<String>? get _immediatePaths {
+    final first = PlantSpriteBundle.filter(widget.candidates).firstOrNull;
+    return first == null ? null : [first];
+  }
 
   @override
   void initState() {
     super.initState();
-    final legacy = widget.candidates.firstOrNull;
-    _displayedPaths = legacy == null ? null : [legacy];
+    _displayedPaths = _immediatePaths;
   }
 
   @override
@@ -688,6 +761,18 @@ class _RasterPlantArtworkState extends State<_RasterPlantArtwork> {
     if (_devicePixelRatio != dpr) {
       _devicePixelRatio = dpr;
       unawaited(_resolveCandidate());
+    }
+    // 앱은 `main`에서 매니페스트를 먼저 읽으므로 보통 이미 준비돼 있다. 그래도
+    // 늦게 도착하는 경로(테스트·핫리스타트)가 있어 한 번만 다시 고른다.
+    // initState에서는 못 한다 — 여기 붙은 재해석이 MediaQuery를 읽는데,
+    // initState가 끝나기 전에 그것을 만지면 프레임워크가 막는다.
+    if (!_awaitedBundle) {
+      _awaitedBundle = true;
+      unawaited(
+        PlantSpriteBundle.ensureLoaded().then((_) {
+          if (mounted) unawaited(_resolveCandidate());
+        }),
+      );
     }
   }
 
@@ -702,8 +787,7 @@ class _RasterPlantArtworkState extends State<_RasterPlantArtwork> {
         oldWidget.logicalWidth != widget.logicalWidth) {
       if (widget.animationsDisabled) {
         _loadVersion += 1;
-        final legacy = widget.candidates.firstOrNull;
-        _displayedPaths = legacy == null ? null : [legacy];
+        _displayedPaths = _immediatePaths;
       } else {
         unawaited(_resolveCandidate());
       }
@@ -716,8 +800,9 @@ class _RasterPlantArtworkState extends State<_RasterPlantArtwork> {
     final cacheWidth =
         (widget.logicalWidth * dpr).round().clamp(128, 1024).toInt();
     final bundles = [
-      ...widget.layeredCandidates,
-      for (final path in widget.candidates) [path],
+      for (final layer in widget.layeredCandidates)
+        if (PlantSpriteBundle.filter(layer).length == layer.length) layer,
+      for (final path in PlantSpriteBundle.filter(widget.candidates)) [path],
     ];
     for (final paths in bundles) {
       if (!mounted || version != _loadVersion) return;
