@@ -613,8 +613,10 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                   Positioned(
                     right: 8,
                     top: 8,
-                    width: size.width < 370 ? 82 : 96,
-                    height: 70,
+                    // 지도 비율(72:52)에 맞춘 상자. 비율이 다르면 안에서 지도가
+                    // 붕 뜨고, 억지로 채우면 늘어난다.
+                    width: size.width < 370 ? 96 : 112,
+                    height: size.width < 370 ? 74 : 86,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         color: const Color(0xCC151A18),
@@ -627,6 +629,7 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                           field: _field,
                           player: _position,
                           camera: camera,
+                          facing: _facing,
                         ),
                       ),
                     ),
@@ -1256,49 +1259,164 @@ class _TileField {
     }
   }
 
+  /// 미니맵 투영. 배경과 그 위 레이어가 같은 눈금을 써야 점이 지형에 붙는다.
+  ///
+  /// 축척은 가로세로 중 작은 쪽 **하나**다. 앞 판은 두 축을 따로 늘여 상자에
+  /// 맞췄는데, 그러면 방이 납작해져서 지도 모양과 걷는 땅의 모양이 어긋난다.
+  /// 지도는 비율이 맞아야 모양만 보고 자리를 찾을 수 있다.
+  ({double scale, Offset origin}) minimapFrame(Size size) {
+    const inset = 5.0;
+    final scale = math.min(
+      (size.width - inset * 2) / width,
+      (size.height - inset * 2) / height,
+    );
+    return (
+      scale: scale,
+      origin: Offset(
+        (size.width - width * scale) / 2,
+        (size.height - height * scale) / 2,
+      ),
+    );
+  }
+
+  /// 미니맵 배경. 지도가 할 일은 하나 - 구조가 한눈에 읽히는 것이다.
+  ///
+  /// 앞 판은 바닥색 판에 바닥이 아닌 칸을 덧칠해서 벽과 이끼가 한 색으로
+  /// 뭉개졌고, 길을 막는 물건을 종류 불문 검은 점으로 찍어서 서가 하나하나가
+  /// 후추처럼 흩어졌다. 방 모양은 안 보이고 얼룩만 보이는 지도였다.
+  ///
+  /// 지금은 값의 위계로 그린다. 어두운 바탕 위에 이끼는 살짝, 벽은 돌빛으로
+  /// 도드라지고, 걷는 바닥이 가장 밝다. 벽 두 겹이 밝은 바닥을 두르면서
+  /// 방과 복도의 윤곽선 노릇을 한다 - 선을 따로 긋지 않아도 구조가 남는다.
   ui.Picture minimapBackground(Size size) {
     final cached = _minimapPicture;
     if (cached != null && _minimapPictureSize == size) return cached;
     cached?.dispose();
-    const padding = 6.0;
-    final sx = (size.width - padding * 2) / width;
-    final sy = (size.height - padding * 2) / height;
+    final frame = minimapFrame(size);
+    final scale = frame.scale;
+    final origin = frame.origin;
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
-    final map = Rect.fromLTWH(padding, padding, width * sx, height * sy);
-    canvas.drawRect(map, Paint()..color = palette.floorA);
+    final map = Rect.fromLTWH(
+      origin.dx,
+      origin.dy,
+      width * scale,
+      height * scale,
+    );
+    // 지형 덩어리가 각지게 끝나면 지도가 아니라 스크린샷 조각으로 보인다.
+    // 모서리를 액자와 같은 결로 둥글려 둔다.
+    canvas.clipRRect(
+      RRect.fromRectAndRadius(map.inflate(1), const Radius.circular(4)),
+    );
+    canvas.drawRect(
+      map.inflate(1),
+      Paint()..color = Color.lerp(palette.voidColor, Colors.black, .38)!,
+    );
+
+    final mossInk = Paint()
+      ..color = Color.lerp(palette.voidColor, palette.moss, .40)!;
+    final wallInk = Paint()
+      ..color = Color.lerp(palette.voidColor, palette.stone, .55)!;
+    final floorInk = Paint()
+      ..color = Color.lerp(palette.floorA, Colors.white, .30)!;
+    final waterInk = Paint()
+      ..color = Color.lerp(palette.water, Colors.white, .14)!;
     for (final chunk in _chunks) {
       for (final cell in chunk.cells) {
-        if (cell.terrain == _TileTerrain.floor) continue;
+        final ink = switch (cell.terrain) {
+          _TileTerrain.moss => mossInk,
+          _TileTerrain.wall => wallInk,
+          _TileTerrain.floor => floorInk,
+          _TileTerrain.water => waterInk,
+        };
         canvas.drawRect(
           Rect.fromLTWH(
-            padding + cell.x * sx,
-            padding + cell.y * sy,
-            sx + .15,
-            sy + .15,
+            origin.dx + cell.x * scale,
+            origin.dy + cell.y * scale,
+            // 반 픽셀 겹침. 소수 축척에서 칸 사이가 실금으로 갈라지지 않게.
+            scale + .5,
+            scale + .5,
           ),
-          Paint()
-            ..color = cell.terrain == _TileTerrain.water
-                ? palette.water
-                : palette.moss,
+          ink,
         );
       }
     }
+
+    // 표식은 다섯 가지뿐이다. 상자·결정·사람·엉킴, 그리고 제단.
+    //
+    // 서가나 기둥 같은 조형물은 찍지 않는다. 전부 찍으면 지도가 다시 후추가
+    // 되는데, 눌러도 아무 일 없는 점은 지도에서 소음이다. 벽 너머 장식으로
+    // 흩어 둔 결정도 바닥 위가 아니면 거른다 - 갈 수 없는 곳의 표식은 거짓말이다.
+    void dot(Offset foot, Color color, double radius) {
+      if (terrainAt(foot.dx.floor(), (foot.dy - .5).floor()) !=
+          _TileTerrain.floor) {
+        return;
+      }
+      final center = Offset(
+        origin.dx + foot.dx * scale,
+        origin.dy + foot.dy * scale,
+      );
+      // 밝은 바닥 위에서도 남게 어두운 받침을 깔고 색을 얹는다.
+      canvas.drawCircle(
+        center,
+        radius + .9,
+        Paint()..color = Color.lerp(palette.voidColor, Colors.black, .45)!,
+      );
+      canvas.drawCircle(center, radius, Paint()..color = color);
+    }
+
     for (final chunk in _chunks) {
-      for (final object in chunk.objects.where((object) => object.blocks)) {
-        // 제단과 결정은 빛으로 찍는다. 미니맵에서 빛나는 점이 곧 가 볼 곳이다.
-        final lit = object.kind == _TileObjectKind.altar ||
-            object.kind == _TileObjectKind.crystal;
-        canvas.drawCircle(
-          Offset(
-            padding + object.position.dx * sx,
-            padding + object.position.dy * sy,
-          ),
-          object.kind == _TileObjectKind.altar ? 2.5 : (lit ? 1.6 : 1.1),
-          Paint()..color = lit ? palette.glow : palette.voidColor,
-        );
+      for (final object in chunk.objects) {
+        switch (object.kind) {
+          case _TileObjectKind.chest:
+            dot(
+              object.position,
+              Color.lerp(palette.metal, Colors.white, .32)!,
+              1.5,
+            );
+          case _TileObjectKind.crystal:
+            dot(object.position, Color.lerp(palette.glow, Colors.white, .2)!,
+                1.5);
+          case _TileObjectKind.npc:
+            dot(object.position, const Color(0xFFCDEBC4), 1.5);
+          case _TileObjectKind.monster:
+            dot(object.position, const Color(0xFFFF9A85), 1.8);
+          case _TileObjectKind.root:
+            // 아치 문만 찍는다. 문은 지도에서 찾아 들어가는 곳이다.
+            if (object.warp) {
+              dot(object.position, Color.lerp(palette.metal, Colors.white, .1)!,
+                  1.4);
+            }
+          default:
+            break;
+        }
       }
     }
+
+    // 제단은 별 하나로 찍는다. 이 지도에 별은 하나뿐이라, 어디로 가야
+    // 하는지가 글자 없이 정해진다.
+    final goalCenter = Offset(
+      origin.dx + goal.dx * scale,
+      origin.dy + goal.dy * scale,
+    );
+    Path sparkle(double reach, double waist) => Path()
+      ..moveTo(goalCenter.dx, goalCenter.dy - reach)
+      ..quadraticBezierTo(goalCenter.dx + waist, goalCenter.dy - waist,
+          goalCenter.dx + reach, goalCenter.dy)
+      ..quadraticBezierTo(goalCenter.dx + waist, goalCenter.dy + waist,
+          goalCenter.dx, goalCenter.dy + reach)
+      ..quadraticBezierTo(goalCenter.dx - waist, goalCenter.dy + waist,
+          goalCenter.dx - reach, goalCenter.dy)
+      ..quadraticBezierTo(goalCenter.dx - waist, goalCenter.dy - waist,
+          goalCenter.dx, goalCenter.dy - reach)
+      ..close();
+    canvas.drawPath(
+      sparkle(4.6, 1.7),
+      Paint()..color = Color.lerp(palette.voidColor, Colors.black, .45)!,
+    );
+    canvas.drawPath(sparkle(3.7, 1.25), Paint()..color = palette.glow);
+    canvas.drawCircle(goalCenter, .95, Paint()..color = Colors.white);
+
     _minimapPictureSize = size;
     return _minimapPicture = recorder.endRecording();
   }
@@ -3223,41 +3341,63 @@ class _TileMinimapPainter extends CustomPainter {
     required this.field,
     required this.player,
     required this.camera,
+    required this.facing,
   });
 
   final _TileField field;
   final Offset player;
   final _WorldCamera camera;
+  final _WalkFacing facing;
 
   @override
   void paint(Canvas canvas, Size size) {
-    const padding = 6.0;
-    final sx = (size.width - padding * 2) / field.width;
-    final sy = (size.height - padding * 2) / field.height;
+    final frame = field.minimapFrame(size);
+    final scale = frame.scale;
+    final origin = frame.origin;
     canvas.drawPicture(field.minimapBackground(size));
+    // 카메라 창. 세게 그리면 지도 위에 흰 상자만 남는다 - 지금 화면이 지도의
+    // 어디쯤인지 짚어 줄 만큼만 남긴다.
     final view = camera.worldRect;
-    canvas.drawRect(
-      Rect.fromLTWH(
-        padding + view.left * sx,
-        padding + view.top * sy,
-        view.width * sx,
-        view.height * sy,
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(
+          origin.dx + view.left * scale,
+          origin.dy + view.top * scale,
+          view.width * scale,
+          view.height * scale,
+        ),
+        const Radius.circular(2),
       ),
       Paint()
-        ..color = Colors.white54
+        ..color = Colors.white38
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1,
     );
-    canvas.drawCircle(
-      Offset(padding + player.dx * sx, padding + player.dy * sy),
-      2.5,
-      Paint()..color = const Color(0xFFFFE19A),
+    final at = Offset(
+      origin.dx + player.dx * scale,
+      origin.dy + player.dy * scale,
     );
+    final ahead = switch (facing) {
+      _WalkFacing.up => const Offset(0, -1),
+      _WalkFacing.down => const Offset(0, 1),
+      _WalkFacing.left => const Offset(-1, 0),
+      _WalkFacing.right => const Offset(1, 0),
+    };
+    // 바라보는 쪽 앞에 작은 점을 하나 더 찍는다. 이 크기에서 화살표는
+    // 뭉개지고, 큰 점 하나와 작은 점 하나면 방향이 읽힌다.
+    canvas.drawCircle(at, 3.1, Paint()..color = field.palette.voidColor);
+    canvas.drawCircle(
+      at + ahead * 3.4,
+      1.0,
+      Paint()..color = Colors.white70,
+    );
+    canvas.drawCircle(at, 2.1, Paint()..color = const Color(0xFFFFE19A));
   }
 
   @override
   bool shouldRepaint(covariant _TileMinimapPainter oldDelegate) =>
       oldDelegate.field != field ||
       oldDelegate.player != player ||
+      oldDelegate.facing != facing ||
       oldDelegate.camera.origin != camera.origin;
 }
