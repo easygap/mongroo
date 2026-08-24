@@ -506,6 +506,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     final currentGuard = battle?.enemy.guard ?? maxGuard;
     final currentTelegraph =
         battle?.enemy.intent.telegraph ?? encounter?.telegraph ?? '';
+    final hasTelegraph = encounter != null || battle != null;
     final semantics = cue == null
         ? '$enemyName 조우. $currentTelegraph'
         : cue.isTerminalCombatOutcome
@@ -561,9 +562,12 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                   if (guardianActive)
                     Positioned(
                       right: -size.width * .035,
-                      top: size.height * .035,
+                      // 아군과 같은 [usableHeight]를 쓴다. 전체 높이로 잡으면
+                      // 아래 지휘 독이 덮는 만큼 적이 잘려서, 얼굴이 있는
+                      // 아래쪽이 화면 밖으로 밀린다.
+                      top: usableHeight * .035,
                       width: size.width * .62,
-                      height: size.height * .84,
+                      height: usableHeight * .84,
                       child: _AnimatedGuardian(
                         action: _actionController,
                         ambient: _ambientController,
@@ -609,30 +613,44 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                         reduceMotion: reduceMotion,
                       ),
                     ),
-                  if (enemyName != null)
+                  // 적의 이름·장벽과 다음 공격 예고는 한 덩어리로 위에 붙인다.
+                  //
+                  // 예고를 무대 바닥(`bottom: 10 + inset`)에 두면 아군의 화분과
+                  // 적의 얼굴을 가로질러 덮는다. 둘 다 아래쪽에 서 있어서
+                  // 피할 자리가 없다. 같은 적을 설명하는 두 조각이니 위에서
+                  // 붙여 두면 서로 겹치지도, 배우를 가리지도 않는다.
+                  if (enemyName != null || (cue == null && hasTelegraph))
                     Positioned(
                       top: 47,
                       left: 10,
-                      width: math.min(200.0, size.width * .53),
-                      child: _AnimatedGuardHud(
-                        action: _actionController,
-                        enemyName: enemyName,
-                        maxGuard: maxGuard,
-                        before: combat?.enemyGuardBefore ?? currentGuard,
-                        after: combat?.enemyGuardAfter ?? currentGuard,
-                        animate: cue != null,
-                      ),
-                    ),
-                  if (cue == null && (encounter != null || battle != null))
-                    Positioned(
-                      left: 12,
-                      right: 12,
-                      bottom: 10 + widget.bottomHudInset,
-                      child: ExpeditionTelegraphChip(
-                        attackName: battle?.enemy.intent.name ??
-                            encounter?.attackName ??
-                            '수호자의 공격',
-                        text: currentTelegraph,
+                      right: 10,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (enemyName != null)
+                            SizedBox(
+                              width: math.min(200.0, size.width * .53),
+                              child: _AnimatedGuardHud(
+                                action: _actionController,
+                                enemyName: enemyName,
+                                maxGuard: maxGuard,
+                                before:
+                                    combat?.enemyGuardBefore ?? currentGuard,
+                                after: combat?.enemyGuardAfter ?? currentGuard,
+                                animate: cue != null,
+                              ),
+                            ),
+                          if (cue == null && hasTelegraph) ...[
+                            const SizedBox(height: 8),
+                            ExpeditionTelegraphChip(
+                              attackName: battle?.enemy.intent.name ??
+                                  encounter?.attackName ??
+                                  '수호자의 공격',
+                              text: currentTelegraph,
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                   if (cue != null)
