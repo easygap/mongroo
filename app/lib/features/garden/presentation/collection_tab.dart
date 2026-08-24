@@ -174,6 +174,10 @@ class _CollectionHeader extends StatelessWidget {
               child: const Icon(Icons.auto_stories_outlined),
             ),
             const SizedBox(width: 14),
+            // 씨앗 배지는 정원 앱바가 이미 같은 값으로 들고 있다. 여기서 한 번
+            // 더 놓으면 좁은 폭에서 부제목이 배지 옆으로 밀려 `전체 수집`이
+            // `전체 수` + `집`으로 갈린다. 숫자를 두 곳에서 말할 이유가 없어
+            // 배지를 내리고 폭을 부제목에 준다.
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,12 +190,12 @@ class _CollectionHeader extends StatelessWidget {
                   Text(
                     totalCharacters == 0
                         ? '수집 ${data.unlockedCount}/${data.totalCount} · 보유 아이템 ${data.ownedCollectionItems.length}개'
-                        : '성장 캐릭터 $ownedCharacters/$totalCharacters · 전체 수집 ${data.unlockedCount}/${data.totalCount}',
+                        : '성장 캐릭터 $ownedCharacters/$totalCharacters\n'
+                            '전체 수집 ${data.unlockedCount}/${data.totalCount}',
                   ),
                 ],
               ),
             ),
-            SeedBalanceBadge(balance: data.seedBalance),
           ],
         ),
       ),

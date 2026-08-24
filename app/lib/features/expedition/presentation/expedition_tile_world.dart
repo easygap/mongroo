@@ -599,17 +599,22 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                         ),
                       ),
                     ),
-                  Positioned(
-                    left: 8,
-                    top: 8,
-                    child: _SceneHudTag(
-                      icon: Icons.grid_view_rounded,
-                      label: size.width < 370
-                          ? '$visibleTiles/${_field.width * _field.height}칸 · $visibleChunks청크'
-                          : '가시 타일 $visibleTiles/${_field.width * _field.height} · 청크 $visibleChunks',
-                      color: const Color(0xFFFFE19A),
+                  // 몇 칸·몇 청크를 그렸는지는 컬링이 도는지 확인하려고 붙인
+                  // 계측이다. 플레이어에게는 아무 뜻이 없는데 화면에서 제일
+                  // 좋은 자리를 차지하고 있어서 출시 빌드에서는 감춘다.
+                  // 디버그·테스트에서는 그대로 보여 회귀를 눈으로 잡는다.
+                  if (kDebugMode)
+                    Positioned(
+                      left: 8,
+                      top: 8,
+                      child: _SceneHudTag(
+                        icon: Icons.grid_view_rounded,
+                        label: size.width < 370
+                            ? '$visibleTiles/${_field.width * _field.height}칸 · $visibleChunks청크'
+                            : '가시 타일 $visibleTiles/${_field.width * _field.height} · 청크 $visibleChunks',
+                        color: const Color(0xFFFFE19A),
+                      ),
                     ),
-                  ),
                   Positioned(
                     right: 8,
                     top: 8,
