@@ -82,7 +82,7 @@ ExpeditionStageMap _stageMap({int clearedCount = 1}) =>
       ],
     });
 
-ExpeditionCatalog _catalog({bool heartResonance = true}) =>
+ExpeditionCatalog _catalog({bool heartResonance = true, bool deep = false}) =>
     ExpeditionCatalog.fromJson({
       'content_version': '2026.08.4',
       'active_run_id': null,
@@ -90,6 +90,8 @@ ExpeditionCatalog _catalog({bool heartResonance = true}) =>
         'diary_ready': heartResonance,
         'heart_resonance_available': heartResonance,
         'free_explore_available': true,
+        'deep_available': deep,
+        'deep_locked_reason': deep ? null : '지역의 8스테이지를 모두 마치면 열려요',
         'suspended': false,
         'tutorial_completed': true,
       },
@@ -138,6 +140,7 @@ Future<_FakeStageController> _pumpShell(
   WidgetTester tester, {
   int clearedCount = 1,
   bool heartResonance = true,
+  bool deep = false,
 }) async {
   late _FakeStageController controller;
   await tester.pumpWidget(
@@ -147,7 +150,7 @@ Future<_FakeStageController> _pumpShell(
           controller = _FakeStageController(
             ExpeditionUiState(
               loading: false,
-              catalog: _catalog(heartResonance: heartResonance),
+              catalog: _catalog(heartResonance: heartResonance, deep: deep),
               roster: _roster(),
               stageMap: _stageMap(clearedCount: clearedCount),
               selectedPlantIds: const {11},
@@ -320,6 +323,71 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('stage-point-1')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('열린 깊은 조사는 눌러서 편성까지 들어간다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = await _pumpShell(tester, clearedCount: 8, deep: true);
+
+    expect(find.text('지도를 직접 읽으며 숨은 길과 원본 서고를 찾아요.'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('hub-entry-깊은 조사')));
+    // 편성 화면 캐릭터는 계속 흔들리므로 pumpAndSettle이 끝나지 않는다.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(controller.state.shellView, ExpeditionShellView.preparation);
+    // 깊은 조사는 스테이지 투기장이 아니라 지역 자유 지도를 쓴다.
+    expect(controller.state.selectedStageNo, isNull);
+    expect(find.byKey(const ValueKey('prep-start-deep')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('스테이지를 골라 들어온 편성에는 깊은 조사 버튼을 두지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = await _pumpShell(tester, clearedCount: 8, deep: true);
+    controller.openStagePreparation(3);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(controller.state.shellView, ExpeditionShellView.preparation);
+    expect(find.byKey(const ValueKey('prep-start-deep')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('깊은 조사 편성에서 뒤로 가면 지도를 건너뛰고 허브로 돌아온다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = await _pumpShell(tester, clearedCount: 8, deep: true);
+    controller.openDeepPreparation();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(controller.state.shellView, ExpeditionShellView.preparation);
+
+    expect(controller.goBackInShell(), isTrue);
+    expect(controller.state.shellView, ExpeditionShellView.hub);
+  });
+
+  testWidgets('아직 만들지 않은 길은 자물쇠가 아니라 준비 중으로 알린다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpShell(tester, clearedCount: 8, deep: true);
+
+    // 지역을 다 깨도 열리지 않는다. `조건을 채우면 열린다`고 약속하지 않는다.
+    expect(find.text('합동 수호전'), findsOneWidget);
+    expect(find.text('장거리 개척'), findsOneWidget);
+    expect(find.text('아직 만들고 있어요.'), findsNWidgets(2));
+    expect(find.byKey(const ValueKey('hub-entry-합동 수호전')), findsNothing);
+    expect(find.byKey(const ValueKey('hub-entry-장거리 개척')), findsNothing);
+
+    // 순찰은 모험 탭이 들고 있으므로 여기서는 진입만 열려 있다.
+    expect(find.byKey(const ValueKey('hub-entry-자동 순찰')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

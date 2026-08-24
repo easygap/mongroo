@@ -491,6 +491,38 @@ class _StartActions extends ConsumerWidget {
           icon: const Icon(Icons.route_outlined),
           label: const Text('보상 없이 자유 탐험'),
         ),
+        // 깊은 조사는 지역 자유 지도를 쓰므로 스테이지를 고르고 들어온 편성에는
+        // 내놓지 않는다. 고른 스테이지를 조용히 무시하는 버튼이 되기 때문이다.
+        // 허브의 `깊은 조사`로 들어오면 스테이지가 비어 있어 여기가 켜진다.
+        // 잠겼을 때도 버튼을 남기고 서버가 준 사유를 그대로 말한다 — 빼 버리면
+        // 있는 줄도 모른다.
+        if (state.selectedStageNo == null) ...[
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            key: const ValueKey('prep-start-deep'),
+            onPressed: !busy && hasParty && state.catalog!.deepAvailable
+                ? () => controller.start('deep')
+                : null,
+            icon: busy && state.busyAction?.startsWith('start:deep') == true
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.travel_explore_outlined),
+            label: const Text('깊은 조사 떠나기'),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            state.catalog!.deepAvailable
+                ? '엉킴이 더 단단해지는 대신, 처음 여는 기록서와 이야기를 만나요. 씨앗은 늘지 않아요.'
+                : state.catalog!.deepLockedReason ??
+                    '지역의 8스테이지를 모두 마치면 열려요.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ],
         const SizedBox(height: 8),
         TextButton.icon(
           onPressed:

@@ -59,7 +59,7 @@ class _ExpeditionHub extends ConsumerWidget {
                     Text('다른 길',
                         style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 10),
-                    ..._hubEntries(stageMap).map(
+                    ..._hubEntries(context, ref, stageMap).map(
                       (entry) => Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: _HubEntryTile(entry: entry),
@@ -75,33 +75,56 @@ class _ExpeditionHub extends ConsumerWidget {
     );
   }
 
-  List<_HubEntry> _hubEntries(ExpeditionStageMap stageMap) {
-    final regionCleared = stageMap.regionCleared;
-    final shortName = stageMap.region.shortName;
+  /// 허브에서 갈 수 있는 다른 길.
+  ///
+  /// **누를 수 없는 것을 열린 것처럼 두지 않는다.** 예전에는 네 항목이 모두
+  /// 그냥 판이라, 잠기지 않은 `자동 순찰`·`깊은 조사`를 눌러도 아무 일이 없고
+  /// 아직 만들지 않은 `합동 수호전`은 지역을 깨면 열린 모습이 되었다.
+  /// 지금은 셋으로 갈린다 — 갈 수 있으면 [_HubEntry.onTap]이 있고, 조건이
+  /// 모자라면 [_HubEntry.lockReason], 서버에 아직 없는 길은
+  /// [_HubEntry.comingSoon]이다.
+  List<_HubEntry> _hubEntries(
+    BuildContext context,
+    WidgetRef ref,
+    ExpeditionStageMap stageMap,
+  ) {
+    final notifier = ref.read(expeditionControllerProvider.notifier);
+    final catalog = ref.read(expeditionControllerProvider).catalog;
+    final deepAvailable = catalog?.deepAvailable ?? stageMap.regionCleared;
     return [
-      const _HubEntry(
+      _HubEntry(
         icon: Icons.hiking_rounded,
         title: '자동 순찰',
         description: '앱을 닫아 두면 캐릭터가 혼자 다녀와요.',
         lockReason: null,
+        // 순찰 보내기는 모험 탭(`오늘의 순찰`)이 들고 있다. 같은 것을 두 곳에
+        // 만들지 않고, 여기서는 그 화면으로 돌려보낸다.
+        onTap: () => Navigator.of(context).maybePop(),
       ),
       _HubEntry(
         icon: Icons.travel_explore_rounded,
         title: '깊은 조사',
         description: '지도를 직접 읽으며 숨은 길과 원본 서고를 찾아요.',
-        lockReason: regionCleared ? null : '$shortName 8까지 완주하면 열려요.',
+        // 사유는 지역 이름을 넣어 직접 만든다. 서버도 같은 뜻을 보내지만
+        // `지역의 8스테이지`라고만 해서, 지금 보고 있는 곳이 어디인지 모른다.
+        lockReason: deepAvailable
+            ? null
+            : '${stageMap.region.shortName} 8까지 완주하면 열려요.',
+        onTap: deepAvailable ? notifier.openDeepPreparation : null,
       ),
-      _HubEntry(
+      const _HubEntry(
         icon: Icons.groups_2_rounded,
         title: '합동 수호전',
         description: '여섯이서 깊이 잠든 수호짐승을 깨워 줘요.',
-        lockReason: regionCleared ? null : '수호짐승과 한 번 만난 뒤에 열려요.',
+        lockReason: '아직 만들고 있어요.',
+        comingSoon: true,
       ),
-      _HubEntry(
+      const _HubEntry(
         icon: Icons.map_outlined,
         title: '장거리 개척',
         description: '여러 구간을 다른 조로 나눠 멀리까지 다녀와요.',
-        lockReason: '우물정원을 완주하면 열려요.',
+        lockReason: '아직 만들고 있어요.',
+        comingSoon: true,
       ),
     ];
   }
@@ -276,12 +299,21 @@ class _HubEntry {
     required this.title,
     required this.description,
     required this.lockReason,
+    this.onTap,
+    this.comingSoon = false,
   });
 
   final IconData icon;
   final String title;
   final String description;
   final String? lockReason;
+
+  /// 갈 수 있는 길만 값을 갖는다. 없으면 판만 그린다.
+  final VoidCallback? onTap;
+
+  /// 조건이 모자란 것이 아니라 아직 만들지 않은 길. 자물쇠 대신 공사 표시를
+  /// 쓴다 — 자물쇠는 `무언가를 하면 열린다`는 약속인데 그럴 조건이 없다.
+  final bool comingSoon;
 }
 
 class _HubEntryTile extends StatelessWidget {
@@ -293,44 +325,68 @@ class _HubEntryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final locked = entry.lockReason != null;
+    final onTap = entry.onTap;
+    final leading = entry.comingSoon
+        ? Icons.handyman_outlined
+        : locked
+            ? Icons.lock_outline_rounded
+            : entry.icon;
+    final panel = MongrooPanel(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        children: [
+          Icon(
+            leading,
+            size: 22,
+            color: locked ? scheme.onSurfaceVariant : scheme.primary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.title,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  entry.lockReason ?? entry.description,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          // 갈 수 있는 길에만 화살표를 둔다. 이어서 모험하기 카드와 같은 신호다.
+          if (onTap != null)
+            Icon(Icons.chevron_right_rounded,
+                size: 22, color: scheme.onSurfaceVariant),
+        ],
+      ),
+    );
     return Semantics(
-      label: locked
-          ? '${entry.title}, 잠김. ${entry.lockReason}'
-          : '${entry.title}. ${entry.description}',
+      button: onTap != null,
+      label: entry.comingSoon
+          ? '${entry.title}, 준비 중. ${entry.description}'
+          : locked
+              ? '${entry.title}, 잠김. ${entry.lockReason}'
+              : '${entry.title}. ${entry.description}',
       child: Opacity(
         opacity: locked ? .62 : 1,
-        child: MongrooPanel(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              Icon(
-                locked ? Icons.lock_outline_rounded : entry.icon,
-                size: 22,
-                color: locked ? scheme.onSurfaceVariant : scheme.primary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      entry.title,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      entry.lockReason ?? entry.description,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: scheme.onSurfaceVariant),
-                    ),
-                  ],
+        child: onTap == null
+            ? panel
+            : Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  key: ValueKey('hub-entry-${entry.title}'),
+                  borderRadius: BorderRadius.circular(15),
+                  onTap: onTap,
+                  child: panel,
                 ),
               ),
-            ],
-          ),
-        ),
       ),
     );
   }

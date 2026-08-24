@@ -291,14 +291,11 @@ def _shipped_regions() -> frozenset[str]:
     return shipped_region_codes()
 
 
-# ── 아직 근거가 없어 등록하지 않은 조건 ──────────────────────────────────────
-#
-# `bellringer_chime`(우물정원)·`germination_gear`(보관고)·`ringcount_record`
-# (관측실)는 모두 **깊은 조사 최초 완주**를 묻는다. 그런데 지금 구현에는 `deep`
-# 모드가 없고(`tutorial|heart_resonance|free_explore`가 전부), 지역도 기억서고
-# (`moss_archive`) 하나뿐이라 세 조건 모두 **영원히 참이 될 수 없다.** 등록하면
-# 진행도 0/1이 영영 멈춰 있는 채로 사전 공개되므로 넣지 않는다. 깊은 조사 모드와
-# 나머지 지역이 생기는 날 함께 연다.
+# 깊은 조사로 열리는 세 권(`bellringer_chime`·`germination_gear`·
+# `ringcount_record`)은 위 DEEP_SURVEY_UNLOCKS에 등록돼 있다. 예전에는 `deep`
+# 모드도 없고 지역도 기억서고 하나뿐이라 영원히 참이 될 수 없어 빼 뒀는데,
+# 그 뒤 네 지역과 깊은 조사가 들어오면서 조건이 실제로 채워진다. `shipped`
+# 검사가 남아 있어 콘텐츠를 뺀 지역의 조건은 여전히 광고하지 않는다.
 
 # 보유 권수로 열리는 조건. 스킬 사용이 아니라 서고 크기를 본다.
 COLLECTION_UNLOCKS = (

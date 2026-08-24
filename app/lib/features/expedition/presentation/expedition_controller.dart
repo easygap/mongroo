@@ -277,12 +277,37 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
     );
   }
 
+  /// 허브에서 깊은 조사 편성 화면을 연다.
+  ///
+  /// 스테이지를 고르지 않는다 — 깊은 조사는 정해진 8걸음이 아니라 그 지역의
+  /// 자유 지도를 어려운 난이도로 다시 도는 길이라서, 서버도 `stage_no` 없이
+  /// 받는다. 그래서 [ExpeditionUiState.selectedStageNo]를 비워 둔 채 넘어간다.
+  void openDeepPreparation() {
+    final catalog = state.catalog;
+    if (catalog == null) return;
+    if (!catalog.deepAvailable) {
+      state = state.copyWith(
+        error: catalog.deepLockedReason ?? '아직 깊은 조사가 열리지 않았어요.',
+      );
+      return;
+    }
+    state = state.copyWith(
+      shellView: ExpeditionShellView.preparation,
+      selectedStageNo: null,
+      error: null,
+    );
+  }
+
   /// 한 단계 뒤로. 편성 → 지도 → 허브 순서로 돌아간다.
   bool goBackInShell() {
     switch (state.shellView) {
       case ExpeditionShellView.preparation:
+        // 스테이지를 고르지 않고 온 편성(깊은 조사)은 지도를 거치지 않고
+        // 곧장 허브로 돌아간다. 안 그러면 오지 않은 화면으로 나간다.
         state = state.copyWith(
-          shellView: ExpeditionShellView.stageMap,
+          shellView: state.selectedStageNo == null
+              ? ExpeditionShellView.hub
+              : ExpeditionShellView.stageMap,
           selectedStageNo: null,
         );
         return true;
@@ -321,6 +346,12 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
       state = state.copyWith(error: '오늘 마음 일기를 먼저 기록해 주세요.');
       return false;
     }
+    if (mode == 'deep' && !catalog.deepAvailable) {
+      state = state.copyWith(
+        error: catalog.deepLockedReason ?? '아직 깊은 조사가 열리지 않았어요.',
+      );
+      return false;
+    }
     final plantIds = mode == 'tutorial'
         ? [
             state.roster
@@ -333,7 +364,9 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
                 .plantId,
           ]
         : state.selectedPlantIds.toList(growable: false);
-    final stageNo = mode == 'tutorial' ? null : state.selectedStageNo;
+    // 조작 연습과 깊은 조사는 스테이지 투기장이 아니라 지역 자유 지도를 쓴다.
+    final stageNo =
+        mode == 'tutorial' || mode == 'deep' ? null : state.selectedStageNo;
     final action = 'start:$mode:${plantIds.join(',')}:${stageNo ?? '-'}';
     return _perform(
       action,
