@@ -65,7 +65,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 : constraints.maxWidth < 400
                     ? 8
                     : 16,
-            32,
+            // 확장 FAB(높이 56)이 마지막 줄을 덮지 않도록 비운다. 320px에서는
+            // 달력이 스크롤되지 않아서 가려진 문장을 꺼낼 방법이 없었다.
+            96,
           ),
           children: [
             const Align(
@@ -154,22 +156,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               },
             ),
             const SizedBox(height: 16),
-            const Wrap(
+            // 칸에 찍히는 것은 읽힌 마음의 아이콘이다. 범례도 같은 아이콘을
+            // 같은 뜻으로 적는다 — 예전 범례는 해를 `이전 직접 선택`,
+            // 반짝임을 `일기에서 읽음`이라 설명했는데, 칸에서 그 둘은 각각
+            // 기쁨과 놀람·당황이라 서로 어긋났다.
+            Wrap(
               spacing: 14,
               runSpacing: 8,
               alignment: WrapAlignment.center,
               children: [
-                _CalendarLegend(
-                  icon: Icons.auto_awesome_rounded,
-                  label: '일기에서 읽음',
-                ),
-                _CalendarLegend(
+                for (final emotion in diaryEmotionLegend)
+                  _CalendarLegend(
+                    icon: diaryEmotionIcon(emotion.code),
+                    color: diaryEmotionColor(
+                      emotion.code,
+                      brightness: Theme.of(context).brightness,
+                    ),
+                    label: emotion.label,
+                  ),
+                const _CalendarLegend(
                   icon: Icons.hourglass_top_rounded,
                   label: '읽는 중',
-                ),
-                _CalendarLegend(
-                  icon: Icons.wb_sunny_outlined,
-                  label: '이전 직접 선택',
                 ),
               ],
             ),
@@ -276,10 +283,13 @@ class _MonthGrid extends StatelessWidget {
 }
 
 class _CalendarLegend extends StatelessWidget {
-  const _CalendarLegend({required this.icon, required this.label});
+  const _CalendarLegend({required this.icon, required this.label, this.color});
 
   final IconData icon;
   final String label;
+
+  /// 칸 표시와 같은 색. 없으면 테마 기본색을 쓴다(상태 표시용).
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +297,7 @@ class _CalendarLegend extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 17, color: scheme.primary),
+        Icon(icon, size: 17, color: color ?? scheme.primary),
         const SizedBox(width: 4),
         Text(label, style: const TextStyle(fontSize: 12)),
       ],
@@ -324,10 +334,11 @@ class _DayCell extends StatelessWidget {
     final showsAnalyzedEmotion = !explicitMood &&
         day?.lastAnalysisStatus == 'succeeded' &&
         day?.lastAiEmotion != null;
+    final brightness = Theme.of(context).brightness;
     final markerColor = explicitMood
-        ? moodLevelColor(day!.lastMoodLevel!)
+        ? moodLevelColor(day!.lastMoodLevel!, brightness: brightness)
         : showsAnalyzedEmotion
-            ? diaryEmotionColor(day?.lastAiEmotion)
+            ? diaryEmotionColor(day?.lastAiEmotion, brightness: brightness)
             : scheme.primary;
     final markerIcon = explicitMood
         ? moodLevelIcon(day!.lastMoodLevel!)

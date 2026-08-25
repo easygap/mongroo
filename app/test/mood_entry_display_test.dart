@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
@@ -83,5 +85,106 @@ void main() {
     expect(diaryEmotionName(day.lastAiEmotion), '여러 마음');
     expect(diaryEmotionName('hurt'), '슬픔·상처');
     expect(diaryEmotionName('embarrassment'), '놀람·당황');
+  });
+
+  test('분류기가 내는 한글 라벨도 여섯 갈래 표시로 이어진다', () {
+    // 서버 `EMOTION_LABELS`는 한국어다. 영어 코드만 알던 매핑에서는
+    // 기쁨·슬픔·분노·불안이 전부 미분류 아이콘(책)과 보라색으로 떨어져서
+    // 라벨은 「기쁨」인데 그림은 아무 뜻도 없는 상태가 됐다.
+    const pairs = {
+      '기쁨': 'joy',
+      '슬픔': 'sadness',
+      '상처': 'sadness',
+      '분노': 'anger',
+      '불안': 'anxiety',
+      '당황': 'surprise',
+    };
+    for (final entry in pairs.entries) {
+      expect(diaryEmotionCode(entry.key), entry.value, reason: entry.key);
+      expect(
+        diaryEmotionIcon(entry.key),
+        diaryEmotionIcon(entry.value),
+        reason: entry.key,
+      );
+      expect(
+        diaryEmotionColor(entry.key),
+        diaryEmotionColor(entry.value),
+        reason: entry.key,
+      );
+      expect(
+        diaryEmotionIcon(entry.key),
+        isNot(Icons.menu_book_outlined),
+        reason: entry.key,
+      );
+    }
+
+    // 모르는 라벨은 원문을 살리고 표시만 중립으로 남긴다.
+    expect(diaryEmotionCode('무엇'), isNull);
+    expect(diaryEmotionName('무엇'), '무엇');
+    expect(diaryEmotionIcon('무엇'), Icons.menu_book_outlined);
+  });
+
+  test('어두운 테마에서도 마음 표시가 배경과 충분히 갈린다', () {
+    // 종이색 배경용으로 고른 어두운 값들이라 검은 배경에서는 3:1 언저리까지
+    // 떨어졌다. 달력 칸·기록 카드의 아이콘과 테두리가 전부 이 색이다.
+    const darkSurface = Color(0xFF17130F);
+    double relativeLuminance(Color color) {
+      double channel(double value) => value <= 0.03928
+          ? value / 12.92
+          : math.pow((value + .055) / 1.055, 2.4).toDouble();
+      return .2126 * channel(color.r) +
+          .7152 * channel(color.g) +
+          .0722 * channel(color.b);
+    }
+
+    double contrast(Color a, Color b) {
+      final first = relativeLuminance(a);
+      final second = relativeLuminance(b);
+      final high = math.max(first, second);
+      final low = math.min(first, second);
+      return (high + .05) / (low + .05);
+    }
+
+    for (final emotion in diaryEmotionLegend) {
+      final dark = diaryEmotionColor(
+        emotion.code,
+        brightness: Brightness.dark,
+      );
+      expect(
+        contrast(dark, darkSurface),
+        greaterThanOrEqualTo(4.5),
+        reason: '${emotion.label}이 어두운 배경에서 묻힙니다',
+      );
+    }
+    for (var level = 1; level <= 5; level++) {
+      expect(
+        contrast(moodLevelColor(level, brightness: Brightness.dark),
+            darkSurface),
+        greaterThanOrEqualTo(4.5),
+        reason: '$level단계 기분 색이 어두운 배경에서 묻힙니다',
+      );
+    }
+
+    // 밝은 테마 값은 그대로 둔다.
+    expect(
+      diaryEmotionColor('기쁨'),
+      diaryEmotionColor('joy'),
+    );
+    expect(
+      diaryEmotionColor('기쁨', brightness: Brightness.dark),
+      isNot(diaryEmotionColor('기쁨')),
+    );
+  });
+
+  test('달력 범례의 아이콘과 색이 칸 표시와 같다', () {
+    for (final emotion in diaryEmotionLegend) {
+      expect(diaryEmotionCode(emotion.code), emotion.code);
+      expect(diaryEmotionName(emotion.code), emotion.label);
+    }
+    // 여섯 갈래가 서로 다른 아이콘을 쓴다 — 범례가 구분에 쓸모 있으려면 필요하다.
+    expect(
+      diaryEmotionLegend.map((e) => diaryEmotionIcon(e.code)).toSet(),
+      hasLength(diaryEmotionLegend.length),
+    );
   });
 }

@@ -33,10 +33,11 @@ class MoodEntryTile extends StatelessWidget {
         !entry.aiLabelHidden &&
         entry.analysisStatus == 'succeeded' &&
         entry.effectiveAiLabel != null;
+    final brightness = Theme.of(context).brightness;
     final markerColor = entry.moodLevelExplicit
-        ? moodLevelColor(entry.moodLevel)
+        ? moodLevelColor(entry.moodLevel, brightness: brightness)
         : showsAnalyzedEmotion
-            ? diaryEmotionColor(entry.effectiveAiLabel)
+            ? diaryEmotionColor(entry.effectiveAiLabel, brightness: brightness)
             : scheme.primary;
     final markerIcon = entry.moodLevelExplicit
         ? moodLevelIcon(entry.moodLevel)

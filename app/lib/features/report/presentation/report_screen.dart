@@ -156,7 +156,13 @@ class ReportScreen extends ConsumerWidget {
                             label: diaryEmotionName(emotion.emotion),
                             count: emotion.count,
                             maxCount: maxAi,
-                            color: palette.leaf,
+                            // 달력이 가르쳐 준 마음별 색을 회고에서도 그대로
+                            // 쓴다. 전부 같은 초록이면 어느 마음이 얼마나
+                            // 쌓였는지 막대 길이로만 읽어야 했다.
+                            color: diaryEmotionColor(
+                              emotion.emotion,
+                              brightness: Theme.of(context).brightness,
+                            ),
                             semanticContext: '일기에서 읽은 감정',
                             onTap: () => _openEntries(
                               context,

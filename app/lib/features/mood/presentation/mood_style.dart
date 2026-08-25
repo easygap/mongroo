@@ -22,10 +22,26 @@ const Map<int, Color> moodLevelColors = {
   5: Color(0xFFAA4E3E),
 };
 
+/// 어두운 테마용 같은 색상의 밝은 변주.
+///
+/// 위 값들은 종이색 배경에 맞춰 고른 어두운 색이라 검은 배경 위에서는
+/// 3:1 언저리까지 떨어진다(비텍스트 대비 하한). 색상은 그대로 두고 밝기만
+/// 올려 어두운 테마에서 4.6:1 이상을 확보한다.
+const Map<int, Color> moodLevelColorsDark = {
+  1: Color(0xFF837B9B),
+  2: Color(0xFF6D8488),
+  3: Color(0xFF9F7A43),
+  4: Color(0xFF5C896F),
+  5: Color(0xFFC16555),
+};
+
 String moodLevelName(int level) => moodLevelNames[level] ?? '잔잔함';
 
-Color moodLevelColor(int level) =>
-    moodLevelColors[level] ?? moodLevelColors[3]!;
+Color moodLevelColor(int level, {Brightness brightness = Brightness.light}) {
+  final palette =
+      brightness == Brightness.dark ? moodLevelColorsDark : moodLevelColors;
+  return palette[level] ?? palette[3]!;
+}
 
 /// 색을 구분하기 어려운 환경에서도 기분 풍경을 알아볼 수 있게 하는 보조 아이콘.
 IconData moodLevelIcon(int level) => switch (level) {
@@ -65,21 +81,64 @@ String? analysisStatusLabel(String status) {
   }
 }
 
-String diaryEmotionName(String? value) => switch (value?.toLowerCase()) {
-      'joy' || 'happy' || 'happiness' => '기쁨',
-      'sad' || 'sadness' || 'hurt' || '상처' => '슬픔·상처',
-      'anger' || 'angry' => '화남',
-      'anxiety' || 'anxious' || 'fear' => '불안',
-      'surprise' ||
-      'surprised' ||
-      'embarrassment' ||
-      'flustered' ||
-      '당황' =>
-        '놀람·당황',
-      'mixed' || 'mosaic' || 'uncertain' || 'abstained' => '여러 마음',
-      final label? when label.trim().isNotEmpty => label.trim(),
-      _ => '아직 읽힌 마음 없음',
-    };
+/// 서버가 `mood_entries.ai_emotion`에 넣는 라벨을 여섯 갈래 코드로 모은다.
+///
+/// **분류기는 한국어 라벨을 낸다**(`EMOTION_LABELS = ("기쁨","슬픔","분노",
+/// "불안","상처","당황")`). 영어 코드만 알던 시절의 매핑을 그대로 두면
+/// 기쁨·슬픔·분노·불안이 전부 미분류로 떨어져서, 달력·기록 목록·기록 상세가
+/// 라벨은 「기쁨」이라 적어 놓고 아이콘은 보라색 책을 그린다.
+/// 서버 `app/services/plants.py`의 `_EMOTION_ALIASES`와 같은 표를 쓴다.
+const Map<String, String> _diaryEmotionAliases = {
+  'joy': 'joy',
+  'happy': 'joy',
+  'happiness': 'joy',
+  '기쁨': 'joy',
+  '행복': 'joy',
+  '즐거움': 'joy',
+  'sad': 'sadness',
+  'sadness': 'sadness',
+  'hurt': 'sadness',
+  '슬픔': 'sadness',
+  '상처': 'sadness',
+  'anger': 'anger',
+  'angry': 'anger',
+  '분노': 'anger',
+  '화남': 'anger',
+  'anxiety': 'anxiety',
+  'anxious': 'anxiety',
+  'fear': 'anxiety',
+  '불안': 'anxiety',
+  'surprise': 'surprise',
+  'surprised': 'surprise',
+  'embarrassment': 'surprise',
+  'flustered': 'surprise',
+  '당황': 'surprise',
+  '놀람': 'surprise',
+  'mixed': 'mixed',
+  'mosaic': 'mixed',
+  'uncertain': 'mixed',
+  'abstained': 'mixed',
+  '혼합': 'mixed',
+};
+
+/// 표에 없는 값은 null. 이름은 원문을 살리고 아이콘·색만 중립으로 떨어진다.
+String? diaryEmotionCode(String? value) =>
+    _diaryEmotionAliases[value?.trim().toLowerCase() ?? ''];
+
+String diaryEmotionName(String? value) {
+  final named = switch (diaryEmotionCode(value)) {
+    'joy' => '기쁨',
+    'sadness' => '슬픔·상처',
+    'anger' => '화남',
+    'anxiety' => '불안',
+    'surprise' => '놀람·당황',
+    'mixed' => '여러 마음',
+    _ => null,
+  };
+  if (named != null) return named;
+  final raw = value?.trim() ?? '';
+  return raw.isEmpty ? '아직 읽힌 마음 없음' : raw;
+}
 
 String diaryAnalysisDisplayLabel({
   required String status,
@@ -108,36 +167,44 @@ IconData diaryAnalysisIcon(String status, {bool hidden = false}) {
   };
 }
 
-Color diaryEmotionColor(String? emotion) => switch (emotion?.toLowerCase()) {
-      'joy' || 'happy' || 'happiness' => const Color(0xFF9A602B),
-      'sad' || 'sadness' || 'hurt' || '상처' => const Color(0xFF4F718F),
-      'anger' || 'angry' => const Color(0xFFA84642),
-      'anxiety' || 'anxious' || 'fear' => const Color(0xFF655D8E),
-      'surprise' ||
-      'surprised' ||
-      'embarrassment' ||
-      'flustered' ||
-      '당황' =>
-        const Color(0xFF984A72),
-      'mixed' ||
-      'mosaic' ||
-      'uncertain' ||
-      'abstained' =>
-        const Color(0xFF4D7664),
-      _ => const Color(0xFF6257C8),
-    };
+/// 마음별 표시 색. 어두운 테마에서는 같은 색상의 밝은 변주를 쓴다.
+///
+/// 종이색 배경에 맞춘 어두운 값들이라 검은 배경에서는 3.1~3.6:1까지
+/// 떨어진다. 달력 칸·기록 카드의 아이콘과 테두리가 전부 이 색이라 어두운
+/// 테마에서 마음이 구분되지 않았다.
+Color diaryEmotionColor(
+  String? emotion, {
+  Brightness brightness = Brightness.light,
+}) {
+  final dark = brightness == Brightness.dark;
+  return switch (diaryEmotionCode(emotion)) {
+    'joy' => dark ? const Color(0xFFB47032) : const Color(0xFF9A602B),
+    'sadness' => dark ? const Color(0xFF5C83A5) : const Color(0xFF4F718F),
+    'anger' => dark ? const Color(0xFFC16561) : const Color(0xFFA84642),
+    'anxiety' => dark ? const Color(0xFF827BA8) : const Color(0xFF655D8E),
+    'surprise' => dark ? const Color(0xFFB4668E) : const Color(0xFF984A72),
+    'mixed' => dark ? const Color(0xFF598974) : const Color(0xFF4D7664),
+    _ => dark ? const Color(0xFF7D74D1) : const Color(0xFF6257C8),
+  };
+}
 
-IconData diaryEmotionIcon(String? emotion) => switch (emotion?.toLowerCase()) {
-      'joy' || 'happy' || 'happiness' => Icons.wb_sunny_outlined,
-      'sad' || 'sadness' || 'hurt' || '상처' => Icons.water_drop_outlined,
-      'anger' || 'angry' => Icons.local_fire_department_outlined,
-      'anxiety' || 'anxious' || 'fear' => Icons.nights_stay_outlined,
-      'surprise' ||
-      'surprised' ||
-      'embarrassment' ||
-      'flustered' ||
-      '당황' =>
-        Icons.auto_awesome_rounded,
-      'mixed' || 'mosaic' || 'uncertain' || 'abstained' => Icons.spa_outlined,
+IconData diaryEmotionIcon(String? emotion) =>
+    switch (diaryEmotionCode(emotion)) {
+      'joy' => Icons.wb_sunny_outlined,
+      'sadness' => Icons.water_drop_outlined,
+      'anger' => Icons.local_fire_department_outlined,
+      'anxiety' => Icons.nights_stay_outlined,
+      'surprise' => Icons.auto_awesome_rounded,
+      'mixed' => Icons.spa_outlined,
       _ => Icons.menu_book_outlined,
     };
+
+/// 달력 범례가 실제로 찍히는 표시와 같은 순서·아이콘을 쓰도록 하나로 모은다.
+const List<({String code, String label})> diaryEmotionLegend = [
+  (code: 'joy', label: '기쁨'),
+  (code: 'sadness', label: '슬픔·상처'),
+  (code: 'anger', label: '화남'),
+  (code: 'anxiety', label: '불안'),
+  (code: 'surprise', label: '놀람·당황'),
+  (code: 'mixed', label: '여러 마음'),
+];

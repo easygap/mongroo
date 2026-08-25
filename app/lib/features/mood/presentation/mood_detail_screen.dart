@@ -229,10 +229,15 @@ class _MoodHeader extends StatelessWidget {
         !entry.aiLabelHidden &&
         entry.analysisStatus == 'succeeded' &&
         entry.effectiveAiLabel != null;
+    // 이 머리 패널은 테마와 무관하게 항상 어두운 밤색이고, 아이콘도 밤색으로
+    // 뚫는다. 그래서 표시 색은 늘 어두운 배경용 밝은 변주를 쓴다.
     final markerColor = entry.moodLevelExplicit
-        ? moodLevelColor(entry.moodLevel)
+        ? moodLevelColor(entry.moodLevel, brightness: Brightness.dark)
         : showsAnalyzedEmotion
-            ? diaryEmotionColor(entry.effectiveAiLabel)
+            ? diaryEmotionColor(
+                entry.effectiveAiLabel,
+                brightness: Brightness.dark,
+              )
             : palette.butter;
     final markerIcon = entry.moodLevelExplicit
         ? moodLevelIcon(entry.moodLevel)
