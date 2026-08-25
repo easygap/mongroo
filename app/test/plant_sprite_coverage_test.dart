@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mongroo/core/config/bundled_assets.dart';
 import 'package:mongroo/features/home/domain/plant.dart';
 import 'package:mongroo/features/home/presentation/plant_view.dart';
 
@@ -90,8 +91,8 @@ void main() {
   });
 
   test('번들에 없는 후보는 걸러 내고 요청하지 않는다', () {
-    PlantSpriteBundle.overrideAssetsForTest(bundled);
-    addTearDown(() => PlantSpriteBundle.overrideAssetsForTest(null));
+    BundledAssets.overrideAssetsForTest(bundled);
+    addTearDown(() => BundledAssets.overrideAssetsForTest(null));
 
     final raw = PlantGrowthAssetResolver.candidates(
       speciesCode: 'baby-pot',

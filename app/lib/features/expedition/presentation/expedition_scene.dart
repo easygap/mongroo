@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../domain/expedition_models.dart';
 
 const expeditionDungeonGateAsset =
     'assets/adventure/expedition-dungeon-gate-v3.webp';
@@ -75,6 +76,44 @@ String expeditionTangleAssetPath(String code, String state) {
       : 'tangled-ledger';
   final safeState = expeditionTangleStates.contains(state) ? state : 'idle';
   return 'assets/adventure/tangles/tangle-$safeCode-$safeState-v1.webp';
+}
+
+/// 품종 시트가 아직 없을 때 쓰는 공용 걷기 도트.
+const expeditionSharedWalkerAsset =
+    'assets/adventure/overworld/expedition-walker-v1.png';
+
+/// 던전을 걷는 캐릭터의 도트 시트를 우선순위대로 돌려준다.
+///
+/// 지금 번들에는 공용 시트 한 장뿐이다. 방향이 읽히는 것을 먼저 잡느라 후드를
+/// 쓴 여행자 하나로 만들었고(`import_expedition_walker.py`), 그래서 어떤
+/// 캐릭터로 들어가도 같은 사람이 걷는다. 품종별 시트는 방향마다 한 장씩 그림을
+/// 받아 구워야 하는 원화 작업이라 코드로 만들 수 없다.
+///
+/// 대신 시트가 들어오면 코드를 고치지 않고 그 품종부터 바뀌도록 자리를 연다.
+/// `expedition-walker-<품종>-v1.png`가 번들에 있으면 그것을 쓰고 없으면 공용
+/// 시트로 떨어진다. 성장 원화를 채울 때와 같은 순서다.
+List<String> expeditionWalkerAssetCandidates(String? speciesCode) {
+  final slug = (speciesCode ?? '')
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+      .replaceAll(RegExp(r'^-+|-+$'), '');
+  return <String>[
+    if (slug.isNotEmpty && slug != 'generic')
+      'assets/adventure/overworld/expedition-walker-$slug-v1.png',
+    expeditionSharedWalkerAsset,
+  ];
+}
+
+/// 던전을 실제로 걷는 대원.
+///
+/// 안내자는 서버에만 있는 가상 대원이라(`isGuide`) 전용 도트가 영원히 없다.
+/// 그 사람을 기준으로 시트를 고르면 튜토리얼 내내 폴백만 탄다.
+ExpeditionMember? expeditionWalkerMember(List<ExpeditionMember> party) {
+  for (final member in party) {
+    if (!member.isGuide) return member;
+  }
+  return party.isEmpty ? null : party.first;
 }
 
 final expeditionTangleCombatAssets = <String>{

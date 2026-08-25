@@ -3,8 +3,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import '../../../core/config/bundled_assets.dart';
 import '../domain/plant.dart';
 
 /// 번들에 실제로 들어 있는 캐릭터 그림 목록.
@@ -16,38 +16,16 @@ import '../domain/plant.dart';
 ///
 /// 종별 목록을 손으로 들고 있으면 그림을 추가한 날 반드시 한쪽을 잊는다.
 /// 그래서 번들 매니페스트를 단일 원본으로 삼는다.
+/// 실체는 [BundledAssets]다. 같은 장치를 던전 걷기 도트도 쓰게 되면서
+/// core로 옮겼고, 호출부가 많아 이름만 그대로 둔다.
 class PlantSpriteBundle {
   const PlantSpriteBundle._();
 
-  static Set<String>? _assets;
-  static Future<Set<String>>? _loading;
+  static Set<String>? get assetsOrNull => BundledAssets.assetsOrNull;
 
-  /// 매니페스트를 아직 못 읽었으면 `null`. 이때는 걸러 내지 않고 그대로
-  /// 시도한다 — 첫 프레임에 캐릭터가 사라지는 것보다 404 한 번이 낫다.
-  static Set<String>? get assetsOrNull => _assets;
+  static Future<void> ensureLoaded() => BundledAssets.ensureLoaded();
 
-  static Future<void> ensureLoaded() {
-    final pending = _loading;
-    if (pending != null) return pending;
-    return _loading = AssetManifest.loadFromAssetBundle(rootBundle)
-        .then((manifest) => _assets = manifest.listAssets().toSet())
-        // 매니페스트를 못 읽는 환경(일부 위젯 테스트)에서는 거르지 않는다.
-        .onError<Object>((_, __) => _assets = <String>{});
-  }
-
-  /// 번들에 있는 경로만 남긴다. 매니페스트를 못 읽었으면 원본 그대로.
-  static List<String> filter(List<String> paths) {
-    final assets = _assets;
-    if (assets == null || assets.isEmpty) return paths;
-    final kept = paths.where(assets.contains).toList(growable: false);
-    return kept.isEmpty ? const <String>[] : kept;
-  }
-
-  @visibleForTesting
-  static void overrideAssetsForTest(Set<String>? assets) {
-    _assets = assets;
-    _loading = assets == null ? null : Future<Set<String>>.value(assets);
-  }
+  static List<String> filter(List<String> paths) => BundledAssets.filter(paths);
 }
 
 /// 잠깐 보여 주는 UI 반응. 성장 형태와 기본 표정은 일기 분석

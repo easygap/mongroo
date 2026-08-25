@@ -102,25 +102,37 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
   }
 
   Future<void> _loadWalker() async {
-    try {
-      final bytes = await rootBundle.load(
-        'assets/adventure/overworld/expedition-walker-v1.png',
-      );
-      final codec = await ui.instantiateImageCodec(
-        bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
-      );
-      final frame = await codec.getNextFrame();
-      codec.dispose();
-      if (!mounted) {
-        frame.image.dispose();
+    // 품종 시트를 먼저 찾고 없으면 공용 시트로 떨어진다.
+    //
+    // 번들에 있는 것만 요청한다. 품종 시트는 대부분 아직 없어서, 그냥 넣어
+    // 보면 던전에 들어갈 때마다 404가 콘솔에 한 줄씩 남는다.
+    await BundledAssets.ensureLoaded();
+    final candidates = BundledAssets.filter(
+      expeditionWalkerAssetCandidates(
+        expeditionWalkerMember(widget.expedition.party)?.speciesCode,
+      ),
+    );
+    for (final path in candidates) {
+      try {
+        final bytes = await rootBundle.load(path);
+        final codec = await ui.instantiateImageCodec(
+          bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
+        );
+        final frame = await codec.getNextFrame();
+        codec.dispose();
+        if (!mounted) {
+          frame.image.dispose();
+          return;
+        }
+        setState(() {
+          _walker?.dispose();
+          _walker = frame.image;
+        });
         return;
+      } catch (_) {
+        // 이 시트가 없으면 다음 후보로. 공용까지 실패하면 기존 토큰으로 그린다.
+        continue;
       }
-      setState(() {
-        _walker?.dispose();
-        _walker = frame.image;
-      });
-    } catch (_) {
-      // 걷기 시트를 못 읽어도 월드는 돌아야 한다. 그때는 기존 토큰으로 그린다.
     }
   }
 

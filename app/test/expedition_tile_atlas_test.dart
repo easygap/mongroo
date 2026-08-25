@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mongroo/features/expedition/domain/expedition_models.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_scene.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_screen.dart';
 
 void main() {
@@ -261,5 +263,68 @@ void main() {
       // 들어서자마자 벽에 끼면 조작이 고장 난 것처럼 보인다.
       expect(travel['insideSpawnBlocked'], 0, reason: region);
     }
+  });
+
+  test('걷기 시트는 품종 시트를 먼저 찾고 공용으로 떨어진다', () async {
+    // 품종별 도트는 방향마다 그림을 받아야 하는 원화 작업이라 아직 없다.
+    // 시트가 들어오는 순간 코드를 고치지 않고 그 품종부터 바뀌도록 자리만
+    // 열어 뒀다. 여기서 지키는 것은 그 순서와 이름 규칙이다.
+    expect(
+      expeditionWalkerAssetCandidates('cactus'),
+      const [
+        'assets/adventure/overworld/expedition-walker-cactus-v1.png',
+        expeditionSharedWalkerAsset,
+      ],
+    );
+    // 서버 코드는 밑줄, 파일은 붙임표를 쓴다. 굽는 쪽(`import_expedition_walker.py`의
+    // `out_path`)과 같은 규칙이어야 서로 못 찾는 일이 없다.
+    expect(
+      expeditionWalkerAssetCandidates('baby_pot').first,
+      'assets/adventure/overworld/expedition-walker-baby-pot-v1.png',
+    );
+    // 품종을 모르면 공용 한 장만 시도한다.
+    for (final unknown in <String?>[null, '', '   ', 'generic']) {
+      expect(
+        expeditionWalkerAssetCandidates(unknown),
+        const [expeditionSharedWalkerAsset],
+        reason: '$unknown',
+      );
+    }
+
+    // 마지막 후보는 실제로 번들에 있어야 한다. 없으면 폴백이 폴백이 아니다.
+    final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    final bundled = manifest.listAssets().toSet();
+    expect(bundled, contains(expeditionSharedWalkerAsset));
+  });
+
+  test('던전을 걷는 대원은 안내자가 아니라 실제 캐릭터다', () {
+    ExpeditionMember member(String code, {bool guide = false}) =>
+        ExpeditionMember.fromJson(<String, dynamic>{
+          'id': code.hashCode,
+          'name': code,
+          'species': <String, dynamic>{'code': code, 'name': code},
+          'is_guide': guide,
+        });
+
+    // 안내자가 앞에 서 있어도 시트는 뒤에 있는 진짜 캐릭터로 고른다.
+    expect(
+      expeditionWalkerMember([
+        member('archive_guide', guide: true),
+        member('cactus'),
+      ])?.speciesCode,
+      'cactus',
+    );
+    expect(
+      expeditionWalkerMember([member('baby-pot'), member('cactus')])
+          ?.speciesCode,
+      'baby-pot',
+    );
+    // 안내자밖에 없는 튜토리얼에서는 그 사람이라도 쓴다.
+    expect(
+      expeditionWalkerMember([member('archive_guide', guide: true)])
+          ?.speciesCode,
+      'archive_guide',
+    );
+    expect(expeditionWalkerMember(const []), isNull);
   });
 }

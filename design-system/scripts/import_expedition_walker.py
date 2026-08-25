@@ -21,6 +21,12 @@
 잇는다. 실측으로도 그 편이 낫다 - 게임 배율에서 가장 비슷한 두 방향의 픽셀
 차이가 502에서 595로 벌어졌고, 무엇보다 다리가 생겨 걸음이 읽힌다.
 
+품종별 시트도 같은 자리에서 굽는다. `--species`를 주면
+`expedition-walker-<품종>-v1.png`로 나가고, 앱이 그 품종부터 새 시트를 쓴다
+(없으면 공용으로 떨어진다). 지금 번들에 있는 것은 공용 한 장뿐이라 어떤
+캐릭터로 들어가도 같은 여행자가 걷는다 — 품종을 하나씩 채워 넣으라고 자리를
+열어 둔 것이다.
+
 사용법:
     # 방향마다 288×120 띠 네 장 (아래·왼쪽·오른쪽·위 순서)
     python import_expedition_walker.py --strips 아래.png 왼쪽.png 오른쪽.png 위.png
@@ -28,11 +34,15 @@
     # 한 장짜리 288×480 시트
     python import_expedition_walker.py <받은시트.png>
     python import_expedition_walker.py <받은시트.png> --check   # 검사만
+
+    # 가시니만 쓰는 시트로 굽기
+    python import_expedition_walker.py --strips ... --species cactus
 """
 
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -43,9 +53,22 @@ except ImportError:  # pragma: no cover
     raise SystemExit(1)
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT_PATH = (
-    ROOT / "app" / "assets" / "adventure" / "overworld" / "expedition-walker-v1.png"
-)
+OVERWORLD_DIR = ROOT / "app" / "assets" / "adventure" / "overworld"
+
+
+def out_path(species: str | None) -> Path:
+    """구운 시트를 놓을 자리.
+
+    품종을 주면 그 품종만 쓰는 시트가 되고, 안 주면 공용 시트를 덮는다.
+    앱은 품종 시트를 먼저 찾고 없으면 공용으로 떨어진다
+    (`expeditionWalkerAssetCandidates`). 그래서 한 품종씩 채워 넣을 수 있다.
+    """
+    if not species:
+        return OVERWORLD_DIR / "expedition-walker-v1.png"
+    slug = re.sub(r"[^a-z0-9]+", "-", species.strip().lower()).strip("-")
+    if not slug:
+        raise SystemExit("품종 코드가 비어 있습니다.")
+    return OVERWORLD_DIR / f"expedition-walker-{slug}-v1.png"
 
 CELL_W, CELL_H = 96, 120
 COLUMNS, ROWS = 3, 4
@@ -249,6 +272,10 @@ def main() -> int:
         metavar=("아래", "왼쪽", "오른쪽", "위"),
         help="방향별 288×120 띠 네 장",
     )
+    parser.add_argument(
+        "--species",
+        help="이 품종만 쓰는 시트로 굽는다. 안 주면 공용 시트를 덮는다",
+    )
     parser.add_argument("--check", action="store_true", help="검사만 하고 쓰지 않는다")
     args = parser.parse_args()
 
@@ -277,9 +304,12 @@ def main() -> int:
     }
     alphas = {pixel[3] for pixel in baked.get_flattened_data()}
     print(f"  구운 뒤 색 {len(colors)}개, 알파 {sorted(alphas)}")
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    baked.save(OUT_PATH, "PNG")
-    print(f"  {OUT_PATH.name} 갱신  {OUT_PATH.stat().st_size // 1024}KB")
+    target = out_path(args.species)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    baked.save(target, "PNG")
+    print(f"  {target.name} 갱신  {target.stat().st_size // 1024}KB")
+    if args.species:
+        print("  pubspec의 assets/adventure/overworld/ 항목이 폴더째라 따로 등록할 것은 없다.")
     return 0
 
 
