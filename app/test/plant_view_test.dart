@@ -309,6 +309,47 @@ void main() {
     ]);
   });
 
+  test('만개한 식물의 visual로 이전 단계를 미리 봐도 그 단계 그림을 집는다', () {
+    // 성장 계보·연재 일지는 지금 키우는 식물의 visual 하나로 다섯 칸을 모두
+    // 그린다. 서버 phase를 단계와 무관하게 쓰면 2·3·4단계 칸까지 만개 그림을
+    // 집어서 네 칸이 같은 그림이 됐다.
+    const visual = PlantGrowthVisual(
+      seedShape: 'heart_speck_seed',
+      vesselStyle: 'round_terracotta_pot',
+      rarityEffect: 'none',
+      assetNamespace: 'plants/basic_sprout',
+      rarity: 1,
+      phase: 'full_bloom',
+      phaseStage: 5,
+    );
+
+    for (final (stage, phase) in const [
+      (2, 'sprout'),
+      (3, 'branching'),
+      (4, 'bloom'),
+    ]) {
+      final candidates = PlantGrowthAssetResolver.candidates(
+        speciesCode: 'basic_sprout',
+        stage: stage,
+        form: PlantGrowthForm.mosaic,
+        visual: visual,
+      );
+      expect(candidates, everyElement(contains('-$phase')));
+      expect(candidates, everyElement(isNot(contains('full-bloom'))));
+    }
+
+    // 자기 단계에서는 서버가 준 이름을 그대로 쓴다.
+    expect(
+      PlantGrowthAssetResolver.candidates(
+        speciesCode: 'basic_sprout',
+        stage: 5,
+        form: PlantGrowthForm.mosaic,
+        visual: visual,
+      ),
+      contains('assets/plants/basic-sprout-25d-full-bloom-mosaic.webp'),
+    );
+  });
+
   test('가상 탐험 안내자는 존재하는 기본 몽그루 에셋만 요청한다', () {
     final candidates = PlantGrowthAssetResolver.candidates(
       speciesCode: 'archive_guide',

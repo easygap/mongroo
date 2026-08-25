@@ -501,7 +501,13 @@ class PlantGrowthAssetResolver {
     PlantSpritePose pose = PlantSpritePose.idle,
   }) {
     final clamped = stage.clamp(1, 5).toInt();
-    final serverPhase = _slug(visual?.phase ?? '');
+    // 서버 phase는 그 visual이 가리키는 단계에만 쓴다. 성장 계보·연재 일지는
+    // 지금 키우는 식물의 visual 하나로 다섯 단계를 모두 그리는데, 여기서
+    // 단계를 가리지 않으면 2·3·4단계 칸까지 현재 단계(`full_bloom`) 그림을
+    // 집어서 네 칸이 같은 그림이 된다.
+    final visualStage = visual?.phaseStage ?? 0;
+    final serverPhase =
+        visualStage == 0 || visualStage == clamped ? _slug(visual?.phase ?? '') : '';
     final phase = serverPhase.isEmpty ? _phases[clamped]! : serverPhase;
     final slugs = <String>{
       _renderableSpeciesSlug(_slug(speciesCode)),

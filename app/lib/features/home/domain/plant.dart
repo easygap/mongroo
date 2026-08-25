@@ -545,6 +545,7 @@ class PlantGrowthVisual {
     required this.rarity,
     this.secondaryAssetKey,
     this.phase = '',
+    this.phaseStage = 0,
     this.seedAssetKey,
     this.vesselAssetKey,
     this.baseAssetKey,
@@ -558,7 +559,16 @@ class PlantGrowthVisual {
   final String assetNamespace;
   final int rarity;
   final String? secondaryAssetKey;
+
+  /// 서버가 확정한 현재 단계의 그림 이름(`full_bloom` 등).
   final String phase;
+
+  /// [phase]가 가리키는 성장 단계. 0이면 서버가 알려 주지 않은 것이다.
+  ///
+  /// 성장 계보나 연재 일지처럼 **지금 단계가 아닌 단계를 미리 보여 주는**
+  /// 화면이 같은 visual을 재사용하기 때문에 필요하다. 이 값이 없으면
+  /// 2·3·4단계 칸이 전부 현재 단계 그림 하나로 그려진다.
+  final int phaseStage;
   final String? seedAssetKey;
   final String? vesselAssetKey;
   final String? baseAssetKey;
@@ -640,6 +650,9 @@ class PlantGrowthVisual {
       ).clamp(1, 5).toInt(),
       secondaryAssetKey: pickOptional('secondary_asset_key'),
       phase: pick('phase', ''),
+      phaseStage: _plantInt(primary['stage'] ?? manifestGrowth['stage'])
+          .clamp(0, 5)
+          .toInt(),
       seedAssetKey: pickOptional('seed_asset_key'),
       vesselAssetKey: pickOptional('vessel_asset_key'),
       baseAssetKey: pickOptional('base_asset_key'),
