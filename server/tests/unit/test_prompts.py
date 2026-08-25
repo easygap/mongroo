@@ -107,7 +107,8 @@ async def test_fake_llm_varies_by_scene_species_growth_persona_and_secondary():
         context,
     )
     reply = await FakeLlm().chat(messages)
-    assert "단단한 몸을 네 쪽으로" in reply
+    # 개화(4단계)부터는 원화가 사람 형태라 다 자란 몸짓을 쓴다.
+    assert "가시를 세우지 않은 채" in reply
     assert "찾지 못한 채 돌아서야 했던" in reply
     assert "예상 밖의 작은 단서" in reply
     assert "가장 아쉬움이 남은 지점" in reply
@@ -142,3 +143,51 @@ async def test_fake_llm_keeps_early_species_voice_before_growth_branch():
     assert sprout_reply.startswith("새잎을 네 쪽으로")
     assert cactus_reply.startswith("가시는 세워 둔 채")
     assert sprout_reply != cactus_reply
+
+
+async def test_grown_stage_body_language_matches_the_humanoid_artwork():
+    """4단계부터 원화가 사람 형태라 화분·여린 줄기 몸짓이 그림과 어긋났다."""
+    growth_persona = {
+        "persona_key": "free_spirit",
+        "persona_name": "모아결",
+        "trait": "유연함·다채로움",
+        "voice_line": "오늘은 잎마다 다른 색이야.",
+    }
+    turn = [{"role": "user", "content": "오늘은 좀 지쳤어."}]
+
+    sprout_reply = await FakeLlm().chat(
+        build_chat_messages(
+            "sprout",
+            "모아",
+            "explore",
+            turn,
+            None,
+            growth_persona,
+            {"stage": 2, "growth_phase": "sprout", "growth_traits": {}},
+        )
+    )
+    bloom_reply = await FakeLlm().chat(
+        build_chat_messages(
+            "sprout",
+            "모아",
+            "explore",
+            turn,
+            None,
+            growth_persona,
+            {"stage": 5, "growth_phase": "full_bloom", "growth_traits": {}},
+        )
+    )
+
+    assert sprout_reply.startswith("여린 줄기를")
+    assert not bloom_reply.startswith("여린 줄기를")
+    assert "여린 줄기" not in bloom_reply
+
+    # 다 자란 몸짓에는 화분에 담긴 어린 몸을 가리키는 말이 남지 않는다.
+    beats = ("greeting", "emotion_check", "explore", "reframe_option", "action")
+    for species in ("sprout", "cactus", "sunflower"):
+        for beat in beats:
+            grown = FakeLlm._species_touch(species, beat, 5)
+            assert grown, f"{species}/{beat} 몸짓이 비었습니다"
+            assert "여린" not in grown
+            assert "화분 가장자리" not in grown
+            assert "고개를 내밀었어" not in grown

@@ -154,6 +154,58 @@ class FakeLlm:
         },
     }
 
+    #: 개화(4)·만개(5) 단계의 몸짓.
+    #:
+    #: 위 표는 화분에 담긴 어린 몸을 그린다. 그런데 4단계부터는 원화가 사람
+    #: 형태라, 다 자란 캐릭터 그림 바로 아래에서 자기를 "여린 줄기"라고
+    #: 말하거나 "화분 가장자리에서 몸을 흔들었어"라고 하는 문장이 붙었다.
+    #: 같은 성격·같은 품종색을 유지하되 자란 몸으로 다시 쓴다.
+    _GROWN_SPECIES_TOUCHES = {
+        "sprout": {
+            "greeting": "잎으로 엮은 옷자락을 스치며 네 쪽으로 다가왔어.",
+            "emotion_check": "손에 든 꽃대를 내려놓고 네 쪽을 바라봤어.",
+            "explore": "잎끝을 모아 쥐고 네 말을 끝까지 듣고 있어.",
+            "reframe_option": "머리에 얹힌 잎 사이로 다른 빛이 드는지 살펴보고 있어.",
+            "action": "발끝으로 바닥을 톡 두드리며 박자를 맞췄어.",
+        },
+        "cactus": {
+            "greeting": "세워 뒀던 가시를 눕히고 네 쪽으로 성큼 다가왔어.",
+            "emotion_check": "팔짱을 풀고 네 쪽으로 몸을 돌렸어.",
+            "explore": "가시를 세우지 않은 채 네 말을 듣고 있어.",
+            "reframe_option": "가시 사이 빈틈으로 다른 쪽도 바라보고 있어.",
+            "action": "손끝에 남은 모래를 털고 짧게 고개를 끄덕였어.",
+        },
+        "sunflower": {
+            "greeting": "빛을 좇던 고개를 돌려 네 쪽으로 걸어왔어.",
+            "emotion_check": "쓰고 있던 꽃 모자를 살짝 들고 네 쪽을 봤어.",
+            "explore": "두 손을 모으고 네 말을 듣고 있어.",
+            "reframe_option": "꽃잎 사이로 들어오는 다른 빛도 살펴보고 있어.",
+            "action": "허리를 한 번 쭉 펴고 주머니 속 씨앗을 토닥였어.",
+        },
+    }
+
+    #: 원화가 사람 형태로 바뀌는 성장 단계.
+    _GROWN_STAGE = 4
+
+    @classmethod
+    def _species_touch(
+        cls, species_code: str, stage: str, growth_stage: int
+    ) -> str | None:
+        table = (
+            cls._GROWN_SPECIES_TOUCHES
+            if growth_stage >= cls._GROWN_STAGE
+            else cls._SPECIES_TOUCHES
+        )
+        return table.get(species_code, {}).get(stage)
+
+    @staticmethod
+    def _growth_stage(system: str) -> int:
+        raw = FakeLlm._marker(system, "현재 성장 단계")
+        try:
+            return max(1, min(5, int(raw or 1)))
+        except ValueError:
+            return 1
+
     @staticmethod
     def _marker(system: str, label: str) -> str | None:
         prefix = f"{label}:"
@@ -198,10 +250,11 @@ class FakeLlm:
         species_code: str,
         secondary: str | None,
         latest_user_text: str,
+        growth_stage: int = 1,
     ) -> str:
         acknowledgement = self._scene_acknowledgement(latest_user_text)
         acknowledgement = acknowledgement or self._PERSONA_ACKS[persona_code]
-        species_touch = self._SPECIES_TOUCHES.get(species_code, {}).get(stage)
+        species_touch = self._species_touch(species_code, stage, growth_stage)
         opening = (
             f"{species_touch} {acknowledgement}" if species_touch else acknowledgement
         )
@@ -241,6 +294,7 @@ class FakeLlm:
         persona_code = self._marker(system, "성장 페르소나 코드")
         species_code = self._marker(system, "품종 말투 코드") or "sprout"
         secondary = self._marker(system, "보조 감정 결")
+        growth_stage = self._growth_stage(system)
         for stage, reply in self._STAGE_REPLIES.items():
             if f"지금 대화 단계: {stage}" in system:
                 if persona_code in self._PERSONA_ACKS:
@@ -250,8 +304,11 @@ class FakeLlm:
                         species_code,
                         secondary,
                         self._latest_user_text(messages),
+                        growth_stage,
                     )
-                species_touch = self._SPECIES_TOUCHES.get(species_code, {}).get(stage)
+                species_touch = self._species_touch(
+                    species_code, stage, growth_stage
+                )
                 if species_touch:
                     return f"{species_touch} {reply}"
                 return reply
