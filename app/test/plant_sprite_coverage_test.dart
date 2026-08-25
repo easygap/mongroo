@@ -42,10 +42,9 @@ void main() {
   /// 아직 원화가 없어 벡터 폴백으로 내려가는 조합. **줄어들기만 해야 한다.**
   ///
   /// - 가시니·해바라기: 상점에 씨앗은 있는데 성장 원화가 한 장도 없다.
-  /// - 세렌·백화: 만개 원화만 있고 씨앗~개화 네 단계가 비어 있다.
   ///
-  /// 그림을 채우면 이 목록에서 지운다. 반대로 여기 없는 조합이 새로 비면
-  /// 테스트가 깨져서 알려 준다.
+  /// 세렌·백화는 2026-08-25에 채웠다. 그림을 채우면 이 목록에서 지운다.
+  /// 반대로 여기 없는 조합이 새로 비면 테스트가 깨져서 알려 준다.
   const knownGaps = <String>{
     'cactus:1',
     'cactus:2',
@@ -57,14 +56,6 @@ void main() {
     'sunflower:3',
     'sunflower:4',
     'sunflower:5',
-    'maestro-pot:1',
-    'maestro-pot:2',
-    'maestro-pot:3',
-    'maestro-pot:4',
-    'nurse-pot:1',
-    'nurse-pot:2',
-    'nurse-pot:3',
-    'nurse-pot:4',
   };
 
   /// 서버가 결을 내려 주는 시점. 2단계까지는 `ActivePlant.fromJson`이 언제나

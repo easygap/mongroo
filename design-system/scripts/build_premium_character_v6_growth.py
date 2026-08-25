@@ -31,6 +31,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -43,6 +44,7 @@ from build_character_expansion_v7 import (
     _save_lossless_webp,
     _sha256,
     _split_growth_sheet,
+    _visible_bbox,
 )
 
 CONCEPT_ROOT = Path("design-system/concepts/character-redesign-v6")
@@ -59,20 +61,156 @@ CHARACTERS: dict[str, str] = {
 }
 
 
-def _require_sheet(slug: str) -> Path:
-    path = ALPHA_ROOT / f"{slug}-growth.png"
-    if path.exists():
-        return path
+#: 점묘 관문. `import_expedition_walker.py`와 같은 척도를 쓰되 한계는 다르다 -
+#: 그쪽은 24색 도트 아틀라스(0.16)에 맞춘 값이고, 여기는 붓질이 남는 캐릭터
+#: 원화다. 승인된 원화 다섯 장의 실측이 고주파 0.036~0.050, 튀는 점
+#: 0.0001~0.0003이라 여유를 두고 잡았다. 생성물이 자글거리면 눈으로 다투지
+#: 않고 여기서 막는다.
+HIGH_FREQUENCY_LIMIT = 0.075
+SPECK_LIMIT = 0.0010
+
+
+def _measure_stipple(image: Image.Image) -> dict[str, float]:
+    """자글거림과 튀는 점을 잰다.
+
+    `import_expedition_walker.measure`와 같은 정의를 numpy로 옮긴 것이다.
+    거기 구현은 픽셀을 하나씩 도는데 96x480 시트를 재려고 만든 것이라,
+    1700x900 원화에 그대로 쓰면 너무 느리다. 두 구현이 같은 값을 내는 것은
+    작은 이미지로 대조해 확인했다.
+    """
+
+    array = np.asarray(image.convert("RGBA"), dtype=np.float64)
+    rgb, alpha = array[..., :3], array[..., 3]
+    luma = rgb[..., 0] * 0.2126 + rgb[..., 1] * 0.7152 + rgb[..., 2] * 0.0722
+    solid = alpha >= 224
+
+    # 맞닿은 두 불투명 픽셀의 밝기 차. 같은 면인데 자주 튀면 점묘다.
+    pair_h = solid[:, :-1] & solid[:, 1:]
+    pair_v = solid[:-1, :] & solid[1:, :]
+    edges = int(pair_h.sum() + pair_v.sum())
+    high = int(
+        ((np.abs(luma[:, :-1] - luma[:, 1:]) >= 36) & pair_h).sum()
+        + ((np.abs(luma[:-1, :] - luma[1:, :]) >= 36) & pair_v).sum()
+    )
+
+    # 사방이 고른데 혼자 튀는 픽셀.
+    center = (
+        solid[1:-1, 1:-1]
+        & solid[1:-1, :-2]
+        & solid[1:-1, 2:]
+        & solid[:-2, 1:-1]
+        & solid[2:, 1:-1]
+    )
+    around = np.stack(
+        (luma[1:-1, :-2], luma[1:-1, 2:], luma[:-2, 1:-1], luma[2:, 1:-1])
+    )
+    isolated = int(
+        (
+            (around.max(0) - around.min(0) <= 14)
+            & (np.abs(luma[1:-1, 1:-1] - around.mean(0)) >= 30)
+            & center
+        ).sum()
+    )
+    return {
+        "high_frequency": high / max(1, edges),
+        "speck": isolated / max(1, int(center.sum())),
+    }
+
+
+def _gate_stipple(label: str, image: Image.Image) -> dict[str, float]:
+    metrics = _measure_stipple(image)
+    problems = []
+    if metrics["high_frequency"] > HIGH_FREQUENCY_LIMIT:
+        problems.append(
+            f"자글거림 {metrics['high_frequency']:.3f} > {HIGH_FREQUENCY_LIMIT}"
+        )
+    if metrics["speck"] > SPECK_LIMIT:
+        problems.append(f"튀는 점 {metrics['speck']:.4f} > {SPECK_LIMIT}")
+    if problems:
+        raise SystemExit(
+            f"{label}에 점묘가 섞여 있습니다: {', '.join(problems)}\n"
+            "  승인된 원화 실측은 고주파 0.036~0.050, 튀는 점 0.0001~0.0003입니다.\n"
+            "  README의 프롬프트에 있는 점묘 금지 블록을 넣고 다시 생성하세요."
+        )
+    return metrics
+
+
+def _panel_sources(slug: str) -> tuple[list[Image.Image], list[Path], bool]:
+    """네 칸을 읽는다. 한 장짜리 시트와 낱장 넷을 모두 받는다.
+
+    낱장을 먼저 본다. 네 나이를 한 번에 요구하면 칸마다 얼굴이 흔들려서,
+    한 칸씩 만들고 나쁜 칸만 다시 굽는 편이 낫다. 걷기 시트에서도 방향마다
+    한 장씩 받는 쪽이 나았던 것과 같은 이유다.
+
+    세 번째 값은 `낱장인가`다. 낱장은 파일마다 따로 프레이밍돼서 칸 사이의
+    상대 키가 사라지므로 뒤에서 키를 따로 잡아 줘야 한다.
+    """
+
+    singles = [ALPHA_ROOT / f"{slug}-{phase}.png" for phase in SHEET_PHASES]
+    if all(path.exists() for path in singles):
+        panels = []
+        for path in singles:
+            image = Image.open(path).convert("RGBA")
+            panels.append(image.crop(_visible_bbox(image)))
+        return panels, singles, True
+
+    sheet_path = ALPHA_ROOT / f"{slug}-growth.png"
+    if sheet_path.exists():
+        sheet = Image.open(sheet_path).convert("RGBA")
+        panels = _split_growth_sheet(sheet)
+        if len(panels) != len(SHEET_PHASES):
+            raise SystemExit(
+                f"{sheet_path.name}에서 칸 {len(panels)}개를 찾았습니다. "
+                f"{len(SHEET_PHASES)}개여야 합니다. 칸 사이를 더 벌려 주세요."
+            )
+        return panels, [sheet_path], False
+
+    missing = "\n    ".join(path.name for path in singles)
     raise SystemExit(
-        f"성장 시트가 없습니다: {path}\n"
-        f"  {CHARACTERS[slug]}의 씨앗·새싹·가지·개화 네 칸을 한 줄로 담은 투명 PNG가\n"
-        f"  필요합니다. 프롬프트와 규격은 {CONCEPT_ROOT / 'README.md'}의\n"
-        f"  `성장 시트 생성 규격` 절을 보세요."
+        f"{CHARACTERS[slug]}의 성장 원화가 없습니다. 둘 중 하나를 넣으세요.\n"
+        f"  낱장 넷 (권장): {ALPHA_ROOT}/\n    {missing}\n"
+        f"  또는 네 칸 시트 한 장: {sheet_path}\n"
+        f"  프롬프트와 규격은 {CONCEPT_ROOT / 'README.md'}의"
+        " `성장 시트 생성 규격` 절을 보세요."
     )
 
 
+#: 만개 키를 1로 둔 단계별 키 비율. 사람형 계보 둘의 실측 평균이다 -
+#: 리아 0.245·0.687·0.876·0.976, 에단 0.210·0.634·0.864·0.974. 모루는
+#: 동물형이라 곡선이 달라서(씨앗 0.511) 넣지 않았다.
+#:
+#: 낱장으로 받을 때만 쓴다. 시트 한 장에는 칸 사이의 상대 키가 이미 들어
+#: 있지만, 낱장은 파일마다 인물이 캔버스를 채우도록 그려져서 그 정보가
+#: 없다. 그대로 같은 배율을 먹이면 씨앗이 성인만 해진다.
+PHASE_HEIGHT_RATIO = {
+    "seed": 0.23,
+    "sprout": 0.66,
+    "branching": 0.87,
+    "bloom": 0.975,
+}
+
+
+def _visible_height(image: Image.Image) -> int:
+    box = _visible_bbox(image)
+    return box[3] - box[1]
+
+
+def _render_singles(
+    panels: list[Image.Image], full_bloom: Image.Image
+) -> dict[str, Image.Image]:
+    """낱장 넷을 만개 키에 맞춰 앉힌다."""
+
+    target_full = _visible_height(full_bloom)
+    stages: dict[str, Image.Image] = {}
+    for phase, panel in zip(SHEET_PHASES, panels):
+        target = target_full * PHASE_HEIGHT_RATIO[phase]
+        scale = min(target / panel.height, 448 / panel.width)
+        stages[phase] = _render_growth(panel, scale=scale)
+    return stages
+
+
 def _build(slug: str, name: str) -> dict[str, Any]:
-    sheet_path = _require_sheet(slug)
+    panels, sources, singles = _panel_sources(slug)
     full_bloom_path = PLANT_ROOT / f"{slug}-25d-full-bloom.webp"
     if not full_bloom_path.exists():
         raise SystemExit(
@@ -80,25 +218,26 @@ def _build(slug: str, name: str) -> dict[str, Any]:
             "  build_premium_character_v6.py 를 먼저 돌리세요."
         )
 
-    sheet = Image.open(sheet_path).convert("RGBA")
-    panels = _split_growth_sheet(sheet)
-    if len(panels) != len(SHEET_PHASES):
-        raise SystemExit(
-            f"{sheet_path.name}에서 칸 {len(panels)}개를 찾았습니다. "
-            f"{len(SHEET_PHASES)}개여야 합니다."
-        )
-
-    # 네 칸에 같은 배율을 먹인다. 칸마다 따로 맞추면 씨앗이 성인만큼 커져서
-    # 자란다는 느낌이 사라진다. 시트 안의 상대 크기가 곧 성장 곡선이다.
-    common_scale = min(
-        448 / max(panel.width for panel in panels),
-        704 / max(panel.height for panel in panels),
-    )
-    stages = {
-        phase: _render_growth(panel, scale=common_scale)
-        for phase, panel in zip(SHEET_PHASES, panels)
+    stipple = {
+        path.name: _gate_stipple(path.name, Image.open(path).convert("RGBA"))
+        for path in sources
     }
-    stages["full-bloom"] = Image.open(full_bloom_path).convert("RGBA")
+
+    full_bloom = Image.open(full_bloom_path).convert("RGBA")
+    if singles:
+        stages = _render_singles(panels, full_bloom)
+    else:
+        # 시트는 네 칸에 같은 배율을 먹인다. 칸마다 따로 맞추면 씨앗이 성인만큼
+        # 커져서 자란다는 느낌이 사라진다. 시트 안의 상대 크기가 곧 성장 곡선이다.
+        common_scale = min(
+            448 / max(panel.width for panel in panels),
+            704 / max(panel.height for panel in panels),
+        )
+        stages = {
+            phase: _render_growth(panel, scale=common_scale)
+            for phase, panel in zip(SHEET_PHASES, panels)
+        }
+    stages["full-bloom"] = full_bloom
 
     outputs: list[Path] = []
     for phase in SHEET_PHASES:
@@ -121,8 +260,9 @@ def _build(slug: str, name: str) -> dict[str, Any]:
         "slug": slug,
         "name": name,
         "asset_count": len(outputs),
+        "stipple": stipple,
         "source_sha256": {
-            sheet_path.name: _sha256(sheet_path),
+            **{path.name: _sha256(path) for path in sources},
             full_bloom_path.name: _sha256(full_bloom_path),
         },
         "runtime_sha256": {path.name: _sha256(path) for path in outputs},
