@@ -350,13 +350,26 @@ class _HubEntryTile extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: 2),
+                // 잠긴 길도 무엇인지는 알려 준다. 사유만 남기면 `합동 수호전
+                // · 아직 만들고 있어요`처럼 이름 말고는 아무것도 못 읽는다.
+                // 시맨틱 라벨은 이미 설명을 읽어 주고 있었다.
                 Text(
-                  entry.lockReason ?? entry.description,
+                  entry.description,
                   style: Theme.of(context)
                       .textTheme
                       .bodySmall
                       ?.copyWith(color: scheme.onSurfaceVariant),
                 ),
+                if (entry.lockReason != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    entry.lockReason!,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -372,7 +385,7 @@ class _HubEntryTile extends StatelessWidget {
       label: entry.comingSoon
           ? '${entry.title}, 준비 중. ${entry.description}'
           : locked
-              ? '${entry.title}, 잠김. ${entry.lockReason}'
+              ? '${entry.title}, 잠김. ${entry.description} ${entry.lockReason}'
               : '${entry.title}. ${entry.description}',
       child: Opacity(
         opacity: locked ? .62 : 1,
