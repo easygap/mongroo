@@ -598,11 +598,30 @@ class _PlantCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 9),
                       Expanded(
-                        child: Text(
-                          plant.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              plant.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                            // 장면 안 이름표가 들고 있던 종과 성격을 여기로
+                            // 옮겼다. 단계는 왼쪽 칩이 이미 말한다.
+                            Text(
+                              '${plant.species.name} · '
+                              '${plant.stage >= 3 && plant.growthForm != null ? plant.personalityName : '관찰 중'}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -889,56 +908,12 @@ class _PlantStageScene extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            Positioned(
-                              left: 14,
-                              bottom: 12,
-                              child: ExcludeSemantics(
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: palette.paper.withAlpha(236),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                        color: palette.ink.withAlpha(44)),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: palette.ink.withAlpha(32),
-                                        offset: const Offset(0, 4),
-                                        blurRadius: 12,
-                                        spreadRadius: -5,
-                                      ),
-                                    ],
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 11,
-                                      vertical: 8,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          plant.name,
-                                          style: TextStyle(
-                                            color: palette.ink,
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${plant.species.name} · ${plantStageName(plant.stage)}'
-                                          '${plant.stage >= 3 && plant.growthForm != null ? ' · ${plant.personalityName}' : ' · 관찰 중'}',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: palette.inkMuted,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
+                            // 이름표는 장면 안에 두지 않는다. 캐릭터는 늘 가운데
+                            // 아래에 서고 이름표는 왼쪽 아래에 붙어 있어서,
+                            // 390폭에서 캐릭터가 x 79~311을 쓰고 이름표가 240px를
+                            // 쓰니 겹치지 않을 자리가 없었다. 화분이나 발이 통째로
+                            // 가려져 캐릭터가 잘려 보였다. 이름은 바로 아래 줄이
+                            // 이미 보여 주고 있어 여기 있을 이유도 없었다.
                           ],
                         );
                       },
