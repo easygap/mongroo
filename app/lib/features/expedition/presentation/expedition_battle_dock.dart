@@ -209,6 +209,24 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
   final ExpeditionBattle battle;
   final bool locked;
 
+  /// 상태 태그와 조작이 한 줄에 같이 들어가는 최소 폭.
+  ///
+  /// 실측 폭의 합이다 - R 태그 96, 보스 태그 182, AUTO·연속 148, 버튼 48+48에
+  /// 사이 여백까지 546. 그 아래에서는 조작을 아랫줄로 내린다.
+  static const double oneLineWidth = 560;
+
+  /// 한 줄일 때의 높이.
+  static const double lineHeight = 48;
+
+  /// 두 줄이 될 때 늘어나는 높이 - 상태 줄 34에 사이 여백 4.
+  static const double compactExtraHeight = 38;
+
+  /// 주어진 폭에서 이 바가 실제로 차지하는 높이.
+  ///
+  /// 무대 위에 겹쳐 놓는 장벽 HUD가 이 값만큼 내려가야 한다.
+  static double heightFor(double width) =>
+      width >= oneLineWidth ? lineHeight : lineHeight + compactExtraHeight;
+
   Future<void> _confirmRetreat(BuildContext context, WidgetRef ref) async {
     final leave = await showDialog<bool>(
       context: context,
@@ -234,6 +252,12 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
     await ref.read(expeditionControllerProvider.notifier).retreat();
   }
 
+  Future<void> _openSettings(BuildContext context) => showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (context) => const _BattleSettingsSheet(),
+      );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(expeditionBattleSettingsProvider);
@@ -247,152 +271,255 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
     final wave = battle.wave;
     final bossPhase = battle.bossPhase;
     final threat = battle.threat;
-    return SizedBox(
-      height: 48,
-      child: Row(
-        children: [
-          MongrooTag(
-            label: 'R ${battle.round}/${battle.maxRounds}',
-            icon: Icons.sports_martial_arts_rounded,
-            backgroundColor: scheme.errorContainer.withAlpha(130),
+
+    // 상태 태그는 남는 폭을 나눠 쓰고 넘치면 말줄임한다. 조작을 밀어내면
+    // 안 되는 쪽은 태그가 아니라 버튼이다.
+    final statusTags = <Widget>[
+      MongrooTag(
+        label: 'R ${battle.round}/${battle.maxRounds}',
+        icon: Icons.sports_martial_arts_rounded,
+        backgroundColor: scheme.errorContainer.withAlpha(130),
+      ),
+      if (wave != null && wave.count > 1) ...[
+        const SizedBox(width: 6),
+        Flexible(
+          child: Semantics(
+            label: '${wave.count}번의 엉킴 중 ${wave.index}번째',
+            child: MongrooTag(
+              key: const ValueKey('seq-dock-wave'),
+              label: '웨이브 ${wave.index}/${wave.count}',
+              icon: Icons.blur_on_rounded,
+              backgroundColor: scheme.tertiaryContainer.withAlpha(130),
+              maxWidth: 140,
+            ),
           ),
-          if (wave != null && wave.count > 1) ...[
-            const SizedBox(width: 6),
-            Semantics(
-              label: '${wave.count}번의 엉킴 중 ${wave.index}번째',
-              child: MongrooTag(
-                key: const ValueKey('seq-dock-wave'),
-                label: '웨이브 ${wave.index}/${wave.count}',
-                icon: Icons.blur_on_rounded,
-                backgroundColor: scheme.tertiaryContainer.withAlpha(130),
-              ),
+        ),
+      ],
+      if (bossPhase != null) ...[
+        const SizedBox(width: 6),
+        Flexible(
+          child: Semantics(
+            liveRegion: true,
+            label:
+                '${bossPhase.count}단계 보스 중 ${bossPhase.index}단계 ${bossPhase.name}',
+            child: MongrooTag(
+              key: const ValueKey('seq-dock-boss-phase'),
+              label: 'P${bossPhase.index}/${bossPhase.count} · ${bossPhase.name}',
+              icon: bossPhase.isFinal
+                  ? Icons.warning_amber_rounded
+                  : Icons.change_circle_outlined,
+              backgroundColor: bossPhase.isFinal
+                  ? scheme.errorContainer.withAlpha(160)
+                  : scheme.secondaryContainer.withAlpha(140),
+              maxWidth: 220,
             ),
-          ],
-          if (bossPhase != null) ...[
-            const SizedBox(width: 6),
-            Semantics(
-              liveRegion: true,
-              label:
-                  '${bossPhase.count}단계 보스 중 ${bossPhase.index}단계 ${bossPhase.name}',
-              child: MongrooTag(
-                key: const ValueKey('seq-dock-boss-phase'),
-                label:
-                    'P${bossPhase.index}/${bossPhase.count} · ${bossPhase.name}',
-                icon: bossPhase.isFinal
-                    ? Icons.warning_amber_rounded
-                    : Icons.change_circle_outlined,
-                backgroundColor: bossPhase.isFinal
-                    ? scheme.errorContainer.withAlpha(160)
-                    : scheme.secondaryContainer.withAlpha(140),
-              ),
+          ),
+        ),
+      ],
+      if (threat != null && threat.tier > 0 && bossPhase == null) ...[
+        const SizedBox(width: 6),
+        Flexible(
+          child: Semantics(
+            label:
+                '위협 ${threat.tier}단계 ${threat.name}, 권장 레벨 ${threat.recommendedLevel}',
+            child: MongrooTag(
+              key: const ValueKey('seq-dock-threat'),
+              label: '위협 ${threat.tier} · ${threat.name}',
+              icon: Icons.shield_moon_outlined,
+              backgroundColor: scheme.tertiaryContainer.withAlpha(130),
+              maxWidth: 220,
             ),
-          ],
-          if (threat != null && threat.tier > 0 && bossPhase == null) ...[
-            const SizedBox(width: 6),
-            Semantics(
-              label:
-                  '위협 ${threat.tier}단계 ${threat.name}, 권장 레벨 ${threat.recommendedLevel}',
-              child: MongrooTag(
-                key: const ValueKey('seq-dock-threat'),
-                label: '위협 ${threat.tier} · ${threat.name}',
-                icon: Icons.shield_moon_outlined,
-                backgroundColor: scheme.tertiaryContainer.withAlpha(130),
-              ),
+          ),
+        ),
+      ],
+    ];
+
+    // AUTO만 전장에 남긴다. 매 턴 고쳐 잡는 지휘 판단이라 한 번에 닿아야 한다.
+    final autoChip = Semantics(
+      label: '자동 지휘 $autoLabel. 눌러서 끔, 보조, 연속 순서로 바꿔요',
+      child: SizedBox(
+        height: 44,
+        child: FilterChip(
+          key: const ValueKey('seq-dock-auto'),
+          selected: settings.autoMode != ExpeditionAutoMode.off,
+          onSelected: (_) => notifier.cycleAutoMode(),
+          avatar: Icon(
+            settings.autoMode == ExpeditionAutoMode.off
+                ? Icons.touch_app_outlined
+                : Icons.autorenew_rounded,
+            size: 16,
+          ),
+          visualDensity: VisualDensity.compact,
+          label: Text(autoLabel),
+        ),
+      ),
+    );
+    final settingsButton = Semantics(
+      label: '전투 설정. 배속 ${settings.pace}배, '
+          '짧은 연출 ${settings.shortEffects ? '켜짐' : '꺼짐'}, '
+          '소리 ${settings.audioLabel}',
+      child: IconButton(
+        key: const ValueKey('seq-dock-settings'),
+        onPressed: () => _openSettings(context),
+        tooltip: '전투 설정',
+        constraints: const BoxConstraints.tightFor(width: 48, height: 48),
+        icon: const Icon(Icons.tune_rounded),
+      ),
+    );
+    final retreatButton = IconButton(
+      key: const ValueKey('seq-dock-retreat'),
+      onPressed: locked ? null : () => _confirmRetreat(context, ref),
+      tooltip: '긴급 귀환',
+      constraints: const BoxConstraints.tightFor(width: 48, height: 48),
+      icon: const Icon(Icons.directions_run_rounded),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= oneLineWidth) {
+          return SizedBox(
+            height: lineHeight,
+            child: Row(
+              children: [
+                Expanded(child: Row(children: statusTags)),
+                const SizedBox(width: 6),
+                autoChip,
+                const SizedBox(width: 6),
+                settingsButton,
+                retreatButton,
+              ],
             ),
-          ],
-          const SizedBox(width: 6),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              reverse: true,
+          );
+        }
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: compactExtraHeight - 4,
+              child: Row(children: statusTags),
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              height: lineHeight,
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Semantics(
-                    label: '자동 지휘 $autoLabel. 눌러서 끔, 보조, 연속 순서로 바꿔요',
-                    child: SizedBox(
-                      height: 44,
-                      child: FilterChip(
-                        key: const ValueKey('seq-dock-auto'),
-                        selected: settings.autoMode != ExpeditionAutoMode.off,
-                        onSelected: (_) => notifier.cycleAutoMode(),
-                        avatar: Icon(
-                          settings.autoMode == ExpeditionAutoMode.off
-                              ? Icons.touch_app_outlined
-                              : Icons.autorenew_rounded,
-                          size: 16,
-                        ),
-                        visualDensity: VisualDensity.compact,
-                        label: Text(autoLabel),
-                      ),
-                    ),
-                  ),
+                  autoChip,
                   const SizedBox(width: 6),
-                  Semantics(
-                    label: '연출 배속 ${settings.pace}배',
-                    child: SizedBox(
-                      height: 44,
-                      child: FilterChip(
-                        key: const ValueKey('seq-dock-pace'),
-                        selected: settings.pace == 2,
-                        onSelected: (_) => notifier.togglePace(),
-                        avatar: const Icon(Icons.speed_rounded, size: 16),
-                        visualDensity: VisualDensity.compact,
-                        label: Text('${settings.pace}×'),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Semantics(
-                    label: '짧은 연출 ${settings.shortEffects ? '켜짐' : '꺼짐'}',
-                    child: SizedBox(
-                      height: 44,
-                      child: FilterChip(
-                        key: const ValueKey('seq-dock-short'),
-                        selected: settings.shortEffects,
-                        onSelected: (_) => notifier.toggleShortEffects(),
-                        avatar: const Icon(Icons.bolt_outlined, size: 16),
-                        visualDensity: VisualDensity.compact,
-                        label: const Text('짧은 연출'),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Semantics(
-                    label: '전투 소리 ${settings.audioLabel}, 눌러서 다음 단계',
-                    child: SizedBox(
-                      height: 44,
-                      child: FilterChip(
-                        key: const ValueKey('seq-dock-audio'),
-                        selected: settings.audioEnabled,
-                        onSelected: (_) => notifier.cycleAudioMode(),
-                        avatar: Icon(
-                          switch (settings.audioMode) {
-                            ExpeditionAudioMode.all => Icons.volume_up_outlined,
-                            ExpeditionAudioMode.sfxOnly =>
-                              Icons.music_off_outlined,
-                            ExpeditionAudioMode.muted =>
-                              Icons.volume_off_outlined,
-                          },
-                          size: 16,
-                        ),
-                        visualDensity: VisualDensity.compact,
-                        label: Text(settings.audioLabel),
-                      ),
-                    ),
-                  ),
+                  settingsButton,
+                  const Spacer(),
+                  retreatButton,
                 ],
               ),
             ),
-          ),
-          IconButton(
-            key: const ValueKey('seq-dock-retreat'),
-            onPressed: locked ? null : () => _confirmRetreat(context, ref),
-            tooltip: '긴급 귀환',
-            constraints: const BoxConstraints.tightFor(width: 48, height: 48),
-            icon: const Icon(Icons.directions_run_rounded),
-          ),
-        ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// 배속·짧은 연출·소리를 모아 놓은 전투 설정 시트.
+///
+/// 예전에는 이 셋이 AUTO와 함께 상단 바의 가로 스크롤 안에 있었다. 390px에서
+/// 그 스크롤에 주어지는 폭이 70px 남짓이라 네 칩(456px) 중 마지막 하나만
+/// 보였고, `reverse: true`라 정작 제일 자주 쓰는 AUTO가 제일 깊이 숨었다.
+/// 스크롤이 있다는 표시도 없었다.
+class _BattleSettingsSheet extends ConsumerWidget {
+  const _BattleSettingsSheet();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(expeditionBattleSettingsProvider);
+    final notifier = ref.read(expeditionBattleSettingsProvider.notifier);
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('전투 설정', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 4),
+            Text(
+              '어느 설정에서도 판정과 결과는 그대로예요.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 10),
+            _BattleSettingRow(
+              itemKey: const ValueKey('seq-dock-pace'),
+              icon: Icons.speed_rounded,
+              title: '연출 배속',
+              description: '판정과 프레임은 건너뛰지 않고 타임라인만 줄여요.',
+              value: '${settings.pace}배',
+              semanticsLabel: '연출 배속 ${settings.pace}배, 눌러서 바꿔요',
+              onTap: notifier.togglePace,
+            ),
+            _BattleSettingRow(
+              itemKey: const ValueKey('seq-dock-short'),
+              icon: Icons.bolt_outlined,
+              title: '짧은 연출',
+              description: '시동과 여운을 줄이되 판정 정보는 그대로 보여 줘요.',
+              value: settings.shortEffects ? '켜짐' : '꺼짐',
+              semanticsLabel:
+                  '짧은 연출 ${settings.shortEffects ? '켜짐' : '꺼짐'}, 눌러서 바꿔요',
+              onTap: notifier.toggleShortEffects,
+            ),
+            _BattleSettingRow(
+              itemKey: const ValueKey('seq-dock-audio'),
+              icon: switch (settings.audioMode) {
+                ExpeditionAudioMode.all => Icons.volume_up_outlined,
+                ExpeditionAudioMode.sfxOnly => Icons.music_off_outlined,
+                ExpeditionAudioMode.muted => Icons.volume_off_outlined,
+              },
+              title: '전투 소리',
+              description: '소리를 꺼도 판정은 화면과 진동으로 남아요.',
+              value: settings.audioLabel,
+              semanticsLabel: '전투 소리 ${settings.audioLabel}, 눌러서 다음 단계',
+              onTap: notifier.cycleAudioMode,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BattleSettingRow extends StatelessWidget {
+  const _BattleSettingRow({
+    required this.itemKey,
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.value,
+    required this.semanticsLabel,
+    required this.onTap,
+  });
+
+  final Key itemKey;
+  final IconData icon;
+  final String title;
+  final String description;
+  final String value;
+  final String semanticsLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: semanticsLabel,
+      child: ExcludeSemantics(
+        child: ListTile(
+          key: itemKey,
+          onTap: onTap,
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(icon),
+          title: Text(title),
+          subtitle: Text(description),
+          trailing: MongrooTag(label: value),
+        ),
       ),
     );
   }

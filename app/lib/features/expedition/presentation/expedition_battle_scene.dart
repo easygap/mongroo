@@ -50,6 +50,14 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
         final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.5;
         final mobileDockHeight =
             largeText || constraints.maxWidth < 340 ? 300.0 : 238.0;
+        // 좁은 화면에서는 상단 바가 두 줄이 된다. 넓은 화면은 상단 바를 무대
+        // 위에 겹치지 않고 Column으로 쌓으니 밀어낼 것이 없다.
+        // 폭 계산은 아래 Stack의 여백과 같다 - 바깥 4+4, Positioned 6+6,
+        // 패널 안쪽 4+4.
+        final topHudInset = compactHud
+            ? ExpeditionBattleTopBar.heightFor(constraints.maxWidth - 28) -
+                ExpeditionBattleTopBar.lineHeight
+            : 0.0;
         final stage = _ImmersiveBattleStage(
           node: node,
           expedition: expedition,
@@ -59,6 +67,7 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
           shortEffects: settings.shortEffects,
           audioMode: settings.audioMode,
           bottomHudInset: compactHud ? mobileDockHeight - 12 : 0,
+          topHudInset: topHudInset,
           onCueCompleted:
               ref.read(expeditionControllerProvider.notifier).clearActionCue,
         );
@@ -144,6 +153,7 @@ class _ImmersiveBattleStage extends StatelessWidget {
     required this.shortEffects,
     required this.audioMode,
     required this.bottomHudInset,
+    required this.topHudInset,
     required this.onCueCompleted,
   });
 
@@ -155,6 +165,7 @@ class _ImmersiveBattleStage extends StatelessWidget {
   final bool shortEffects;
   final ExpeditionAudioMode audioMode;
   final double bottomHudInset;
+  final double topHudInset;
   final VoidCallback onCueCompleted;
 
   @override
@@ -182,6 +193,7 @@ class _ImmersiveBattleStage extends StatelessWidget {
           shortEffects: shortEffects,
           audioMode: audioMode,
           bottomHudInset: bottomHudInset,
+          topHudInset: topHudInset,
           onCueCompleted: onCueCompleted,
         ),
       ),

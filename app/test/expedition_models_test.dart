@@ -18,6 +18,7 @@ import 'package:mongroo/features/expedition/presentation/expedition_walk_masks.d
 import 'package:mongroo/features/expedition/presentation/expedition_free_walk.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_overlay.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_effect_catalog.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_combat_hud.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_effects.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_sprites.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_combat_timeline.dart';
@@ -1693,6 +1694,135 @@ void main() {
     expect(controller.combatActionRequests, 1);
     expect(controller.combatActionLog.single.action, 'attack');
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('좁은 화면에서도 전투 조작 넷에 스크롤 없이 닿는다', (tester) async {
+    // 예전에는 AUTO·배속·짧은 연출·소리가 상단 바의 가로 스크롤 안에 있었다.
+    // 390px에서 그 스크롤이 받는 폭이 70px 남짓이라 마지막 칩 하나만 보였고,
+    // `reverse: true` 탓에 제일 자주 쓰는 AUTO가 제일 깊이 숨었다.
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final raw = _battleSnapshotJson();
+    final battleJson =
+        (raw['current_event'] as Map<String, dynamic>)['battle']
+            as Map<String, dynamic>;
+    // 상태 태그가 제일 긴 경우 - 보스 페이즈까지 붙은 상태로 잰다.
+    battleJson['boss_phase'] = {
+      'index': 1,
+      'count': 3,
+      'code': 'index_guard',
+      'name': '색인 수호',
+      'tone': 'moonlit',
+    };
+    final snapshot = ExpeditionSnapshot.fromJson(raw);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          expeditionControllerProvider.overrideWith(
+            () => _FakeExpeditionController(
+              ExpeditionUiState(
+                loading: false,
+                expedition: snapshot,
+                selectedMemberId: 11,
+              ),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const ExpeditionScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // 전장에 남는 조작은 화면 안에 온전히 들어와 있어야 한다.
+    for (final key in const ['seq-dock-auto', 'seq-dock-settings',
+      'seq-dock-retreat']) {
+      final rect = tester.getRect(find.byKey(ValueKey(key)));
+      expect(rect.left, greaterThanOrEqualTo(0), reason: key);
+      expect(rect.right, lessThanOrEqualTo(390), reason: key);
+      expect(rect.width, greaterThan(0), reason: key);
+    }
+    expect(find.byKey(const ValueKey('seq-dock-boss-phase')), findsOneWidget);
+
+    // 조작이 아랫줄로 내려간 만큼 장벽 HUD도 같이 내려와야 겹치지 않는다.
+    final barBottom =
+        tester.getRect(find.byKey(const ValueKey('seq-dock-retreat'))).bottom;
+    final guardTop = tester.getRect(find.byType(ExpeditionEnemyGuardHud)).top;
+    expect(
+      guardTop,
+      greaterThanOrEqualTo(barBottom - 6),
+      reason: '장벽 HUD가 상단 바 아래로 내려와야 해요. '
+          '바 $barBottom / HUD $guardTop',
+    );
+
+    // 나머지 셋은 설정 시트 안에 있고, 열기 전에는 전장에 없다.
+    expect(find.byKey(const ValueKey('seq-dock-pace')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('seq-dock-settings')));
+    await tester.pump();
+    // 전장은 대기 모션이 계속 돌아 pumpAndSettle이 끝나지 않는다.
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('전투 설정'), findsOneWidget);
+    for (final key in const ['seq-dock-pace', 'seq-dock-short',
+      'seq-dock-audio']) {
+      final rect = tester.getRect(find.byKey(ValueKey(key)));
+      expect(rect.left, greaterThanOrEqualTo(0), reason: key);
+      expect(rect.right, lessThanOrEqualTo(390), reason: key);
+    }
+    expect(find.text('1배'), findsOneWidget);
+    expect(find.text('음악·효과음'), findsOneWidget);
+
+    // 시트 안에서 누르면 그 자리에서 값이 바뀐다.
+    await tester.tap(find.byKey(const ValueKey('seq-dock-pace')));
+    await tester.pump();
+    expect(find.text('2배'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('seq-dock-audio')));
+    await tester.pump();
+    expect(find.text('효과음만'), findsOneWidget);
+
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('넓은 화면에서는 상단 바가 한 줄을 유지한다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final snapshot = ExpeditionSnapshot.fromJson(_battleSnapshotJson());
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          expeditionControllerProvider.overrideWith(
+            () => _FakeExpeditionController(
+              ExpeditionUiState(
+                loading: false,
+                expedition: snapshot,
+                selectedMemberId: 11,
+              ),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const ExpeditionScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final auto = tester.getRect(find.byKey(const ValueKey('seq-dock-auto')));
+    final settings =
+        tester.getRect(find.byKey(const ValueKey('seq-dock-settings')));
+    final retreat =
+        tester.getRect(find.byKey(const ValueKey('seq-dock-retreat')));
+    expect(auto.center.dy, closeTo(settings.center.dy, 1));
+    expect(auto.center.dy, closeTo(retreat.center.dy, 1));
+    // 조작은 오른쪽 끝에 모이고 상태 태그가 왼쪽을 쓴다.
+    expect(auto.left, greaterThan(400));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('320px과 200% 글자에서도 전장을 유지하고 명령을 스크롤한다', (tester) async {

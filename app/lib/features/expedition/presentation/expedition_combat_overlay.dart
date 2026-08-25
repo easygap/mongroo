@@ -35,6 +35,7 @@ class ExpeditionEncounterStage extends StatefulWidget {
     this.shortEffects = false,
     this.audioMode = ExpeditionAudioMode.all,
     this.bottomHudInset = 0,
+    this.topHudInset = 0,
   });
 
   final ExpeditionEncounter? encounter;
@@ -60,6 +61,10 @@ class ExpeditionEncounterStage extends StatefulWidget {
 
   /// 전장을 줄이지 않고 가장자리 명령 HUD가 차지하는 하단 영역만 피한다.
   final double bottomHudInset;
+
+  /// 상단 바가 한 줄보다 길어진 만큼. 좁은 화면에서 조작이 아랫줄로 내려가면
+  /// 그만큼 장벽 HUD도 같이 내려가야 서로 겹치지 않는다.
+  final double topHudInset;
 
   @override
   State<ExpeditionEncounterStage> createState() =>
@@ -621,7 +626,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                   // 붙여 두면 서로 겹치지도, 배우를 가리지도 않는다.
                   if (enemyName != null || (cue == null && hasTelegraph))
                     Positioned(
-                      top: 47,
+                      top: 47 + widget.topHudInset,
                       left: 10,
                       right: 10,
                       child: Column(
