@@ -380,6 +380,51 @@ class MongrooPocketMark extends StatelessWidget {
 }
 
 /// 서버 오류를 폼 안에서 즉시 읽을 수 있게 알린다.
+/// 오류는 아니지만 왜 이 화면에 있는지 알려 주는 한 줄.
+///
+/// 붉은 경고 면을 쓰면 사용자가 뭘 잘못한 것처럼 읽힌다. 세션 만료는 잘못이
+/// 아니라 그냥 시간이 지난 것이라 중립적인 면을 쓴다.
+class AuthInlineNotice extends StatelessWidget {
+  const AuthInlineNotice({super.key, required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      label: message,
+      child: ExcludeSemantics(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.lock_clock_outlined,
+                    size: 20, color: scheme.onSecondaryContainer),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: TextStyle(color: scheme.onSecondaryContainer),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class AuthInlineError extends StatelessWidget {
   const AuthInlineError({super.key, required this.message});
 

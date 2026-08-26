@@ -84,6 +84,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // 로그아웃을 누른 적이 없는데 여기 서 있는 경우가 있다. 왜
+              // 나왔는지 한 줄이라도 없으면 앱이 고장 난 것처럼 보인다.
+              if (ref.watch(authControllerProvider).sessionExpired) ...[
+                const AuthInlineNotice(
+                  message: '로그인이 만료돼 안전하게 나왔어요. 다시 로그인하면 기록은 그대로예요.',
+                ),
+                const SizedBox(height: 14),
+              ],
               TextFormField(
                 controller: _emailController,
                 focusNode: _emailFocusNode,

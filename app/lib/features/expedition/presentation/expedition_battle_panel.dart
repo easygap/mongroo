@@ -901,7 +901,9 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
           const SizedBox(height: 10),
           DecoratedBox(
             decoration: BoxDecoration(
-              color: scheme.errorContainer.withAlpha(120),
+              // 흐린 면 위에서는 `onErrorContainer`(진한 빨강 면용 짝)가
+              // 안 읽힌다. 면에 맞는 본문색을 쓰고 알파도 대화 쪽과 맞춘다.
+              color: scheme.errorContainer.withAlpha(90),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Padding(
@@ -916,7 +918,7 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
                       '${battle.maxRounds}라운드 안에 장벽을 못 깨거나 전원이 쓰러지면 '
                       '긴급 귀환하고 미확정 보상을 잃어요.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: scheme.onErrorContainer,
+                            color: scheme.onSurface,
                           ),
                     ),
                   ),

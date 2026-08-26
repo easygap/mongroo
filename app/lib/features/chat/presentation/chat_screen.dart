@@ -196,17 +196,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 width: double.infinity,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                // 면을 흐리게 깔았으면 글자도 그 면에 맞춰야 한다.
+                // `onErrorContainer`(흰색)는 진한 빨강 면을 위한 짝이라
+                // 흐린 분홍 위에서는 2.1:1이 된다.
                 color: scheme.errorContainer.withAlpha(90),
                 child: Row(
                   children: [
                     Icon(Icons.error_outline_rounded,
-                        size: 18, color: scheme.onErrorContainer),
+                        size: 18, color: scheme.error),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         state.errorMessage!,
                         style: TextStyle(
-                            fontSize: 13, color: scheme.onErrorContainer),
+                            fontSize: 13, color: scheme.onSurface),
                       ),
                     ),
                     if (state.failedContent != null)

@@ -8,10 +8,20 @@ import '../domain/user.dart';
 enum AuthStatus { restoring, signedIn, signedOut }
 
 class AuthState {
-  const AuthState({required this.status, this.user});
+  const AuthState({
+    required this.status,
+    this.user,
+    this.sessionExpired = false,
+  });
 
   final AuthStatus status;
   final User? user;
+
+  /// 사용자가 로그아웃을 누른 것이 아니라 세션이 끊겨서 나온 상태.
+  ///
+  /// 아무 말 없이 로그인 화면으로 떨어지면 앱이 고장 난 것처럼 보인다.
+  /// 로그인 화면이 이 값을 보고 왜 나왔는지 한 줄로 알려 준다.
+  final bool sessionExpired;
 }
 
 class AuthController extends Notifier<AuthState> {
@@ -22,7 +32,12 @@ class AuthController extends Notifier<AuthState> {
     // 라우터가 이 상태를 보고 로그인 화면으로 redirect한다.
     void onTokenChange() {
       if (!tokenStore.hasAccessToken && state.status == AuthStatus.signedIn) {
-        state = const AuthState(status: AuthStatus.signedOut);
+        // 여기로 오는 것은 refresh까지 실패해 토큰이 폐기된 경우뿐이다.
+        // 사용자가 누른 로그아웃은 `logout()`이 직접 상태를 바꾼다.
+        state = const AuthState(
+          status: AuthStatus.signedOut,
+          sessionExpired: true,
+        );
       }
     }
 
@@ -46,6 +61,9 @@ class AuthController extends Notifier<AuthState> {
   /// 성공 시 null, 실패 시 사용자에게 보여줄 서버 message를 돌려준다.
   Future<String?> login(
       {required String email, required String password}) async {
+    // 로그인을 다시 시도하는 순간 만료 안내는 역할을 다했다. 남겨 두면
+    // 비밀번호를 틀렸을 때 두 문장이 같이 떠서 어느 쪽이 원인인지 흐려진다.
+    _clearSessionExpiryNotice();
     try {
       final user = await ref
           .read(authRepositoryProvider)
@@ -66,6 +84,7 @@ class AuthController extends Notifier<AuthState> {
     required bool privacyAccepted,
     required bool sensitiveDataConsent,
   }) async {
+    _clearSessionExpiryNotice();
     try {
       final user = await ref.read(authRepositoryProvider).signup(
             email: email,
@@ -80,6 +99,12 @@ class AuthController extends Notifier<AuthState> {
       return null;
     } on ApiException catch (e) {
       return e.message;
+    }
+  }
+
+  void _clearSessionExpiryNotice() {
+    if (state.sessionExpired) {
+      state = AuthState(status: state.status, user: state.user);
     }
   }
 

@@ -24,6 +24,12 @@ void main() {
         greaterThanOrEqualTo(4.5),
         reason: '${scheme.brightness} errorContainer',
       );
+      // 잘못이 아닌 안내(세션 만료 등)는 붉은 면 대신 이 면을 쓴다.
+      expect(
+        contrastRatio(scheme.onSecondaryContainer, scheme.secondaryContainer),
+        greaterThanOrEqualTo(4.5),
+        reason: '${scheme.brightness} secondaryContainer',
+      );
       // 본문 기본색을 그대로 얹으면 왜 안 되는지도 함께 남긴다.
       if (scheme.brightness == Brightness.light) {
         expect(
@@ -60,6 +66,34 @@ void main() {
           reason: '밝은 테마 error를 밤색 위에 쓰면 안 되는 이유가 사라졌습니다',
         );
       }
+    }
+  });
+
+  test('흐리게 깐 경고 면 위의 글자도 AA를 넘는다', () {
+    // 대화 오류 막대와 전투 라운드 경고는 경고색을 알파로 깔아 쓴다. 그 위에
+    // 진한 빨강 면을 위한 짝(`onErrorContainer`)을 얹어 2.1:1이었다.
+    Color over(Color background, Color tint, int alpha) =>
+        Color.lerp(background, tint, alpha / 255)!;
+
+    for (final theme in [AppTheme.light(), AppTheme.dark()]) {
+      final scheme = theme.colorScheme;
+      final faded = over(scheme.surface, scheme.errorContainer, 90);
+      expect(
+        contrastRatio(scheme.onSurface, faded),
+        greaterThanOrEqualTo(4.5),
+        reason: '${scheme.brightness} 흐린 경고 면의 본문',
+      );
+      // 아이콘은 비텍스트라 3:1이면 된다. 경고색을 그대로 살린다.
+      expect(
+        contrastRatio(scheme.error, faded),
+        greaterThanOrEqualTo(3),
+        reason: '${scheme.brightness} 흐린 경고 면의 아이콘',
+      );
+      expect(
+        contrastRatio(scheme.onErrorContainer, faded),
+        lessThan(4.5),
+        reason: '진한 면용 짝을 흐린 면에 써도 되는 상태가 됐습니다',
+      );
     }
   });
 }
