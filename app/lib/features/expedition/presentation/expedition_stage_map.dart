@@ -387,20 +387,20 @@ class _HubEntryTile extends StatelessWidget {
           : locked
               ? '${entry.title}, 잠김. ${entry.description} ${entry.lockReason}'
               : '${entry.title}. ${entry.description}',
-      child: Opacity(
-        opacity: locked ? .62 : 1,
-        child: onTap == null
-            ? panel
-            : Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  key: ValueKey('hub-entry-${entry.title}'),
-                  borderRadius: BorderRadius.circular(15),
-                  onTap: onTap,
-                  child: panel,
-                ),
+      // 잠김은 아이콘과 사유 줄이 이미 말한다. 여기에 불투명도까지 곱하면
+      // 설명·사유가 쓰는 `onSurfaceVariant`(4.62:1)가 2.35:1로 떨어져서,
+      // 정작 무엇을 하는 길인지 읽을 수 없게 된다.
+      child: onTap == null
+          ? panel
+          : Material(
+              color: Colors.transparent,
+              child: InkWell(
+                key: ValueKey('hub-entry-${entry.title}'),
+                borderRadius: BorderRadius.circular(15),
+                onTap: onTap,
+                child: panel,
               ),
-      ),
+            ),
     );
   }
 }
@@ -592,9 +592,9 @@ class _StagePointTile extends StatelessWidget {
       label: '${stage.label} ${stage.kindLabel}, ${stage.title}. '
           '${locked ? stage.lockReason ?? '잠김' : stage.cleared ? '완주함' : '아직 걷지 않음'}'
           '${stage.hasUnreadStory ? ', 못 본 이야기 있음' : ''}',
-      child: Opacity(
-        opacity: locked ? .6 : 1,
-        child: MongrooPanel(
+      // 잠긴 스테이지도 배지와 사유 줄이 이미 잠김을 말한다. 여기에 불투명도를
+      // 곱하면 표기와 사유가 쓰는 `onSurfaceVariant`가 2.3:1로 내려간다.
+      child: MongrooPanel(
           padding: EdgeInsets.zero,
           radius: 14,
           borderColor: isNext
@@ -679,7 +679,6 @@ class _StagePointTile extends StatelessWidget {
             ),
           ),
         ),
-      ),
     );
   }
 }

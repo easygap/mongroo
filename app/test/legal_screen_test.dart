@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/auth/presentation/legal_screen.dart';
@@ -37,6 +38,28 @@ void main() {
       expect(find.text('개발 빌드 안내'), findsOneWidget);
       expect(find.textContaining('운영자 정보 미설정'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    }
+  });
+
+  testWidgets('개발 빌드 안내는 붉은 면에 맞는 글자색을 쓴다', (tester) async {
+    // 붉은 면 위에 본문 기본색(진한 갈색)을 얹어 2.32:1이었다. 개발 빌드에서
+    // 무엇이 비어 있는지 알려 주는 유일한 안내인데 그게 안 읽혔다.
+    await pumpLegal(tester, LegalDocument.terms);
+
+    final scheme = AppTheme.light().colorScheme;
+    for (final text in const [
+      '개발 빌드 안내',
+      '이 빌드는 공개 서비스용 법적 고지값이 입력되지 않았습니다.',
+    ]) {
+      final paragraph = tester.renderObject<RenderParagraph>(
+        find.descendant(of: find.text(text), matching: find.byType(RichText))
+            .first,
+      );
+      expect(
+        paragraph.text.style?.color,
+        scheme.onErrorContainer,
+        reason: text,
+      );
     }
   });
 

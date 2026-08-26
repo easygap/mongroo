@@ -220,6 +220,39 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('잠긴 곳의 글자는 흐려서 안 읽히지 않는다', (tester) async {
+    // 잠김을 불투명도로 표시하면 이미 muted 색인 설명·사유가 한 번 더
+    // 눌린다. 실측으로 4.62:1이던 `onSurfaceVariant`가 2.35:1까지 내려갔다.
+    // 잠김은 아이콘과 사유 줄이 말하고, 글자는 색 그대로 둔다.
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpShell(tester, clearedCount: 2);
+
+    // 허브의 준비 중 항목
+    final comingSoon = find.text('여섯이서 깊이 잠든 수호짐승을 깨워 줘요.');
+    await tester.ensureVisible(comingSoon);
+    await tester.pump();
+    expect(
+      find.ancestor(of: comingSoon, matching: find.byType(Opacity)),
+      findsNothing,
+      reason: '허브 잠김 항목 설명이 흐려집니다',
+    );
+
+    // 지도의 잠긴 스테이지
+    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.pump();
+    final lockReason = find.text('기억서고 4을 먼저 완주하면 열려요.').first;
+    await tester.ensureVisible(lockReason);
+    await tester.pump();
+    expect(
+      find.ancestor(of: lockReason, matching: find.byType(Opacity)),
+      findsNothing,
+      reason: '잠긴 스테이지 사유가 흐려집니다',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('스테이지를 누르면 미리보기 시트가 열리고 출발까지 이어진다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));

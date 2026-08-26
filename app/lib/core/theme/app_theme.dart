@@ -97,6 +97,12 @@ abstract final class AppTheme {
   static const onNight = MongrooBrandColors.paper;
   static const onNightMuted = Color(0xFFD0C3B5);
 
+  /// 밤색 면 위의 오류 문구.
+  ///
+  /// 밤색 패널은 테마와 무관하게 늘 어둡다. 밝은 테마의 `error`(진한 빨강)를
+  /// 얹으면 2.3:1이라 오류 문구만 안 읽힌다. 두 테마 모두 이 밝은 빨강을 쓴다.
+  static const onNightError = Color(0xFFFFB4AB);
+
   static const _lightPalette = MongrooPalette(
     paper: MongrooBrandColors.paper,
     paperDeep: Color(0xFFE9E1D3),

@@ -162,6 +162,57 @@ void main() {
     expect(container.read(chatControllerProvider).character?.name, '모아');
   });
 
+  testWidgets('대화를 다 쓰면 입력 칸 대신 마무리 안내가 들어선다', (tester) async {
+    // 입력 칸의 `남은 횟수` 안내는 좁다 - 390px에서 302px뿐이라 긴 문장은
+    // 잘린다. 다 쓴 뒤의 긴 안내는 그 자리에 그리지 않고 별도 패널로 바꾼다는
+    // 것을 고정해 둔다. `remainingTurns == 0`이면 언제나 `closed`이기도 하다.
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final plants = _MutablePlantRepository(_plant());
+    final chats = _CharacterChatRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          plantRepositoryProvider.overrideWithValue(plants),
+          chatRepositoryProvider.overrideWithValue(chats),
+          equippedWardrobeLayerKeyProvider.overrideWithValue(null),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          ),
+          home: const ChatScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.text('대화 시작'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(TextField), findsOneWidget);
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ChatScreen)),
+      listen: false,
+    );
+    for (var turn = 1; turn <= ChatController.maxUserTurns; turn++) {
+      await container.read(chatControllerProvider.notifier).send('$turn번째');
+    }
+    await tester.pump();
+
+    final state = container.read(chatControllerProvider);
+    expect(state.remainingTurns, 0);
+    expect(state.closed, isTrue);
+    expect(find.byType(TextField), findsNothing);
+    expect(find.textContaining('10번'), findsWidgets);
+  });
+
   testWidgets('채팅 화면은 실제 성장 모습을 쓰고 활성 식물이 바뀌어도 캐릭터를 유지한다', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(390, 844);

@@ -281,21 +281,32 @@ class _StorageWarning extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
         liveRegion: true,
-        child: MongrooPanel(
-          color: Theme.of(context).colorScheme.errorContainer,
-          borderColor: Theme.of(context).colorScheme.error.withAlpha(85),
-          shadowOffset: Offset.zero,
-          padding: const EdgeInsets.all(12),
-          child: const Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.storage_outlined, size: 20),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text('브라우저 저장소를 사용할 수 없어 이번 화면을 닫으면 체험 진행이 사라져요.'),
+        child: Builder(
+          builder: (context) {
+            final scheme = Theme.of(context).colorScheme;
+            // 붉은 면 위에 본문 기본색을 얹으면 2.3:1이다. 그 면을 위해
+            // 마련된 짝 색을 쓴다.
+            final foreground = scheme.onErrorContainer;
+            return MongrooPanel(
+              color: scheme.errorContainer,
+              borderColor: scheme.error.withAlpha(85),
+              shadowOffset: Offset.zero,
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.storage_outlined, size: 20, color: foreground),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '브라우저 저장소를 사용할 수 없어 이번 화면을 닫으면 체험 진행이 사라져요.',
+                      style: TextStyle(color: foreground),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       );
 }
@@ -551,6 +562,9 @@ class _TrialDiaryState extends State<_TrialDiary> {
               alignLabelWithHint: true,
               hintText: '오늘 기억에 남은 순간과 그때의 느낌을 적어 보세요.',
               helperText: '10자 이상이면 캐릭터가 마음의 결을 받아요.',
+              // 안내와 글자 수가 한 줄을 나눠 쓴다. 기본 한 줄로 두면
+              // `0/280`에 밀려 `…마음의 결을 받…`에서 끊긴다.
+              helperMaxLines: 2,
             ),
             onChanged: (_) => setState(() {}),
           ),

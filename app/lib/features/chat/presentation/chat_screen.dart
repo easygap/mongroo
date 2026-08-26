@@ -264,6 +264,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                     helperText: state.remainingTurns > 0
                                         ? '${state.remainingTurns}번 남았어요'
                                         : '마지막 답변은 위의 다시 시도에서 이어갈 수 있어요',
+                                    // 입력 칸이 보내기 버튼과 폭을 나눠 써서
+                                    // 302px밖에 안 된다. 한 줄로 두면 대화를
+                                    // 다 쓴 뒤의 안내가 잘려 어디서 이어가는지
+                                    // 못 읽는다.
+                                    helperMaxLines: 2,
                                     helperStyle: const TextStyle(
                                       fontFeatures: [
                                         FontFeature.tabularFigures(),
@@ -602,7 +607,6 @@ class _SessionIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final palette = MongrooPalette.of(context);
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
@@ -655,12 +659,13 @@ class _SessionIntro extends StatelessWidget {
                     ),
                     if (errorMessage != null) ...[
                       const SizedBox(height: 12),
+                      // 이 패널은 테마와 무관하게 늘 밤색이라 주변 글자도
+                      // onNight 계열을 쓴다. 오류 문구만 밝은 테마에서
+                      // 진한 빨강으로 갈라져 2.3:1까지 떨어져 있었다.
                       Text(errorMessage!,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: scheme.brightness == Brightness.dark
-                                ? scheme.error
-                                : scheme.errorContainer,
+                          style: const TextStyle(
+                            color: AppTheme.onNightError,
                           )),
                     ],
                     const SizedBox(height: 20),

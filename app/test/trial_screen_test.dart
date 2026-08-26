@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
@@ -73,6 +74,14 @@ Future<void> _tapVisible(WidgetTester tester, Finder finder) async {
   await tester.pump();
 }
 
+/// 화면에 실제로 그려진 글자가 잘렸는지. `maxLines`를 넘으면 말줄임표가 붙는다.
+bool _ellipsized(WidgetTester tester, Finder finder) {
+  final paragraph = tester.renderObject<RenderParagraph>(
+    find.descendant(of: finder, matching: find.byType(RichText)).first,
+  );
+  return paragraph.didExceedMaxLines;
+}
+
 void main() {
   testWidgets('가입 없이 일기부터 선택 탐험과 귀환까지 직접 진행한다', (tester) async {
     final storage = _MemoryTrialStorage();
@@ -145,6 +154,23 @@ void main() {
     await _tapVisible(tester, find.byKey(const Key('trial-start')));
     expect(find.textContaining('저장소를 사용할 수 없어'), findsOneWidget);
     expect(find.text('오늘 마음의 날씨는 어떤가요?'), findsOneWidget);
+  });
+
+  testWidgets('마음 기록 칸의 안내 문구가 글자 수 표시에 밀려 잘리지 않는다', (tester) async {
+    // helperText와 counter는 한 줄을 나눠 쓴다. 안내가 길면 `0/280`에 밀려
+    // `10자 이상이면 캐릭터가 마음의 결을 받…`으로 끊겼다. 하필 무슨 일이
+    // 일어나는지 말해 주는 뒷부분이 잘린다.
+    final storage = _MemoryTrialStorage();
+    await _pumpTrial(tester, storage);
+    await _tapVisible(tester, find.byKey(const Key('trial-start')));
+
+    final helper = find.text('10자 이상이면 캐릭터가 마음의 결을 받아요.');
+    expect(helper, findsOneWidget);
+    expect(
+      _ellipsized(tester, helper),
+      isFalse,
+      reason: '안내 문구가 잘렸습니다',
+    );
   });
 
   testWidgets('320px 200% 글자에서도 체험 시작 화면이 오버플로우하지 않는다', (tester) async {

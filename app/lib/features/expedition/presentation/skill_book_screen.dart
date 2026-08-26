@@ -376,7 +376,10 @@ class _BookRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Opacity(
         // 없는 책도 지우지 않고 흐리게 둔다. 무엇을 모으면 되는지가 목표가 된다.
-        opacity: book.owned ? 1 : .58,
+        //
+        // .58에서는 본문이 3.77:1이라 정작 `무엇을 모으면 되는지`가 안 읽혔다.
+        // 흐리게 두는 뜻은 살리되 AA(4.5:1)를 넘기는 .7로 올린다.
+        opacity: book.owned ? 1 : .7,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

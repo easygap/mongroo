@@ -114,23 +114,37 @@ class _OperatorDisclosure extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                configured ? '서비스 운영 정보' : '개발 빌드 안내',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              Text('운영자: $operator\n주소: $address\n문의: $contact'),
-              if (document != LegalDocument.terms) Text('데이터 호스팅: $hosting'),
-              if (!configured) ...[
+          // 개발 빌드 안내는 붉은 면이다. 글자를 본문 기본색으로 두면 진한
+          // 갈색이 붉은 바탕에 얹혀 2.3:1까지 떨어진다. 그 면을 위해 마련된
+          // 짝 색을 쓴다.
+          child: DefaultTextStyle.merge(
+            style: TextStyle(
+              color: configured
+                  ? scheme.onSurface
+                  : scheme.onErrorContainer,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  configured ? '서비스 운영 정보' : '개발 빌드 안내',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: configured
+                            ? scheme.onSurface
+                            : scheme.onErrorContainer,
+                      ),
+                ),
                 const SizedBox(height: 8),
-                const Text('이 빌드는 공개 서비스용 법적 고지값이 입력되지 않았습니다.'),
+                Text('운영자: $operator\n주소: $address\n문의: $contact'),
+                if (document != LegalDocument.terms)
+                  Text('데이터 호스팅: $hosting'),
+                if (!configured) ...[
+                  const SizedBox(height: 8),
+                  const Text('이 빌드는 공개 서비스용 법적 고지값이 입력되지 않았습니다.'),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
