@@ -1,3 +1,4 @@
+import '../../../core/text/korean_particles.dart';
 import 'expedition_combat_models.dart';
 export 'expedition_combat_models.dart';
 export 'expedition_stage_models.dart';
@@ -268,7 +269,8 @@ class ExpeditionUnlockedSkillBook {
   String get sourceLabel => source == 'challenge' ? '도전 달성' : '조건 달성';
 
   /// 안내 한 줄. 보유해도 자동 장착되지 않으므로 다음 행동까지 알려 준다.
-  String get notice => '$name을(를) 서고에 담았어요. 기록서 화면에서 장착할 수 있어요.';
+  String get notice =>
+      '${koreanObject(name)} 서고에 담았어요. 기록서 화면에서 장착할 수 있어요.';
 
   factory ExpeditionUnlockedSkillBook.fromJson(Map<String, dynamic> json) {
     final code = json['code'] as String? ?? '';

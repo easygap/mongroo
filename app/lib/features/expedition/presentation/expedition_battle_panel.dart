@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/text/korean_particles.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
 import '../../home/domain/plant.dart';
@@ -138,7 +139,8 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
             valid: false,
             focusAfter: focus,
             damage: damage,
-            error: '${member.name} 순서에서 집중력 ${action.focusCost}이(가) 필요해요.',
+            error: '${member.name} 순서에서 '
+                '집중력 ${koreanSubject('${action.focusCost}')} 필요해요.',
           );
         }
         focus -= action.focusCost;

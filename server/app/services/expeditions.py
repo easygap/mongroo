@@ -69,6 +69,7 @@ from app.services import skill_mastery
 from app.services import rewards
 from app.services.adventure import ITEMS, character_stats
 from app.services.plants import growth_state_payload, level_from_exp, stage_from_exp
+from app.core.korean import korean_subject
 
 
 _CONTENT_PATH = (
@@ -79,11 +80,17 @@ _CONTENT_PATH = (
     / "moss_archive.json"
 )
 _STAT_LABELS = {"care": "돌봄", "focus": "집중", "courage": "용기", "insight": "관찰"}
+#: 사건 결과 한 줄. **완결된 문장으로 보낸다.**
+#:
+#: 앱이 이 값 뒤에 다음 문장을 붙인다(`expedition_stage_scene.dart`). 마침표가
+#: 없으면 `차분히 길을 열었어요 이제 기록을 안고 돌아갈 수 있어요.`처럼 두
+#: 문장이 붙어 나온다. 사건 화면(`expedition_decision.dart`)은 이 값을 그대로
+#: 한 줄로 쓰는데 옆의 대체 문구는 마침표로 끝나서 서로 어긋나기도 했다.
 _OUTCOME_LABELS = {
-    "flourish": "멋지게 풀어냈어요",
-    "clear": "차분히 길을 열었어요",
-    "detour": "뜻밖의 우회로가 생겼어요",
-    "safe": "안전한 선택으로 물러났어요",
+    "flourish": "멋지게 풀어냈어요.",
+    "clear": "차분히 길을 열었어요.",
+    "detour": "뜻밖의 우회로가 생겼어요.",
+    "safe": "안전한 선택으로 물러났어요.",
 }
 _STAT_APPROACH = {
     "focus": "careful",
@@ -2504,7 +2511,7 @@ async def _return_scene(db: AsyncSession, run: ExpeditionRun) -> dict[str, Any]:
         "code": f"{run.region_code}.homeward.{min(len(names), 3)}",
         "title": "함께 돌아온 탐험대",
         "caption": (
-            f"{', '.join(names)}이(가) 고른 길과 기록을 안고 집으로 돌아왔어요."
+            f"{korean_subject(', '.join(names))} 고른 길과 기록을 안고 집으로 돌아왔어요."
             if names
             else "기록 안내자가 탐험의 흔적을 안고 돌아왔어요."
         ),

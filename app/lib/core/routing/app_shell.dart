@@ -9,11 +9,17 @@ class AppShell extends StatelessWidget {
 
   final StatefulNavigationShell navigationShell;
 
+  /// 아래쪽 탭 대신 왼쪽 레일을 쓰기 시작하는 폭.
+  ///
+  /// 레일이 서면 브랜드가 레일 머리에 이미 있다. 화면 쪽에서 앱바에 워드마크를
+  /// 또 그리지 않으려고 같은 값을 본다.
+  static const double railBreakpoint = 840;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 840) {
+        if (constraints.maxWidth >= railBreakpoint) {
           return Scaffold(
             body: Row(
               children: [

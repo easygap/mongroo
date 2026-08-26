@@ -10,6 +10,8 @@ from __future__ import annotations
 import hashlib
 from typing import Any, Mapping, Sequence
 
+from app.core.korean import korean_subject, korean_with
+
 
 RELATIONSHIP_MOMENTS = ("departure", "camp", "return")
 
@@ -281,7 +283,8 @@ def relationship_duet(
             },
         ]
         narration = (
-            f"야영지의 불빛이 낮아지자 {left_name}와 {right_name}이(가) "
+            f"야영지의 불빛이 낮아지자 {korean_with(left_name)} "
+            f"{korean_subject(right_name)} "
             "평소 미뤄 둔 질문을 하나씩 꺼내요."
         )
         title = "불빛 곁의 깊은 이야기"

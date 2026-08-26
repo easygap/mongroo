@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/routing/app_shell.dart';
 import '../../../core/branding/mongroo_brand.dart';
 import '../../../core/error/api_exception.dart';
 import '../../../core/theme/app_theme.dart';
@@ -164,7 +165,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         toolbarHeight: 62,
         titleSpacing: 20,
-        title: const _HomeWordmark(),
+        // 레일이 서는 폭에서는 브랜드가 레일 머리에 이미 있다. 앱바에 또
+        // 그리면 한 화면에 몽그루가 두 번 나온다.
+        title: MediaQuery.sizeOf(context).width >= AppShell.railBreakpoint
+            ? const Text('오늘')
+            : const _HomeWordmark(),
         actions: [
           _SeedToken(value: seedBalance),
           const SizedBox(width: 4),

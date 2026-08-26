@@ -73,6 +73,7 @@ from app.content.expeditions.skill_book_effects import (
 )
 from app.content.expeditions.skill_books import SKILL_BOOK_CATALOG
 from app.content.expeditions.tangles import CONTACT_MATERIALS, tangle_definition
+from app.core.korean import korean_subject, korean_topic
 
 
 # 전용 재질이 없는 구형 수호자에게 쓸 안전 기본값. 단단한 무언가에 닿았다는
@@ -1587,7 +1588,7 @@ def _apply_member_command(
         member_state["guard"] = int(kit["guard"]["guard"])
         pending["guard_actions"] = int(pending.get("guard_actions", 0)) + 1
         action_name = kit["guard"]["name"]
-        caption = f"{actor_name}이(가) 마음을 다잡고 공격에 대비했어요."
+        caption = f"{korean_subject(actor_name)} 마음을 다잡고 공격에 대비했어요."
     else:
         skill_by_slot = {
             item["slot"]: item
@@ -1608,9 +1609,9 @@ def _apply_member_command(
                 once_per_battle = remaining >= int(state.get("max_rounds", 6))
                 raise CombatRuleError(
                     "EXPEDITION_COMBAT_COOLDOWN",
-                    f"{action_name}은(는) 이 전투에서 한 번만 쓸 수 있어요."
+                    f"{korean_topic(action_name)} 이 전투에서 한 번만 쓸 수 있어요."
                     if once_per_battle
-                    else f"{action_name}은(는) {remaining}턴 뒤 다시 사용할 수 있어요.",
+                    else f"{korean_topic(action_name)} {remaining}턴 뒤 다시 사용할 수 있어요.",
                 )
             # 고를 것이 있는 기록서는 무엇을 골랐는지 먼저 본다. 집중력을
             # 쓰기 전에 막아야 잘못 고른 선택으로 자원이 사라지지 않는다.

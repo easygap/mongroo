@@ -222,4 +222,43 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('레일이 서는 폭에서는 앱바에 브랜드를 또 그리지 않는다', (tester) async {
+    // 데스크톱에서는 왼쪽 레일 머리에 이미 몽그루가 있다. 홈 앱바의
+    // 워드마크까지 그리면 한 화면에 브랜드가 두 번 나온다.
+    final repository = _DelayedHarvestRepository(_harvestablePlant());
+    Future<void> pumpAt(Size size) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            plantRepositoryProvider.overrideWithValue(repository),
+            authControllerProvider.overrideWith(_SignedInAuthController.new),
+            farmControllerProvider.overrideWith(_IdleFarmController.new),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: child!,
+            ),
+            home: const HomeScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    addTearDown(tester.view.reset);
+
+    await pumpAt(const Size(390, 844));
+    expect(find.text('몽그루'), findsOneWidget);
+    expect(find.text('오늘'), findsNothing);
+
+    await pumpAt(const Size(1280, 900));
+    expect(find.text('몽그루'), findsNothing);
+    expect(find.text('오늘'), findsOneWidget);
+  });
 }

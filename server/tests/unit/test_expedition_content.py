@@ -368,3 +368,39 @@ def test_all_species_and_growth_forms_have_distinct_non_reward_skills():
     assert len({item["code"] for item in definitions}) == 16
     assert all(item["modes"] and item["phases"] for item in definitions)
     assert all("reward" not in item and "loot" not in item for item in definitions)
+
+
+def test_outcome_labels_are_complete_sentences():
+    """앱이 이 값 뒤에 문장을 이어 붙이므로 마침표까지 서버가 보낸다.
+
+    없으면 `차분히 길을 열었어요 이제 기록을 안고 돌아갈 수 있어요.`처럼
+    두 문장이 붙어 나온다.
+    """
+    from app.services.expeditions import _OUTCOME_LABELS
+
+    assert set(_OUTCOME_LABELS) == {"flourish", "clear", "detour", "safe"}
+    for code, label in _OUTCOME_LABELS.items():
+        assert label.endswith("."), f"{code}: {label}"
+        assert not label.endswith(".."), f"{code}: {label}"
+
+
+def test_no_literal_particle_placeholders_in_source():
+    """`이(가)` 같은 자리표시자가 화면에 그대로 나가지 않게 막는다.
+
+    실제로 탐험 귀환 요약이 `새싹몬이(가) 고른 길과…`로 나갔다. 조사는
+    `app/core/korean.py`가 이름 끝 받침을 보고 고른다.
+    """
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2] / "app"
+    placeholders = ("이(가)", "을(를)", "은(는)", "와(과)", "과(와)", "가(이)")
+    offenders = []
+    for path in root.rglob("*.py"):
+        # 조사 헬퍼는 자리표시자를 나쁜 예로 문서에 적어 둔다.
+        if path.name == "korean.py":
+            continue
+        text = path.read_text(encoding="utf-8")
+        for placeholder in placeholders:
+            if placeholder in text:
+                offenders.append(f"{path.relative_to(root)}: {placeholder}")
+    assert not offenders, offenders

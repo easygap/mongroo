@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/core/text/korean_particles.dart';
 
@@ -14,5 +16,25 @@ void main() {
     expect(koreanTopic('새싹몬'), '새싹몬은');
     expect(koreanTopic('해답이'), '해답이는');
     expect(koreanTopic('별솔'), '별솔은');
+  });
+
+  test('자리표시자를 화면 문자열에 그대로 두지 않는다', () {
+    // 서버 쪽에서 `새싹몬이(가) 고른 길과…`가 그대로 나갔다. 앱에도 같은
+    // 모양이 하나 있었다 - `집중력 2이(가) 필요해요`.
+    final lib = Directory('lib');
+    const placeholders = ['이(가)', '을(를)', '은(는)', '와(과)', '과(와)'];
+    final offenders = <String>[];
+    for (final entity in lib.listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      // 조사 헬퍼는 규칙을 설명하느라 이름을 적어 둘 수 있다.
+      if (entity.path.endsWith('korean_particles.dart')) continue;
+      final text = entity.readAsStringSync();
+      for (final placeholder in placeholders) {
+        if (text.contains(placeholder)) {
+          offenders.add('${entity.path}: $placeholder');
+        }
+      }
+    }
+    expect(offenders, isEmpty);
   });
 }
