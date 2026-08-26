@@ -1036,17 +1036,22 @@ class _EmptyPlantCard extends StatelessWidget {
     return MongrooPanel(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 24),
-        child: Column(
-          children: [
-            const Icon(Icons.add_circle_outline_rounded, size: 36),
-            const SizedBox(height: 10),
-            const Text('화분이 비어 있어요.'),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: onPlant,
-              child: const Text('새 식물 심기'),
-            ),
-          ],
+        // 폭을 안 잡으면 패널이 가장 넓은 자식(버튼)만큼만 커진다. 같은 화면의
+        // 다른 카드가 전부 전체 너비라 이 카드만 반쪽으로 서 있었다.
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            children: [
+              const Icon(Icons.add_circle_outline_rounded, size: 36),
+              const SizedBox(height: 10),
+              const Text('화분이 비어 있어요.'),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: onPlant,
+                child: const Text('새 식물 심기'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1064,12 +1069,16 @@ class _ErrorCard extends StatelessWidget {
     return MongrooPanel(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 24),
-        child: Column(
-          children: [
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            OutlinedButton(onPressed: onRetry, child: const Text('다시 시도')),
-          ],
+        // 짧은 오류 문구가 오면 같은 이유로 카드가 좁아진다.
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            children: [
+              Text(message, textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              OutlinedButton(onPressed: onRetry, child: const Text('다시 시도')),
+            ],
+          ),
         ),
       ),
     );

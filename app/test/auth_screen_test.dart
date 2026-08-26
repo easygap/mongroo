@@ -372,4 +372,20 @@ void main() {
     expect(find.bySemanticsLabel('몽그루를 시작하는 중입니다'), findsOneWidget);
     semantics.dispose();
   });
+
+  testWidgets('320px 200% 글자에서도 가입 폼과 동의 항목이 넘치지 않는다',
+      (tester) async {
+    // 동의 네 줄과 약관 링크가 한 화면에 몰려 있어 큰 글자에서 제일 위험하다.
+    await pumpAuth(
+      tester,
+      const SignupScreen(),
+      size: const Size(320, 720),
+      textScale: 2,
+    );
+
+    expect(find.text('처음 시작하기'), findsOneWidget);
+    await tester.ensureVisible(find.text('가입하기'));
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
+import 'package:mongroo/core/theme/mongroo_ui.dart';
 import 'package:mongroo/features/auth/domain/user.dart';
 import 'package:mongroo/features/auth/presentation/auth_controller.dart';
 import 'package:mongroo/features/garden/presentation/garden_controller.dart';
@@ -260,5 +261,44 @@ void main() {
     await pumpAt(const Size(1280, 900));
     expect(find.text('몽그루'), findsNothing);
     expect(find.text('오늘'), findsOneWidget);
+  });
+
+  testWidgets('빈 화분 카드는 다른 카드와 같은 너비로 선다', (tester) async {
+    // 패널 안 Column이 폭을 안 잡아서 가장 넓은 자식(버튼)만큼만 커졌다.
+    // 같은 화면의 다른 카드는 전부 전체 너비라 이 카드만 반쪽으로 보인다.
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          plantRepositoryProvider
+              .overrideWithValue(_DelayedCreateRepository(_harvestablePlant())),
+          authControllerProvider.overrideWith(_SignedInAuthController.new),
+          farmControllerProvider.overrideWith(_IdleFarmController.new),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          ),
+          home: const HomeScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    final card = find.ancestor(
+      of: find.text('화분이 비어 있어요.'),
+      matching: find.byType(MongrooPanel),
+    );
+    expect(card, findsWidgets);
+    final cardWidth = tester.getSize(card.first).width;
+    // 390px 화면에서 좌우 여백을 빼도 300은 넘어야 한다. 고치기 전에는
+    // 버튼 폭을 따라 170 언저리였다.
+    expect(cardWidth, greaterThan(300), reason: '카드가 반쪽으로 섰습니다');
   });
 }

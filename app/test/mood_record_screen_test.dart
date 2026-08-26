@@ -517,4 +517,27 @@ void main() {
     expect(repository.lastPatchChanges?['expected_version'], 8);
     expect(repository.lastPatchChanges?['content'], '지키고 싶은 내 초안');
   });
+
+  testWidgets('320px 200% 글자에서도 일기 작성이 넘치지 않는다', (tester) async {
+    // 앱의 핵심 화면인데 큰 글자 회귀가 없었다. 본문 칸·글자 수·안내가
+    // 한 줄을 나눠 쓰는 자리라 커지면 제일 먼저 깨진다.
+    await _pumpRecordScreen(
+      tester,
+      repository: FakeMoodRepository(),
+      size: const Size(320, 720),
+      textScale: 2,
+    );
+
+    expect(find.text('오늘의 일기'), findsOneWidget);
+    // ListView라 화면 밖 버튼은 아직 만들어지지 않는다. 끝까지 굴려서 꺼낸다.
+    // 본문 입력 칸도 스크롤 가능해서 Scrollable이 여럿이다. 바깥 것을 집는다.
+    await tester.scrollUntilVisible(
+      find.text('저장하기'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
+    expect(find.text('저장하기'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
