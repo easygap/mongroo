@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/text/korean_particles.dart';
 import '../../home/domain/plant.dart';
 import '../../home/presentation/plant_view.dart';
 import '../domain/expedition_models.dart';
@@ -526,7 +527,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                         ? '${cue.actorName}의 ${cue.title}. '
                             '${combat!.enemyName} 수호 장벽에 ${combat.guardDamage} 피해. '
                             '${cue.playsEnemyAttack ? combat.counterDamage > 0 ? '${combat.damageTarget} ${combat.counterDamage} 피해.' : '반격 방어.' : ''}'
-                        : '${cue.actorName}이 ${cue.title} 스킬을 사용했어요.';
+                        : '${koreanSubject(cue.actorName)} ${cue.title} 스킬을 사용했어요.';
 
     return Positioned.fill(
       child: Semantics(

@@ -523,7 +523,7 @@ class _LandmarkBeacon extends StatelessWidget {
       label: current
           ? '${node.name}, 현재 위치'
           : available
-              ? '${node.name}, 길빛 ${node.cost}를 사용해 이동'
+              ? '${node.name}, 길빛 ${koreanObject('${node.cost}')} 사용해 이동'
               : '${node.name}, 현재 이동할 수 없음',
       child: Tooltip(
         message: node.name,

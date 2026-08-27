@@ -1,3 +1,4 @@
+import '../../../core/text/korean_particles.dart';
 import 'plant.dart';
 
 /// 한 식물의 성장을 숫자 대신 에피소드로 기억하게 하는 5장 이야기.
@@ -24,7 +25,7 @@ extension ActivePlantStory on ActivePlant {
         _chapter(
           1,
           '흙 아래 첫 숨',
-          '첫 이야기가 화분에 닿은 날, $name은 흙 아래에서 작게 몸을 움직였어요.',
+          '첫 이야기가 화분에 닿은 날, ${koreanTopic(name)} 흙 아래에서 작게 몸을 움직였어요.',
         ),
         _chapter(
           2,
@@ -134,9 +135,12 @@ extension ActivePlantStory on ActivePlant {
     final details = <String>[];
     final secondary = secondaryForm;
     if (secondary != null) {
+      // 서버가 주는 결 문구(`온기를 나누는`)는 뒤에 이름이 와야 끝나는
+      // 관형구다. 그대로 조사를 붙이면 `온기를 나누는도`가 화면에 나간다.
+      // 서버가 `growth_persona.trait`을 만들 때와 같이 `결`을 붙여 닫는다.
       final secondaryTrait = growthTraits.traits.length >= 2
-          ? growthTraits.traits[1]
-          : secondary.personalityDescription;
+          ? '${growthTraits.traits[1]} 결'
+          : secondary.personalityName;
       details.add(
         chapterStage == 4
             ? '${secondary.emotionLabel}에서 온 $secondaryTrait도 꽃잎 가장자리와 움직임에 스며들었어요.'

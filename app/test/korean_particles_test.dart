@@ -18,6 +18,19 @@ void main() {
     expect(koreanTopic('별솔'), '별솔은');
   });
 
+  test('로/으로는 ㄹ 받침을 받침 없는 것처럼 다룬다', () {
+    // 다른 조사와 규칙이 하나 다르다. `모아결으로`는 홈 화면에 그대로 나갔다.
+    expect(koreanDirection('모아결'), '모아결로');
+    expect(koreanDirection('햇살결'), '햇살결로');
+    expect(koreanDirection('모자이크형'), '모자이크형으로');
+    expect(koreanDirection('뽀또'), '뽀또로');
+    // 숫자는 한국어로 읽었을 때를 따른다 - 일·칠·팔은 ㄹ 받침이다.
+    expect(koreanDirection('109'), '109로');
+    expect(koreanDirection('1391'), '1391로');
+    expect(koreanDirection('1393'), '1393으로');
+    expect(koreanDirection('112'), '112로');
+  });
+
   test('자리표시자를 화면 문자열에 그대로 두지 않는다', () {
     // 서버 쪽에서 `새싹몬이(가) 고른 길과…`가 그대로 나갔다. 앱에도 같은
     // 모양이 하나 있었다 - `집중력 2이(가) 필요해요`.

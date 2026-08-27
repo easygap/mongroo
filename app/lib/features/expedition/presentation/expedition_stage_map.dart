@@ -148,7 +148,7 @@ class _ContinueAdventureCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final next = stageMap.nextStage;
     final headline = stageMap.regionCleared
-        ? '${stageMap.region.shortName}를 모두 걸었어요'
+        ? '${koreanObject(stageMap.region.shortName)} 모두 걸었어요'
         : '이어서 모험하기';
     final detail = next?.label ?? '${stageMap.region.name} 완주';
     final party = roster.where((item) => item.eligible).take(3).toList();

@@ -1,3 +1,5 @@
+import '../../../core/text/korean_particles.dart';
+
 /// 서버 계산 stage: 1 씨앗, 2 새싹, 3 줄기, 4 개화, 5 만개.
 const List<String> plantStageNames = ['씨앗', '새싹', '줄기', '개화', '만개'];
 
@@ -796,9 +798,10 @@ class ActivePlant {
         2 => '일기가 더 쌓이면 잎맥에 첫 단서가 보여요.',
         _ when growthForm != null && secondaryForm != null =>
           '${growthForm!.emotionLabel} 주결에 ${secondaryForm!.emotionLabel} 보조결이 더해져 '
-              '$personalityName으로 자라고 있어요.',
+              '${koreanDirection(personalityName)} 자라고 있어요.',
         _ when growthForm != null =>
-          '${growthForm!.emotionLabel} 기록을 바탕으로 $personalityName으로 자라고 있어요.',
+          '${growthForm!.emotionLabel} 기록을 바탕으로 '
+              '${koreanDirection(personalityName)} 자라고 있어요.',
         _ => '일기 분석을 더 모아 성장 분기를 찾고 있어요.',
       };
 

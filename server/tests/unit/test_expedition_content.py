@@ -148,6 +148,43 @@ def test_every_current_species_pair_has_three_relationship_beats():
     assert len(rendered) == 360
 
 
+def test_relationship_beats_pick_particles_from_the_name_ending():
+    """이름 뒤 조사는 받침을 보고 갈린다.
+
+    대사 원문은 `{speaker}가`처럼 한쪽만 적어 두므로, 렌더링이 받침을 안 보면
+    `새싹몬가 앞장서다`가 그대로 화면에 나간다. 로스터 절반이 받침으로
+    끝나서 실제로 절반이 어긋났다.
+    """
+    for moment in RELATIONSHIP_MOMENTS:
+        with_final = relationship_beat(
+            [
+                {"name": "새싹몬", "species_code": "baby-pot"},
+                {"name": "그림싹", "species_code": "ninja-pot"},
+            ],
+            moment=moment,
+            seed="particle-test",
+        )
+        without_final = relationship_beat(
+            [
+                {"name": "해바라기", "species_code": "baby-pot"},
+                {"name": "여우비", "species_code": "ninja-pot"},
+            ],
+            moment=moment,
+            seed="particle-test",
+        )
+        assert with_final is not None and without_final is not None
+        for caption in (with_final["caption"], without_final["caption"]):
+            assert "{" not in caption
+        for name in ("새싹몬", "그림싹"):
+            assert f"{name}가" not in with_final["caption"]
+            assert f"{name}는" not in with_final["caption"]
+            assert f"{name}와" not in with_final["caption"]
+        for name in ("해바라기", "여우비"):
+            assert f"{name}이 " not in without_final["caption"]
+            assert f"{name}은" not in without_final["caption"]
+            assert f"{name}과" not in without_final["caption"]
+
+
 def test_every_distinct_species_pair_has_a_core_and_reprise_duet():
     species_codes = sorted(set(SPECIES_SKILLS) - {"archive_guide"})
 

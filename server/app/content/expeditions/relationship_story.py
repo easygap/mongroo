@@ -8,9 +8,43 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from typing import Any, Mapping, Sequence
 
-from app.core.korean import korean_subject, korean_with
+from app.core.korean import has_final_consonant, korean_subject, korean_with
+
+
+#: 이름 뒤에 붙는 조사는 이름의 받침에 따라 갈린다. 대사 원문은 읽기 쉽게
+#: `{speaker}가`처럼 한쪽만 적어 두고, 렌더링할 때 받침을 보고 고른다.
+#: 이걸 안 하면 `해바라기가`와 `새싹몬가`가 같은 템플릿에서 나온다.
+_PARTICLE_PAIRS = {
+    "이": ("이", "가"),
+    "가": ("이", "가"),
+    "을": ("을", "를"),
+    "를": ("을", "를"),
+    "은": ("은", "는"),
+    "는": ("은", "는"),
+    "과": ("과", "와"),
+    "와": ("과", "와"),
+}
+
+_NAME_SLOT = re.compile(r"\{(speaker|partner)\}([이가을를은는과와])?")
+
+
+def render_relationship_line(line: str, *, speaker: str, partner: str) -> str:
+    """이름 자리를 채우면서 뒤따르는 조사를 받침에 맞게 바꾼다."""
+
+    names = {"speaker": speaker, "partner": partner}
+
+    def _replace(match: re.Match[str]) -> str:
+        name = names[match.group(1)]
+        particle = match.group(2)
+        if particle is None:
+            return name
+        with_final, without_final = _PARTICLE_PAIRS[particle]
+        return name + (with_final if has_final_consonant(name) else without_final)
+
+    return _NAME_SLOT.sub(_replace, line)
 
 
 RELATIONSHIP_MOMENTS = ("departure", "camp", "return")
@@ -211,7 +245,8 @@ def relationship_beat(
             "camp": "쉼터의 한 장면",
             "return": "함께 돌아온 순간",
         }[moment],
-        "caption": line.format(
+        "caption": render_relationship_line(
+            line,
             speaker=str(speaker.get("name", "탐험대원")),
             partner=str(partner.get("name", "탐험대원")),
         ),

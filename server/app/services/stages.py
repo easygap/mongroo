@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.errors import AppError
 from app.content.expeditions.tangles import tangle_definition
 from app.content.expeditions.validator import STAGE_COUNT
+from app.core.korean import korean_object
 from app.core.timeutil import to_utc_iso, utcnow
 from app.models.expedition import ExpeditionRun, UserStageProgress
 from app.services.expeditions import load_content
@@ -122,7 +123,10 @@ async def stage_map_payload(db: AsyncSession, user_id: int) -> dict[str, Any]:
                 "unlocked": unlocked,
                 "lock_reason": None
                 if unlocked
-                else f"{stage_label(content, stage_no - 1)}을 먼저 완주하면 열려요.",
+                else (
+                    f"{korean_object(stage_label(content, stage_no - 1))}"
+                    " 먼저 완주하면 열려요."
+                ),
             }
         )
 

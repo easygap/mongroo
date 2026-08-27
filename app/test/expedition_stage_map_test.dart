@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mongroo/core/text/korean_particles.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/expedition/domain/expedition_models.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_controller.dart';
@@ -44,7 +45,8 @@ Map<String, dynamic> _stage({
       'cleared_at': cleared ? '2026-08-08T00:00:00Z' : null,
       'story_seen': storySeen,
       'unlocked': unlocked,
-      'lock_reason': unlocked ? null : '기억서고 ${no - 1}을 먼저 완주하면 열려요.',
+      'lock_reason':
+          unlocked ? null : '${koreanObject('기억서고 ${no - 1}')} 먼저 완주하면 열려요.',
     };
 
 ExpeditionStageMap _stageMap({int clearedCount = 1}) =>
@@ -216,7 +218,7 @@ void main() {
       );
     }
     expect(find.text('2/8'), findsOneWidget);
-    expect(find.text('기억서고 4을 먼저 완주하면 열려요.'), findsWidgets);
+    expect(find.text('기억서고 4를 먼저 완주하면 열려요.'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 
@@ -242,7 +244,7 @@ void main() {
     // 지도의 잠긴 스테이지
     await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
     await tester.pump();
-    final lockReason = find.text('기억서고 4을 먼저 완주하면 열려요.').first;
+    final lockReason = find.text('기억서고 4를 먼저 완주하면 열려요.').first;
     await tester.ensureVisible(lockReason);
     await tester.pump();
     expect(
@@ -294,7 +296,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('stage-sheet-start')), findsNothing);
-    expect(find.text('기억서고 4을 먼저 완주하면 열려요.'), findsWidgets);
+    expect(find.text('기억서고 4를 먼저 완주하면 열려요.'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
 

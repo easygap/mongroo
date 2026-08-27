@@ -839,7 +839,7 @@ class _ThinkingBubble extends StatelessWidget {
     final name = character?.name ?? '식물';
     return Semantics(
       liveRegion: true,
-      label: '$name이 답변을 생각하고 있어요',
+      label: '${koreanSubject(name)} 답변을 생각하고 있어요',
       child: ExcludeSemantics(
         child: Padding(
           padding: const EdgeInsets.only(bottom: 10),
@@ -865,7 +865,7 @@ class _ThinkingBubble extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '$name이 생각 중이에요',
+                      '${koreanSubject(name)} 생각 중이에요',
                       style: TextStyle(
                           fontSize: 13, color: scheme.onSurfaceVariant),
                     ),

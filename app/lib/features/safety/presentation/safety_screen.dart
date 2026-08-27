@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../domain/safety_action.dart';
+import '../../../core/text/korean_particles.dart';
 
 /// 안전 지원 화면. 게이미피케이션 요소 없이 차분하게,
 /// 도움받을 수 있는 연락처를 큰 버튼으로 보여준다.
@@ -28,7 +29,11 @@ class SafetyScreen extends StatelessWidget {
     }
     if (!launched) {
       messenger.showSnackBar(
-        SnackBar(content: Text('전화 연결을 열 수 없어요. 직접 $phone로 전화해 주세요.')),
+        SnackBar(
+          content: Text(
+            '전화 연결을 열 수 없어요. 직접 ${koreanDirection(phone)} 전화해 주세요.',
+          ),
+        ),
       );
     }
   }
