@@ -224,14 +224,14 @@ Future<_FakeStageController> _pumpShell(
 }
 
 void main() {
-  testWidgets('허브는 이어서 모험할 스테이지 하나를 크게 보여 준다', (tester) async {
+  testWidgets('허브는 이어서 탐험할 스테이지 하나를 크게 보여 준다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await _pumpShell(tester, clearedCount: 2);
 
     expect(find.byKey(const ValueKey('hub-continue-card')), findsOneWidget);
-    expect(find.text('이어서 모험하기'), findsOneWidget);
+    expect(find.text('이어서 탐험하기'), findsOneWidget);
     expect(find.text('기억서고 3'), findsOneWidget);
     expect(find.text('오늘 일기를 써서 마음 공명이 준비됐어요.'), findsOneWidget);
     // 잠긴 하위 진입점은 숨기지 않고 조건을 그대로 읽어 준다.
@@ -240,14 +240,14 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('일기 전에는 자유 모험 안내로 바뀌고 재촉하지 않는다', (tester) async {
+  testWidgets('일기 전에는 자유 탐험 안내로 바뀌고 재촉하지 않는다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await _pumpShell(tester, heartResonance: false);
 
     expect(
-      find.text('마음 일기를 쓰면 오늘의 보상 모험이 열려요. 그전에도 자유롭게 다녀올 수 있어요.'),
+      find.text('마음 일기를 쓰면 오늘의 보상 탐험이 열려요. 그전에도 자유롭게 다녀올 수 있어요.'),
       findsOneWidget,
     );
     expect(find.byType(Badge), findsNothing);
@@ -515,7 +515,7 @@ void main() {
     expect(find.byKey(const ValueKey('hub-entry-합동 수호전')), findsNothing);
     expect(find.byKey(const ValueKey('hub-entry-장거리 개척')), findsNothing);
 
-    // 순찰은 모험 탭이 들고 있으므로 여기서는 진입만 열려 있다.
+    // 순찰은 탐험 탭이 들고 있으므로 여기서는 진입만 열려 있다.
     expect(find.byKey(const ValueKey('hub-entry-자동 순찰')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

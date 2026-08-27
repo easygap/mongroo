@@ -88,7 +88,7 @@ class ExpeditionScreen extends ConsumerWidget {
     );
     final expedition = shell.expedition;
     final notifier = ref.read(expeditionControllerProvider.notifier);
-    final title = expedition?.region.name ?? '함께 떠나는 모험';
+    final title = expedition?.region.name ?? '함께 떠나는 탐험';
     final immersiveCombat = expedition?.run.isActive == true &&
         expedition?.currentEvent?.battle != null;
     // 허브 안쪽 화면에서는 시스템 뒤로가기가 화면을 닫지 않고 한 단계만 돌아간다.

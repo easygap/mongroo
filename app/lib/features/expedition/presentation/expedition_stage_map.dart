@@ -15,7 +15,7 @@ class _ExpeditionHub extends ConsumerWidget {
     if (catalog == null || stageMap == null) {
       return _CenteredMessage(
         icon: Icons.cloud_off_outlined,
-        title: '모험 준비를 불러오지 못했어요',
+        title: '탐험 준비를 불러오지 못했어요',
         description: state.error ?? '연결을 확인하고 다시 시도해 주세요.',
         actionLabel: '다시 불러오기',
         onAction: ref.read(expeditionControllerProvider.notifier).load,
@@ -151,7 +151,7 @@ class _ContinueAdventureCard extends StatelessWidget {
     final next = stageMap.nextStage;
     final headline = stageMap.regionCleared
         ? '${koreanObject(stageMap.region.shortName)} 모두 걸었어요'
-        : '이어서 모험하기';
+        : '이어서 탐험하기';
     final detail = next?.label ?? '${stageMap.region.name} 완주';
     final party = roster.where((item) => item.eligible).take(3).toList();
     return Semantics(
@@ -271,8 +271,8 @@ class _TodayRewardLine extends StatelessWidget {
     final text = ready
         ? '오늘 일기를 써서 마음 공명이 준비됐어요.'
         : catalog.diaryReady
-            ? '오늘의 마음 공명 보상은 이미 받았어요. 지금부터는 자유 모험이에요.'
-            : '마음 일기를 쓰면 오늘의 보상 모험이 열려요. 그전에도 자유롭게 다녀올 수 있어요.';
+            ? '오늘의 마음 공명 보상은 이미 받았어요. 지금부터는 자유 탐험이에요.'
+            : '마음 일기를 쓰면 오늘의 보상 탐험이 열려요. 그전에도 자유롭게 다녀올 수 있어요.';
     return Row(
       children: [
         Icon(
@@ -505,7 +505,7 @@ class _StageMapHeader extends ConsumerWidget {
                 IconButton(
                   key: const ValueKey('stage-map-back'),
                   onPressed: onBack,
-                  tooltip: '모험 허브로',
+                  tooltip: '탐험 허브로',
                   icon: const Icon(Icons.arrow_back_rounded),
                 ),
                 Expanded(
