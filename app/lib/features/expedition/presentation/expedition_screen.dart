@@ -103,6 +103,11 @@ class ExpeditionScreen extends ConsumerWidget {
         appBar: immersiveCombat
             ? null
             : AppBar(
+                // 지도·편성 화면은 본문 머리에 `허브로` 버튼을 이미 들고 있다.
+                // 앱바 화살표까지 두면 같은 자리에 똑같은 화살표가 두 개
+                // 겹쳐 보이고, 둘 다 같은 곳으로 간다.
+                automaticallyImplyLeading: expedition != null ||
+                    shell.shellView == ExpeditionShellView.hub,
                 title: Text(title),
                 actions: [
                   if (expedition?.run.mode == 'tutorial' &&

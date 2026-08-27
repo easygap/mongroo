@@ -523,11 +523,11 @@ class _CenteredMessage extends StatelessWidget {
       );
 }
 
-String _formLabel(String form) => switch (form) {
-      'sunny' => '햇살',
-      'rainy' => '빗결',
-      'ember' => '불씨',
-      'moonlit' => '달빛',
-      'sparkling' => '반짝임',
-      _ => '모자이크',
-    };
+/// 대원 목록에 붙는 마음결 이름.
+///
+/// 예전에는 여기서만 쓰는 이름표(`빗결`·`반짝임`·`모자이크`)를 따로 들고
+/// 있었다. 홈·도감·박물관은 같은 결을 `빗물결`·`별빛결`·`모아결`로 부르는데
+/// 편성 화면만 다른 말을 써서 같은 캐릭터가 다른 것처럼 읽혔다.
+String _formLabel(String form) =>
+    PlantGrowthForm.fromCode(form)?.personalityName ??
+    PlantGrowthForm.mosaic.personalityName;
