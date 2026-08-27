@@ -161,6 +161,67 @@ void main() {
     expect(find.textContaining('슬픔'), findsOneWidget);
   });
 
+  testWidgets('같은 캐릭터를 품종·계보로 두 번 세우지 않는다', (tester) async {
+    // `species`와 상점 캐릭터 항목은 같은 캐릭터를 둘 다 담는다. 그대로
+    // 이어 붙이면 도감에 뽀또가 두 번 서고 수집 숫자도 두 번 세인다.
+    // 품종 카드는 눌러도 아무 일이 없어서, 같아 보이는 둘 중 하나만 열렸다.
+    final collection = GardenCollection.fromJson({
+      'seed_balance': 0,
+      'items': const [],
+      'catalog_items': [
+        {
+          'id': 41,
+          'code': 'character_baby_pot',
+          'type': 'main_character',
+          'name': '아기 화분 뽀또',
+          'description': '첫 캐릭터',
+          'price_seeds': 0,
+          'rarity': 1,
+          'asset_manifest': {
+            'asset_key': 'characters/baby-pot',
+            'species_code': 'baby-pot',
+          },
+          'owned': true,
+        },
+      ],
+      'species': [
+        {
+          'id': 1,
+          'code': 'baby-pot',
+          'name': '아기 화분 뽀또',
+          'rarity': 1,
+          'unlock_price': 0,
+          'is_unlocked': true,
+        },
+        {
+          'id': 2,
+          'code': 'basic_sprout',
+          'name': '새싹몬',
+          'rarity': 1,
+          'unlock_price': 0,
+          'is_unlocked': true,
+        },
+      ],
+    });
+
+    expect(
+      collection.standaloneSpecies.map((entry) => entry.code),
+      ['basic_sprout'],
+    );
+
+    await pumpCollection(tester, collection);
+
+    expect(find.text('아기 화분 뽀또'), findsOneWidget);
+    expect(find.text('새싹몬'), findsOneWidget);
+    expect(find.textContaining('성장 캐릭터 2/2'), findsOneWidget);
+
+    // 짝이 없는 품종 카드도 계보 카드와 같은 시트를 연다.
+    await tester.tap(find.text('새싹몬'));
+    await tester.pumpAndSettle();
+    expect(find.text('새싹몬 감정별 성장 도감'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('잠긴 방 테마도 이름과 구체적인 획득 힌트를 보여 준다', (tester) async {
     final semantics = tester.ensureSemantics();
     final collection = GardenCollection.fromJson({

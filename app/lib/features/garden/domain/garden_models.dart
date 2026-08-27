@@ -643,6 +643,27 @@ class GardenCollection {
   ///
   /// 서버가 전체 카탈로그를 주면 잠긴 계보도 보여 주고, 구버전 응답은
   /// 사용자가 보유한 항목만 사용한다.
+  /// 계보 항목이 이미 대표하는 품종 코드.
+  ///
+  /// 품종 목록과 계보 항목은 **같은 캐릭터를 두 번 담는다** - 열여덟 품종 중
+  /// 열다섯이 상점의 캐릭터 항목과 짝이다. 코드 표기가 `baby-pot`과
+  /// `baby_pot`으로 갈리므로 비교 전에 맞춘다.
+  Set<String> get _lineageSpeciesKeys => {
+        for (final item in growthLineageItems)
+          if (item.growthSpeciesCode.trim().isNotEmpty)
+            _speciesKey(item.growthSpeciesCode),
+      };
+
+  /// 도감이 세울 품종 카드. 계보 항목과 겹치는 품종은 뺀다.
+  ///
+  /// 그대로 이어 붙이면 도감에 뽀또가 두 번 서고 수집 숫자도 두 번 세인다.
+  List<SpeciesCollectionEntry> get standaloneSpecies {
+    final covered = _lineageSpeciesKeys;
+    return species
+        .where((entry) => !covered.contains(_speciesKey(entry.code)))
+        .toList(growable: false);
+  }
+
   List<ShopItem> get growthLineageItems {
     final catalog = catalogItems
         .where((entry) => entry.hasFinalCharacterPreview)
@@ -872,3 +893,7 @@ class FarmData {
             .toList(),
       );
 }
+
+/// 품종 코드 비교용 정규화. `baby-pot`과 `baby_pot`을 같은 것으로 본다.
+String _speciesKey(String code) =>
+    code.trim().toLowerCase().replaceAll('-', '_');
