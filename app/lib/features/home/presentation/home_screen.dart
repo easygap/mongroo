@@ -269,6 +269,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           recordedToday: questFeed == null
                               ? null
                               : questFeed.contextStatus != 'record_optional',
+                          hasPlant: currentPlant != null,
                         ),
                         const SizedBox(height: 20),
                         if (wide)
@@ -431,10 +432,17 @@ class _HomeWordmark extends StatelessWidget {
 }
 
 class _HomeGreeting extends StatelessWidget {
-  const _HomeGreeting({required this.nickname, required this.recordedToday});
+  const _HomeGreeting({
+    required this.nickname,
+    required this.recordedToday,
+    required this.hasPlant,
+  });
 
   final String nickname;
   final bool? recordedToday;
+
+  /// 지금 키우는 화분이 있는가. 수확 직후에는 비어 있다.
+  final bool hasPlant;
 
   @override
   Widget build(BuildContext context) {
@@ -459,9 +467,15 @@ class _HomeGreeting extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          recordedToday == true
-              ? '이야기가 식물의 다음 모습과 작은 행동으로 이어져요.'
-              : '한 줄만 남겨도 지금 키우는 식물이 반응해요.',
+          // 수확 직후에는 화분이 비어 있다. 그때 `지금 키우는 식물이
+          // 반응해요`라고 하면 없는 것을 가리킨다.
+          hasPlant
+              ? (recordedToday == true
+                  ? '이야기가 식물의 다음 모습과 작은 행동으로 이어져요.'
+                  : '한 줄만 남겨도 지금 키우는 식물이 반응해요.')
+              : (recordedToday == true
+                  ? '적어 둔 이야기는 새로 심는 씨앗이 처음부터 읽어요.'
+                  : '새 씨앗을 심으면 오늘 적은 한 줄부터 함께 자라요.'),
           style: TextStyle(color: palette.inkMuted),
         ),
       ],

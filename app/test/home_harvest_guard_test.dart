@@ -158,6 +158,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
+    // 화분이 있을 때와 비었을 때의 인사 부제가 달라야 한다.
+    expect(find.text('한 줄만 남겨도 지금 키우는 식물이 반응해요.'), findsOneWidget);
+
     await tester.scrollUntilVisible(
       find.text('박물관으로 보내기'),
       420,
@@ -191,6 +194,12 @@ void main() {
     expect(repository.speciesCalls, 0);
     expect(find.text('햇살이의 이야기를 보관했어요'), findsOneWidget);
     expect(find.text('박물관에 식물이 도착했어요.'), findsOneWidget);
+    // 수확한 뒤에는 화분이 비어 있다. 없는 식물을 가리키면 안 된다.
+    expect(find.text('한 줄만 남겨도 지금 키우는 식물이 반응해요.'), findsNothing);
+    expect(
+      find.text('새 씨앗을 심으면 오늘 적은 한 줄부터 함께 자라요.'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('다음 식물 심기'));
     await tester.pump();
