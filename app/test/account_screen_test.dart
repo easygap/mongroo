@@ -87,6 +87,27 @@ void main() {
     await tester.pump();
   }
 
+  testWidgets('가입한 뒤에도 약관과 처리방침을 다시 읽을 수 있다', (tester) async {
+    // 세 문서는 가입 화면에만 링크가 있었다. 가입하고 나면 내가 무엇에
+    // 동의했는지 앱 안에서 확인할 길이 없었다.
+    await pumpAccount(tester, _AccountRepository());
+
+    for (final entry in const [
+      ('terms', '이용약관'),
+      ('privacy', '개인정보처리방침'),
+      ('sensitive', '민감정보 처리 동의'),
+    ]) {
+      final button = find.byKey(Key('account-legal-${entry.$1}'));
+      expect(button, findsOneWidget, reason: entry.$2);
+      await tester.ensureVisible(button);
+      expect(
+        find.descendant(of: button, matching: find.text(entry.$2)),
+        findsOneWidget,
+      );
+    }
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('내보내기는 비밀 데이터 경고 뒤에만 복사 버튼을 보여 준다', (tester) async {
     final repository = _AccountRepository();
     await pumpAccount(tester, repository);
@@ -106,7 +127,10 @@ void main() {
     final repository = _AccountRepository();
     await pumpAccount(tester, repository);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, '계정 영구 삭제'));
+    final deleteButton = find.widgetWithText(OutlinedButton, '계정 영구 삭제');
+    await tester.ensureVisible(deleteButton);
+    await tester.pump();
+    await tester.tap(deleteButton);
     await tester.pumpAndSettle();
 
     var submit = tester.widget<FilledButton>(

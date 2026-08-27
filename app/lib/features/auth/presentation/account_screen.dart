@@ -156,6 +156,24 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                       label: const Text('처음 사용 가이드 다시 보기'),
                     ),
                     const SizedBox(height: 8),
+                    // 약관·처리방침은 가입 화면에서만 열 수 있었다. 가입하고
+                    // 나면 내가 무엇에 동의했는지 다시 읽을 길이 앱에 없었고,
+                    // 민감정보 동의는 특히 언제든 확인할 수 있어야 한다.
+                    for (final legal in const [
+                      ('terms', '이용약관'),
+                      ('privacy', '개인정보처리방침'),
+                      ('sensitive', '민감정보 처리 동의'),
+                    ]) ...[
+                      OutlinedButton.icon(
+                        key: Key('account-legal-${legal.$1}'),
+                        onPressed: _exporting || _deleting
+                            ? null
+                            : () => context.push('/legal/${legal.$1}'),
+                        icon: const Icon(Icons.article_outlined),
+                        label: Text(legal.$2),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     OutlinedButton.icon(
                       onPressed: _exporting || _deleting
                           ? null
