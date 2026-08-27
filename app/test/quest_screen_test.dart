@@ -99,7 +99,7 @@ Future<(_QuestRepository, GoRouter)> _pumpScreen(
 }
 
 void main() {
-  testWidgets('기록이 없으면 퀘스트 문맥에서 기록 화면으로 바로 이어진다', (tester) async {
+  testWidgets('기록이 없으면 작은 행동 문맥에서 기록 화면으로 바로 이어진다', (tester) async {
     await _pumpScreen(tester);
 
     expect(find.text('오늘 이야기 남기기'), findsOneWidget);
@@ -116,8 +116,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.completeCalls, 1);
-    expect(find.text('퀘스트를 완료했나요?'), findsNothing);
-    expect(find.text('퀘스트 완료!'), findsOneWidget);
+    expect(find.text('작은 행동을 마쳤나요?'), findsNothing);
+    expect(find.text('작은 행동 완료!'), findsOneWidget);
   });
 
   testWidgets('건너뛰기는 불이익을 설명하고 쉼 상태를 구분한다', (tester) async {

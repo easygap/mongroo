@@ -160,7 +160,7 @@ class NextUnlockCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    '이번 주 · 기록 ${progress.weeklyRecordedDays}일 · 퀘스트 ${progress.weeklyCompletedQuests}회',
+                    '이번 주 · 기록 ${progress.weeklyRecordedDays}일 · 작은 행동 ${progress.weeklyCompletedQuests}회',
                     style: TextStyle(color: palette.inkMuted, fontSize: 11),
                   ),
                 ],
@@ -228,7 +228,7 @@ class _JourneyContent extends StatelessWidget {
       icon: Icons.flag_outlined,
       title: '작은 행동',
       caption: feed.suspended
-          ? '오늘은 퀘스트 대신 돌봄을 먼저 봐요'
+          ? '오늘은 작은 행동 대신 돌봄을 먼저 봐요'
           : questStatus == DailyQuestStatus.completed
               ? '보상이 식물과 씨앗에 반영됐어요'
               : questStatus == DailyQuestStatus.skipped
@@ -262,7 +262,7 @@ class _JourneyContent extends StatelessWidget {
     )) {
       (true, _, _, _) => (
           '오늘은 돌봄을 먼저 봐요',
-          '퀘스트와 보상보다 지금 연결할 수 있는 지원을 앞에 두었어요.',
+          '작은 행동과 보상보다 지금 연결할 수 있는 지원을 앞에 두었어요.',
           '지원 안내 보기',
           Icons.health_and_safety_outlined,
           onSafety,

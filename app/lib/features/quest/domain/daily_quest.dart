@@ -68,7 +68,7 @@ class QuestDefinition {
       QuestDefinition(
         id: _asInt(json['id']),
         code: (json['code'] as String?) ?? '',
-        title: (json['title'] as String?) ?? '오늘의 마음 퀘스트',
+        title: (json['title'] as String?) ?? '오늘의 작은 행동',
         description: (json['description'] as String?) ?? '',
         category: (json['category'] as String?) ?? 'grounding',
         burdenLevel: _asInt(json['burden_level'], 1),
@@ -250,7 +250,7 @@ class DailyQuestFeed {
 
   String get contextDescription => switch (contextStatus) {
         'diary_matched' => '이 마음을 평가하지 않고, 부담 적은 행동과 연결했어요.',
-        'analyzing' => '분석이 끝나면 완료 전 퀘스트를 오늘의 마음과 다시 연결해요.',
+        'analyzing' => '분석이 끝나면 아직 안 한 작은 행동을 오늘의 마음과 다시 연결해요.',
         'record_optional' => '먼저 이야기를 남기면 오늘의 마음과 어울리는 행동을 골라요.',
         _ => '완료해도, 건너뛰어도 연속 기록에는 영향이 없어요.',
       };

@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/features/quest/domain/daily_quest.dart';
 
 void main() {
-  test('오늘 퀘스트 계약을 중첩 quest 정의까지 파싱한다', () {
+  test('오늘의 작은 행동 계약을 중첩 quest 정의까지 파싱한다', () {
     final feed = DailyQuestFeed.fromJson({
       'date': '2026-07-13',
       'suspended': false,
@@ -20,7 +20,7 @@ void main() {
           'name': '달빛 몽상 온실',
           'item_type': 'room_theme',
           'acquisition_type': 'quest_count',
-          'label': '일일 퀘스트 3회 완료',
+          'label': '작은 행동 3회 완료',
           'current': 2,
           'target': 3,
           'eligible': false,
@@ -60,7 +60,7 @@ void main() {
     expect(feed.journey.nextUnlock?.typeLabel, '방 테마');
   });
 
-  test('완료 항목으로 교체하면 진행 가능한 퀘스트가 사라진다', () {
+  test('완료 항목으로 교체하면 진행 가능한 작은 행동이 사라진다', () {
     final assigned = DailyQuest.fromJson({
       'id': 7,
       'quest_date': '2026-07-13',
@@ -82,7 +82,7 @@ void main() {
     expect(updated.items.single.status, DailyQuestStatus.completed);
   });
 
-  test('안전 지원 상태에서는 퀘스트 목록과 무관하게 suspended를 보존한다', () {
+  test('안전 지원 상태에서는 목록과 무관하게 suspended를 보존한다', () {
     final feed = DailyQuestFeed.fromJson({
       'date': '2026-07-13',
       'suspended': true,
@@ -94,7 +94,7 @@ void main() {
     expect(feed.suspensionReason, 'safety_support_active');
   });
 
-  test('일기 분석 중에는 퀘스트가 다시 연결될 시점을 설명한다', () {
+  test('일기 분석 중에는 작은 행동이 다시 연결될 시점을 설명한다', () {
     final feed = DailyQuestFeed.fromJson({
       'date': '2026-07-13',
       'suspended': false,
@@ -103,10 +103,10 @@ void main() {
     });
 
     expect(feed.contextTitle, '식물이 오늘 마음을 읽는 중');
-    expect(feed.contextDescription, contains('완료 전 퀘스트'));
+    expect(feed.contextDescription, contains('아직 안 한 작은 행동'));
   });
 
-  test('퀘스트 카테고리와 준비 정도를 짧은 표기로 바꾼다', () {
+  test('작은 행동의 갈래와 준비 정도를 짧은 표기로 바꾼다', () {
     const categories = <String, String>{
       'reflection': '기록',
       'senses': '관찰',

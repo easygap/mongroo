@@ -165,7 +165,7 @@ class _PreviewRepository extends GardenRepository {
             owned: false,
             acquisition: const ShopItemAcquisition(
               type: 'quest_count',
-              label: '일일 퀘스트 5회 완료',
+              label: '작은 행동 5회 완료',
               current: 2,
               target: 5,
               eligible: false,
@@ -213,7 +213,7 @@ void main() {
       owned: false,
       acquisition: const ShopItemAcquisition(
         type: 'quest_count',
-        label: '일일 퀘스트 5회 완료',
+        label: '작은 행동 5회 완료',
         current: 2,
         target: 5,
         eligible: false,
@@ -239,10 +239,10 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('일일 퀘스트 5회 완료'), findsOneWidget);
+    expect(find.text('작은 행동 5회 완료'), findsOneWidget);
     expect(find.text('2/5'), findsOneWidget);
     expect(
-      find.bySemanticsLabel('획득 조건, 일일 퀘스트 5회 완료, 2/5'),
+      find.bySemanticsLabel('획득 조건, 작은 행동 5회 완료, 2/5'),
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
@@ -379,7 +379,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('마법 공방'), findsOneWidget);
-    expect(find.text('일일 퀘스트 5회 완료'), findsOneWidget);
+    expect(find.text('작은 행동 5회 완료'), findsOneWidget);
     expect(
       find.widgetWithText(FilledButton, '조건을 더 채워 주세요'),
       findsOneWidget,

@@ -496,7 +496,7 @@ async def get_or_assign_today(db: AsyncSession, user_id: int) -> dict:
         )
         if not quests:
             raise AppError(
-                503, "QUEST_CATALOG_EMPTY", "오늘의 퀘스트를 준비하지 못했어요."
+                503, "QUEST_CATALOG_EMPTY", "오늘의 작은 행동을 준비하지 못했어요."
             )
         recent_rows = (
             await db.execute(
@@ -567,7 +567,7 @@ async def _owned_user_quest_for_update(
         sa.select(UserQuest).where(UserQuest.id == user_quest_id).with_for_update()
     )
     if user_quest is None:
-        raise AppError(404, "USER_QUEST_NOT_FOUND", "퀘스트를 찾을 수 없습니다.")
+        raise AppError(404, "USER_QUEST_NOT_FOUND", "작은 행동을 찾을 수 없습니다.")
     if user_quest.user_id != user_id:
         raise AppError(403, "FORBIDDEN", "접근 권한이 없습니다.")
     return user_quest
@@ -581,13 +581,15 @@ async def complete_quest(db: AsyncSession, user_id: int, user_quest_id: int) -> 
         raise AppError(
             409,
             "QUESTS_SUSPENDED",
-            "지금은 퀘스트 대신 안전 지원을 먼저 확인해 주세요.",
+            "지금은 작은 행동 대신 안전 지원을 먼저 확인해 주세요.",
         )
     if user_quest.quest_date != today:
-        raise AppError(409, "QUEST_EXPIRED", "오늘 배정된 퀘스트만 완료할 수 있습니다.")
+        raise AppError(
+            409, "QUEST_EXPIRED", "오늘 준비된 작은 행동만 완료할 수 있습니다."
+        )
     if user_quest.status != "assigned":
         raise AppError(
-            409, "QUEST_ALREADY_RESOLVED", "이미 완료하거나 건너뛴 퀘스트입니다."
+            409, "QUEST_ALREADY_RESOLVED", "이미 완료하거나 건너뛴 작은 행동입니다."
         )
 
     quest = await db.get(Quest, user_quest.quest_id)
@@ -606,7 +608,9 @@ async def complete_quest(db: AsyncSession, user_id: int, user_quest_id: int) -> 
         reward_amounts=(quest.reward_exp, quest.reward_seeds),
     )
     if not granted:
-        raise AppError(409, "QUEST_ALREADY_RESOLVED", "이미 보상받은 퀘스트입니다.")
+        raise AppError(
+            409, "QUEST_ALREADY_RESOLVED", "이미 보상받은 작은 행동입니다."
+        )
     user_quest.status = "completed"
     user_quest.completed_at = utcnow()
     await db.flush()
@@ -621,10 +625,12 @@ async def complete_quest(db: AsyncSession, user_id: int, user_quest_id: int) -> 
 async def skip_quest(db: AsyncSession, user_id: int, user_quest_id: int) -> dict:
     user_quest = await _owned_user_quest_for_update(db, user_id, user_quest_id)
     if user_quest.quest_date != local_date_of(utcnow()):
-        raise AppError(409, "QUEST_EXPIRED", "오늘 배정된 퀘스트만 건너뛸 수 있습니다.")
+        raise AppError(
+            409, "QUEST_EXPIRED", "오늘 준비된 작은 행동만 건너뛸 수 있습니다."
+        )
     if user_quest.status != "assigned":
         raise AppError(
-            409, "QUEST_ALREADY_RESOLVED", "이미 완료하거나 건너뛴 퀘스트입니다."
+            409, "QUEST_ALREADY_RESOLVED", "이미 완료하거나 건너뛴 작은 행동입니다."
         )
     user_quest.status = "skipped"
     quest = await db.get(Quest, user_quest.quest_id)

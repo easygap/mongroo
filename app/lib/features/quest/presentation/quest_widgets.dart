@@ -23,7 +23,7 @@ class DailyQuestSummaryCard extends ConsumerWidget {
 
     return MongrooPressable(
       onTap: onOpen,
-      semanticLabel: '오늘 퀘스트 열기',
+      semanticLabel: '오늘의 작은 행동 열기',
       child: MongrooPanel(
         padding: EdgeInsets.zero,
         child: ConstrainedBox(
@@ -56,7 +56,7 @@ class DailyQuestSummaryCard extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('오늘 퀘스트',
+                        Text('오늘의 작은 행동',
                             style: TextStyle(
                               fontFamily: AppTheme.pixelFont,
                               fontSize: 12,
@@ -70,7 +70,7 @@ class DailyQuestSummaryCard extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('오늘 퀘스트',
+                        Text('오늘의 작은 행동',
                             style: TextStyle(
                               fontFamily: AppTheme.pixelFont,
                               fontSize: 12,
@@ -94,10 +94,10 @@ class DailyQuestSummaryCard extends ConsumerWidget {
                         const SizedBox(height: 2),
                         Text(
                           data.suspended
-                              ? '오늘 퀘스트는 쉬어 갑니다.'
+                              ? '오늘은 작은 행동을 쉬어 가요.'
                               : next?.quest.title ??
                                   (data.items.isEmpty
-                                      ? '오늘 준비된 퀘스트가 없어요.'
+                                      ? '오늘 준비된 작은 행동이 없어요.'
                                       : '오늘 할 일을 모두 마쳤어요.'),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,

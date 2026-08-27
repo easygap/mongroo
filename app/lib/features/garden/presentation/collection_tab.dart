@@ -702,7 +702,7 @@ class _CatalogItemCardState extends State<_CatalogItemCard> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           locked
-                              ? '상점과 퀘스트에서 씨앗을 해금할 수 있어요'
+                              ? '상점과 작은 행동에서 씨앗을 해금할 수 있어요'
                               : '씨앗 · 새싹 · 줄기 · 개화 · 만개',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

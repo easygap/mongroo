@@ -36,7 +36,7 @@ class QuestScreen extends ConsumerWidget {
                   size: 42, color: Theme.of(context).colorScheme.primary),
               const SizedBox(height: 12),
               const Text(
-                '퀘스트 완료!',
+                '작은 행동 완료!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: AppTheme.pixelFont,
@@ -47,7 +47,7 @@ class QuestScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Text(
                 reward == null
-                    ? '오늘의 퀘스트를 완료했어요.'
+                    ? '오늘의 작은 행동을 마쳤어요.'
                     : '경험치 +${reward.totalExp} · 씨앗 +${reward.totalSeeds}\n'
                         '보상이 지금 키우는 식물에 반영됐어요.',
                 textAlign: TextAlign.center,
@@ -147,7 +147,7 @@ class QuestScreen extends ConsumerWidget {
           onPressed: () =>
               context.canPop() ? context.pop() : context.go('/home'),
         ),
-        title: const Text('오늘의 퀘스트'),
+        title: const Text('오늘의 작은 행동'),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(questControllerProvider.notifier).load(),
@@ -312,7 +312,7 @@ class _SuspendedCard extends StatelessWidget {
               size: 42, color: scheme.onTertiaryContainer),
           const SizedBox(height: 12),
           const Text(
-            '오늘 퀘스트는 쉬어 갑니다',
+            '오늘은 작은 행동을 쉬어 가요',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
@@ -347,7 +347,7 @@ class _EmptyCard extends StatelessWidget {
           children: [
             Icon(Icons.nights_stay_outlined, size: 40),
             SizedBox(height: 12),
-            Text('오늘 배정된 퀘스트가 없어요.'),
+            Text('오늘 준비된 작은 행동이 없어요.'),
             SizedBox(height: 4),
             Text('감정 기록과 정원 꾸미기는 그대로 이용할 수 있어요.'),
           ],
@@ -419,7 +419,7 @@ class _LoadingBody extends StatelessWidget {
           SizedBox(height: 120),
           Center(child: CircularProgressIndicator()),
           SizedBox(height: 16),
-          Center(child: Text('오늘의 마음 퀘스트를 준비하고 있어요.')),
+          Center(child: Text('오늘의 작은 행동을 준비하고 있어요.')),
         ],
       );
 }

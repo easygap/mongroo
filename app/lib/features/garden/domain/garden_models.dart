@@ -135,7 +135,7 @@ class ShopItemAcquisition {
 
   static String _fallbackLabel(String type) => switch (type) {
         'purchase' => '씨앗으로 구매',
-        'quest_count' => '일일 퀘스트 달성',
+        'quest_count' => '작은 행동 달성',
         'streak' => '연속 기록 달성',
         'record_count' => '누적 기록 달성',
         'own_item' => '필요한 아이템 보유',

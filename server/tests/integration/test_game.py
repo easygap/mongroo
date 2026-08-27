@@ -131,7 +131,7 @@ async def test_daily_quest_journey_tracks_loop_and_next_unlock(client, session_f
         {
             "type": "quest_count",
             "target": 1,
-            "label": "일일 퀘스트 1회 완료",
+            "label": "작은 행동 1회 완료",
         },
     )
     tokens = await signup(client)
@@ -190,7 +190,7 @@ async def test_daily_quest_journey_tracks_loop_and_next_unlock(client, session_f
             "name": "room_test_journey_quest 테스트 테마",
             "item_type": "room_theme",
             "acquisition_type": "quest_count",
-            "label": "일일 퀘스트 1회 완료",
+            "label": "작은 행동 1회 완료",
             "current": 1,
             "target": 1,
             "eligible": True,
@@ -852,7 +852,7 @@ async def test_condition_claim_checks_progress_and_replays_same_key(
         {
             "type": "quest_count",
             "target": 2,
-            "label": "일일 퀘스트 2회 완료",
+            "label": "작은 행동 2회 완료",
         },
     )
     tokens = await signup(client)
@@ -890,7 +890,7 @@ async def test_condition_claim_checks_progress_and_replays_same_key(
     assert unmet.json()["code"] == "ITEM_ACQUISITION_NOT_MET"
     assert unmet.json()["details"]["acquisition"] == {
         "type": "quest_count",
-        "label": "일일 퀘스트 2회 완료",
+        "label": "작은 행동 2회 완료",
         "current": 1,
         "target": 2,
         "eligible": False,
@@ -921,7 +921,7 @@ async def test_condition_claim_checks_progress_and_replays_same_key(
     assert claimed.json()["seed_balance"] == 0
     assert claimed.json()["acquisition"] == {
         "type": "quest_count",
-        "label": "일일 퀘스트 2회 완료",
+        "label": "작은 행동 2회 완료",
         "current": 2,
         "target": 2,
         "eligible": False,

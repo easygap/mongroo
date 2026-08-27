@@ -374,7 +374,7 @@ class _AnimatedGardenCharacterState extends State<AnimatedGardenCharacter>
       label: widget.locked
           ? '${widget.item.name}, 아직 만나지 못한 캐릭터'
           : '${widget.item.name}, ${widget.item.personality}',
-      hint: widget.locked ? '퀘스트와 상점에서 만날 수 있어요.' : widget.item.catchphrase,
+      hint: widget.locked ? '작은 행동과 상점에서 만날 수 있어요.' : widget.item.catchphrase,
       child: ExcludeSemantics(
         child: Listener(
           behavior: HitTestBehavior.translucent,

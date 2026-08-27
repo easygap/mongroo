@@ -14,7 +14,7 @@ from app.protect_sensitive_data import (
 )
 
 router = APIRouter(tags=["health"])
-EXPECTED_SCHEMA_REVISION = "0038_retire_first_signal"
+EXPECTED_SCHEMA_REVISION = "0039_small_action_wording"
 
 
 @router.get("/health/live")

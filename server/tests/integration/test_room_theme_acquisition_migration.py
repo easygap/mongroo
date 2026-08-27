@@ -74,10 +74,11 @@ def test_room_theme_acquisition_migration_preserves_and_seeds_catalog(
             "room_magic_atelier": "room/magic_atelier",
             "room_cloud_cafe": "room/cloud_cafe",
         }
+        # 0039가 `일일 퀘스트`를 앱이 쓰는 말로 바꾼다. 판정 키는 그대로다.
         assert manifests["room_moonlit"]["acquisition"] == {
             "type": "quest_count",
             "target": 3,
-            "label": "일일 퀘스트 3회 완료",
+            "label": "작은 행동 3회 완료",
         }
         assert manifests["room_sakura"]["acquisition"] == {
             "type": "record_count",

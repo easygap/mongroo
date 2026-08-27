@@ -64,7 +64,7 @@ class _SafetyQuestRepository extends QuestRepository {
 }
 
 void main() {
-  test('대화 안전 신호가 오면 오늘 퀘스트 캐시를 다시 불러온다', () async {
+  test('대화 안전 신호가 오면 오늘의 작은 행동 캐시를 다시 불러온다', () async {
     final questRepository = _SafetyQuestRepository();
     final container = ProviderContainer(
       overrides: [

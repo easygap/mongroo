@@ -70,7 +70,7 @@ class ShopController extends Notifier<ShopUiState> {
     if (item == null || item.owned || item.requiresClaim) return null;
     if (catalog == null || catalog.seedBalance < item.priceSeeds) {
       state = state.copyWith(
-        actionError: '씨앗이 부족해요. 오늘의 기록과 퀘스트로 모아 보세요.',
+        actionError: '씨앗이 부족해요. 오늘의 기록과 작은 행동으로 모아 보세요.',
       );
       return null;
     }
