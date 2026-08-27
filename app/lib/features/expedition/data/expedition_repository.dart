@@ -39,9 +39,15 @@ class ExpeditionRepository {
             : null;
       });
 
-  Future<ExpeditionStageMap> getStageMap() => guardApi(() async {
+  /// 스테이지 지도. 지역을 안 주면 서버가 아직 완주하지 않은 첫 지역을 고른다.
+  Future<ExpeditionStageMap> getStageMap({String? regionCode}) =>
+      guardApi(() async {
         final response = await _dio.get<Map<String, dynamic>>(
           '/adventure/stages',
+          queryParameters: {
+            if (regionCode != null && regionCode.isNotEmpty)
+              'region_code': regionCode,
+          },
         );
         return ExpeditionStageMap.fromJson(response.data ?? const {});
       });
@@ -59,6 +65,7 @@ class ExpeditionRepository {
 
   Future<ExpeditionSnapshot> start({
     required String mode,
+    required String regionCode,
     required List<int> plantIds,
     required int guideCount,
     required String idempotencyKey,
@@ -68,7 +75,7 @@ class ExpeditionRepository {
         final response = await _dio.post<Map<String, dynamic>>(
           '/adventure/expeditions',
           data: {
-            'region_code': 'moss_archive',
+            'region_code': regionCode,
             'mode': mode,
             'plant_ids': plantIds,
             'guide_count': guideCount,

@@ -38,6 +38,7 @@ class ExpeditionStageMap {
     required this.regionCleared,
     required this.activeRunId,
     required this.activeStageNo,
+    required this.regions,
     required this.stages,
   });
 
@@ -51,7 +52,15 @@ class ExpeditionStageMap {
   final bool regionCleared;
   final int? activeRunId;
   final int? activeStageNo;
+
+  /// 실려 있는 지역 전부. 잠긴 지역도 이유와 함께 남아서 지도 위 전환기가
+  /// 다음에 어디가 열리는지 보여 줄 수 있다.
+  final List<ExpeditionStageRegionSummary> regions;
   final List<ExpeditionStage> stages;
+
+  /// 지금 걸을 수 있는 지역이 둘 이상인가. 하나뿐이면 전환기를 감춘다.
+  bool get hasRegionChoice =>
+      regions.where((item) => item.unlocked).length > 1;
 
   bool get hasActiveRun => activeRunId != null;
 
@@ -82,6 +91,9 @@ class ExpeditionStageMap {
       activeStageNo: active is Map<String, dynamic> && active['stage_no'] is num
           ? (active['stage_no'] as num).toInt()
           : null,
+      regions: _stageMaps(json['regions'])
+          .map(ExpeditionStageRegionSummary.fromJson)
+          .toList(growable: false),
       stages: _stageMaps(json['stages'])
           .map(ExpeditionStage.fromJson)
           .toList(growable: false),
@@ -112,6 +124,42 @@ class ExpeditionStageRegion {
       shortName: json['short_name'] as String? ?? name,
       description: json['description'] as String? ?? '',
       recommendedStage: _stageInt(json['recommended_stage'], 1),
+    );
+  }
+}
+
+/// 지도 위 지역 전환기가 읽는 한 줄.
+class ExpeditionStageRegionSummary {
+  const ExpeditionStageRegionSummary({
+    required this.code,
+    required this.name,
+    required this.shortName,
+    required this.unlocked,
+    required this.lockReason,
+    required this.clearedCount,
+    required this.total,
+  });
+
+  final String code;
+  final String name;
+  final String shortName;
+  final bool unlocked;
+  final String? lockReason;
+  final int clearedCount;
+  final int total;
+
+  bool get cleared => total > 0 && clearedCount >= total;
+
+  factory ExpeditionStageRegionSummary.fromJson(Map<String, dynamic> json) {
+    final name = json['name'] as String? ?? '';
+    return ExpeditionStageRegionSummary(
+      code: json['code'] as String? ?? '',
+      name: name,
+      shortName: json['short_name'] as String? ?? name,
+      unlocked: json['unlocked'] == true,
+      lockReason: json['lock_reason'] as String?,
+      clearedCount: _stageInt(json['cleared_count']),
+      total: _stageInt(json['total'], 8),
     );
   }
 }

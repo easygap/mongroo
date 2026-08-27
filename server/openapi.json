@@ -2241,12 +2241,40 @@
         ],
         "summary": "Stage Map",
         "operationId": "stage_map_api_v1_adventure_stages_get",
+        "parameters": [
+          {
+            "name": "region_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Region Code"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -2280,6 +2308,125 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skill-books": {
+      "get": {
+        "tags": [
+          "skill-books"
+        ],
+        "summary": "Skill Book Library",
+        "description": "서고 화면의 단일 응답 — 카탈로그 전체와 내가 가진 것.\n\n카탈로그를 통째로 내려보내는 이유는 획득 경로를 **사전 공개**해야 하기\n때문이다. 아직 없는 책도 어디서 얻는지 보여 준다. 확률이 없는 게임이라\n숨길 이유가 없다.",
+        "operationId": "skill_book_library_api_v1_skill_books_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/skill-books/loadouts/{plant_id}": {
+      "get": {
+        "tags": [
+          "skill-books"
+        ],
+        "summary": "Read Loadout",
+        "operationId": "read_loadout_api_v1_skill_books_loadouts__plant_id__get",
+        "parameters": [
+          {
+            "name": "plant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Plant Id"
+            }
+          },
+          {
+            "name": "preset_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "guard",
+              "title": "Preset Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "skill-books"
+        ],
+        "summary": "Write Loadout",
+        "description": "장착을 저장한다.\n\n멱등 키를 요구하지 않는다. 같은 내용을 두 번 저장해도 결과가 같은 덮어쓰기이고,\n재화가 움직이지 않기 때문이다. 대신 `expected_revision`으로 다른 화면이\n먼저 바꾼 경우를 잡는다.",
+        "operationId": "write_loadout_api_v1_skill_books_loadouts__plant_id__put",
+        "parameters": [
+          {
+            "name": "plant_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Plant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillBookLoadoutRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -2492,6 +2639,18 @@
             "type": "string",
             "pattern": "^(attack|skill|unique_1|unique_2|selected_1|selected_2|guard)$",
             "title": "Action"
+          },
+          "choice": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 48
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Choice"
           }
         },
         "type": "object",
@@ -2650,7 +2809,7 @@
           },
           "mode": {
             "type": "string",
-            "pattern": "^(tutorial|heart_resonance|free_explore)$",
+            "pattern": "^(tutorial|heart_resonance|free_explore|deep)$",
             "title": "Mode"
           },
           "plant_ids": {
@@ -3146,6 +3305,57 @@
           "nickname"
         ],
         "title": "SignupRequest"
+      },
+      "SkillBookLoadoutRequest": {
+        "properties": {
+          "preset_code": {
+            "type": "string",
+            "pattern": "^(explore|guard|personal)$",
+            "title": "Preset Code"
+          },
+          "slot_b1_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 48
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot B1 Code"
+          },
+          "slot_b2_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 48
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot B2 Code"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "preset_code"
+        ],
+        "title": "SkillBookLoadoutRequest",
+        "description": "캐릭터 한 명의 선택 슬롯 저장 요청.\n\n슬롯에는 기록서 코드 또는 감정 포인터가 들어간다. `null`은 지우기이며,\n지운 슬롯은 안전 기본값으로 해석된다."
       },
       "ValidationError": {
         "properties": {

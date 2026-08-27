@@ -143,7 +143,9 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
         repository.getCatalog(),
         repository.getRoster(),
         repository.getActive(),
-        repository.getStageMap(),
+        // 고른 지역이 있으면 그대로 다시 받는다. 안 주면 서버가 아직
+        // 완주하지 않은 첫 지역을 고른다.
+        repository.getStageMap(regionCode: state.stageMap?.region.code),
       ]);
       final catalog = results[0] as ExpeditionCatalog;
       final roster = results[1] as List<ExpeditionRosterItem>;
@@ -283,11 +285,12 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
   /// 자유 지도를 어려운 난이도로 다시 도는 길이라서, 서버도 `stage_no` 없이
   /// 받는다. 그래서 [ExpeditionUiState.selectedStageNo]를 비워 둔 채 넘어간다.
   void openDeepPreparation() {
-    final catalog = state.catalog;
-    if (catalog == null) return;
-    if (!catalog.deepAvailable) {
+    final stageMap = state.stageMap;
+    if (stageMap == null) return;
+    // 지역마다 따로 열린다. 서버도 출발할 때 그 지역의 완주 여부를 본다.
+    if (!stageMap.regionCleared) {
       state = state.copyWith(
-        error: catalog.deepLockedReason ?? '아직 깊은 조사가 열리지 않았어요.',
+        error: '${stageMap.region.shortName} 8까지 완주하면 열려요.',
       );
       return;
     }
@@ -296,6 +299,37 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
       selectedStageNo: null,
       error: null,
     );
+  }
+
+  /// 지도가 보여 줄 지역을 바꾼다.
+  ///
+  /// 잠긴 지역은 서버가 막지만, 눌러 놓고 실패 문구만 보는 것보다 앞에서
+  /// 이유를 말해 주는 편이 낫다.
+  Future<void> selectRegion(String regionCode) async {
+    final stageMap = state.stageMap;
+    if (stageMap == null || stageMap.region.code == regionCode) return;
+    final target = stageMap.regions
+        .where((region) => region.code == regionCode)
+        .firstOrNull;
+    if (target != null && !target.unlocked) {
+      state = state.copyWith(
+        error: target.lockReason ?? '앞 지역을 완주하면 열려요.',
+      );
+      return;
+    }
+    state = state.copyWith(busyAction: 'region:$regionCode', error: null);
+    try {
+      final next = await ref
+          .read(expeditionRepositoryProvider)
+          .getStageMap(regionCode: regionCode);
+      state = state.copyWith(
+        stageMap: next,
+        selectedStageNo: null,
+        busyAction: null,
+      );
+    } on ApiException catch (error) {
+      state = state.copyWith(busyAction: null, error: error.message);
+    }
   }
 
   /// 한 단계 뒤로. 편성 → 지도 → 허브 순서로 돌아간다.
@@ -329,7 +363,9 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
             stageNo: stageNo,
           );
       state = state.copyWith(
-        stageMap: await ref.read(expeditionRepositoryProvider).getStageMap(),
+        stageMap: await ref
+            .read(expeditionRepositoryProvider)
+            .getStageMap(regionCode: stageMap.region.code),
       );
     } on ApiException {
       // 이야기 확인 표시는 보조 정보다. 실패를 사용자에게 알리지 않는다.
@@ -346,11 +382,23 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
       state = state.copyWith(error: '오늘 마음 일기를 먼저 기록해 주세요.');
       return false;
     }
-    if (mode == 'deep' && !catalog.deepAvailable) {
-      state = state.copyWith(
-        error: catalog.deepLockedReason ?? '아직 깊은 조사가 열리지 않았어요.',
-      );
-      return false;
+    if (mode == 'deep') {
+      // 깊은 조사는 지역마다 따로 열린다. 카탈로그의 `deepAvailable`은 첫
+      // 지역 기준이라 지역을 옮기고 나면 잠긴 곳을 열린 것으로 읽는다.
+      final stageMap = state.stageMap;
+      if (stageMap != null && !stageMap.regionCleared) {
+        state = state.copyWith(
+          error: '${stageMap.region.shortName} 8까지 완주하면 열려요.',
+        );
+        return false;
+      }
+      // 안전 지원이 켜진 날은 지역과 무관하게 막는다.
+      if (catalog.suspended || (stageMap == null && !catalog.deepAvailable)) {
+        state = state.copyWith(
+          error: catalog.deepLockedReason ?? '아직 깊은 조사가 열리지 않았어요.',
+        );
+        return false;
+      }
     }
     final plantIds = mode == 'tutorial'
         ? [
@@ -368,10 +416,14 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
     final stageNo =
         mode == 'tutorial' || mode == 'deep' ? null : state.selectedStageNo;
     final action = 'start:$mode:${plantIds.join(',')}:${stageNo ?? '-'}';
+    // 지도에서 보고 있는 지역으로 출발한다. 예전에는 첫 지역 코드가 요청에
+    // 박혀 있어서 두 번째 지역을 열어도 계속 첫 지역만 걸었다.
+    final regionCode = state.stageMap?.region.code ?? 'moss_archive';
     return _perform(
       action,
       (key) => ref.read(expeditionRepositoryProvider).start(
             mode: mode,
+            regionCode: regionCode,
             plantIds: plantIds,
             guideCount: mode == 'tutorial' ? 1 : 0,
             idempotencyKey: key,

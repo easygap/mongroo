@@ -26,10 +26,11 @@ stage_router = APIRouter(prefix="/adventure/stages", tags=["expeditions"])
 
 @stage_router.get("")
 async def stage_map(
+    region_code: str | None = Query(default=None),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await stage_service.stage_map_payload(db, user.id)
+    return await stage_service.stage_map_payload(db, user.id, region_code)
 
 
 @stage_router.post("/{region_code}/{stage_no}/story-seen")

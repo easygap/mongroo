@@ -16,7 +16,7 @@ from app.content.expeditions.validator import STAGE_COUNT
 from app.core.korean import korean_object
 from app.core.timeutil import to_utc_iso, utcnow
 from app.models.expedition import ExpeditionRun, UserStageProgress
-from app.services.expeditions import load_content
+from app.services.expeditions import load_content, region_cleared, region_order
 
 
 _STAT_LABELS = {"care": "돌봄", "focus": "집중", "courage": "용기", "insight": "관찰"}
@@ -53,8 +53,80 @@ async def _progress_rows(
     return {row.stage_no: row for row in rows}
 
 
-async def stage_map_payload(db: AsyncSession, user_id: int) -> dict[str, Any]:
-    content = load_content()
+async def unlocked_region_codes(db: AsyncSession, user_id: int) -> list[str]:
+    """지금 걸을 수 있는 지역 — 앞 지역을 완주할 때마다 하나씩 늘어난다.
+
+    카탈로그가 쓰는 해금 규칙과 같은 규칙이다. 두 곳이 각자 세면 지도에서는
+    열려 있는데 출발은 막히는 날이 온다.
+    """
+
+    order = region_order()
+    unlocked = order[:1]
+    for previous, code in zip(order, order[1:]):
+        if not await region_cleared(db, user_id, previous):
+            break
+        unlocked.append(code)
+    return unlocked
+
+
+async def resolve_region_code(
+    db: AsyncSession, user_id: int, region_code: str | None
+) -> str:
+    """지도가 보여 줄 지역을 정한다.
+
+    지역을 고르지 않으면 **아직 완주하지 않은 첫 해금 지역**을 준다. 그래야
+    첫 지역을 다 걸은 사람이 지도를 열었을 때 `완주 8/8`에 갇히지 않고 다음
+    지역 1스테이지에서 이어 걷는다. 전부 완주했으면 마지막 지역에 머문다.
+    """
+
+    unlocked = await unlocked_region_codes(db, user_id)
+    if region_code is not None:
+        if region_code not in unlocked:
+            # 없는 지역은 load_content가 404로 막는다. 여기서는 아직 안 열린
+            # 지역만 걸러 낸다.
+            load_content(region_code)
+            raise AppError(
+                403, "EXPEDITION_REGION_LOCKED", "앞 지역을 완주하면 열려요."
+            )
+        return region_code
+    for code in unlocked:
+        if not await region_cleared(db, user_id, code):
+            return code
+    return unlocked[-1]
+
+
+async def _region_summaries(
+    db: AsyncSession, user_id: int, unlocked: list[str]
+) -> list[dict[str, Any]]:
+    """지도 위 지역 전환기가 읽는 목록. 잠긴 지역도 이유와 함께 남긴다."""
+
+    summaries: list[dict[str, Any]] = []
+    for code in region_order():
+        pack = _region_of(load_content(code))
+        cleared_count = len(await _progress_rows(db, user_id, code))
+        is_unlocked = code in unlocked
+        summaries.append(
+            {
+                "code": code,
+                "name": pack["name"],
+                "short_name": pack.get("short_name") or pack["name"],
+                "unlocked": is_unlocked,
+                # 같은 응답의 스테이지 항목과 이름을 맞춘다. 한 payload 안에서
+                # `lock_reason`과 `locked_reason`이 섞이면 읽는 쪽이 흘린다.
+                "lock_reason": None if is_unlocked else "앞 지역을 완주하면 열려요.",
+                "cleared_count": cleared_count,
+                "total": STAGE_COUNT,
+            }
+        )
+    return summaries
+
+
+async def stage_map_payload(
+    db: AsyncSession, user_id: int, region_code: str | None = None
+) -> dict[str, Any]:
+    unlocked_codes = await unlocked_region_codes(db, user_id)
+    code = await resolve_region_code(db, user_id, region_code)
+    content = load_content(code)
     region = _region_of(content)
     progress = await _progress_rows(db, user_id, region["code"])
     catalogued_tangles = {
@@ -156,6 +228,7 @@ async def stage_map_payload(db: AsyncSession, user_id: int) -> dict[str, Any]:
         }
         if active
         else None,
+        "regions": await _region_summaries(db, user_id, unlocked_codes),
         "stages": stages,
     }
 

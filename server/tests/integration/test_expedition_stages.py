@@ -392,10 +392,31 @@ async def test_boss_stage_runs_the_guardian_in_the_arena(
     assert stage_result["stage_no"] == 8
     assert stage_result["region_cleared"] is True
 
+    # 지역을 다 걸으면 지도는 다음 지역으로 넘어간다. 완주 화면에 갇히면
+    # 두 번째 지역으로 갈 길이 앱 어디에도 없다.
     map_response = await client.get("/adventure/stages", headers=headers)
     payload = map_response.json()
-    assert payload["progress"]["region_cleared"] is True
-    assert payload["progress"]["next_stage_no"] is None
+    assert payload["region"]["code"] == "echo_well"
+    assert payload["progress"]["next_stage_no"] == 1
+    unlocked = {item["code"] for item in payload["regions"] if item["unlocked"]}
+    assert unlocked == {"moss_archive", "echo_well"}
+
+    # 지나온 지역도 골라서 다시 걸을 수 있고, 그쪽은 완주로 남는다.
+    revisit = await client.get(
+        "/adventure/stages", headers=headers, params={"region_code": "moss_archive"}
+    )
+    revisited = revisit.json()
+    assert revisited["progress"]["region_cleared"] is True
+    assert revisited["progress"]["next_stage_no"] is None
+
+    # 아직 안 열린 지역은 골라도 막는다.
+    locked = await client.get(
+        "/adventure/stages",
+        headers=headers,
+        params={"region_code": "heartwood_observatory"},
+    )
+    assert locked.status_code == 403
+    assert locked.json()["code"] == "EXPEDITION_REGION_LOCKED"
 
 
 async def test_event_stage_walks_to_the_pack_event(

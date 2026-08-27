@@ -89,8 +89,10 @@ class _ExpeditionHub extends ConsumerWidget {
     ExpeditionStageMap stageMap,
   ) {
     final notifier = ref.read(expeditionControllerProvider.notifier);
-    final catalog = ref.read(expeditionControllerProvider).catalog;
-    final deepAvailable = catalog?.deepAvailable ?? stageMap.regionCleared;
+    // 깊은 조사는 **지금 보고 있는 지역**의 8스테이지를 마쳐야 열린다.
+    // 카탈로그의 `deepAvailable`은 첫 지역 기준이라, 지역을 옮기고 나면
+    // 잠긴 곳이 열린 것처럼 보인다.
+    final deepAvailable = stageMap.regionCleared;
     return [
       _HubEntry(
         icon: Icons.hiking_rounded,
@@ -486,44 +488,126 @@ class _ExpeditionStageMapView extends ConsumerWidget {
   }
 }
 
-class _StageMapHeader extends StatelessWidget {
+class _StageMapHeader extends ConsumerWidget {
   const _StageMapHeader({required this.stageMap, required this.onBack});
 
   final ExpeditionStageMap stageMap;
   final VoidCallback onBack;
 
   @override
-  Widget build(BuildContext context) => Padding(
+  Widget build(BuildContext context, WidgetRef ref) => Padding(
         padding: const EdgeInsets.fromLTRB(6, 6, 14, 4),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            IconButton(
-              key: const ValueKey('stage-map-back'),
-              onPressed: onBack,
-              tooltip: '모험 허브로',
-              icon: const Icon(Icons.arrow_back_rounded),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    stageMap.region.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              children: [
+                IconButton(
+                  key: const ValueKey('stage-map-back'),
+                  onPressed: onBack,
+                  tooltip: '모험 허브로',
+                  icon: const Icon(Icons.arrow_back_rounded),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        stageMap.region.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      _StageProgressBar(
+                        cleared: stageMap.clearedCount,
+                        total: stageMap.total,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  _StageProgressBar(
-                    cleared: stageMap.clearedCount,
-                    total: stageMap.total,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+            if (stageMap.regions.length > 1) ...[
+              const SizedBox(height: 8),
+              _RegionSwitcher(stageMap: stageMap),
+            ],
           ],
         ),
       );
+}
+
+/// 지역을 오가는 줄.
+///
+/// 첫 지역을 완주하면 서버가 다음 지역을 기본으로 주지만, 지나온 지역을
+/// 다시 걸을 길이 없으면 완주가 곧 막다른 길이 된다. 잠긴 지역도 남겨서
+/// 다음에 무엇이 열리는지 보이게 한다.
+class _RegionSwitcher extends ConsumerWidget {
+  const _RegionSwitcher({required this.stageMap});
+
+  final ExpeditionStageMap stageMap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final busy = ref.watch(
+      expeditionControllerProvider.select((state) => state.busyAction != null),
+    );
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        itemCount: stageMap.regions.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final region = stageMap.regions[index];
+          final current = region.code == stageMap.region.code;
+          final label = region.unlocked
+              ? '${region.shortName} ${region.clearedCount}/${region.total}'
+              : region.shortName;
+          return Semantics(
+            button: true,
+            selected: current,
+            enabled: region.unlocked && !busy,
+            label: current
+                ? '${region.name}, 지금 보는 지역'
+                : region.unlocked
+                    ? '${region.name}, ${region.total}개 중 '
+                        '${region.clearedCount}개 완주. 눌러서 이동'
+                    : '${region.name}, ${region.lockReason ?? '아직 잠김'}',
+            child: ExcludeSemantics(
+              child: ChoiceChip(
+                key: ValueKey('region-chip-${region.code}'),
+                selected: current,
+                avatar: region.unlocked
+                    ? (region.cleared
+                        ? const Icon(Icons.verified_rounded, size: 16)
+                        : null)
+                    : Icon(
+                        Icons.lock_outline_rounded,
+                        size: 16,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                label: Text(label),
+                // 지금 보고 있는 지역이라고 `onSelected`를 비우면 칩이
+                // 비활성으로 그려져 글자가 흐려진다. 눌러도 아무 일이 없게만
+                // 두고 칩은 살려 둔다.
+                onSelected: busy
+                    ? null
+                    : (_) {
+                        if (current) return;
+                        ref
+                            .read(expeditionControllerProvider.notifier)
+                            .selectRegion(region.code);
+                      },
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 }
 
 class _StageProgressBar extends StatelessWidget {

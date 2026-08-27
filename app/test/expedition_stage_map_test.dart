@@ -49,23 +49,57 @@ Map<String, dynamic> _stage({
           unlocked ? null : '${koreanObject('기억서고 ${no - 1}')} 먼저 완주하면 열려요.',
     };
 
-ExpeditionStageMap _stageMap({int clearedCount = 1}) =>
+ExpeditionStageMap _stageMap({
+  int clearedCount = 1,
+  String regionCode = 'moss_archive',
+  bool echoWellUnlocked = false,
+}) =>
     ExpeditionStageMap.fromJson({
       'content_version': '2026.08.4',
-      'region': {
-        'code': 'moss_archive',
-        'name': '이끼 기억서고',
-        'short_name': '기억서고',
-        'description': '첫 탐험지',
-        'recommended_stage': 2,
-      },
+      'region': regionCode == 'echo_well'
+          ? {
+              'code': 'echo_well',
+              'name': '메아리 우물정원',
+              'short_name': '우물정원',
+              'description': '두 번째 탐험지',
+              'recommended_stage': 3,
+            }
+          : {
+              'code': 'moss_archive',
+              'name': '이끼 기억서고',
+              'short_name': '기억서고',
+              'description': '첫 탐험지',
+              'recommended_stage': 2,
+            },
       'progress': {
         'cleared_count': clearedCount,
         'total': 8,
-        'next_stage_no': clearedCount + 1,
-        'region_cleared': false,
+        'next_stage_no': clearedCount >= 8 ? null : clearedCount + 1,
+        'region_cleared': clearedCount >= 8,
       },
       'active_run': null,
+      'regions': [
+        {
+          'code': 'moss_archive',
+          'name': '이끼 기억서고',
+          'short_name': '기억서고',
+          'unlocked': true,
+          'lock_reason': null,
+          'cleared_count': regionCode == 'moss_archive' ? clearedCount : 8,
+          'total': 8,
+        },
+        {
+          'code': 'echo_well',
+          'name': '메아리 우물정원',
+          'short_name': '우물정원',
+          'unlocked': echoWellUnlocked || regionCode == 'echo_well',
+          'lock_reason': echoWellUnlocked || regionCode == 'echo_well'
+              ? null
+              : '앞 지역을 완주하면 열려요.',
+          'cleared_count': regionCode == 'echo_well' ? clearedCount : 0,
+          'total': 8,
+        },
+      ],
       'stages': [
         for (var no = 1; no <= 8; no++)
           _stage(
@@ -128,6 +162,7 @@ class _FakeStageController extends ExpeditionController {
 
   final ExpeditionUiState initial;
   int loadCalls = 0;
+  final List<String> selectedRegions = [];
 
   @override
   ExpeditionUiState build() => initial;
@@ -136,6 +171,19 @@ class _FakeStageController extends ExpeditionController {
   Future<void> load() async {
     loadCalls += 1;
   }
+
+  @override
+  Future<void> selectRegion(String regionCode) async {
+    selectedRegions.add(regionCode);
+    final map = state.stageMap;
+    final target =
+        map?.regions.where((region) => region.code == regionCode).firstOrNull;
+    if (target != null && !target.unlocked) {
+      state = state.copyWith(error: target.lockReason);
+      return;
+    }
+    state = state.copyWith(stageMap: _stageMap(regionCode: regionCode));
+  }
 }
 
 Future<_FakeStageController> _pumpShell(
@@ -143,6 +191,7 @@ Future<_FakeStageController> _pumpShell(
   int clearedCount = 1,
   bool heartResonance = true,
   bool deep = false,
+  bool echoWellUnlocked = false,
 }) async {
   late _FakeStageController controller;
   await tester.pumpWidget(
@@ -154,7 +203,10 @@ Future<_FakeStageController> _pumpShell(
               loading: false,
               catalog: _catalog(heartResonance: heartResonance, deep: deep),
               roster: _roster(),
-              stageMap: _stageMap(clearedCount: clearedCount),
+              stageMap: _stageMap(
+                clearedCount: clearedCount,
+                echoWellUnlocked: echoWellUnlocked,
+              ),
               selectedPlantIds: const {11},
             ),
           );
@@ -358,6 +410,48 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('stage-point-1')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('지역을 완주하면 지도에서 다음 지역으로 넘어갈 수 있다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = await _pumpShell(
+      tester,
+      clearedCount: 8,
+      echoWellUnlocked: true,
+    );
+    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('region-chip-moss_archive')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('region-chip-echo_well')));
+    await tester.pump();
+
+    expect(controller.selectedRegions, ['echo_well']);
+    expect(controller.state.stageMap?.region.code, 'echo_well');
+    expect(find.text('메아리 우물정원'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('아직 잠긴 지역을 누르면 이유를 말해 주고 지도는 그대로 둔다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = await _pumpShell(tester, clearedCount: 3);
+    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('region-chip-echo_well')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(controller.selectedRegions, ['echo_well']);
+    // 사유는 스낵바로 한 번 알리고 상태에서는 지워진다.
+    expect(controller.state.stageMap?.region.code, 'moss_archive');
+    expect(find.text('앞 지역을 완주하면 열려요.'), findsOneWidget);
+    expect(find.text('이끼 기억서고'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
