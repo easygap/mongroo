@@ -806,6 +806,9 @@ class _PlantStageScene extends StatelessWidget {
                 child: Image.asset(
                   'assets/rooms/day-greenhouse-ink.webp',
                   fit: BoxFit.cover,
+                  // 방 배경은 장식이다. 빼 두지 않으면 홈에서 화면 낭독기가
+                  // 이름 없는 그림 하나를 먼저 읽고 식물에 닿는다.
+                  excludeFromSemantics: true,
                   cacheWidth: backgroundCacheWidth,
                   errorBuilder: (_, __, ___) =>
                       ColoredBox(color: palette.paperDeep),
