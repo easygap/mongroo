@@ -44,6 +44,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
     refreshListenable: refreshNotifier,
+    // 없는 주소로 들어오면 go_router 기본 화면이 뜬다 - 영어로 `Page Not
+    // Found`와 `GoException: no routes for location: …`을 그대로 보여 준다.
+    // 웹은 주소창을 고칠 수 있고 지워진 링크도 남으니 실제로 닿는 화면이다.
+    errorBuilder: (context, state) => const _RouteNotFoundScreen(),
     redirect: (context, state) {
       final auth = ref.read(authControllerProvider);
       final location = state.matchedLocation;
@@ -220,3 +224,52 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(router.dispose);
   return router;
 });
+
+/// 없는 주소로 들어왔을 때 서는 화면.
+class _RouteNotFoundScreen extends StatelessWidget {
+  const _RouteNotFoundScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('길을 찾지 못했어요')),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.explore_off_outlined,
+                  size: 56,
+                  color: scheme.onSurfaceVariant,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '여기엔 아무것도 없어요',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '주소가 바뀌었거나 지워진 화면이에요. 기록은 그대로 있어요.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  key: const Key('route-not-found-home'),
+                  onPressed: () => context.go('/home'),
+                  icon: const Icon(Icons.wb_sunny_outlined),
+                  label: const Text('오늘 화면으로'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
