@@ -180,8 +180,9 @@ class _ImmersiveBattleStage extends StatelessWidget {
         scene: expeditionGuardianBattleScene,
         regionCode: expedition.region.code,
         borderRadius: BorderRadius.circular(18),
-        semanticLabel:
-            '${node.sceneLabel} 수호전. ${battle.enemy.name} 장벽 ${battle.enemy.guard}/${battle.enemy.maxGuard}.',
+        semanticLabel: '${node.sceneLabel} '
+            '${battle.isTangle ? '엉킴' : '수호전'}. '
+            '${battle.enemy.name} 장벽 ${battle.enemy.guard}/${battle.enemy.maxGuard}.',
         child: ExpeditionEncounterStage(
           encounter: expedition.currentEvent?.encounter,
           battle: battle,

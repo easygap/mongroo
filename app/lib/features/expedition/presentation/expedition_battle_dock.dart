@@ -233,7 +233,7 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
       builder: (context) => AlertDialog(
         title: const Text('지금 긴급 귀환할까요?'),
         content: const Text(
-          '수호전에서 물러나면 아직 확정하지 않은 발견물과 보상을 가져갈 수 없어요.',
+          '지금 물러나면 아직 확정하지 않은 발견물과 보상을 가져갈 수 없어요.',
         ),
         actions: [
           TextButton(
@@ -1151,8 +1151,11 @@ class _ExpeditionSequentialCommandDockState
     final scheme = Theme.of(context).colorScheme;
     final targeted = _targetedMemberIds();
     final locked = _locked;
+    // 한 차례가 풀리는 동안 뜨는 문장이다. 상대가 엉킴인지 수호짐승인지와
+    // 무관하게 같은 자리라, 이름을 붙이면 `전투` 스테이지에서 `수호전이
+    // 진행되고 있어요`가 뜬다.
     final prompt = locked || actor == null
-        ? '수호전이 진행되고 있어요…'
+        ? '한 차례가 진행되고 있어요…'
         : '${koreanTopic(actor.name)} 무엇을 할까요?';
     Widget promptLine() => Semantics(
           liveRegion: true,

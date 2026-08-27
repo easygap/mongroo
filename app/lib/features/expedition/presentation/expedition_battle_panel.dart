@@ -306,7 +306,7 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
       builder: (context) => AlertDialog(
         title: const Text('지금 긴급 귀환할까요?'),
         content: const Text(
-          '수호전에서 물러나면 아직 확정하지 않은 발견물과 보상을 가져갈 수 없어요.',
+          '지금 물러나면 아직 확정하지 않은 발견물과 보상을 가져갈 수 없어요.',
         ),
         actions: [
           TextButton(
@@ -929,7 +929,7 @@ class _ExpeditionBattlePanelState extends ConsumerState<ExpeditionBattlePanel> {
           TextButton.icon(
             onPressed: busy ? null : _confirmRetreat,
             icon: const Icon(Icons.directions_run_rounded),
-            label: const Text('수호전에서 물러나기'),
+            label: const Text('여기서 물러나기'),
           ),
         ],
       ),

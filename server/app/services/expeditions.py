@@ -2183,10 +2183,20 @@ async def resolve_combat_turn(
             "event_code": node_state.event_code,
             "title": event["title"],
             "choice": f"{resolved['round']}라운드 직접 지휘",
+            # 마침표까지 붙여 완결된 문장으로 보낸다. 앱이 이 뒤에 `이제 기록을
+            # 안고 돌아갈 수 있어요.`를 이어 붙이는데, `_OUTCOME_LABELS`를
+            # 고칠 때 이 자리가 빠져서 두 문장이 붙어 나갔다.
+            #
+            # 엉킴은 무찌르는 상대가 아니라 풀어 주는 물건이라(설계 3.3)
+            # 장벽을 깼다는 말을 쓰지 않는다. 수호짐승만 장벽으로 말한다.
             "outcome": (
-                "수호 장벽을 무너뜨렸어요"
+                (
+                    "엉킨 것을 남김없이 풀어냈어요."
+                    if resolved.get("enemy_kind") == "tangle"
+                    else "수호 장벽을 무너뜨렸어요."
+                )
                 if victory
-                else "봉인이 완성돼 긴급 귀환했어요"
+                else "봉인이 완성돼 긴급 귀환했어요."
             ),
             "score": int(resolved["enemy_max_guard"]) - int(resolved["enemy_guard"]),
             "stat": resolved.get("weakness"),

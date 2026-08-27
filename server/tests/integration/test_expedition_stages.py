@@ -192,6 +192,30 @@ async def test_locked_stage_cannot_be_started(client, user_tokens, session_facto
     assert response.json()["code"] == "EXPEDITION_STAGE_LOCKED"
 
 
+async def test_tangle_release_reads_as_untangling_not_a_broken_barrier(
+    client, user_tokens, session_factory
+):
+    """엉킴을 푼 결과 문장은 완결돼 있고 장벽을 깼다고 말하지 않는다.
+
+    앱이 이 값 뒤에 `이제 기록을 안고 돌아갈 수 있어요.`를 이어 붙인다. 마침표가
+    없으면 화면에서 두 문장이 붙어 나온다 - `_OUTCOME_LABELS`를 고칠 때 전투
+    경로만 빠져 있었다. 그리고 엉킴은 무찌르는 상대가 아니라 풀어 주는 물건이라
+    (설계 3.3) 장벽을 깼다는 말은 수호짐승에게만 쓴다.
+    """
+    headers = auth_headers(user_tokens)
+    plant_id = await _prepare_stage_two(session_factory, user_tokens["user"]["id"])
+
+    run = await _start(
+        client, headers, plant_id, mode="free_explore", stage_no=1, key="tangle-wording"
+    )
+    run, _ = await _fight_stage_battle(client, headers, run, "tangle-wording-fight")
+
+    outcome = run["last_resolution"]["outcome"]
+    assert outcome.endswith("."), outcome
+    assert "장벽" not in outcome
+    assert "풀어냈어요" in outcome
+
+
 async def test_clearing_a_stage_opens_the_next_point(
     client, user_tokens, session_factory
 ):
@@ -387,6 +411,12 @@ async def test_boss_stage_runs_the_guardian_in_the_arena(
     run, exchanges = await _fight_stage_battle(client, headers, run, "stage-boss-fight")
     assert any(event.get("action") in {"unique_1", "unique_2"} for event in exchanges)
     assert run["run"]["objective_secured"] is True
+    # 이 문장 뒤에 앱이 다음 문장을 이어 붙인다. 마침표가 없으면 화면에서
+    # `수호 장벽을 무너뜨렸어요 이제 기록을 안고…`처럼 두 문장이 붙는다.
+    outcome = run["last_resolution"]["outcome"]
+    assert outcome.endswith("."), outcome
+    # 수호짐승은 장벽으로 말한다. 엉킴은 풀어 준다.
+    assert "장벽" in outcome
     completed = await _action(client, headers, run, "extract", {}, "stage-boss-extract")
     stage_result = completed["summary"]["progress"]["stage"]
     assert stage_result["stage_no"] == 8
