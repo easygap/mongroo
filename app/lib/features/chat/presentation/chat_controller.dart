@@ -80,11 +80,14 @@ class ChatUiState {
   final RewardResult? sessionReward;
 
   bool get hasSession => session != null;
-  int get remainingTurns => (ChatController.maxUserTurns - userTurns)
-      .clamp(0, ChatController.maxUserTurns)
-      .toInt();
+
+  /// 서버가 알려 준 한도. 세션이 없으면 기본값으로 표시만 한다.
+  int get maxUserTurns =>
+      session?.maxUserTurns ?? ChatSession.defaultMaxUserTurns;
+  int get remainingTurns =>
+      (maxUserTurns - userTurns).clamp(0, maxUserTurns).toInt();
   double get turnProgress =>
-      (userTurns / ChatController.maxUserTurns).clamp(0, 1).toDouble();
+      (userTurns / maxUserTurns).clamp(0, 1).toDouble();
   List<String> get suggestedStarters => userTurns == 0 && !closed
       ? character?.suggestedStarters ?? const []
       : const [];
@@ -134,7 +137,6 @@ class ChatUiState {
 /// 대화 세션의 시작·전송·run 구독·종료를 담당한다.
 class ChatController extends Notifier<ChatUiState> {
   static const _uuid = Uuid();
-  static const maxUserTurns = 10;
 
   StreamSubscription<RunUpdate>? _runSubscription;
   _ChatSendAttempt? _retryAttempt;
@@ -262,24 +264,28 @@ class ChatController extends Notifier<ChatUiState> {
       if (result.safetyAction != null) {
         // 안전 경로: LLM 미호출. 지원 화면으로 안내한다.
         ref.invalidate(questControllerProvider);
+        final safetyLimit = state.maxUserTurns;
         state = state.copyWith(
           thinking: false,
           userTurns: turns,
-          closed: turns >= maxUserTurns,
-          closureMessage:
-              turns >= maxUserTurns ? '오늘 나눌 수 있는 10번의 이야기를 모두 마쳤어요.' : null,
+          closed: turns >= safetyLimit,
+          closureMessage: turns >= safetyLimit
+              ? '오늘 나눌 수 있는 $safetyLimit번의 이야기를 모두 마쳤어요.'
+              : null,
           pendingSafety: result.safetyAction,
         );
         return;
       }
       final runId = result.runId;
       if (runId == null) {
+        final limit = state.maxUserTurns;
         state = state.copyWith(
           thinking: false,
           userTurns: turns,
-          closed: turns >= maxUserTurns,
-          closureMessage:
-              turns >= maxUserTurns ? '오늘 나눌 수 있는 10번의 이야기를 모두 마쳤어요.' : null,
+          closed: turns >= limit,
+          closureMessage: turns >= limit
+              ? '오늘 나눌 수 있는 $limit번의 이야기를 모두 마쳤어요.'
+              : null,
         );
         return;
       }
@@ -352,14 +358,14 @@ class ChatController extends Notifier<ChatUiState> {
               ChatBubble(localId: _uuid.v4(), role: 'plant', content: content),
             ],
             thinking: false,
-            closed: state.userTurns >= maxUserTurns,
-            closureMessage: state.userTurns >= maxUserTurns
-                ? '오늘 나눌 수 있는 10번의 이야기를 모두 마쳤어요.'
+            closed: state.userTurns >= state.maxUserTurns,
+            closureMessage: state.userTurns >= state.maxUserTurns
+                ? '오늘 나눌 수 있는 ${state.maxUserTurns}번의 이야기를 모두 마쳤어요.'
                 : null,
           );
         case RunCompleted():
           _retryAttempt = null;
-          final reachedLimit = state.userTurns >= maxUserTurns;
+          final reachedLimit = state.userTurns >= state.maxUserTurns;
           state = state.copyWith(
             thinking: false,
             closed: state.closed || reachedLimit,

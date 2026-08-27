@@ -55,6 +55,9 @@ def session_payload(session: ChatSession) -> dict:
         "status": session.status,
         "started_at": to_utc_iso(session.started_at),
         "last_message_at": to_utc_iso(session.last_message_at),
+        # 한도를 앱이 따로 들고 있으면 운영에서 이 값을 바꾸는 순간 화면의
+        # `최대 10번`과 실제 거절 시점이 어긋난다. 판정하는 쪽이 알려 준다.
+        "max_user_turns": get_settings().chat_session_max_user_turns,
     }
 
 

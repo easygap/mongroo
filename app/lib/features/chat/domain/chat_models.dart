@@ -10,7 +10,11 @@ class ChatSession {
     required this.status,
     required this.startedAt,
     required this.lastMessageAt,
+    this.maxUserTurns = defaultMaxUserTurns,
   });
+
+  /// 서버가 한도를 안 보내던 시절의 응답을 위한 값.
+  static const defaultMaxUserTurns = 10;
 
   final int id;
   final int? plantId;
@@ -19,6 +23,12 @@ class ChatSession {
   final DateTime? startedAt;
   final DateTime? lastMessageAt;
 
+  /// 한 세션에서 사용자가 보낼 수 있는 최대 횟수.
+  ///
+  /// 거절 판정은 서버가 하므로 그 값을 그대로 받는다. 앱이 따로 들고 있으면
+  /// 운영에서 한도를 바꾸는 순간 `최대 10번`과 실제 거절 시점이 어긋난다.
+  final int maxUserTurns;
+
   bool get isClosed => status == 'closed';
 
   factory ChatSession.fromJson(Map<String, dynamic> json) => ChatSession(
@@ -26,6 +36,9 @@ class ChatSession {
         plantId: json['plant_id'] as int?,
         reflectionStage: (json['reflection_stage'] as String?) ?? 'greeting',
         status: (json['status'] as String?) ?? 'active',
+        maxUserTurns: json['max_user_turns'] is num
+            ? (json['max_user_turns'] as num).toInt().clamp(1, 100)
+            : defaultMaxUserTurns,
         startedAt: json['started_at'] == null
             ? null
             : DateTime.tryParse(json['started_at'] as String),

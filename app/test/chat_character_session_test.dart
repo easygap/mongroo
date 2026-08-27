@@ -66,8 +66,11 @@ ActivePlant _plant({
     );
 
 class _CharacterChatRepository extends ChatRepository {
-  _CharacterChatRepository() : super(Dio());
+  _CharacterChatRepository({this.maxUserTurns = ChatSession.defaultMaxUserTurns})
+      : super(Dio());
 
+  /// 서버가 내려보내는 한도. 운영에서 바꿀 수 있는 값이다.
+  final int maxUserTurns;
   int? startedPlantId;
   int sendCalls = 0;
 
@@ -82,6 +85,7 @@ class _CharacterChatRepository extends ChatRepository {
         status: 'active',
         startedAt: null,
         lastMessageAt: null,
+        maxUserTurns: maxUserTurns,
       ),
       reward: null,
       greeting: '오늘 이야기를 천천히 들려줘.',
@@ -145,12 +149,12 @@ void main() {
     expect(container.read(chatControllerProvider).character?.name, '모아');
     expect(container.read(chatControllerProvider).remainingTurns, 10);
 
-    for (var turn = 1; turn <= ChatController.maxUserTurns; turn++) {
+    for (var turn = 1; turn <= ChatSession.defaultMaxUserTurns; turn++) {
       await container.read(chatControllerProvider.notifier).send('$turn번째 이야기');
     }
 
     final closed = container.read(chatControllerProvider);
-    expect(closed.userTurns, ChatController.maxUserTurns);
+    expect(closed.userTurns, ChatSession.defaultMaxUserTurns);
     expect(closed.remainingTurns, 0);
     expect(closed.closed, isTrue);
     expect(closed.closureMessage, contains('10번'));
@@ -158,8 +162,35 @@ void main() {
     await container
         .read(chatControllerProvider.notifier)
         .send('열한 번째 이야기는 보내지지 않아야 해');
-    expect(repository.sendCalls, ChatController.maxUserTurns);
+    expect(repository.sendCalls, ChatSession.defaultMaxUserTurns);
     expect(container.read(chatControllerProvider).character?.name, '모아');
+  });
+
+  test('대화 한도는 서버가 알려 준 값을 따른다', () async {
+    // 한도를 앱이 따로 들고 있으면 운영에서 값을 바꾸는 순간 화면의 안내와
+    // 실제 거절 시점이 어긋난다. 판정하는 쪽 값을 그대로 쓴다.
+    final repository = _CharacterChatRepository(maxUserTurns: 3);
+    final container = ProviderContainer(
+      overrides: [chatRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+
+    await container
+        .read(chatControllerProvider.notifier)
+        .startSession(plant: _plant());
+    expect(container.read(chatControllerProvider).maxUserTurns, 3);
+    expect(container.read(chatControllerProvider).remainingTurns, 3);
+
+    for (var turn = 1; turn <= 3; turn++) {
+      await container.read(chatControllerProvider.notifier).send('$turn번째');
+    }
+
+    final closed = container.read(chatControllerProvider);
+    expect(closed.closed, isTrue);
+    expect(closed.closureMessage, contains('3번'));
+
+    await container.read(chatControllerProvider.notifier).send('네 번째');
+    expect(repository.sendCalls, 3);
   });
 
   testWidgets('대화를 다 쓰면 입력 칸 대신 마무리 안내가 들어선다', (tester) async {
@@ -201,7 +232,7 @@ void main() {
       tester.element(find.byType(ChatScreen)),
       listen: false,
     );
-    for (var turn = 1; turn <= ChatController.maxUserTurns; turn++) {
+    for (var turn = 1; turn <= ChatSession.defaultMaxUserTurns; turn++) {
       await container.read(chatControllerProvider.notifier).send('$turn번째');
     }
     await tester.pump();
@@ -279,7 +310,7 @@ void main() {
     expect(find.text('새별'), findsNothing);
     expect(find.text('주결 · 슬픔'), findsOneWidget);
 
-    for (var turn = 1; turn <= ChatController.maxUserTurns; turn++) {
+    for (var turn = 1; turn <= ChatSession.defaultMaxUserTurns; turn++) {
       await container.read(chatControllerProvider.notifier).send('$turn번째 이야기');
     }
     await tester.pump();

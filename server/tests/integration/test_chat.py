@@ -4,6 +4,7 @@ import uuid
 import pytest
 import sqlalchemy as sa
 
+from app.core.config import get_settings
 from app.models.plant import Plant
 from app.services.plants import refresh_active_plant_growth
 from app.workers.ai_worker import run_pending_once
@@ -63,6 +64,12 @@ async def test_chat_flow_with_fake_llm(client, session_factory):
     session_id = body["session"]["id"]
     assert body["greeting"]["role"] == "plant"
     assert body["reward"] is not None  # 하루 첫 채팅 시작 +5
+    # 한도는 거절을 판정하는 쪽이 알려 준다. 앱이 따로 들고 있으면 운영에서
+    # 값을 바꿨을 때 화면의 `최대 10번`과 실제 거절 시점이 어긋난다.
+    assert (
+        body["session"]["max_user_turns"]
+        == get_settings().chat_session_max_user_turns
+    )
 
     res = await _send(client, tokens, session_id, "오늘 좀 힘든 하루였어")
     assert res.status_code == 202

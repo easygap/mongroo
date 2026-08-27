@@ -153,6 +153,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: _SessionCharacterBar(
                 character: character,
                 userTurns: state.userTurns,
+                maxUserTurns: state.maxUserTurns,
                 remainingTurns: state.remainingTurns,
                 progress: state.turnProgress,
               ),
@@ -162,6 +163,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 ? _SessionIntro(
                     plant: activePlant,
                     outfitKey: outfitKey,
+                    maxUserTurns: state.maxUserTurns,
                     starting: state.starting,
                     errorMessage: state.errorMessage,
                     onStart: () => ref
@@ -313,12 +315,14 @@ class _SessionCharacterBar extends StatelessWidget {
   const _SessionCharacterBar({
     required this.character,
     required this.userTurns,
+    required this.maxUserTurns,
     required this.remainingTurns,
     required this.progress,
   });
 
   final ChatCharacterSnapshot? character;
   final int userTurns;
+  final int maxUserTurns;
   final int remainingTurns;
   final double progress;
 
@@ -372,7 +376,7 @@ class _SessionCharacterBar extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            '$userTurns / ${ChatController.maxUserTurns}',
+                            '$userTurns / $maxUserTurns',
                             style: TextStyle(
                               color: scheme.onSurfaceVariant,
                               fontSize: 12,
@@ -597,6 +601,7 @@ class _SessionIntro extends StatelessWidget {
   const _SessionIntro({
     required this.plant,
     required this.outfitKey,
+    required this.maxUserTurns,
     required this.starting,
     required this.errorMessage,
     required this.onStart,
@@ -604,6 +609,7 @@ class _SessionIntro extends StatelessWidget {
 
   final ActivePlant? plant;
   final String? outfitKey;
+  final int maxUserTurns;
   final bool starting;
   final String? errorMessage;
   final VoidCallback onStart;
@@ -652,8 +658,9 @@ class _SessionIntro extends StatelessWidget {
                     const SizedBox(height: 7),
                     Text(
                       plant == null
-                          ? '최대 10번 주고받아요. 언제든 끝낼 수 있어요.'
-                          : '성격 단서 · ${plant!.personalityName} · 최대 10번 주고받아요.',
+                          ? '최대 $maxUserTurns번 주고받아요. 언제든 끝낼 수 있어요.'
+                          : '성격 단서 · ${plant!.personalityName} · '
+                              '최대 $maxUserTurns번 주고받아요.',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 13,
