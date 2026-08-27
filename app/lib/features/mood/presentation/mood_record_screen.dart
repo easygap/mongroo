@@ -442,7 +442,9 @@ class _MoodRecordScreenState extends ConsumerState<MoodRecordScreen> {
                 const SizedBox(height: 18),
                 _ObservationSection(
                   indexLabel: '01',
-                  title: '오늘의 일기',
+                  // 수정은 지난 날짜의 기록도 연다. 그때도 `오늘의 일기`라고
+                  // 부르면 어느 날 것을 고치는지 흐려진다.
+                  title: _isEdit ? '남긴 일기' : '오늘의 일기',
                   helper: '감정을 고르지 않아도 돼요. 식물이 이 글을 읽고 자신만의 결로 자라요.',
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -633,7 +635,11 @@ class _ObservationIntro extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '가장 기억나는 장면 하나부터 적어도 충분해요.',
+                    // 새로 쓸 때의 조언을 수정 화면에 그대로 두면, 이미 쓴
+                    // 글을 앞에 두고 처음부터 적으라는 말이 된다.
+                    isEdit
+                        ? '고쳐서 저장하면 이 기록의 마음을 다시 읽어요.'
+                        : '가장 기억나는 장면 하나부터 적어도 충분해요.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: palette.inkMuted,
                         ),
