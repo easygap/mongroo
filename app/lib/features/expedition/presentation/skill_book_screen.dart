@@ -434,19 +434,30 @@ class _BookRow extends StatelessWidget {
                   ),
               ],
             ),
-            Text(book.effectSummary, style: theme.textTheme.bodySmall),
-            if (book.tradeoff != null)
-              Text(
-                '대가 · ${book.tradeoff}',
-                style: theme.textTheme.bodySmall,
+            // 아래 설명은 위 이름과 같은 줄에서 시작해야 한다. 그냥 두면
+            // 등급 아이콘보다 왼쪽에서 시작해 한 항목이 두 덩어리로 보인다.
+            // 30(아이콘) + 8(간격)만큼 들여쓴다.
+            Padding(
+              padding: const EdgeInsets.only(left: 38),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(book.effectSummary, style: theme.textTheme.bodySmall),
+                  if (book.tradeoff != null)
+                    Text(
+                      '대가 · ${book.tradeoff}',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  // 효과가 아직 판정에 없으면 그렇다고 밝힌다. 있는 척하지 않는다.
+                  if (!book.combatEffect)
+                    Text(
+                      '효과를 준비하고 있어요',
+                      key: ValueKey('pending-${book.code}'),
+                      style: theme.textTheme.labelSmall,
+                    ),
+                ],
               ),
-            // 효과가 아직 판정에 없으면 그렇다고 밝힌다. 있는 척하지 않는다.
-            if (!book.combatEffect)
-              Text(
-                '효과를 준비하고 있어요',
-                key: ValueKey('pending-${book.code}'),
-                style: theme.textTheme.labelSmall,
-              ),
+            ),
           ],
         ),
       ),
