@@ -1440,6 +1440,17 @@ void main() {
     tester.state<NavigatorState>(find.byType(Navigator)).pop();
     await tester.pump(const Duration(milliseconds: 300));
 
+    // 좁은 폭에서도 **누구를 얼마나**는 잘리지 않는다. 넷을 다 넣으면
+    // 390px에서 `장부 발톱 · 행동 순서 맨…`으로 끊겨 대상이 사라졌다.
+    // 공격 이름은 무대 위 예고판이 이미 말한다.
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('seq-dock-intent')),
+        matching: find.text('행동 순서 맨 앞 대원 · 위력 1'),
+      ),
+      findsOneWidget,
+    );
+
     // 의도 줄을 누르면 발견 정보 시트가 열린다.
     final intentLine = find.byKey(const ValueKey('seq-dock-intent'));
     await tester.tap(intentLine);

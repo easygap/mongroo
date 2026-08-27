@@ -1331,25 +1331,32 @@ class _IntentLine extends StatelessWidget {
       ).withAlpha(38),
       maxWidth: textScale >= 1.5 ? 180 : null,
     );
-    final intentSummary = Row(
-      children: [
-        Icon(
-          expeditionIntentTargetIcon(intent.target),
-          size: 17,
-          color: scheme.error,
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            '${intent.name} · ${intent.targetLabel} · 위력 ${intent.power}'
-            '${mechanic == null ? '' : ' · ${mechanic.name}'}',
-            maxLines: textScale >= 1.35 ? 2 : 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelMedium,
-          ),
-        ),
-      ],
-    );
+    // 폭이 좁으면 공격 이름을 뺀다. 무대 위 예고판이 `종잇장 회오리 예고 ·
+    // 낱장들이 맨 앞 대원 쪽으로 몰려가요.`로 이름과 상황을 이미 말하고,
+    // 이 줄에서 꼭 읽어야 하는 것은 **누구를 얼마나**다. 넷을 다 넣으면
+    // 390px에서 `종잇장 회오리 · 행동 순서 맨…`으로 끊겨 대상이 사라졌다.
+    Widget intentSummaryFor(bool compact) => Row(
+          children: [
+            Icon(
+              expeditionIntentTargetIcon(intent.target),
+              size: 17,
+              color: scheme.error,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                compact
+                    ? '${intent.targetLabel} · 위력 ${intent.power}'
+                    : '${intent.name} · ${intent.targetLabel} · '
+                        '위력 ${intent.power}'
+                        '${mechanic == null ? '' : ' · ${mechanic.name}'}',
+                maxLines: textScale >= 1.35 ? 2 : 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ),
+          ],
+        );
     return Semantics(
       button: true,
       label: '적 의도 ${intent.name}, ${intent.targetLabel}, 위력 ${intent.power}. '
@@ -1365,22 +1372,32 @@ class _IntentLine extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
-            child: textScale >= 1.5
-                ? Column(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                if (textScale >= 1.5) {
+                  return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      intentSummary,
+                      intentSummaryFor(false),
                       const SizedBox(height: 5),
-                      Align(alignment: Alignment.centerLeft, child: matchupTag),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: matchupTag,
+                      ),
                     ],
-                  )
-                : Row(
-                    children: [
-                      Expanded(child: intentSummary),
-                      const SizedBox(width: 6),
-                      matchupTag,
-                    ],
-                  ),
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(
+                      child: intentSummaryFor(constraints.maxWidth < 420),
+                    ),
+                    const SizedBox(width: 6),
+                    matchupTag,
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
