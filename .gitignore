@@ -37,6 +37,10 @@ app/android/key.properties
 #   python design-system/scripts/build_expedition_music.py --region all --check
 design-system/audio/**/*-master.wav
 
+# 테스트·린트 캐시. pytest는 자기 폴더에 .gitignore를 써 두지만 ruff는 안 쓴다.
+.pytest_cache/
+.ruff_cache/
+
 # local QA artifacts
 .playwright-cli/
 .playwright-mcp/
