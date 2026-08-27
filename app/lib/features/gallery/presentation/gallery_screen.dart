@@ -1501,22 +1501,13 @@ class _PlantDetailSheet extends StatelessWidget {
             : '${formatDotDate(planted)} 심음 · ${formatDotDate(harvested)} 수확';
     return Material(
       color: palette.sheet,
+      // 손잡이는 테마가 이미 그린다(`bottomSheetTheme.showDragHandle`).
+      // 여기서 또 그리면 시트 머리에 회색 막대가 두 개 겹쳐 뜬다.
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+        padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 42,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 14),
-                decoration: BoxDecoration(
-                  color: palette.ink.withAlpha(70),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

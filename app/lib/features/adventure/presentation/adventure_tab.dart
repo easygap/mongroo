@@ -1485,17 +1485,7 @@ class _DungeonApproachSheet extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Align(
-                  child: Container(
-                    width: 42,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
+                // 손잡이는 테마가 그린다. 여기서 또 그리면 두 개가 겹친다.
                 Text(
                   '${dungeon.name}, 어떻게 살펴볼까요?',
                   style: Theme.of(context).textTheme.titleLarge,
