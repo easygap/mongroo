@@ -19,8 +19,9 @@ class MoodEntryTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final statusLabel = analysisStatusLabel(entry.analysisStatus);
     final snippet = (entry.content ?? '').replaceAll('\n', ' ');
-    final recordTime =
-        showDate ? entry.localDate : formatLocalTime(entry.recordedAt);
+    final recordTime = showDate
+        ? formatKoreanApiDate(entry.localDate)
+        : formatLocalTime(entry.recordedAt);
     final displayLabel = entry.moodLevelExplicit
         ? moodLevelName(entry.moodLevel)
         : diaryAnalysisDisplayLabel(

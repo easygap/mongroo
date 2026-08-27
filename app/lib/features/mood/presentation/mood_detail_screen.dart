@@ -189,8 +189,13 @@ class _MoodDetailScreenState extends ConsumerState<MoodDetailScreen> {
             children: [
               _MoodHeader(entry: entry),
               const SizedBox(height: 16),
-              _UserTagsCard(entry: entry),
-              const SizedBox(height: 12),
+              // 작성 화면에는 태그를 고르는 자리가 없다. 그래서 앱에서 쓴
+              // 기록은 이 칸이 늘 `고른 태그가 없어요.`로 비어 있었다.
+              // 값이 있는 기록에서만 세운다.
+              if (entry.emotionTags.isNotEmpty) ...[
+                _UserTagsCard(entry: entry),
+                const SizedBox(height: 12),
+              ],
               _ContentCard(entry: entry),
               const SizedBox(height: 12),
               _AiLabelCard(
@@ -282,7 +287,8 @@ class _MoodHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${entry.localDate} ${formatLocalTime(entry.recordedAt)}',
+                  '${formatKoreanApiDate(entry.localDate, withYear: true)}'
+                  ' ${formatLocalTime(entry.recordedAt)}',
                   style: const TextStyle(color: AppTheme.onNightMuted),
                 ),
               ],
@@ -307,20 +313,13 @@ class _UserTagsCard extends StatelessWidget {
         children: [
           const MongrooTag(label: '내 태그'),
           const SizedBox(height: 10),
-          if (entry.emotionTags.isEmpty)
-            Text(
-              '고른 태그가 없어요.',
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant),
-            )
-          else
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final tag in entry.emotionTags) Chip(label: Text(tag)),
-              ],
-            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final tag in entry.emotionTags) Chip(label: Text(tag)),
+            ],
+          ),
         ],
       ),
     );
@@ -339,10 +338,10 @@ class _ContentCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MongrooTag(label: '메모'),
+          const MongrooTag(label: '일기'),
           const SizedBox(height: 10),
           Text(
-            (content == null || content.isEmpty) ? '남긴 메모가 없어요.' : content,
+            (content == null || content.isEmpty) ? '남긴 이야기가 없어요.' : content,
             style: (content == null || content.isEmpty)
                 ? TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant)
