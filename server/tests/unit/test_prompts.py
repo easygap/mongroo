@@ -16,6 +16,22 @@ def test_greeting_uses_natural_korean_subject_particle():
     assert "이(가)" not in greeting_line("sprout", "새싹몬")
 
 
+def test_greeting_never_puts_a_speaker_tag_inside_the_bubble():
+    """대화 화면은 말풍선 옆에 이름과 그림을 이미 붙인다.
+
+    첫 인사에만 `새싹몬: `이 붙어 있어서 같은 캐릭터의 첫 줄과 다음 줄이
+    다른 말투로 보였다.
+    """
+    lines = [
+        greeting_line("sprout", "새싹몬"),
+        greeting_line("cactus", "가시니"),
+        greeting_line("sunflower", "해바라기"),
+        greeting_line("sprout", "초록이", GROWTH_PERSONA),
+    ]
+    for line in lines:
+        assert not line.startswith(("새싹몬:", "가시니:", "해바라기:", "초록이:")), line
+
+
 def test_growth_persona_is_added_to_prompt_without_replacing_species_identity():
     messages = build_chat_messages(
         "cactus", "가시니", "explore", [], None, GROWTH_PERSONA
@@ -29,7 +45,7 @@ def test_growth_persona_is_added_to_prompt_without_replacing_species_identity():
 
 def test_growth_persona_greeting_uses_the_revealed_voice_line():
     line = greeting_line("sprout", "초록이", GROWTH_PERSONA)
-    assert line.startswith("초록이: 잎 끝의 물방울")
+    assert line.startswith("잎 끝의 물방울")
     assert line.endswith("오늘 이야기도 들려줄래?")
 
 

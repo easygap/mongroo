@@ -3,6 +3,8 @@
 치료·상담이 아니라 CBT의 질문 구조를 참고한 자기성찰 대화다.
 """
 
+from app.core.korean import korean_subject
+
 PERSONAS = {
     "sprout": {
         "name": "새싹몬",
@@ -104,9 +106,14 @@ def build_chat_messages(
     return messages
 
 
+#: 첫 인사. **말풍선 안에 이름표를 넣지 않는다.**
+#:
+#: 대화 화면은 말풍선 옆에 캐릭터 그림과 이름을 이미 붙인다. 문장 앞에
+#: `새싹몬:`을 또 넣으면 첫 줄만 이름이 두 번 나오고, 뒤이어 오는 답변에는
+#: 없어서 같은 캐릭터가 두 말투로 보인다.
 GREETING_TEMPLATES = {
     "sprout": "{plant_subject} 잎을 흔들며 반겨요. 오늘 하루는 어땠어?",
-    "cactus": "{plant_name}: 왔네. 오늘은 어떤 하루였어?",
+    "cactus": "왔네. 오늘은 어떤 하루였어?",
     "sunflower": "{plant_subject} 해를 보다가 돌아봐요. 오늘 이야기 들려줄래?",
 }
 
@@ -133,18 +140,12 @@ def greeting_line(
                 f" {traits.get('title', growth_persona.get('persona_name', '내 결'))}의 "
                 "잎이 오늘도 천천히 움직여."
             )
-        return f"{plant_name}: {voice_line}{stage_flavor} 오늘 이야기도 들려줄래?"
+        return f"{voice_line}{stage_flavor} 오늘 이야기도 들려줄래?"
     template = GREETING_TEMPLATES.get(persona_key, GREETING_TEMPLATES["sprout"])
-    subject = f"{plant_name}{'이' if _has_final_consonant(plant_name) else '가'}"
-    return template.format(plant_name=plant_name, plant_subject=subject)
-
-
-def _has_final_consonant(word: str) -> bool:
-    trimmed = word.rstrip()
-    if not trimmed:
-        return False
-    code_point = ord(trimmed[-1])
-    return 0xAC00 <= code_point <= 0xD7A3 and (code_point - 0xAC00) % 28 != 0
+    return template.format(
+        plant_name=plant_name,
+        plant_subject=korean_subject(plant_name),
+    )
 
 
 SUMMARY_SYSTEM = """너는 감정 기록 앱의 리포트 요약을 쓰는 도우미다. 규칙:
