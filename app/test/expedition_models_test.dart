@@ -1427,13 +1427,17 @@ void main() {
     expect(find.text('T3 · 마음 만개'), findsOneWidget);
     expect(find.text('↑ 햇살결 · 모아결 · 약점 ×1.30'), findsOneWidget);
     expect(find.textContaining('내성 ×'), findsNothing);
-    expect(find.text('계수 116%'), findsOneWidget);
-    expect(find.text('단계 122% · 상성 130%'), findsOneWidget);
+    // 판정식 중간값은 화면에 두지 않는다. 셋을 곱한 결과는 머리의 `위력`이고
+    // 약점 배수는 결 태그가 이미 말한다.
+    expect(find.textContaining('계수 '), findsNothing);
+    expect(find.textContaining('상성 1'), findsNothing);
+    expect(find.textContaining('위력 '), findsWidgets);
     expect(find.text('T3 감정 융합'), findsOneWidget);
     expect(
-      find.text('연출 · 캐릭터 고유 VFX 위에 성장결 융합 레이어 적용'),
+      find.text('연출 · 고유 움직임 위에 지금 성장결의 빛이 겹쳐요'),
       findsOneWidget,
     );
+    expect(find.textContaining('VFX'), findsNothing);
     await detailGesture.up();
     await tester.pump();
     expect(controller.combatActionRequests, 0);
@@ -1588,7 +1592,7 @@ void main() {
     expect(sent.toJson()['choice'], 'ember');
   });
 
-  testWidgets('엉킴 웨이브 전투는 웨이브 표기와 전용 상태 원화를 보여 준다', (tester) async {
+  testWidgets('엉킴 웨이브 전투는 몇 번째 엉킴인지와 전용 상태 원화를 보여 준다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 1100));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final raw = _battleSnapshotJson();
@@ -1635,7 +1639,8 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('seq-dock-wave')), findsOneWidget);
-    expect(find.text('웨이브 1/2'), findsOneWidget);
+    expect(find.text('엉킴 1/2'), findsOneWidget);
+    expect(find.textContaining('웨이브'), findsNothing);
     // 엉킴은 코드에 맞는 알파 원화를 쓰고 수호짐승 원화는 쓰지 않는다.
     expect(find.byKey(const ValueKey('tangle-body-idle')), findsOneWidget);
     expect(find.byKey(const ValueKey('ledger-keeper-idle')), findsNothing);

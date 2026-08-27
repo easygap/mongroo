@@ -287,7 +287,9 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
             label: '${wave.count}번의 엉킴 중 ${wave.index}번째',
             child: MongrooTag(
               key: const ValueKey('seq-dock-wave'),
-              label: '웨이브 ${wave.index}/${wave.count}',
+              // 바로 위 시맨틱스가 이미 `엉킴`이라고 읽어 준다. 눈에 보이는
+              // 쪽만 `웨이브`였다 - 설계 문서 말이지 화면 말이 아니다.
+              label: '엉킴 ${wave.index}/${wave.count}',
               icon: Icons.blur_on_rounded,
               backgroundColor: scheme.tertiaryContainer.withAlpha(130),
               maxWidth: 140,
@@ -857,12 +859,6 @@ class _ExpeditionSequentialCommandDockState
     final action = _actionFor(member, actionCode);
     final weaknessHit = actionCode != 'guard' && _isWeak(action);
     final resistanceHit = actionCode != 'guard' && _isResisted(action);
-    final coefficient = action.powerScaleBp / 100;
-    final coefficientLabel = coefficient == coefficient.roundToDouble()
-        ? coefficient.toStringAsFixed(0)
-        : coefficient.toStringAsFixed(1);
-    final tierCoefficient = action.tierPowerBp / 100;
-    final matchupCoefficient = action.matchupBp / 100;
     final matchupMultiplier = (action.matchupBp / 10000).toStringAsFixed(2);
     final matchupAdjustment =
         _battle.version >= 2 && _battle.enemy.weakKel != null
@@ -971,6 +967,12 @@ class _ExpeditionSequentialCommandDockState
                 ],
                 if (actionCode != 'guard') ...[
                   const SizedBox(height: 10),
+                  // 여기에는 **이름이 붙은 것만** 둔다. 계수를 그대로 얹으면
+                  // `계수 107.9%`, `단계 110% · 상성 150%`처럼 판정식 중간값이
+                  // 화면에 나오는데, 그 셋을 곱해 나온 결과는 이미 위의
+                  // `위력 23`이고 약점 배수는 아래 결 태그가 `×1.50`으로
+                  // 말한다. 같은 값을 세 번, 그중 두 번은 내부 표기로 보여
+                  // 주고 있었다.
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
@@ -995,17 +997,6 @@ class _ExpeditionSequentialCommandDockState
                           label: label,
                           icon: Icons.sports_martial_arts_rounded,
                         ),
-                      if (action.rawPower > 0)
-                        MongrooTag(
-                          label: '계수 $coefficientLabel%',
-                          icon: Icons.trending_up_rounded,
-                        ),
-                      if (action.rawPower > 0)
-                        MongrooTag(
-                          label:
-                              '단계 ${tierCoefficient.toStringAsFixed(0)}% · 상성 ${matchupCoefficient.toStringAsFixed(0)}%',
-                          icon: Icons.calculate_outlined,
-                        ),
                       if (action.kelLabels.isNotEmpty)
                         MongrooTag(
                           label: matchupLabel(action.kelLabels.join(' · ')),
@@ -1020,10 +1011,12 @@ class _ExpeditionSequentialCommandDockState
                   ),
                   if (action.vfxFamily != null) ...[
                     const SizedBox(height: 10),
+                    // 무엇으로 그리는지가 아니라 무엇이 보이는지를 적는다.
+                    // `스프라이트 VFX 계열`·`융합 레이어`는 만드는 쪽 말이다.
                     Text(
                       action.fusionVfxFamily == null
-                          ? '연출 · 전용 모션과 스프라이트 VFX 계열 적용'
-                          : '연출 · 캐릭터 고유 VFX 위에 성장결 융합 레이어 적용',
+                          ? '연출 · 이 캐릭터만의 움직임과 효과가 나와요'
+                          : '연출 · 고유 움직임 위에 지금 성장결의 빛이 겹쳐요',
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
                   ],
