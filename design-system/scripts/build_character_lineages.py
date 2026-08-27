@@ -16,6 +16,7 @@ from build_growth_assets import (
     _render_asset,
     _route_scale,
     _split_route,
+    seed_scale,
 )
 
 
@@ -82,28 +83,33 @@ def _split_character_route(sheet: Image.Image) -> list[Image.Image]:
 
 
 def build_lineage(source_dir: Path, output_dir: Path, slug: str) -> None:
-    seed = Image.open(source_dir / slug / "shared-seed-v1-alpha.png").convert(
-        "RGBA"
-    )
-    seed = seed.crop(_alpha_bbox(seed))
-    _render_asset(
-        seed,
-        scale=min(420 / seed.width, 704 / seed.height),
-        output=output_dir / f"{slug}-25d-seed.webp",
-    )
-
+    full_bloom_heights: list[int] = []
     for form in FORMS:
         sheet = Image.open(
             source_dir / slug / f"{form}-route-chroma-v1-alpha.png"
         ).convert("RGBA")
         panels = _split_character_route(sheet)
         scale = _route_scale(panels)
+        full_bloom_heights.append(round(panels[-1].height * scale))
         for phase, panel in zip(PHASES, panels, strict=True):
             _render_asset(
                 panel,
                 scale=scale,
                 output=output_dir / f"{slug}-25d-{phase}-{form}.webp",
             )
+
+    # 씨앗 낱장은 캔버스를 채우도록 그려져 있다. 시트에서 뽑은 2~5단계와
+    # 같은 자리에 그대로 놓으면 씨앗이 다 자란 모습만 해지고, 홈·도감에서
+    # 씨앗 → 새싹으로 갈 때 캐릭터가 작아진다.
+    seed = Image.open(source_dir / slug / "shared-seed-v1-alpha.png").convert(
+        "RGBA"
+    )
+    seed = seed.crop(_alpha_bbox(seed))
+    _render_asset(
+        seed,
+        scale=seed_scale(seed, max(full_bloom_heights)),
+        output=output_dir / f"{slug}-25d-seed.webp",
+    )
 
 
 def build_preview(output_dir: Path, preview_path: Path, slug: str) -> None:
@@ -151,23 +157,67 @@ def build_preview(output_dir: Path, preview_path: Path, slug: str) -> None:
     canvas.save(preview_path, "WEBP", quality=92, method=6)
 
 
+def build_overview(
+    preview_dir: Path, slugs: list[str], output_path: Path
+) -> None:
+    """열 계보의 미리보기를 2열로 붙인 README용 한 장.
+
+    낱장 미리보기와 같은 그림을 절반 크기로 붙인다. 순서는 매니페스트를
+    따르므로 계보를 다시 구우면 이 장도 같은 자리에서 갱신된다.
+    """
+
+    if not slugs:
+        raise ValueError("overview requires at least one lineage")
+    first = Image.open(preview_dir / f"{slugs[0]}-growth-preview.webp")
+    cell = (first.width // 2, first.height // 2)
+    rows = (len(slugs) + 1) // 2
+    canvas = Image.new("RGB", (cell[0] * 2, cell[1] * rows), "#fff8ea")
+    for index, slug in enumerate(slugs):
+        sheet = Image.open(preview_dir / f"{slug}-growth-preview.webp").convert(
+            "RGB"
+        )
+        row, column = divmod(index, 2)
+        canvas.paste(
+            sheet.resize(cell, Image.Resampling.LANCZOS),
+            (column * cell[0], row * cell[1]),
+        )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    canvas.save(output_path, "WEBP", quality=92, method=6)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--preview-dir", type=Path)
+    parser.add_argument(
+        "--overview",
+        type=Path,
+        help="README용 계보 모음 한 장을 쓸 경로. --preview-dir와 함께 쓴다.",
+    )
     args = parser.parse_args()
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+    built: list[str] = []
     for lineage in manifest["lineages"]:
         slug = lineage["slug"]
         build_lineage(args.source_dir, args.output_dir, slug)
+        built.append(slug)
         if args.preview_dir is not None:
             build_preview(
                 args.output_dir,
                 args.preview_dir / f"{slug}-growth-preview.webp",
                 slug,
             )
+    if args.overview is not None:
+        if args.preview_dir is None:
+            parser.error("--overview는 --preview-dir가 있어야 만들 수 있어요.")
+        available = [
+            slug
+            for slug in built
+            if (args.preview_dir / f"{slug}-growth-preview.webp").exists()
+        ]
+        build_overview(args.preview_dir, available, args.overview)
 
 
 if __name__ == "__main__":

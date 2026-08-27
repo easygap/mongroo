@@ -19,6 +19,24 @@ FORMS = ("sunny", "rainy", "ember", "moonlit", "sparkling", "mosaic")
 PHASES = ("sprout", "branching", "bloom", "full-bloom")
 PREVIEW_PHASES = ("SEED", "SPROUT", "BRANCH", "BLOOM", "FULL")
 
+#: 만개 키를 1로 둔 씨앗 목표 키.
+#:
+#: 씨앗은 시트가 아니라 낱장으로 들어온다. 낱장은 파일마다 인물이 캔버스를
+#: 채우도록 그려져서 칸 사이의 상대 키 정보가 없고, 그대로 캔버스에 맞춰
+#: 키우면 씨앗이 성인만 해진다. 그러면 홈과 도감에서 씨앗 → 새싹으로 갈 때
+#: 캐릭터가 오히려 작아진다.
+#:
+#: 값은 `build_premium_character_v6_growth.PHASE_HEIGHT_RATIO["seed"]`와
+#: 같다 — 사람형 계보 둘의 실측 평균이다.
+SEED_HEIGHT_RATIO = 0.23
+
+
+def seed_scale(seed: Image.Image, full_bloom_height: int) -> float:
+    """만개 키를 기준으로 씨앗 배율을 정한다. 입력은 이미 crop된 원본이다."""
+
+    target = max(1, round(full_bloom_height * SEED_HEIGHT_RATIO))
+    return target / seed.height
+
 
 def _alpha_bbox(image: Image.Image) -> tuple[int, int, int, int]:
     bbox = image.getchannel("A").getbbox()
@@ -108,33 +126,37 @@ def _route_scale(panels: list[Image.Image]) -> float:
 
 
 def build(alpha_dir: Path, output_dir: Path) -> None:
-    for source_name, asset_name in (
-        ("shared-seed-v2-alpha.png", "basic-sprout-25d-seed.webp"),
-        (
-            "shared-sprout-v2-alpha.png",
-            "basic-sprout-25d-sprout.webp",
-        ),
-    ):
-        shared = Image.open(alpha_dir / source_name).convert("RGBA")
-        shared = shared.crop(_alpha_bbox(shared))
-        shared_scale = min(420 / shared.width, 704 / shared.height)
-        _render_asset(
-            shared,
-            scale=shared_scale,
-            output=output_dir / asset_name,
-        )
-
+    full_bloom_heights: list[int] = []
     for form in FORMS:
         sheet_path = alpha_dir / f"{form}-route-chroma-v2-alpha.png"
         sheet = Image.open(sheet_path).convert("RGBA")
         panels = _split_route(sheet)
         scale = _route_scale(panels)
+        full_bloom_heights.append(round(panels[-1].height * scale))
         for phase, panel in zip(PHASES, panels, strict=True):
             _render_asset(
                 panel,
                 scale=scale,
                 output=output_dir / f"basic-sprout-25d-{phase}-{form}.webp",
             )
+
+    sprout = Image.open(alpha_dir / "shared-sprout-v2-alpha.png").convert("RGBA")
+    sprout = sprout.crop(_alpha_bbox(sprout))
+    _render_asset(
+        sprout,
+        scale=min(420 / sprout.width, 704 / sprout.height),
+        output=output_dir / "basic-sprout-25d-sprout.webp",
+    )
+
+    # 씨앗은 다 자란 키를 기준으로 줄인다. 캔버스에 맞춰 키우면 새싹보다
+    # 커져서 성장이 거꾸로 읽힌다.
+    seed = Image.open(alpha_dir / "shared-seed-v2-alpha.png").convert("RGBA")
+    seed = seed.crop(_alpha_bbox(seed))
+    _render_asset(
+        seed,
+        scale=seed_scale(seed, max(full_bloom_heights)),
+        output=output_dir / "basic-sprout-25d-seed.webp",
+    )
 
 
 def build_preview(output_dir: Path, preview_path: Path) -> None:
