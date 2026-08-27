@@ -171,7 +171,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ? const Text('오늘')
             : const _HomeWordmark(),
         actions: [
-          _SeedToken(value: seedBalance),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: MongrooSeedToken(value: seedBalance),
+          ),
           const SizedBox(width: 4),
           IconButton(
             tooltip: '마음 식물 박물관',
@@ -421,51 +424,6 @@ class _HomeWordmark extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SeedToken extends StatelessWidget {
-  const _SeedToken({required this.value});
-
-  final int value;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = MongrooPalette.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Semantics(
-        label: '보유 씨앗 $value개',
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: palette.night,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.eco_rounded, size: 16, color: palette.butter),
-                const SizedBox(width: 4),
-                ExcludeSemantics(
-                  child: Text(
-                    '$value',
-                    style: TextStyle(
-                      color: AppTheme.onNight,
-                      fontFamily: AppTheme.pixelFont,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      fontFeatures: [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

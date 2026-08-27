@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/api_exception.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/mongroo_ui.dart';
 import '../../home/domain/plant.dart';
 import '../../home/presentation/plant_view.dart';
 import '../domain/garden_models.dart';
@@ -258,34 +259,9 @@ class _SpeciesCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final growthLine = FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Row(
-        children: [
-          PlantStagePreview(
-            stage: 1,
-            speciesCode: entry.code,
-            speciesName: entry.name,
-            size: 58,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: Icon(
-              Icons.call_split_rounded,
-              size: 18,
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          for (final form in PlantGrowthForm.values)
-            PlantStagePreview(
-              stage: 5,
-              form: form,
-              speciesCode: entry.code,
-              speciesName: entry.name,
-              size: 52,
-            ),
-        ],
-      ),
+    final growthLine = _GrowthLineagePreview(
+      speciesCode: entry.code,
+      speciesName: entry.name,
     );
     return Semantics(
       label:
@@ -309,10 +285,7 @@ class _SpeciesCard extends StatelessWidget {
                           alignment: Alignment.center,
                           children: [
                             ColorFiltered(
-                              colorFilter: const ColorFilter.mode(
-                                Color(0xFF77716A),
-                                BlendMode.saturation,
-                              ),
+                              colorFilter: kMongrooGreyscale,
                               child: Opacity(opacity: .32, child: growthLine),
                             ),
                             Icon(
@@ -348,6 +321,61 @@ class _SpeciesCard extends StatelessWidget {
   }
 }
 
+/// 씨앗 하나가 여섯 마음결로 갈라지는 계보 미리보기.
+///
+/// 예전에는 일곱 칸을 한 줄로 세웠다. 도감 카드는 세로로 긴데 가로 한 줄은
+/// `scaleDown`에 눌려 카드 높이의 1/6만 쓰는 얇은 띠가 되고, 위아래가 텅 빈
+/// 카드로 보였다. 씨앗을 위에 두고 여섯 결을 3×2로 접어 같은 정보로 칸을
+/// 채운다.
+class _GrowthLineagePreview extends StatelessWidget {
+  const _GrowthLineagePreview({
+    required this.speciesCode,
+    required this.speciesName,
+  });
+
+  final String speciesCode;
+  final String speciesName;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    const forms = PlantGrowthForm.values;
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PlantStagePreview(
+            stage: 1,
+            speciesCode: speciesCode,
+            speciesName: speciesName,
+            size: 54,
+          ),
+          Icon(
+            Icons.call_split_rounded,
+            size: 16,
+            color: scheme.onSurfaceVariant,
+          ),
+          for (var row = 0; row < 2; row++)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final form in forms.skip(row * 3).take(3))
+                  PlantStagePreview(
+                    stage: 5,
+                    form: form,
+                    speciesCode: speciesCode,
+                    speciesName: speciesName,
+                    size: 46,
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CharacterLineageCard extends StatelessWidget {
   const _CharacterLineageCard({required this.item});
 
@@ -366,34 +394,9 @@ class _CharacterLineageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final locked = !item.owned;
-    final growthLine = FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Row(
-        children: [
-          PlantStagePreview(
-            stage: 1,
-            speciesCode: item.growthSpeciesCode,
-            speciesName: item.name,
-            size: 58,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: Icon(
-              Icons.call_split_rounded,
-              size: 18,
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          for (final form in PlantGrowthForm.values)
-            PlantStagePreview(
-              stage: 5,
-              form: form,
-              speciesCode: item.growthSpeciesCode,
-              speciesName: item.name,
-              size: 52,
-            ),
-        ],
-      ),
+    final growthLine = _GrowthLineagePreview(
+      speciesCode: item.growthSpeciesCode,
+      speciesName: item.name,
     );
     return Semantics(
       label: locked
@@ -420,10 +423,7 @@ class _CharacterLineageCard extends StatelessWidget {
                             alignment: Alignment.center,
                             children: [
                               ColorFiltered(
-                                colorFilter: const ColorFilter.mode(
-                                  Color(0xFF77716A),
-                                  BlendMode.saturation,
-                                ),
+                                colorFilter: kMongrooGreyscale,
                                 child: Opacity(opacity: .32, child: growthLine),
                               ),
                               Icon(

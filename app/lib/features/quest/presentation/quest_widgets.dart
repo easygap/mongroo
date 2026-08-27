@@ -220,7 +220,7 @@ class QuestCard extends StatelessWidget {
                           color: palette.coral,
                         ),
                         _RewardFact(
-                          icon: Icons.toll_outlined,
+                          icon: Icons.eco_rounded,
                           label: '+${quest.rewardSeeds} 씨앗',
                           color: palette.leaf,
                         ),

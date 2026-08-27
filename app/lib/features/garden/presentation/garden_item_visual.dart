@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/mongroo_ui.dart';
 import '../../home/presentation/plant_view.dart';
 import '../domain/garden_models.dart';
 
@@ -155,7 +156,20 @@ class GardenItemVisual extends StatelessWidget {
               height: 300,
               child: Row(
                 children: [
-                  SizedBox(width: 126, height: 190, child: preview),
+                  // 씨앗 원화는 다 자란 키의 0.23배로 그려져 512x768 캔버스의
+                  // 아래쪽 한 뼘만 쓴다. 캔버스째로 넣으면 상품 그림에서 씨앗이
+                  // 점만 해지므로, 그림이 있는 아래쪽만 잘라 크게 보여 준다.
+                  SizedBox(
+                    width: 126,
+                    height: 190,
+                    child: ClipRect(
+                      child: Transform.scale(
+                        scale: 2.4,
+                        alignment: Alignment.bottomCenter,
+                        child: preview,
+                      ),
+                    ),
+                  ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 8),
                     child: Icon(Icons.arrow_forward_rounded, size: 24),
@@ -184,10 +198,7 @@ class GardenItemVisual extends StatelessWidget {
             fit: fit,
             child: locked
                 ? ColorFiltered(
-                    colorFilter: const ColorFilter.mode(
-                      Color(0xFF807A72),
-                      BlendMode.saturation,
-                    ),
+                    colorFilter: kMongrooGreyscale,
                     child: Opacity(opacity: .52, child: growthPreview),
                   )
                 : growthPreview,
@@ -889,37 +900,6 @@ class SeedBalanceBadge extends StatelessWidget {
   final int balance;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Semantics(
-      label: '보유 씨앗 $balance개',
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 40),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: scheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.toll_outlined,
-              size: 18,
-              color: scheme.onSecondaryContainer,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '$balance',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontFeatures: const [FontFeature.tabularFigures()],
-                color: scheme.onSecondaryContainer,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      MongrooSeedToken(value: balance);
 }

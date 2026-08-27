@@ -838,7 +838,7 @@ class _ShopItemCardState extends State<_ShopItemCard> {
                                           ? Icons.visibility_outlined
                                           : item.requiresClaim
                                               ? Icons.lock_open_outlined
-                                              : Icons.toll_outlined,
+                                              : Icons.eco_rounded,
                                   size: 19,
                                 ),
                                 const SizedBox(width: 7),
@@ -1301,7 +1301,7 @@ class _RoomThemeActionButton extends StatelessWidget {
         ? Icons.wallpaper_outlined
         : item.requiresClaim
             ? Icons.lock_open_outlined
-            : Icons.toll_outlined;
+            : Icons.eco_rounded;
 
     return Semantics(
       excludeSemantics: true,

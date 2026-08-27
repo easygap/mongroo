@@ -2,6 +2,19 @@ import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
 
+/// 아직 만나지 못한 것을 흑백으로 눕히는 필터.
+///
+/// `ColorFilter.mode(..., BlendMode.saturation)`은 자식의 **사각 경계 전체**에
+/// 색을 올려서, 투명한 여백까지 회색 판으로 칠해 버린다. 도감 카드처럼 칸을
+/// 꽉 채우면 그 판이 그대로 보인다. 채도 행렬은 알파를 그대로 두므로 그림만
+/// 흑백이 된다.
+const ColorFilter kMongrooGreyscale = ColorFilter.matrix(<double>[
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0.2126, 0.7152, 0.0722, 0, 0, //
+  0, 0, 0, 1, 0, //
+]);
+
 class MongrooPanel extends StatelessWidget {
   const MongrooPanel({
     super.key,
@@ -203,6 +216,54 @@ class _MongrooPressableState extends State<MongrooPressable> {
       child: widget.semanticLabel == null
           ? content
           : ExcludeSemantics(child: content),
+    );
+  }
+}
+
+
+/// 보유 씨앗을 보여 주는 공용 배지.
+///
+/// 씨앗은 앱의 유일한 재화인데 홈은 잎사귀 도트 칩, 정원·상점은 동전
+/// 아이콘의 분홍 배지를 써서 같은 값이 다른 물건처럼 보였다. 화폐 표기는
+/// 한 곳에서만 만든다.
+class MongrooSeedToken extends StatelessWidget {
+  const MongrooSeedToken({super.key, required this.value});
+
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = MongrooPalette.of(context);
+    return Semantics(
+      label: '보유 씨앗 $value개',
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: palette.night,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.eco_rounded, size: 16, color: palette.butter),
+              const SizedBox(width: 4),
+              ExcludeSemantics(
+                child: Text(
+                  '$value',
+                  style: const TextStyle(
+                    color: AppTheme.onNight,
+                    fontFamily: AppTheme.pixelFont,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
