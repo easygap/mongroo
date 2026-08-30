@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim@sha256:abd67ffcfa541b485a3dff59865ab629aa048a6c613e639d36e7456b0b229241 AS build
+FROM debian:bookworm-slim@sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe64d6990e4b07ea4171 AS build
 
 # 배포 이미지는 공개 시점이 늦는 서드파티 태그 대신 공식 아카이브를 검증해 사용한다.
 ARG FLUTTER_VERSION=3.44.6
