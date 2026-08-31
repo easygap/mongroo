@@ -25,12 +25,17 @@ List<String> smallTapTargets(WidgetTester tester) {
   for (final type in types) {
     for (final element in find.byType(type).evaluate()) {
       final finder = find.byElementPredicate((candidate) => candidate == element);
-      final size = tester.getSize(finder);
+      // `CheckboxListTile`류는 체크박스를 일부러 40dp로 줄인다 - 누르는 자리가
+      // 네모가 아니라 줄 전체이기 때문이다. 네모만 재면 멀쩡한 화면이
+      // 위반으로 잡힌다(가입 동의 네 줄이 그랬다). 줄이 있으면 줄을 잰다.
+      final row = _enclosingListTile(element);
+      final size = tester.getSize(row ?? finder);
       // 화면 밖으로 접힌 위젯은 0으로 잡힌다. 그건 크기 문제가 아니다.
       if (size.isEmpty) continue;
       if (size.width < minimum || size.height < minimum) {
+        final what = row == null ? '$type' : '$type(줄 전체)';
         offenders.add(
-          '$type ${size.width.toStringAsFixed(1)}×${size.height.toStringAsFixed(1)}',
+          '$what ${size.width.toStringAsFixed(1)}×${size.height.toStringAsFixed(1)}',
         );
       }
     }
@@ -46,4 +51,22 @@ void expectTapTargets(WidgetTester tester, {required String screen}) {
     isEmpty,
     reason: '$screen에 48dp보다 작은 조작부가 있다:\n${offenders.join('\n')}',
   );
+}
+
+/// 조작부를 감싼 `ListTile`. 없으면 null.
+///
+/// `CheckboxListTile`·`SwitchListTile`·`RadioListTile`은 안쪽 조작부를
+/// `shrinkWrap`으로 줄이고 누르는 자리를 줄 전체로 넓힌다. 그래서 실제로
+/// 재야 하는 것은 줄이다.
+Finder? _enclosingListTile(Element control) {
+  Element? found;
+  control.visitAncestorElements((ancestor) {
+    if (ancestor.widget is ListTile) {
+      found = ancestor;
+      return false;
+    }
+    return true;
+  });
+  if (found == null) return null;
+  return find.byElementPredicate((candidate) => candidate == found);
 }

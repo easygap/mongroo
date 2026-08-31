@@ -15,6 +15,8 @@ import 'package:mongroo/features/auth/presentation/login_screen.dart';
 import 'package:mongroo/features/auth/presentation/signup_screen.dart';
 import 'package:mongroo/features/auth/presentation/splash_screen.dart';
 
+import 'tap_target.dart';
+
 class _MemoryRefreshStorage implements RefreshTokenStorage {
   @override
   Future<void> clear() async {}
@@ -386,6 +388,10 @@ void main() {
     expect(find.text('처음 시작하기'), findsOneWidget);
     await tester.ensureVisible(find.text('가입하기'));
     await tester.pump();
+    // 동의 체크박스는 여기서만 나온다. 기본 Checkbox는 tapTargetSize를
+    // 줄이면 40dp라 48dp 아래로 내려가고, 가입은 못 누르면 앱을 아예 못
+    // 쓰는 자리다.
+    expectTapTargets(tester, screen: '가입');
     expect(tester.takeException(), isNull);
   });
 }

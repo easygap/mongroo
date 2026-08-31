@@ -10,9 +10,9 @@
 | 영역 | 명령 | 현재 기준 |
 |---|---|---|
 | Flutter 정적 분석 | `cd app; dart analyze` | 경고·오류 0 |
-| Flutter 단위/위젯 | `cd app; flutter test` | 265 passed |
+| Flutter 단위/위젯 | `cd app; flutter test` | 전체 통과, 실패·건너뜀 0 |
 | Web 릴리스 빌드 | `cd app; flutter build web --wasm --release --no-web-resources-cdn --dart-define=API_BASE_URL=...` | 성공 |
-| 서버 전체 | `cd server; pytest -q` | 340 passed |
+| 서버 전체 | `cd server; pytest -q` | 전체 통과, 실패·건너뜀 0 |
 | Python import/문법 | `python -m compileall server/app server/tests` | 성공 |
 | API 계약 | `cd server; python -m app.export_openapi` | `server/openapi.json`과 일치 |
 | Python 보안 감사 | lock export 후 `pip-audit` | 알려진 취약점 0 |
