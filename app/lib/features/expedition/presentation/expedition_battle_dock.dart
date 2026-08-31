@@ -574,7 +574,15 @@ class _ExpeditionSequentialCommandDockState
     super.didChangeDependencies();
     if (_skillIconsPrecached) return;
     _skillIconsPrecached = true;
-    for (final asset in _dockSkillIconAssets.values) {
+    // 지금 이 전투에 나오는 아이콘만 올린다. 지도 전체를 올리면 대원 셋이
+    // 최대 열두 칸을 쓰는 자리를 위해 마흔 장을 디코드하게 되고, 품종이나
+    // 성장결이 늘 때마다 그 값이 조용히 커진다.
+    final assets = <String>{
+      for (final member in _battle.party)
+        for (final action in member.kit.combatSkills)
+          if (_dockSkillIconAssets[action.code] case final asset?) asset,
+    };
+    for (final asset in assets) {
       unawaited(precacheImage(AssetImage(asset), context));
     }
   }
@@ -2055,6 +2063,13 @@ Color _dockActionColor(BuildContext context, String action) {
   };
 }
 
+/// 이 행동의 전용 아이콘. 없으면 `null`이고 호출부가 효과 시트 조각을 쓴다.
+///
+/// 지도 자체는 비공개로 둔다. 밖에서 필요한 것은 `이 코드에 그림이 있는가`
+/// 하나뿐이고, 지도를 열면 다른 화면이 제 나름의 대체 규칙을 만들기 시작한다.
+String? expeditionDockSkillIconAsset(String? code) =>
+    code == null ? null : _dockSkillIconAssets[code];
+
 const _dockSkillIconAssets = <String, String>{
   'sprout_cheer': 'assets/adventure/skill-icons/baby-pot/sprout-cheer-v1.webp',
   'root_embrace': 'assets/adventure/skill-icons/baby-pot/root-embrace-v1.webp',
@@ -2115,6 +2130,25 @@ const _dockSkillIconAssets = <String, String>{
       'assets/adventure/skill-icons/gal-pot/patchwork-relay-v1.webp',
   'runway_reversal':
       'assets/adventure/skill-icons/gal-pot/runway-reversal-v1.webp',
+  'archive_lantern':
+      'assets/adventure/skill-icons/archive-guide/archive-lantern-v1.webp',
+  'archive_seal':
+      'assets/adventure/skill-icons/archive-guide/archive-seal-v1.webp',
+  // 여섯 성장결 스킬. 품종이 아니라 마음이 정하는 자리라 품종 폴더가 아니라
+  // `emotion/`에 둔다. 누구든 선택 I에 이 중 하나를 끼우므로 아이콘이 없으면
+  // 모든 사용자가 전투마다 대체 그림 한 칸을 본다.
+  'sunny_radiant_heart':
+      'assets/adventure/skill-icons/emotion/sunny-radiant-heart-v1.webp',
+  'rainy_frozen_tide':
+      'assets/adventure/skill-icons/emotion/rainy-frozen-tide-v1.webp',
+  'ember_rage_breaker':
+      'assets/adventure/skill-icons/emotion/ember-rage-breaker-v1.webp',
+  'moonlit_lonesome_tempest':
+      'assets/adventure/skill-icons/emotion/moonlit-lonesome-tempest-v1.webp',
+  'sparkling_shock_wonder':
+      'assets/adventure/skill-icons/emotion/sparkling-shock-wonder-v1.webp',
+  'mosaic_steel_equilibrium':
+      'assets/adventure/skill-icons/emotion/mosaic-steel-equilibrium-v1.webp',
 };
 
 Color _dockAffinityColor(BuildContext context, String affinity) {

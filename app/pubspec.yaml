@@ -108,6 +108,8 @@ flutter:
     - assets/adventure/skill-icons/magical-pot/
     - assets/adventure/skill-icons/aloof-pot/
     - assets/adventure/skill-icons/student-pot/
+    - assets/adventure/skill-icons/archive-guide/
+    - assets/adventure/skill-icons/emotion/
     - assets/adventure/sfx/
     - assets/adventure/music/
     - assets/adventure/ambience/
