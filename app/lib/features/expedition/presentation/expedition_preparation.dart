@@ -24,7 +24,13 @@ class _ExpeditionPreparation extends ConsumerWidget {
         description: '마음이 급한 날에는 탐험을 쉬어도 성장 기록은 사라지지 않아요.',
       );
     }
-    final region = catalog.regions.firstOrNull;
+    // 출발은 `지도에서 보고 있는 지역`으로 간다(`start`가 그렇게 보낸다).
+    // 여기서 목록의 첫 칸을 집으면 네 지역이 이름·설명·권장 단계·보상이 다
+    // 다른데도 늘 이끼 기억서고를 안내하게 된다.
+    final region = expeditionDestinationRegion(
+      catalog.regions,
+      state.stageMap?.region.code,
+    );
     return LayoutBuilder(
       builder: (context, constraints) => RefreshIndicator(
         onRefresh: ref.read(expeditionControllerProvider.notifier).load,

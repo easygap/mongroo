@@ -3974,4 +3974,39 @@ void _freeWalkTests() {
     expect(scales.reduce(math.min), lessThan(.85));
     expect(scales.reduce(math.max), lessThanOrEqualTo(1));
   });
+
+  test('편성 화면의 목적지는 지도에서 보고 있는 지역이다', () {
+    // 출발은 지도의 지역으로 간다. 목록의 첫 칸을 집으면 네 지역이 권장
+    // 단계도 보상도 다 다른데 늘 이끼 기억서고를 안내하게 된다.
+    final regions = [
+      for (final entry in const [
+        ('moss_archive', '이끼 기억서고', 2),
+        ('echo_well', '메아리 우물정원', 3),
+        ('starlight_seed_vault', '별빛 씨앗 보관고', 4),
+      ])
+        ExpeditionRegion.fromJson({
+          'code': entry.$1,
+          'name': entry.$2,
+          'description': '',
+          'recommended_stage': entry.$3,
+          'reward': const {'exp': 6, 'seeds': 2},
+        }),
+    ];
+
+    expect(
+      expeditionDestinationRegion(regions, 'starlight_seed_vault')?.name,
+      '별빛 씨앗 보관고',
+    );
+    expect(
+      expeditionDestinationRegion(regions, 'starlight_seed_vault')
+          ?.recommendedStage,
+      4,
+    );
+    // 지도를 아직 못 받았거나 모르는 코드면 첫 지역으로 떨어진다.
+    expect(expeditionDestinationRegion(regions, null)?.code, 'moss_archive');
+    expect(expeditionDestinationRegion(regions, '없는지역')?.code,
+        'moss_archive');
+    expect(expeditionDestinationRegion(const [], 'echo_well'), isNull);
+  });
+
 }

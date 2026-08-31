@@ -141,6 +141,18 @@ class ExpeditionRosterItem {
   }
 }
 
+/// 지금 걸어 들어갈 지역.
+///
+/// 출발 요청은 `지도에서 보고 있는 지역`으로 간다. 준비 화면이 목록의 첫 칸을
+/// 집으면 네 지역이 이름·설명·권장 단계·보상이 다 다른데도 늘 첫 지역을
+/// 안내하게 된다. 목록에 없는 코드(구버전 응답)면 첫 칸으로 떨어진다.
+ExpeditionRegion? expeditionDestinationRegion(
+  List<ExpeditionRegion> regions,
+  String? destinationCode,
+) =>
+    regions.where((region) => region.code == destinationCode).firstOrNull ??
+    regions.firstOrNull;
+
 class ExpeditionSnapshot {
   const ExpeditionSnapshot({
     required this.run,
