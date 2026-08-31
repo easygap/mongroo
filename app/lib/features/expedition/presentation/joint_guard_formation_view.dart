@@ -32,6 +32,17 @@ class _JointGuardFormationViewState
 
   static const _frontCount = 3;
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 이미 이 짐승으로 정하고 들어온 화면이라, 그 꿈 배경 한 장만 미리 읽어
+    // 둔다. 판이 열릴 때 무대가 검은 채로 한 박자 기다리지 않는다.
+    precacheImage(
+      AssetImage(dreamSceneFor(widget.beastCode).assetPath),
+      context,
+    ).ignore();
+  }
+
   bool _isPicked(int plantId) => _slots.contains(plantId);
 
   void _toggle(int plantId) {

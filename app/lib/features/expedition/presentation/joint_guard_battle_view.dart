@@ -1,5 +1,33 @@
 part of 'joint_guard_screen.dart';
 
+/// 짐승마다 다른 꿈의 배경.
+///
+/// 넷이 같은 수호전 무대를 쓰면 `깊은 꿈`이 그냥 한 판 더가 된다. 짐승이
+/// 무엇을 끌어안고 있는지가 배경에 그대로 보여야 한다 — 눈처럼 내리는 페이지,
+/// 물결로 보이는 소리, 모래처럼 쌓이는 별빛, 물결치는 나이테.
+const _dreamSceneAssets = <String, String>{
+  'ledger_keeper': 'assets/adventure/joint-guard-dream-ledger-keeper-v1.webp',
+  'echo_keeper': 'assets/adventure/joint-guard-dream-echo-keeper-v1.webp',
+  'seed_keeper': 'assets/adventure/joint-guard-dream-seed-keeper-v1.webp',
+  'record_keeper': 'assets/adventure/joint-guard-dream-record-keeper-v1.webp',
+};
+
+/// 각 꿈의 강조색. 그 배경에서 실제로 빛나는 색을 골랐다.
+const _dreamAccents = <String, Color>{
+  'ledger_keeper': Color(0xFFE8C77A),
+  'echo_keeper': Color(0xFF72D6DD),
+  'seed_keeper': Color(0xFFCBB6F2),
+  'record_keeper': Color(0xFFE0A76A),
+};
+
+/// 짐승의 꿈 무대. 아직 원화가 없는 짐승은 공용 수호전 무대로 물러난다.
+ExpeditionSceneTheme dreamSceneFor(String beastCode) => ExpeditionSceneTheme(
+      assetPath: _dreamSceneAssets[beastCode] ??
+          expeditionGuardianBattleScene.assetPath,
+      icon: Icons.bedtime_rounded,
+      accent: _dreamAccents[beastCode] ?? expeditionGuardianBattleScene.accent,
+    );
+
 /// 판 — 무대, 여섯 슬롯, 그리고 뒤에서 기다리는 셋.
 ///
 /// 무대와 명령 슬롯은 스테이지 수호전과 **같은 위젯**을 쓴다. 사본을 만들면
@@ -43,9 +71,10 @@ class _JointGuardBattleView extends ConsumerWidget {
                   radius: 18,
                   // 무대는 자기 자리를 `Positioned`로 잡는다. 배경이 Stack을
                   // 열어 주지 않으면 부모 종류가 안 맞아 화면 전체가 무너진다.
+                  // 지역 보정색은 넘기지 않는다. 이 배경은 그 꿈 전용으로
+                  // 그린 원화라, 지역 색을 한 번 더 얹으면 두 번 물든다.
                   child: ExpeditionSceneBackdrop(
-                    scene: expeditionGuardianBattleScene,
-                    regionCode: state.beast.regionCode,
+                    scene: dreamSceneFor(state.beast.code),
                     borderRadius: BorderRadius.circular(18),
                     semanticLabel: '${state.beast.name}의 꿈. '
                         '${state.layer.name}. '
