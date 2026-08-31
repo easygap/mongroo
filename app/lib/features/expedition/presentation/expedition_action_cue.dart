@@ -39,6 +39,7 @@ class ExpeditionActionCue {
     this.emotionVfxSecondary,
     this.contactMaterial,
     this.releaseRegionCode,
+    this.skillCode,
   });
 
   final int id;
@@ -75,6 +76,10 @@ class ExpeditionActionCue {
   /// 이 행동으로 엉킴 하나가 풀려 제자리로 돌아갔다면 그 지역 코드다.
   /// 연출이 끝난 뒤 지역별 두 음 풀려남 cadence를 한 번 재생한다.
   final String? releaseRegionCode;
+
+  /// 지금 쓰인 스킬(또는 적 공격)의 코드. 이 값으로 그 행동만의 소리를 고른다.
+  /// 서버가 알려 주지 않는 구버전 응답에서는 `null`이고 공용음으로 떨어진다.
+  final String? skillCode;
 
   bool get isGuardianExchange => combat?.kind == 'guardian';
   bool get isCombatRound =>
@@ -142,6 +147,7 @@ class ExpeditionActionCue {
         effectKey: _skillEffectKey(member, skill),
         outcome: null,
         combat: null,
+        skillCode: skill.code,
       );
 
   factory ExpeditionActionCue.resolution({
@@ -225,6 +231,7 @@ class ExpeditionActionCue {
       emotionVfxSecondary: event.emotionVfxSecondary,
       contactMaterial: event.contactMaterial,
       releaseRegionCode: releaseRegionCode,
+      skillCode: event.skillCode,
     );
   }
 

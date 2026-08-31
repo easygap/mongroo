@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 
+import 'expedition_signature_audio.dart';
+
 enum ExpeditionCombatSound {
   command,
   hit,
@@ -211,6 +213,13 @@ class ExpeditionCombatAudio {
 
   final Future<Map<ExpeditionCombatSound, AudioPool>> _ready;
   final Map<ExpeditionCombatSound, DateTime> _lastPlayedAt = {};
+
+  /// 품종·성장결·엉킴 저마다의 소리. 공용음과 달리 필요할 때 올린다.
+  final ExpeditionSignatureAudioCache _signatures =
+      ExpeditionSignatureAudioCache(audioContext: _context);
+
+  /// signature도 겹침 방지를 받아야 한다. 공용음은 enum이 키라서 같이 못 쓴다.
+  final Map<String, DateTime> _lastSignatureAt = {};
   AudioPlayer _activeMusic = AudioPlayer();
   AudioPlayer _standbyMusic = AudioPlayer();
   final AudioPlayer _ambienceA = AudioPlayer();
@@ -325,6 +334,73 @@ class ExpeditionCombatAudio {
     final last = _lastPlayedAt[sound];
     if (last != null && now.difference(last) < window) return false;
     _lastPlayedAt[sound] = now;
+    return true;
+  }
+
+  /// 시전자 signature의 재생 이득.
+  ///
+  /// 마스터가 이미 접촉음보다 낮게 정규화돼 있다(50ms 최대 RMS 0.108 대 접촉
+  /// 0.147). 그래서 접촉과 **비슷한 이득으로 틀어야** 기준 문서의 믹스 순서가
+  /// 그대로 나온다 — 접촉 0.72×0.147 = 0.106, signature 0.78×0.108 = 0.084.
+  /// tier 대체음(RMS 0.374)을 쓰던 시절에는 이 자리가 접촉의 두 배였는데,
+  /// 그건 순서표가 1순위로 정한 접촉을 시전음이 덮고 있었다는 뜻이다.
+  static const _skillBed = .78;
+  static const _skillTop = .88;
+
+  /// 이 스킬만의 소리를 내고, 없으면 tier 대체음으로 떨어진다.
+  ///
+  /// 소리로 답해야 하는 질문은 `누가 무엇을 했는가`인데 tier 세 종류로는
+  /// `얼마나 컸는가`밖에 답하지 못한다. 그래서 코드가 있으면 그 스킬의 음원을
+  /// 먼저 쓰고, 아직 만들지 않은 스킬만 tier 대체음을 쓴다. 어느 쪽이든 크기와
+  /// 궁극기 강조는 tier가 정한다.
+  Future<void> playSkill({
+    required String? code,
+    required int tier,
+    required bool ultimate,
+  }) async {
+    if (_disposed || !_enabled) return;
+    final safeTier = tier.clamp(1, 3);
+    final asset = expeditionSkillSignatureAsset(code);
+    if (asset == null) {
+      await playSkillTier(tier: safeTier, ultimate: ultimate);
+      return;
+    }
+    if (!_claimSignature(asset)) return;
+    await _signatures.play(asset, volume: safeTier == 3 ? _skillTop : _skillBed);
+    if (safeTier == 3 && ultimate && !_disposed && _enabled) {
+      await Future<void>.delayed(const Duration(milliseconds: 56));
+      await play(ExpeditionCombatSound.weakness, volume: .20);
+    }
+  }
+
+  /// 엉킴·수호짐승이 저마다 내는 공격 예고음. 없으면 재질 예고음으로 떨어진다.
+  ///
+  /// 재질만으로는 `종이 뭉치가 온다`까지만 알 수 있고 열두 엉킴이 셋씩 같은
+  /// 소리를 낸다. 개별 signature가 붙으면 어떤 공격인지가 눈을 떼고도 구분된다.
+  Future<void> playEnemyAttack({
+    required String? code,
+    String? material,
+    double volume = .34,
+  }) async {
+    if (_disposed || !_enabled) return;
+    final asset = expeditionEnemySignatureAsset(code);
+    if (asset == null) {
+      await playTelegraph(material, volume: volume);
+      return;
+    }
+    if (!_claimSignature(asset)) return;
+    await _signatures.play(asset, volume: volume);
+  }
+
+  /// 같은 signature가 120ms 안에 두 번 요청되면 한 번만 낸다.
+  bool _claimSignature(String asset) {
+    final now = DateTime.now();
+    final last = _lastSignatureAt[asset];
+    if (last != null &&
+        now.difference(last) < const Duration(milliseconds: 120)) {
+      return false;
+    }
+    _lastSignatureAt[asset] = now;
     return true;
   }
 
@@ -573,6 +649,7 @@ class ExpeditionCombatAudio {
   Future<void> dispose() async {
     _disposed = true;
     ++_transitionGeneration;
+    await _signatures.dispose();
     try {
       final pools = await _ready;
       await Future.wait([

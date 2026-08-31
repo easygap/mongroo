@@ -1587,6 +1587,7 @@ def _apply_member_command(
         )
         member_state["guard"] = int(kit["guard"]["guard"])
         pending["guard_actions"] = int(pending.get("guard_actions", 0)) + 1
+        action_code = str(kit["guard"]["code"])
         action_name = kit["guard"]["name"]
         caption = f"{korean_subject(actor_name)} 마음을 다잡고 공격에 대비했어요."
     else:
@@ -1595,6 +1596,7 @@ def _apply_member_command(
             for item in [*kit["unique_skills"], *kit["selected_skills"]]
         }
         action_data = kit["basic"] if action == "attack" else skill_by_slot[action]
+        action_code = str(action_data["code"])
         action_name = action_data["name"]
         if action != "attack":
             if not bool(action_data.get("available", True)):
@@ -2017,6 +2019,10 @@ def _apply_member_command(
             "member_id": member_id,
             "actor_name": actor_name,
             "action": action,
+            # 슬롯(`unique_1`)과 별개로 **무엇을 썼는지**를 알려 준다. 앱은 이
+            # 코드로 그 스킬만의 소리와 아이콘을 고른다. 슬롯만으로는 같은
+            # 자리에 들어간 서로 다른 스킬을 구분할 수 없다.
+            "skill_code": action_code,
             "action_name": action_name,
             "effect_key": effect_key,
             "motion_profile": motion_profile,
@@ -2181,6 +2187,7 @@ def _finalize_round(
             state,
             {
                 "type": "enemy_action",
+                "skill_code": intent.get("code"),
                 "action_name": intent.get("name", "수호자의 공격"),
                 "effect_key": intent["effect_key"],
                 "motion_profile": intent["motion_profile"],

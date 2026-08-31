@@ -1,0 +1,54 @@
+{
+  "loudness": 0.108,
+  "seconds": 0.62,
+  "files": [
+    {
+      "kel": "rainy",
+      "skill": "rainy_frozen_tide",
+      "slot": "selected_1",
+      "path": "skill-emotion-rainy-frozen-tide.wav",
+      "seconds": 0.62,
+      "sha256": "BAFA3E1963352A9271B9DF1EACF29E863D149F3A66615D1022044C20B2180D33"
+    },
+    {
+      "kel": "moonlit",
+      "skill": "moonlit_lonesome_tempest",
+      "slot": "selected_1",
+      "path": "skill-emotion-moonlit-lonesome-tempest.wav",
+      "seconds": 0.62,
+      "sha256": "2083FF6D14E93A3A4C6FFC88B675F14FED79D6875EAF2F1D1E8EFBD275BE2925"
+    },
+    {
+      "kel": "ember",
+      "skill": "ember_rage_breaker",
+      "slot": "selected_1",
+      "path": "skill-emotion-ember-rage-breaker.wav",
+      "seconds": 0.62,
+      "sha256": "A2A665AFD89ADF0EDB4C78859BCE936CAA373B3819F4C818445DFEAC22AB5622"
+    },
+    {
+      "kel": "sunny",
+      "skill": "sunny_radiant_heart",
+      "slot": "selected_1",
+      "path": "skill-emotion-sunny-radiant-heart.wav",
+      "seconds": 0.62,
+      "sha256": "70A4930CCE29788EDF699492CC6E27AB66079B1F4E52D2908F7D1BD9B612E2F8"
+    },
+    {
+      "kel": "mosaic",
+      "skill": "mosaic_steel_equilibrium",
+      "slot": "selected_1",
+      "path": "skill-emotion-mosaic-steel-equilibrium.wav",
+      "seconds": 0.62,
+      "sha256": "D495AF30BC63D670CF9B335B4A08DF4ABA6E937D285AEBD1A2DA8823A9637832"
+    },
+    {
+      "kel": "sparkling",
+      "skill": "sparkling_shock_wonder",
+      "slot": "selected_1",
+      "path": "skill-emotion-sparkling-shock-wonder.wav",
+      "seconds": 0.62,
+      "sha256": "632D19F0387760E87FD6F2D1EA4D94744FD7991BD8CEB171B68F1CC30114A7F5"
+    }
+  ]
+}

@@ -2236,3 +2236,55 @@ def test_phase_gate_requires_the_visible_intent_before_crossing_a_boundary(profi
     payload = guardian_battle_payload(crossed, encounter, profiles)
     assert payload["boss_phase"]["phase_gate"] == "resolve_intent"
     assert payload["boss_phase"]["phase_gate_ready"] is False
+
+
+def test_every_action_event_names_the_skill_it_used(profiles):
+    """슬롯이 아니라 **무엇을 썼는지**가 이벤트에 실려야 한다.
+
+    앱은 이 코드로 그 행동만의 소리와 아이콘을 고른다. 슬롯(`selected_1`)만
+    보내면 여섯 성장결 스킬이 모두 같은 자리로 들어와 구분되지 않는다.
+    """
+
+    encounter = _encounter()
+    resolved = resolve_guardian_round(
+        encounter=encounter,
+        battle=new_guardian_battle("keeper", encounter, profiles),
+        commands=[
+            {"member_id": 1, "action": "unique_1"},
+            {"member_id": 2, "action": "guard"},
+        ],
+        profiles=profiles,
+    )
+
+    by_type: dict[str, list[dict]] = {}
+    for event in resolved["last_exchange"]:
+        by_type.setdefault(event["type"], []).append(event)
+
+    ninja, guide = by_type["party_action"]
+    assert ninja["action"] == "unique_1"
+    assert ninja["skill_code"] == SPECIES_SKILLS["ninja-pot"]["code"]
+    assert guide["action"] == "guard"
+    assert guide["skill_code"] == "guard"
+
+    # 적 예고도 같은 계약을 따른다 — 어떤 공격이 오는지 코드로 알려 준다.
+    enemy = by_type["enemy_action"][0]
+    assert enemy["skill_code"] in {"claw", "wave"}
+    assert enemy["skill_code"] != enemy["action_name"]
+
+
+def test_basic_attack_reports_its_own_code(profiles):
+    encounter = _encounter()
+    resolved = resolve_guardian_round(
+        encounter=encounter,
+        battle=new_guardian_battle("keeper", encounter, profiles),
+        commands=[
+            {"member_id": 1, "action": "attack"},
+            {"member_id": 2, "action": "attack"},
+        ],
+        profiles=profiles,
+    )
+    for event in resolved["last_exchange"]:
+        if event["type"] != "party_action":
+            continue
+        assert event["skill_code"], "기본 공격도 자기 코드를 가진다"
+        assert event["skill_code"] != "guard"

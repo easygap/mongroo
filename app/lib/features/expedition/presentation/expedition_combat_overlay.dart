@@ -219,7 +219,12 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     final signature = '${battle.round}:${battle.enemy.intent.code}';
     if (signature == _telegraphSignature) return;
     _telegraphSignature = signature;
-    unawaited(_audio.playTelegraph(battle.enemy.intent.contactMaterial));
+    unawaited(
+      _audio.playEnemyAttack(
+        code: battle.enemy.intent.code,
+        material: battle.enemy.intent.contactMaterial,
+      ),
+    );
   }
 
   void _syncMusic() {
@@ -380,10 +385,16 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
       if (cue.playsEnemyAttack) {
         // 적이 무엇을 날리는지 행동 시작에 먼저 들려주고, 실제 충돌음은
         // contact frame까지 미룬다. 두 소리를 분리해야 예고가 판정 정보가 된다.
-        unawaited(_audio.playTelegraph(cue.contactMaterial));
+        unawaited(
+          _audio.playEnemyAttack(
+            code: cue.skillCode,
+            material: cue.contactMaterial,
+          ),
+        );
       } else if (cue.effectKey != 'safe_guard') {
         unawaited(
-          _audio.playSkillTier(
+          _audio.playSkill(
+            code: cue.skillCode,
             tier: cue.presentationTier,
             ultimate: cue.cameraProfile == 'ultimate',
           ),

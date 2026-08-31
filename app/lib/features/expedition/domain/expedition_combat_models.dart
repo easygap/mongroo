@@ -978,6 +978,7 @@ class ExpeditionBattleEvent {
     required this.actionName,
     required this.effectKey,
     required this.weaknessHit,
+    this.skillCode,
     required this.damage,
     required this.enemyGuardBefore,
     required this.enemyGuardAfter,
@@ -1026,6 +1027,12 @@ class ExpeditionBattleEvent {
   final String? actionName;
   final String? effectKey;
   final bool weaknessHit;
+
+  /// 이 행동이 실제로 쓴 스킬 코드. 슬롯(`action`)은 자리를, 이 값은 무엇을
+  /// 썼는지를 알려 준다. 같은 `selected_1`에 여섯 성장결 스킬이 번갈아 들어오기
+  /// 때문에 고유한 소리를 고르려면 슬롯이 아니라 이 코드가 필요하다.
+  /// 구버전 응답에는 없어 `null`이면 tier 대체음으로 떨어진다.
+  final String? skillCode;
   final int damage;
   final int? enemyGuardBefore;
   final int? enemyGuardAfter;
@@ -1092,6 +1099,7 @@ class ExpeditionBattleEvent {
         actionName: json['action_name'] as String?,
         effectKey: json['effect_key'] as String?,
         weaknessHit: json['weakness_hit'] == true,
+        skillCode: json['skill_code'] as String?,
         damage: _combatInt(json['damage']),
         enemyGuardBefore: json['enemy_guard_before'] is num
             ? (json['enemy_guard_before'] as num).toInt()
