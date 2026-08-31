@@ -20,6 +20,13 @@ List<String> smallTapTargets(WidgetTester tester) {
     Checkbox,
     Switch,
     Radio,
+    // 평범한 버튼이 제일 많은데 그동안 한 번도 안 쟀다. Material 기본
+    // minimumSize는 64×40이고 48은 tapTargetSize가 채워 준다 - 스타일로
+    // 높이를 직접 줄인 버튼은 그 보정을 잃는다.
+    TextButton,
+    OutlinedButton,
+    FilledButton,
+    ElevatedButton,
   ];
   final offenders = <String>[];
   for (final type in types) {
