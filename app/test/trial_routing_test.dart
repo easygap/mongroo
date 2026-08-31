@@ -61,6 +61,43 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('로그인하지 않아도 체험에서 지원 안내로 갈 수 있다', (tester) async {
+    // 본편은 글에서 위험 신호를 읽으면 지원 화면을 띄운다. 체험에는 읽어 줄
+    // 서버가 없는데, 라우터까지 `/safety`를 로그인으로 되돌리고 있었다.
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(_SignedOutAuthController.new),
+          trialProgressStorageProvider.overrideWithValue(
+            _MemoryTrialStorage(),
+          ),
+        ],
+        child: const MongrooApp(),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const Key('open-local-trial')));
+    await tester.pump(const Duration(milliseconds: 450));
+    await tester.pump();
+
+    final support = find.byKey(const Key('trial-support-link'));
+    expect(support, findsOneWidget);
+    await tester.ensureVisible(support);
+    await tester.pumpAndSettle();
+    await tester.tap(support);
+    await tester.pumpAndSettle();
+
+    // 로그인 화면으로 튕기지 않고 연락처가 실제로 열린다.
+    expect(find.text('지금 도움받을 수 있는 곳'), findsOneWidget);
+    expect(find.text('자살예방 상담전화 · 109'), findsOneWidget);
+    expect(find.byKey(const Key('open-local-trial')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('없는 주소로 들어오면 한국어 안내와 돌아갈 길을 보여 준다', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;

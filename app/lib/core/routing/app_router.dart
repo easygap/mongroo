@@ -54,6 +54,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       final onAuthScreen = location == '/login' || location == '/signup';
       final onLegalScreen = location.startsWith('/legal/');
       final onTrialScreen = location == '/trial';
+      // 안전 지원 화면은 로그인을 요구하지 않는다. 서버 없이 도는 연락처
+      // 목록이고, 정작 이 화면이 가장 필요한 사람이 계정을 아직 안 만든
+      // 사람일 수 있다. 로그인으로 되돌리면 그 자리에서 길이 끊긴다.
+      final onSafetyScreen = location == '/safety';
       switch (auth.status) {
         case AuthStatus.restoring:
           if (location != '/splash') {
@@ -62,7 +66,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           return location == '/splash' ? null : '/splash';
         case AuthStatus.signedOut:
           pendingLocation = null;
-          return onAuthScreen || onLegalScreen || onTrialScreen
+          return onAuthScreen ||
+                  onLegalScreen ||
+                  onTrialScreen ||
+                  onSafetyScreen
               ? null
               : '/login';
         case AuthStatus.signedIn:

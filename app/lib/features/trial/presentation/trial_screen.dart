@@ -173,6 +173,8 @@ class _TrialScreenState extends ConsumerState<TrialScreen> {
                                 ),
                             },
                           ),
+                          const SizedBox(height: 18),
+                          const _TrialSupportLink(),
                         ],
                       ),
                     ),
@@ -182,6 +184,30 @@ class _TrialScreenState extends ConsumerState<TrialScreen> {
       ),
     );
   }
+}
+
+/// 체험 어느 단계에서든 닿는 지원 안내 입구.
+///
+/// 본편은 글에서 위험 신호를 읽으면 지원 화면을 먼저 띄운다. 체험에는 읽어 줄
+/// 서버가 없어서 그 길이 통째로 없었다 — 마음을 적는 화면인데 힘든 사람이
+/// 갈 곳이 한 군데도 없다는 뜻이다. 판정을 흉내 내는 대신 **늘 열려 있는
+/// 문 하나**를 둔다. 놀라게 하지 않도록 조용한 글자 버튼이다.
+class _TrialSupportLink extends StatelessWidget {
+  const _TrialSupportLink();
+
+  @override
+  Widget build(BuildContext context) => Align(
+        alignment: Alignment.center,
+        child: TextButton.icon(
+          key: const Key('trial-support-link'),
+          onPressed: () => context.push('/safety'),
+          icon: const Icon(Icons.favorite_border_rounded, size: 18),
+          label: const Text('지금 많이 힘들다면, 도움받을 수 있는 곳'),
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      );
 }
 
 Future<void> _confirmReset(BuildContext context, WidgetRef ref) async {
