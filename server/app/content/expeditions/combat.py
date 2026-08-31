@@ -164,6 +164,8 @@ def member_battle_kit(
     choice_context: dict[str, dict[str, Any]] | None = None,
     enemy_guard_bp: int = 10_000,
     party_unique2_power: int = 0,
+    skill_lock_reason: str | None = None,
+    guard_lock_reason: str | None = None,
 ) -> dict[str, Any]:
     element_kels = element_kel_map(kel_map_version)
     snapshot = profile.get("snapshot", {})
@@ -440,7 +442,7 @@ def member_battle_kit(
     basic_neutral_power = scaled_power(
         scaled_power(basic_raw_power, basic_scale), TIER_POWER_BP[tier]
     )
-    return {
+    kit = {
         "version": 8,
         "kel_map_version": int(kel_map_version),
         "level": level,
@@ -535,6 +537,42 @@ def member_battle_kit(
             "cooldown_remaining": 0,
         },
     }
+    return _apply_state_locks(
+        kit,
+        skill_lock_reason=skill_lock_reason,
+        guard_lock_reason=guard_lock_reason,
+    )
+
+
+def _apply_state_locks(
+    kit: dict[str, Any],
+    *,
+    skill_lock_reason: str | None,
+    guard_lock_reason: str | None,
+) -> dict[str, Any]:
+    """기록서가 건 잠금을 슬롯에서 미리 읽히게 한다.
+
+    이 잠금들은 지금까지 `_apply_action`의 거절로만 존재했다. 즉 눌러 봐야
+    알 수 있었는데, 이 화면의 다른 잠금은 전부 미리 말한다 - 집중력이 모자라면
+    `집중 부족`, 레벨이 모자라면 `Lv.N 해금`이다. 기록서가 건 것만 예외일
+    이유가 없다(같은 파일의 `고를 것이 없어요`도 같은 이유로 미리 말한다).
+
+    **이미 잠긴 슬롯은 건드리지 않는다.** 레벨이나 후보 없음처럼 더 오래가는
+    사유가 이미 있으면 그쪽이 사용자에게 더 쓸모 있다. 판정은 그대로
+    `_apply_action`이 하며, 여기서 하는 일은 말해 주는 것뿐이다.
+    """
+
+    def lock(action: dict[str, Any], reason: str) -> None:
+        if action.get("available", True):
+            action["available"] = False
+            action["lock_reason"] = reason
+
+    if skill_lock_reason:
+        for action in [*kit["unique_skills"], *kit["selected_skills"]]:
+            lock(action, skill_lock_reason)
+    if guard_lock_reason:
+        lock(kit["guard"], guard_lock_reason)
+    return kit
 
 
 def _resolve_waves(
@@ -1093,6 +1131,9 @@ def guardian_battle_payload(
         if profile is None:
             continue
         snapshot = profile.get("snapshot", {})
+        skill_lock_reason, guard_lock_reason = _state_lock_reasons(
+            state, member_state
+        )
         party.append(
             {
                 **member_state,
@@ -1111,6 +1152,8 @@ def guardian_battle_payload(
                     round_number=int(state.get("round", 1)),
                     enemy_guard_bp=enemy_guard_bp,
                     party_unique2_power=party_unique2_power,
+                    skill_lock_reason=skill_lock_reason,
+                    guard_lock_reason=guard_lock_reason,
                     choice_context=_battle_choice_context(
                         state,
                         member_state=member_state,
@@ -1333,6 +1376,45 @@ def _target_members(
     if target == "lowest":
         return [min(living, key=lambda item: (int(item["hp"]), item["member_id"]))]
     return [living[0]]
+
+
+# 슬롯에 붙는 짧은 잠금 사유. 거절 문장과 같은 말을 쓰되 카드 배지 길이에
+# 맞춘다(`집중 부족`·`재사용 2`와 같은 자리다). 왜 잠겼는지 눌러 보기 전에
+# 읽히는 것이 목적이므로 원인을 지운 `사용 불가`로 뭉뜽그리지 않는다.
+SKILL_LOCK_WINDING = "태엽 감는 중"
+SKILL_LOCK_SWAPPING = "기록서 교체 중"
+GUARD_LOCK_RINGCOUNT = "고리수 세는 중"
+GUARD_LOCK_AFTERIMAGE = "잔상 받음"
+
+
+def _state_lock_reasons(
+    state: dict[str, Any], member_state: dict[str, Any]
+) -> tuple[str | None, str | None]:
+    """이 대원의 스킬·지키기가 지금 왜 잠겼는지. 안 잠겼으면 `(None, None)`.
+
+    판정은 `_apply_action`이 그대로 한다. 여기서 만드는 것은 화면에 미리
+    보여 줄 사유뿐이고, 두 곳이 어긋나지 않도록 같은 상태를 읽는다.
+    """
+
+    member_id = int(member_state.get("member_id", 0))
+    round_number = int(state.get("round", 1))
+    opening = state.get("skill_book_opening") or {}
+
+    skill_reason: str | None = None
+    if round_number <= 1 and member_id in {
+        int(value) for value in opening.get("first_round_skill_locked", [])
+    }:
+        skill_reason = SKILL_LOCK_WINDING
+    elif int(member_state.get("skill_blocked_round", 0)) == round_number:
+        skill_reason = SKILL_LOCK_SWAPPING
+
+    guard_reason: str | None = None
+    if member_id in {int(value) for value in opening.get("guard_locked", [])}:
+        guard_reason = GUARD_LOCK_RINGCOUNT
+    elif _retargeted_member_id(state) == member_id:
+        guard_reason = GUARD_LOCK_AFTERIMAGE
+
+    return skill_reason, guard_reason
 
 
 def _retargeted_member_id(state: dict[str, Any]) -> int | None:

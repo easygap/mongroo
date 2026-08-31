@@ -1517,6 +1517,57 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('기록서가 건 잠금은 눌러 보기 전에 카드에서 읽힌다', (tester) async {
+    // 이 화면의 다른 잠금은 다 미리 말한다 - `집중 부족`, `Lv.N 해금`.
+    // 기록서가 건 잠금만 눌러야 알 수 있었다.
+    await tester.binding.setSurfaceSize(const Size(390, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final raw = _battleSnapshotJson();
+    final battleJson = (raw['current_event'] as Map<String, dynamic>)['battle']
+        as Map<String, dynamic>;
+    // 집중력을 넉넉히 줘 `집중 부족`이 대신 뜨지 않게 한다.
+    battleJson['focus'] = 5;
+    final kitJson = ((battleJson['party'] as List).first
+        as Map<String, dynamic>)['kit'] as Map<String, dynamic>;
+    final unique = (kitJson['unique_skills'] as List).first
+        as Map<String, dynamic>;
+    unique
+      ..['available'] = false
+      ..['lock_reason'] = '태엽 감는 중';
+    (kitJson['guard'] as Map<String, dynamic>)
+      ..['available'] = false
+      ..['lock_reason'] = '고리수 세는 중';
+    final snapshot = ExpeditionSnapshot.fromJson(raw);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          expeditionControllerProvider.overrideWith(
+            () => _FakeExpeditionController(
+              ExpeditionUiState(
+                loading: false,
+                expedition: snapshot,
+                selectedMemberId: 11,
+              ),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const ExpeditionScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // 레벨 문구로 바꿔 말하지 않는다 - 서버가 준 사유를 그대로 쓴다.
+    expect(find.text('태엽 감는 중'), findsWidgets);
+    expect(find.text('고리수 세는 중'), findsWidgets);
+    expect(find.textContaining('해금'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('잔향 읽기를 쓴 전투에서만 다음 라운드 예고가 보인다', (tester) async {
     // 이 책이 파는 것은 이 한 줄뿐이다. 늘 보이면 40씨앗짜리 책이 파는 게
     // 없어지고, 안 보이면 산 사람이 아무것도 못 받는다.

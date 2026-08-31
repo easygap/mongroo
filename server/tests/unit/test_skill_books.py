@@ -560,6 +560,74 @@ def test_germination_gear_locks_skills_in_the_first_round():
     )
 
 
+def test_book_locks_are_announced_on_the_slot_before_the_tap():
+    """눌러 본 뒤 거절당하는 대신 슬롯에서 왜 못 쓰는지 먼저 읽힌다.
+
+    이 화면의 다른 잠금은 전부 미리 말한다 - 집중력이 모자라면 `집중 부족`,
+    레벨이 모자라면 `Lv.N 해금`이다. 기록서가 건 잠금만 예외였다.
+    """
+
+    from app.content.expeditions.combat import (
+        GUARD_LOCK_RINGCOUNT,
+        SKILL_LOCK_WINDING,
+        guardian_battle_payload,
+        new_guardian_battle,
+    )
+
+    encounter = _encounter_fixture()
+
+    # 발아 시계 — 1라운드에 스킬 넷이 잠기고 기본 공격·지키기는 열려 있다.
+    profiles = _party_with("germination_gear")
+    battle = new_guardian_battle("gear", encounter, profiles)
+    kit = guardian_battle_payload(battle, encounter, profiles)["party"][0]["kit"]
+    for action in kit["unique_skills"]:
+        assert action["available"] is False
+        assert action["lock_reason"] == SKILL_LOCK_WINDING
+    # 선택 칸도 잠기지만, 발아 시계 자신이 꽂힌 칸은 원래 사유를 지킨다
+    # (`때가 되면 스스로 펼쳐져요`). 더 오래가는 사유를 덮지 않는 규칙이다.
+    for action in kit["selected_skills"]:
+        assert action["available"] is False
+        assert action["lock_reason"]
+    # 밸런스 불변식 - 최소 한 행동은 언제나 열려 있어야 한다.
+    assert kit["basic"]["available"] is True
+    assert kit["guard"]["available"] is True
+
+    # 대가를 지지 않은 대원은 잠기지도, 사유가 붙지도 않는다.
+    other = guardian_battle_payload(battle, encounter, profiles)["party"][1]["kit"]
+    assert other["unique_skills"][0]["available"] is True
+    assert other["unique_skills"][0].get("lock_reason") is None
+
+    # 고리수 기록부 — 그 전투 내내 지키기가 잠긴다.
+    ring_profiles = _b2_party("ringcount_record")
+    ring = new_guardian_battle("ring", encounter, ring_profiles)
+    ring_kit = guardian_battle_payload(ring, encounter, ring_profiles)["party"][0][
+        "kit"
+    ]
+    assert ring_kit["guard"]["available"] is False
+    assert ring_kit["guard"]["lock_reason"] == GUARD_LOCK_RINGCOUNT
+
+
+def test_state_lock_does_not_overwrite_a_longer_lasting_reason():
+    """레벨처럼 더 오래가는 사유가 이미 있으면 그쪽을 남긴다."""
+
+    from app.content.expeditions.combat import _apply_state_locks
+
+    kit = {
+        "unique_skills": [
+            {"available": False, "lock_reason": None, "unlock_level": 7},
+            {"available": True},
+        ],
+        "selected_skills": [{"available": True}, {"available": True}],
+        "guard": {"available": True},
+    }
+    _apply_state_locks(kit, skill_lock_reason="태엽 감는 중", guard_lock_reason=None)
+
+    # 이미 잠긴 첫 칸은 그대로 두고, 열려 있던 칸에만 사유가 붙는다.
+    assert kit["unique_skills"][0]["lock_reason"] is None
+    assert kit["unique_skills"][1]["lock_reason"] == "태엽 감는 중"
+    assert kit["guard"]["available"] is True
+
+
 def test_germination_gear_lock_lifts_after_the_first_round():
     """반대급부는 1라운드까지다. 그 뒤에는 평소처럼 쓴다."""
 
