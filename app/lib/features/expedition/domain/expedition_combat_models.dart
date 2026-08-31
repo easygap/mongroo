@@ -304,6 +304,7 @@ class ExpeditionBattleEnemy {
     required this.weakness,
     required this.weaknessLabel,
     required this.intent,
+    this.nextIntent,
     this.elite = false,
     this.weakElement,
     this.weakElementLabel,
@@ -321,6 +322,12 @@ class ExpeditionBattleEnemy {
   final String weakness;
   final String weaknessLabel;
   final ExpeditionBattleIntent intent;
+
+  /// 다음 라운드 예고. `잔향 읽기`를 쓴 전투에서만 서버가 열어 준다.
+  ///
+  /// 책을 안 썼으면 `null`이라 화면에 아무것도 안 나온다 — 늘 보이면 그 책이
+  /// 파는 것이 사라진다.
+  final ExpeditionBattleIntent? nextIntent;
   final String? weakElement;
   final String? weakElementLabel;
   final String? resistElement;
@@ -341,6 +348,11 @@ class ExpeditionBattleEnemy {
         weakness: json['weakness'] as String? ?? 'insight',
         weaknessLabel: json['weakness_label'] as String? ?? '관찰',
         intent: ExpeditionBattleIntent.fromJson(_combatMap(json['intent'])),
+        nextIntent: json['next_intent'] is Map<String, dynamic>
+            ? ExpeditionBattleIntent.fromJson(
+                json['next_intent'] as Map<String, dynamic>,
+              )
+            : null,
         elite: json['elite'] == true,
         weakElement: json['weak_element'] as String?,
         weakElementLabel: json['weak_element_label'] as String?,

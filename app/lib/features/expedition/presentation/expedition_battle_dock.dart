@@ -1203,10 +1203,36 @@ class _IntentLine extends StatelessWidget {
             ),
           ],
         );
+    // `잔향 읽기`를 쓴 전투에서만 서버가 다음 라운드 예고를 열어 준다.
+    // 이 책이 파는 것이 이 한 줄이라, 없으면 아무것도 그리지 않는다.
+    final next = battle.enemy.nextIntent;
+    final nextLine = next == null
+        ? null
+        : Row(
+            key: const ValueKey('seq-dock-next-intent'),
+            children: [
+              Icon(Icons.update_rounded, size: 15, color: scheme.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '다음 라운드 · ${next.name} · ${next.targetLabel} · '
+                  '위력 ${next.power}',
+                  maxLines: textScale >= 1.35 ? 2 : 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                ),
+              ),
+            ],
+          );
+
     return Semantics(
       button: true,
       label: '적 의도 ${intent.name}, ${intent.targetLabel}, 위력 ${intent.power}. '
           '${mechanic == null ? '' : '기믹 ${mechanic.name}, ${mechanic.counter}. '}'
+          '${next == null ? '' : '다음 라운드는 ${next.name}, ${next.targetLabel}, '
+              '위력 ${next.power}. '}'
           '약점 $weakLabel${resistLabel == null ? '' : ', 내성 $resistLabel'}. '
           '눌러서 발견 정보 보기',
       child: Material(
@@ -1220,27 +1246,31 @@ class _IntentLine extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                if (textScale >= 1.5) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      intentSummaryFor(false),
-                      const SizedBox(height: 5),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: matchupTag,
-                      ),
-                    ],
-                  );
-                }
-                return Row(
-                  children: [
-                    Expanded(
-                      child: intentSummaryFor(constraints.maxWidth < 420),
-                    ),
-                    const SizedBox(width: 6),
-                    matchupTag,
-                  ],
+                final head = textScale >= 1.5
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          intentSummaryFor(false),
+                          const SizedBox(height: 5),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: matchupTag,
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: intentSummaryFor(constraints.maxWidth < 420),
+                          ),
+                          const SizedBox(width: 6),
+                          matchupTag,
+                        ],
+                      );
+                if (nextLine == null) return head;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [head, const SizedBox(height: 5), nextLine],
                 );
               },
             ),

@@ -1517,6 +1517,71 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('잔향 읽기를 쓴 전투에서만 다음 라운드 예고가 보인다', (tester) async {
+    // 이 책이 파는 것은 이 한 줄뿐이다. 늘 보이면 40씨앗짜리 책이 파는 게
+    // 없어지고, 안 보이면 산 사람이 아무것도 못 받는다.
+    await tester.binding.setSurfaceSize(const Size(390, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    Future<void> pumpWith(Map<String, dynamic>? nextIntent) async {
+      final raw = _battleSnapshotJson();
+      final battleJson = (raw['current_event'] as Map<String, dynamic>)['battle']
+          as Map<String, dynamic>;
+      final enemy = battleJson['enemy'] as Map<String, dynamic>;
+      if (nextIntent != null) enemy['next_intent'] = nextIntent;
+      final snapshot = ExpeditionSnapshot.fromJson(raw);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            expeditionControllerProvider.overrideWith(
+              () => _FakeExpeditionController(
+                ExpeditionUiState(
+                  loading: false,
+                  expedition: snapshot,
+                  selectedMemberId: 11,
+                ),
+              ),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            home: const ExpeditionScreen(),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    // 책을 안 썼으면 서버가 아예 안 내려 준다.
+    await pumpWith(null);
+    expect(find.byKey(const ValueKey('seq-dock-intent')), findsOneWidget);
+    expect(find.byKey(const ValueKey('seq-dock-next-intent')), findsNothing);
+
+    // 앞 트리를 완전히 내리고 다시 세운다. 같은 자리에 덮어쓰면 provider
+    // 재정의가 그대로 살아 새 응답이 안 들어온다.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await pumpWith(const {
+      'code': 'record_wave',
+      'name': '기록 파동',
+      'telegraph': '모두를 노려요.',
+      'target': 'all',
+      'power': 2,
+    });
+    expect(find.byKey(const ValueKey('seq-dock-intent')), findsOneWidget,
+        reason: '의도 줄 자체가 안 그려졌다');
+    final line = find.byKey(const ValueKey('seq-dock-next-intent'));
+    expect(line, findsOneWidget);
+    expect(
+      find.descendant(
+        of: line,
+        matching: find.text('다음 라운드 · 기록 파동 · 탐험대 전체 · 위력 2'),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('고를 것이 있는 기록서는 먼저 묻고 고른 값을 실어 보낸다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 1100));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -3973,6 +4038,29 @@ void _freeWalkTests() {
     ];
     expect(scales.reduce(math.min), lessThan(.85));
     expect(scales.reduce(math.max), lessThanOrEqualTo(1));
+  });
+
+  test('다음 라운드 예고는 서버가 열어 줄 때만 실린다', () {
+    final enemy = ExpeditionBattleEnemy.fromJson(const {
+      'name': '돌비늘 장부지기',
+      'guard': 80,
+      'max_guard': 100,
+      'intent': {'code': 'claw', 'name': '장부 발톱', 'target': 'front', 'power': 1},
+      'next_intent': {
+        'code': 'record_wave',
+        'name': '기록 파동',
+        'target': 'all',
+        'power': 2,
+      },
+    });
+    expect(enemy.nextIntent?.name, '기록 파동');
+    expect(enemy.nextIntent?.targetLabel, '탐험대 전체');
+
+    final plain = ExpeditionBattleEnemy.fromJson(const {
+      'name': '돌비늘 장부지기',
+      'intent': {'code': 'claw', 'name': '장부 발톱', 'target': 'front', 'power': 1},
+    });
+    expect(plain.nextIntent, isNull);
   });
 
   test('편성 화면의 목적지는 지도에서 보고 있는 지역이다', () {
