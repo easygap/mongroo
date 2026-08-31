@@ -11,8 +11,9 @@ void main() {
     WidgetTester tester,
     GardenCollection collection, {
     TextScaler textScaler = TextScaler.noScaling,
+    Size size = const Size(390, 844),
   }) async {
-    tester.view.physicalSize = const Size(390, 844);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -78,10 +79,13 @@ void main() {
       ],
     });
 
+    // 가장 좁은 폭과 가장 큰 글자에서 먼저 본다. 여기서 넘치지 않으면
+    // 390px에서도 넘치지 않는다.
     await pumpCollection(
       tester,
       collection,
       textScaler: const TextScaler.linear(2),
+      size: const Size(320, 800),
     );
     expectTapTargets(tester, screen: '도감');
 
