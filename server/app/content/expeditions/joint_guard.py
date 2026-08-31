@@ -20,11 +20,19 @@
 
 from typing import Any
 
-from app.content.expeditions.combat_identity import KEL_LABELS
+from app.content.expeditions.combat_identity import (
+    CURRENT_KEL_MAP_VERSION,
+    KEL_LABELS,
+    element_kel_map,
+)
 from app.core.korean import korean_object, korean_subject
 
 
 JOINT_GUARD_VERSION = "joint-guard-v1.1"
+
+#: 겹 안에서 도는 능력치 약점. 결 상성이 이 콘텐츠의 본체이고 이쪽은
+#: 엔진이 라운드마다 하나씩 집어 가는 기존 축이다.
+AFFINITY_CYCLE = ("insight", "care", "courage", "focus")
 
 # 겹별 기준 장벽과 라운드(설계서 4.1). 짐승별 수치 변주는 첫 출시에 넣지
 # 않는다 - 학습 비용을 낮추고 밸런스 변수를 줄이기 위해서다.
@@ -443,6 +451,49 @@ def round_schedule(beast_code: str, layer_index: int) -> list[dict[str, Any]]:
             entry["sleeptalk"] = dict(beast["sleeptalk"])
         schedule.append(entry)
     return schedule
+
+
+def _element_for_kel(kel: str) -> str:
+    """결 하나를 대표하는 속성 코드.
+
+    전투 엔진은 약점·내성을 속성으로 들고 다니고 결은 거기서 파생한다. 속성
+    여럿이 같은 결로 모이므로 대표 하나를 **정렬해서** 고른다 - 사전순 첫
+    번째면 매핑이 늘어나도 같은 값이 나온다.
+    """
+    mapping = element_kel_map(CURRENT_KEL_MAP_VERSION)
+    candidates = sorted(
+        element for element, mapped in mapping.items() if mapped == kel
+    )
+    if not candidates:
+        raise KeyError(f"{kel} 결에 해당하는 속성이 없습니다")
+    return candidates[0]
+
+
+def layer_encounter(
+    beast_code: str,
+    difficulty: str,
+    layer_index: int,
+) -> dict[str, Any]:
+    """겹 하나를 기존 전투 엔진이 읽는 encounter로 편다.
+
+    합동 수호전은 별도 전투 엔진을 두지 않는다. 겹마다 수호자 전투를 하나
+    세우고, 라운드별 의도를 미리 펼쳐 넘긴다. 그래서 방어·빈틈·피해 상한처럼
+    이미 검증된 규칙이 그대로 적용된다.
+    """
+    beast = BEAST_CATALOG[beast_code]
+    layer = layers_for(beast_code, difficulty)[layer_index]
+    return {
+        "enemy_name": beast["name"],
+        "enemy_max_guard": int(layer["barrier"]),
+        "max_rounds": int(layer["rounds"]),
+        "starting_focus": 3,
+        "max_focus": 5,
+        "weakness_cycle": list(AFFINITY_CYCLE),
+        "weak_element": _element_for_kel(str(layer["weak_kel"])),
+        "resist_element": _element_for_kel(str(layer["resist_kel"])),
+        "contact_material": "paper",
+        "intents": round_schedule(beast_code, layer_index),
+    }
 
 
 def validate_joint_guard_content() -> list[str]:

@@ -166,6 +166,7 @@ def member_battle_kit(
     party_unique2_power: int = 0,
     skill_lock_reason: str | None = None,
     guard_lock_reason: str | None = None,
+    focus_surcharge: int = 0,
 ) -> dict[str, Any]:
     element_kels = element_kel_map(kel_map_version)
     snapshot = profile.get("snapshot", {})
@@ -537,11 +538,46 @@ def member_battle_kit(
             "cooldown_remaining": 0,
         },
     }
-    return _apply_state_locks(
-        kit,
-        skill_lock_reason=skill_lock_reason,
-        guard_lock_reason=guard_lock_reason,
+    return _apply_focus_surcharge(
+        _apply_state_locks(
+            kit,
+            skill_lock_reason=skill_lock_reason,
+            guard_lock_reason=guard_lock_reason,
+        ),
+        focus_surcharge,
     )
+
+
+def _focus_surcharge(state: dict[str, Any]) -> int:
+    """이번 라운드에만 걸린 집중력 추가 비용.
+
+    합동 수호전의 `깊은 잠꼬대`가 다음 라운드 스킬 비용을 1 올린다. 라운드가
+    넘어갈 때마다 새로 덮어쓰므로 한 라운드만 살아 있다.
+    """
+    return max(0, int(state.get("focus_surcharge", 0)))
+
+
+def _apply_focus_surcharge(kit: dict[str, Any], surcharge: int) -> dict[str, Any]:
+    """올라간 비용을 슬롯에 그대로 적어 둔다.
+
+    비용을 여기 한 곳에서 올리면 화면에 보이는 숫자, 잠금 사유 `집중 부족`,
+    서버의 거절이 전부 같은 값을 쓴다. 세 곳에서 따로 더하면 화면은 쓸 수
+    있다고 하는데 눌러 보면 거절당하는 상태가 생긴다.
+
+    집중력을 **버는** 행동은 올리지 않는다. 설계가 올린 것은 스킬의 비용이다.
+    """
+    if surcharge <= 0:
+        return kit
+    for action in [
+        kit["basic"],
+        kit["guard"],
+        *kit["unique_skills"],
+        *kit["selected_skills"],
+    ]:
+        cost = int(action.get("focus_cost", 0))
+        if cost > 0:
+            action["focus_cost"] = cost + surcharge
+    return kit
 
 
 def _apply_state_locks(
@@ -1031,6 +1067,7 @@ def new_guardian_battle(
         "weak_kel": element_kels.get(str(weak_element)),
         "resist_kel": element_kels.get(str(resist_element)),
         "intent_index": 0,
+        "focus_surcharge": 0,
         "party": [
             {
                 "member_id": int(profile["id"]),
@@ -1154,6 +1191,7 @@ def guardian_battle_payload(
                     party_unique2_power=party_unique2_power,
                     skill_lock_reason=skill_lock_reason,
                     guard_lock_reason=guard_lock_reason,
+                    focus_surcharge=_focus_surcharge(state),
                     choice_context=_battle_choice_context(
                         state,
                         member_state=member_state,
@@ -1606,6 +1644,7 @@ def _apply_member_command(
         party_unique2_power=int(
             (state.get("skill_book_opening") or {}).get("unique2_power", 0)
         ),
+        focus_surcharge=_focus_surcharge(state),
         choice_context=_battle_choice_context(
             state,
             member_state=member_state,
@@ -2149,25 +2188,56 @@ def _apply_member_command(
     )
 
 
-def _finalize_round(
-    state: dict[str, Any],
+def _round_secondary_intents(
     encounter: dict[str, Any],
-    profile_by_id: dict[int, dict[str, Any]],
+    index: int,
+    *,
+    wave: dict[str, Any] | None = None,
+    boss_phase: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
-    """모든 대원이 행동한 뒤 적의 예고 공격과 라운드 전환을 해결한다."""
+    """이번 라운드에 주 예고와 함께 오는 예고들.
 
-    pending = _pending_round(state) or {}
-    intent_power_delta = int(pending.get("intent_power_delta", 0))
-    events: list[dict[str, Any]] = []
-    wave = _current_wave(state)
-    boss_phase = _current_boss_phase(state)
-    intent = _intent(
-        encounter,
-        int(state.get("intent_index", 0)),
-        wave=wave,
-        boss_phase=boss_phase,
-        difficulty=state.get("difficulty"),
+    합동 수호전의 잠꼬대(선잠부터)와 `꼭 끌어안기`가 다음 라운드에 남기는
+    여운이 여기로 온다. 기존 콘텐츠에는 이 키가 없어 항상 빈 목록이고, 그래서
+    지금까지의 전투는 한 줄도 달라지지 않는다.
+
+    난이도의 위력 가산은 붙이지 않는다. 이 예고들의 위력은 콘텐츠가 정한
+    고정값이고, 주 예고에 이미 실린 가산을 여기 또 실으면 두 번 더해진다.
+    """
+    intents = (
+        (wave or {}).get("intents")
+        or (boss_phase or {}).get("intents")
+        or encounter.get("intents")
+        or []
     )
+    if not intents:
+        return []
+    entry = intents[index % len(intents)]
+    extras: list[dict[str, Any]] = []
+    for key in ("sleeptalk", "follow_up_from"):
+        raw = entry.get(key)
+        if isinstance(raw, dict) and int(raw.get("power", 0)) > 0:
+            extras.append(present_intent(dict(raw)))
+    return extras
+
+
+def _resolve_enemy_intent(
+    state: dict[str, Any],
+    intent: dict[str, Any],
+    *,
+    intent_power_delta: int,
+    pending: dict[str, Any],
+    boss_phase: dict[str, Any] | None,
+    profile_by_id: dict[int, dict[str, Any]],
+) -> dict[str, Any]:
+    """예고 하나를 파티에 적용하고 그 결과 사건을 돌려준다.
+
+    `_finalize_round`에서 그대로 떼어 낸 몸통이다. 한 라운드에 예고가 둘일 수
+    있게 되면서(합동 수호전의 잠꼬대) 같은 판정을 두 번 돌려야 하는데, 두 벌로
+    복사하면 방어·빈틈·피해 상한 규칙이 조용히 갈라진다.
+    """
+
+    events: list[dict[str, Any]] = []
     mechanic = intent.get("mechanic") if isinstance(intent.get("mechanic"), dict) else None
     mechanic_triggered = False
     mechanic_power_bonus = 0
@@ -2291,6 +2361,57 @@ def _finalize_round(
     )
     if mechanic_caption:
         events[-1]["caption"] = f"{events[-1]['caption']} {mechanic_caption}"
+    return events[-1]
+
+def _finalize_round(
+    state: dict[str, Any],
+    encounter: dict[str, Any],
+    profile_by_id: dict[int, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """모든 대원이 행동한 뒤 적의 예고 공격과 라운드 전환을 해결한다."""
+
+    pending = _pending_round(state) or {}
+    intent_power_delta = int(pending.get("intent_power_delta", 0))
+    events: list[dict[str, Any]] = []
+    wave = _current_wave(state)
+    boss_phase = _current_boss_phase(state)
+    intent = _intent(
+        encounter,
+        int(state.get("intent_index", 0)),
+        wave=wave,
+        boss_phase=boss_phase,
+        difficulty=state.get("difficulty"),
+    )
+    events.append(
+        _resolve_enemy_intent(
+            state,
+            intent,
+            intent_power_delta=intent_power_delta,
+            pending=pending,
+            boss_phase=boss_phase,
+            profile_by_id=profile_by_id,
+        )
+    )
+    # 한 라운드에 예고가 둘일 수 있다. 앞의 예고로 전열이 모두 물러났으면
+    # 뒤따르는 예고는 오지 않는다 - 이미 끝난 판을 한 번 더 때리지 않는다.
+    for extra in _round_secondary_intents(
+        encounter,
+        int(state.get("intent_index", 0)),
+        wave=wave,
+        boss_phase=boss_phase,
+    ):
+        if not _living_party(state):
+            break
+        events.append(
+            _resolve_enemy_intent(
+                state,
+                extra,
+                intent_power_delta=intent_power_delta,
+                pending=pending,
+                boss_phase=boss_phase,
+                profile_by_id=profile_by_id,
+            )
+        )
     if not _living_party(state):
         state["status"] = "defeat"
         state["defeat_reason"] = "party_down"
@@ -2306,6 +2427,9 @@ def _finalize_round(
         )
         state["round"] = int(state["round"]) + 1
         state["intent_index"] = int(state.get("intent_index", 0)) + 1
+        # 비용을 올리는 예고는 다음 라운드 하나에만 걸린다. 라운드가 넘어갈
+        # 때마다 새로 덮어쓰므로 따로 지울 필요가 없다.
+        state["focus_surcharge"] = int(intent.get("focus_surcharge_next_round", 0))
         state["weakness"] = weakness_cycle[
             (int(state["round"]) - 1) % len(weakness_cycle)
         ]
