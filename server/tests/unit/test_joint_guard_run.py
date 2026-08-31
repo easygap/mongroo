@@ -295,3 +295,51 @@ def test_the_deep_layer_warning_reaches_the_payload():
     assert warning is not None
     assert warning["code"] == "deep_sleeptalk"
     assert warning["bypass"]
+
+
+def test_a_downed_front_line_still_renders():
+    """전열이 모두 물러난 채 교대를 기다리는 상태도 화면으로 나가야 한다.
+
+    이 판은 그 상태에서 **끝나지 않는다** - 뒤에 설 사람이 있으면 이어진다.
+    그런데 전투 payload는 서 있는 대원이 하나도 없는 경우를 본 적이 없어서,
+    예고 대상을 고르다 빈 목록의 첫 번째를 꺼내며 터졌다. 실제로 서버가 500을
+    냈고, 스택을 띄워 판을 굴려 보고서야 알았다.
+    """
+    state = _start()
+    # 맨 앞 대원을 노리는 예고가 걸린 라운드여야 한다. `모두`를 노리는 예고는
+    # 빈 목록을 그대로 돌려주므로 이 구멍을 지나가 버린다 - 처음 쓴 검사가
+    # 그래서 고쳐도 안 고쳐도 초록불이었다.
+    state["battle"]["intent_index"] = 1
+    state["battle"]["status"] = "defeat"
+    state["battle"]["defeat_reason"] = "party_down"
+    for member in state["battle"]["party"]:
+        member["hp"] = 0
+    for entry in state["roster"]:
+        if entry["formation"] == "front":
+            entry["hp"] = 0
+
+    payload = joint_guard_payload(state)
+
+    assert payload["status"] == "active"
+    assert all(member["hp"] == 0 for member in payload["front"])
+    # 뒤에 설 사람이 있으니 교대가 열려 있어야 한다.
+    assert payload["swaps_left"] == 1
+    assert any(member["can_swap_in"] for member in payload["reserves"])
+
+
+def test_swapping_in_puts_the_run_back_on_its_feet():
+    """물러난 자리를 메우면 판이 다시 선다."""
+    state = _start()
+    state["battle"]["status"] = "defeat"
+    state["battle"]["defeat_reason"] = "party_down"
+    for member in state["battle"]["party"]:
+        member["hp"] = 0
+    for entry in state["roster"]:
+        if entry["formation"] == "front":
+            entry["hp"] = 0
+
+    state = swap_joint_guard_member(state, out_member_id=1, in_member_id=4)
+
+    assert state["battle"]["status"] == "active"
+    assert state["battle"]["defeat_reason"] is None
+    assert 4 in _front_ids(state)

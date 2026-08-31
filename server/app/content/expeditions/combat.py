@@ -1420,6 +1420,11 @@ def _target_members(
     state: dict[str, Any], intent: dict[str, Any]
 ) -> list[dict[str, Any]]:
     living = _living_party(state)
+    # 아무도 서 있지 않으면 노릴 대상도 없다. 합동 수호전은 전열이 모두
+    # 물러나도 뒤에 설 사람이 있으면 판이 이어지므로, 이 상태 그대로 화면을
+    # 그려야 한다. 예전에는 여기서 빈 목록의 첫 번째를 꺼내다 터졌다.
+    if not living:
+        return []
     target = intent.get("target", "front")
     if target == "all":
         return living
@@ -1433,6 +1438,7 @@ def _target_members(
     if target == "lowest":
         return [min(living, key=lambda item: (int(item["hp"]), item["member_id"]))]
     return [living[0]]
+
 
 
 # 슬롯에 붙는 짧은 잠금 사유. 거절 문장과 같은 말을 쓰되 카드 배지 길이에
