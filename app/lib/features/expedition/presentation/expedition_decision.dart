@@ -2,13 +2,9 @@ part of 'expedition_screen.dart';
 
 // 서버가 허용한 이동 경로를 읽기 쉬운 선택 카드로 변환한다.
 class _DecisionColumn extends ConsumerWidget {
-  const _DecisionColumn({
-    required this.expedition,
-    required this.onCombatTurnStarted,
-  });
+  const _DecisionColumn({required this.expedition});
 
   final ExpeditionSnapshot expedition;
-  final Future<void> Function() onCombatTurnStarted;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,17 +24,9 @@ class _DecisionColumn extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
         ],
-        // 라운드 결과를 반영하는 32ms 동안도 패널을 유지한다.
-        // 여기서 대체 위젯을 그리면 사용자가 켠 자동 지휘가
-        // 라운드마다 초기화되고 화면도 짧게 깜빡인다.
-        if (event?.battle != null)
-          ExpeditionBattlePanel(
-            expedition: expedition,
-            event: event!,
-            state: state,
-            onTurnStarted: onCombatTurnStarted,
-          )
-        else if (state.settlingResult)
+        // 전투가 열리면 화면 전체가 몰입 전장으로 바뀐다. 이 열은 전투가
+        // 없을 때만 그려지므로 여기에는 전투 분기를 두지 않는다.
+        if (state.settlingResult)
           _ResultSettlingPanel(expedition: expedition)
         else if (event == null)
           _TravelDecisionPanel(state: state, expedition: expedition)

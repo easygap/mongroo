@@ -26,19 +26,11 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
             .firstOrNull ??
         expedition.party.firstOrNull;
 
-    final Widget commandDock = kSequentialCommandDock
-        ? ExpeditionSequentialCommandDock(
-            expedition: expedition,
-            event: event,
-            state: state,
-          )
-        : ExpeditionBattlePanel(
-            expedition: expedition,
-            event: event,
-            state: state,
-            compact: true,
-            onTurnStarted: () async {},
-          );
+    final Widget commandDock = ExpeditionSequentialCommandDock(
+      expedition: expedition,
+      event: event,
+      state: state,
+    );
     final topBar = ExpeditionBattleTopBar(
       battle: battle,
       locked: state.interactionLocked,

@@ -90,11 +90,9 @@ class _ResourceMeter extends StatelessWidget {
 class _MapColumn extends StatelessWidget {
   const _MapColumn({
     required this.expedition,
-    required this.encounterStageKey,
   });
 
   final ExpeditionSnapshot expedition;
-  final GlobalKey encounterStageKey;
 
   @override
   Widget build(BuildContext context) {
@@ -312,13 +310,7 @@ class _MapColumn extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        KeyedSubtree(
-          key: encounterStageKey,
-          child: _CurrentLocationScene(
-            node: current,
-            expedition: expedition,
-          ),
-        ),
+        _CurrentLocationScene(node: current, expedition: expedition),
         const SizedBox(height: 8),
         Text(
           expedition.run.phase == 'awaiting_event'

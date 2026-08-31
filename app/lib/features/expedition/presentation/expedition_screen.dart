@@ -20,7 +20,6 @@ import '../domain/expedition_models.dart';
 import 'expedition_action_cue.dart';
 import 'expedition_controller.dart';
 import 'expedition_battle_dock.dart';
-import 'expedition_battle_panel.dart';
 import 'expedition_combat_overlay.dart';
 import 'expedition_combat_audio.dart';
 import 'expedition_discovery_audio.dart';
@@ -152,7 +151,6 @@ class _ActiveExpedition extends ConsumerStatefulWidget {
 
 class _ActiveExpeditionState extends ConsumerState<_ActiveExpedition> {
   final ScrollController _scrollController = ScrollController();
-  final GlobalKey _encounterStageKey = GlobalKey();
   final ExpeditionDiscoveryAudio _discoveries = ExpeditionDiscoveryAudio();
 
   @override
@@ -178,18 +176,6 @@ class _ActiveExpeditionState extends ConsumerState<_ActiveExpedition> {
     super.dispose();
   }
 
-  Future<void> _showEncounterStage() async {
-    final stageContext = _encounterStageKey.currentContext;
-    if (!mounted || stageContext == null) return;
-    await Scrollable.ensureVisible(
-      stageContext,
-      duration: const Duration(milliseconds: 320),
-      curve: Curves.easeOutCubic,
-      alignment: .08,
-      alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final expedition = widget.expedition;
@@ -205,10 +191,7 @@ class _ActiveExpeditionState extends ConsumerState<_ActiveExpedition> {
     final content = [
       Expanded(
         flex: 6,
-        child: _MapColumn(
-          expedition: expedition,
-          encounterStageKey: _encounterStageKey,
-        ),
+        child: _MapColumn(expedition: expedition),
       ),
       if (width >= 820)
         const SizedBox(width: 16)
@@ -216,10 +199,7 @@ class _ActiveExpeditionState extends ConsumerState<_ActiveExpedition> {
         const SizedBox(height: 16),
       Expanded(
         flex: 4,
-        child: _DecisionColumn(
-          expedition: expedition,
-          onCombatTurnStarted: _showEncounterStage,
-        ),
+        child: _DecisionColumn(expedition: expedition),
       ),
     ];
     return RefreshIndicator(
@@ -247,15 +227,9 @@ class _ActiveExpeditionState extends ConsumerState<_ActiveExpedition> {
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            _MapColumn(
-                              expedition: expedition,
-                              encounterStageKey: _encounterStageKey,
-                            ),
+                            _MapColumn(expedition: expedition),
                             const SizedBox(height: 16),
-                            _DecisionColumn(
-                              expedition: expedition,
-                              onCombatTurnStarted: _showEncounterStage,
-                            ),
+                            _DecisionColumn(expedition: expedition),
                           ],
                         ),
                 ],

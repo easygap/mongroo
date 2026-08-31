@@ -27,8 +27,6 @@ export 'expedition_settings.dart';
 /// 기존 예약형 지휘 패널을 대체한다. 대원 한 명을 탭하고 카드 한 장을 탭하면
 /// 그 행동이 즉시 서버 판정으로 넘어가 연출까지 이어진다. 첫 입력에서 첫
 /// 피드백까지 탭 2회라는 개편 문서 4.1의 계약을 이 위젯이 지킨다.
-/// false로 내리면 기존 예약형 패널로 되돌아간다(개편 문서 7장의 기능 플래그).
-const bool kSequentialCommandDock = true;
 
 const expeditionCombatActionOrder = <String>[
   'attack',
