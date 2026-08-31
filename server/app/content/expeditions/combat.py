@@ -803,6 +803,16 @@ def _party_growth_scale_bp(profiles: list[dict[str, Any]]) -> tuple[int, int]:
     return growth_index, 10_000 + barrier_bonus_bp
 
 
+def combat_hp_for_profile(profile: dict[str, Any]) -> int:
+    """대원 한 명의 전투 HP.
+
+    전열 밖에서 기다리는 대원도 같은 규칙으로 HP를 갖는다. 합동 수호전은
+    여섯 명의 HP를 전투 밖(명단)에서 들고 있어야 해서 이 값이 전투 없이도
+    필요하다.
+    """
+    return _combat_hp_for_profile(profile)
+
+
 def _combat_hp_for_profile(profile: dict[str, Any]) -> int:
     snapshot = profile.get("snapshot", {})
     level = combat_level_from_snapshot(snapshot)
