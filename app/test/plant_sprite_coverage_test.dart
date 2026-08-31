@@ -21,6 +21,9 @@ void main() {
 
   /// `plant_species` 테이블의 code와 같다. 상점에 올라가는 종이 곧 이 목록이다.
   const species = <String>[
+    // 새 계정이 처음 받는 종이다. 목록에서 빠져 있어 지금까지 한 번도
+    // 검사되지 않았다 - `plant_species`에는 처음부터 있었다.
+    'basic_sprout',
     'baby-pot',
     'cactus',
     'sunflower',
