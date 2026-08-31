@@ -483,7 +483,11 @@ class _StartActions extends ConsumerWidget {
         Text(
           state.catalog!.heartResonanceAvailable
               ? '오늘 1회, 목표를 확보하고 귀환하면 성장과 씨앗을 받아요.'
-              : '마음 공명 보상은 오늘 50자 이상의 마음 일기를 쓴 뒤 열려요.',
+              // 못 쓴 것과 이미 받은 것은 다른 상황이다. 하나로 묶으면 오늘 일기를
+              // 쓰고 다녀온 사람에게 일기를 쓰라고 다시 시킨다.
+              : state.catalog!.diaryReady
+                  ? '오늘의 마음 공명 보상은 이미 받았어요. 지금부터는 자유 탐험이에요.'
+                  : '마음 공명 보상은 오늘 50자 이상의 마음 일기를 쓴 뒤 열려요.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

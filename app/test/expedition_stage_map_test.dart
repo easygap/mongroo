@@ -120,12 +120,16 @@ ExpeditionStageMap _stageMap({
       ],
     });
 
-ExpeditionCatalog _catalog({bool heartResonance = true, bool deep = false}) =>
+ExpeditionCatalog _catalog({
+  bool heartResonance = true,
+  bool deep = false,
+  bool? diaryReady,
+}) =>
     ExpeditionCatalog.fromJson({
       'content_version': '2026.08.4',
       'active_run_id': null,
       'entry': {
-        'diary_ready': heartResonance,
+        'diary_ready': diaryReady ?? heartResonance,
         'heart_resonance_available': heartResonance,
         'free_explore_available': true,
         'deep_available': deep,
@@ -194,6 +198,9 @@ Future<_FakeStageController> _pumpShell(
   bool heartResonance = true,
   bool deep = false,
   bool echoWellUnlocked = false,
+  bool? diaryReady,
+  ExpeditionShellView shellView = ExpeditionShellView.hub,
+  int? selectedStageNo,
 }) async {
   late _FakeStageController controller;
   await tester.pumpWidget(
@@ -203,7 +210,13 @@ Future<_FakeStageController> _pumpShell(
           controller = _FakeStageController(
             ExpeditionUiState(
               loading: false,
-              catalog: _catalog(heartResonance: heartResonance, deep: deep),
+              catalog: _catalog(
+                heartResonance: heartResonance,
+                deep: deep,
+                diaryReady: diaryReady,
+              ),
+              shellView: shellView,
+              selectedStageNo: selectedStageNo,
               roster: _roster(),
               stageMap: _stageMap(
                 clearedCount: clearedCount,
@@ -222,7 +235,10 @@ Future<_FakeStageController> _pumpShell(
     ),
   );
   await tester.pump();
-    expectTapTargets(tester, screen: '스테이지 지도');
+  expectTapTargets(
+    tester,
+    screen: shellView == ExpeditionShellView.preparation ? '탐험대 편성' : '스테이지 지도',
+  );
   return controller;
 }
 
@@ -254,6 +270,51 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(Badge), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  // 편성 화면은 오래 `마음 공명 = 일기 안 씀`으로만 읽었다. 서버는 `diary_ready`를
+  // 따로 주는데 화면이 둘을 하나로 묶어, 오늘 일기를 쓰고 한 번 다녀온 사람에게
+  // 일기를 쓰라고 다시 시켰다. 두 사유를 갈라 놓는다.
+  testWidgets('오늘 몫을 이미 받았으면 일기를 다시 쓰라고 하지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpShell(
+      tester,
+      heartResonance: false,
+      diaryReady: true,
+      shellView: ExpeditionShellView.preparation,
+      selectedStageNo: 2,
+    );
+
+    expect(
+      find.text('오늘의 마음 공명 보상은 이미 받았어요. 지금부터는 자유 탐험이에요.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('마음 공명 보상은 오늘 50자 이상의 마음 일기를 쓴 뒤 열려요.'),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('아직 일기를 쓰지 않았으면 일기부터 안내한다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpShell(
+      tester,
+      heartResonance: false,
+      diaryReady: false,
+      shellView: ExpeditionShellView.preparation,
+      selectedStageNo: 2,
+    );
+
+    expect(
+      find.text('마음 공명 보상은 오늘 50자 이상의 마음 일기를 쓴 뒤 열려요.'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
