@@ -14,6 +14,7 @@ from app.content.expeditions.combat_difficulty import (
     validate_enemy_mechanic_code,
 )
 from app.content.expeditions.combat_identity import ELEMENT_LABELS
+from app.content.expeditions.joint_guard import validate_joint_guard_content
 from app.content.expeditions.skill_books import validate_skill_book_catalog
 from app.content.expeditions.tangles import (
     TANGLE_CATALOG,
@@ -176,6 +177,10 @@ def _validate_stages(
     # 기록서 카탈로그도 같은 관문을 지난다. 등급·슬롯·activation 계약이
     # 깨진 채 배포되면 장착 화면이 고를 수 없는 책을 보여 주게 된다.
     errors.extend(validate_skill_book_catalog())
+    # 합동 수호전은 지역 pack 밖에 있지만 같은 배포 관문을 지나야 한다.
+    # 겹별 상성이 여섯 결에 고르게 퍼져 있는지, 결정적 순간마다 우회가
+    # 있는지를 여기서 함께 센다.
+    errors.extend(validate_joint_guard_content())
 
     stages = content.get("stages")
     if not isinstance(stages, list) or len(stages) != STAGE_COUNT:
