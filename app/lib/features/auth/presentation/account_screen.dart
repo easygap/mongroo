@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/error/api_exception.dart';
+import '../../expedition/presentation/expedition_combat_audio.dart';
+import '../../expedition/presentation/expedition_settings.dart';
 import '../data/auth_repository.dart';
 import 'auth_controller.dart';
 
@@ -141,6 +143,28 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                     const SizedBox(height: 24),
                     const Divider(),
                     const SizedBox(height: 16),
+                    // 소리 설정은 전투 HUD 안에만 있었다. 그런데 그 값은 던전
+                    // 발걸음·지도 확정음·모험 탭 cue·발견음까지 다스린다.
+                    // 소리를 끄려고 전투에 들어가야 하는 건 설정이 아니다.
+                    Text(
+                      '소리',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w900,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '탐험 배경음과 효과음, 걸을 때 나는 소리와 발견 알림에 함께 적용돼요. 소리를 꺼도 판정과 결과는 화면에 그대로 남아요.',
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const _SoundModeButton(),
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 16),
                     Text(
                       '앱 정보',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -225,6 +249,32 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+
+/// 계정 화면에서 소리 단계를 바꾸는 버튼.
+///
+/// 전투 시트와 **같은 provider, 같은 순환**을 쓴다. 두 자리가 서로 다른 방식을
+/// 쓰면 사용자가 두 가지를 배워야 하고, 한쪽에서 바꾼 값이 다른 쪽에 안
+/// 보이는 것처럼 느껴진다.
+class _SoundModeButton extends ConsumerWidget {
+  const _SoundModeButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(expeditionBattleSettingsProvider);
+    final notifier = ref.read(expeditionBattleSettingsProvider.notifier);
+    return OutlinedButton.icon(
+      key: const Key('account-sound-mode'),
+      onPressed: notifier.cycleAudioMode,
+      icon: Icon(switch (settings.audioMode) {
+        ExpeditionAudioMode.all => Icons.volume_up_outlined,
+        ExpeditionAudioMode.sfxOnly => Icons.music_off_outlined,
+        ExpeditionAudioMode.muted => Icons.volume_off_outlined,
+      }),
+      label: Text('탐험 소리 · ${settings.audioLabel}'),
     );
   }
 }

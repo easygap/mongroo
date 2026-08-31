@@ -7,6 +7,7 @@ import 'package:mongroo/core/api/token_store.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/auth/data/auth_repository.dart';
 import 'package:mongroo/features/auth/presentation/account_screen.dart';
+import 'package:mongroo/features/expedition/data/expedition_settings_store.dart';
 
 class _MemoryStorage implements RefreshTokenStorage {
   @override
@@ -17,6 +18,20 @@ class _MemoryStorage implements RefreshTokenStorage {
 
   @override
   Future<void> write(String token) async {}
+}
+
+/// 기기 저장소 없이 도는 설정 저장소. 보안 저장소는 테스트에서 채널이 없다.
+class _MemorySettingsStorage implements ExpeditionSettingsStorage {
+  String? value;
+
+  @override
+  Future<String?> read() async => value;
+
+  @override
+  Future<void> write(String encoded) async => value = encoded;
+
+  @override
+  Future<void> clear() async => value = null;
 }
 
 class _AccountRepository extends AuthRepository {
@@ -63,7 +78,11 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authRepositoryProvider.overrideWithValue(repository)],
+        overrides: [
+          authRepositoryProvider.overrideWithValue(repository),
+          expeditionSettingsStorageProvider
+              .overrideWithValue(_MemorySettingsStorage()),
+        ],
         child: MaterialApp(
           theme: AppTheme.light(),
           locale: const Locale('ko'),
@@ -86,6 +105,32 @@ void main() {
     );
     await tester.pump();
   }
+
+  testWidgets('소리는 전투에 들어가지 않고도 계정 화면에서 끌 수 있다', (tester) async {
+    // 이 값은 전투뿐 아니라 던전 발걸음·지도 확정음·모험 탭 cue·발견음을
+    // 함께 다스린다. 그런데 바꾸는 자리가 전투 HUD 안에만 있었다.
+    await pumpAccount(tester, _AccountRepository());
+
+    final button = find.byKey(const Key('account-sound-mode'));
+    expect(button, findsOneWidget);
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    expect(find.text('탐험 소리 · 음악·효과음'), findsOneWidget);
+
+    await tester.tap(button);
+    await tester.pump();
+    expect(find.text('탐험 소리 · 효과음만'), findsOneWidget);
+
+    await tester.tap(button);
+    await tester.pump();
+    expect(find.text('탐험 소리 · 소리 꺼짐'), findsOneWidget);
+
+    // 세 단계를 돌면 처음으로 돌아온다 - 전투 시트와 같은 순환이다.
+    await tester.tap(button);
+    await tester.pump();
+    expect(find.text('탐험 소리 · 음악·효과음'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('가입한 뒤에도 약관과 처리방침을 다시 읽을 수 있다', (tester) async {
     // 세 문서는 가입 화면에만 링크가 있었다. 가입하고 나면 내가 무엇에
@@ -159,6 +204,9 @@ void main() {
 
     final licenses = find.widgetWithText(OutlinedButton, '오픈소스 라이선스');
     await tester.ensureVisible(licenses);
+    // 화면이 길어져 버튼이 접힌 아래에 있다. 스크롤이 프레임에 반영돼야
+    // 탭 좌표가 뷰포트 안으로 들어온다.
+    await tester.pumpAndSettle();
     await tester.tap(licenses);
     await tester.pumpAndSettle();
 
