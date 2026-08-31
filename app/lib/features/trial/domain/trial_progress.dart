@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../home/domain/plant.dart';
+
 enum TrialStage { welcome, diary, growth, exploration, complete }
 
 class TrialProgress {
@@ -24,12 +26,11 @@ class TrialProgress {
   bool get hasDiary => diaryText.trim().length >= 10 && emotionCode != null;
   bool get hasCompletedExploration => stage == TrialStage.complete;
 
-  String get growthForm => switch (emotionCode) {
-        'sunny' => 'sunny',
-        'rainy' => 'rainy',
-        'ember' => 'ember',
-        _ => 'mosaic',
-      };
+  /// 이 체험이 키우는 결. 본편과 같은 표를 읽어 이름과 코드가 갈리지 않는다.
+  PlantGrowthForm get growth =>
+      PlantGrowthForm.fromCode(emotionCode) ?? PlantGrowthForm.mosaic;
+
+  String get growthForm => growth.code;
 
   TrialProgress copyWith({
     TrialStage? stage,
@@ -85,8 +86,10 @@ class TrialProgress {
     );
   }
 
+  // 여섯 결은 서로 우열이 없다. 셋만 받으면 불안·놀람·여러 마음을 적은
+  // 사람에게 자기 마음에 해당하는 칸이 아예 없다.
   static String? _validEmotion(String? value) =>
-      const {'sunny', 'rainy', 'ember'}.contains(value) ? value : null;
+      PlantGrowthForm.fromCode(value)?.code;
 
   static String? _validPath(String? value) =>
       const {'labels', 'roots'}.contains(value) ? value : null;

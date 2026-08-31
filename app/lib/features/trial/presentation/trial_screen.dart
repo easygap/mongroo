@@ -7,6 +7,7 @@ import '../../../core/theme/mongroo_ui.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../expedition/presentation/expedition_scene.dart';
 import '../../expedition/presentation/moss_archive_scene.dart';
+import '../../home/domain/plant.dart';
 import '../domain/trial_progress.dart';
 import 'trial_controller.dart';
 
@@ -532,47 +533,19 @@ class _TrialDiaryState extends State<_TrialDiary> {
 
   @override
   Widget build(BuildContext context) {
-    final choices = const [
-      ('sunny', '따뜻함', Icons.wb_sunny_outlined),
-      ('rainy', '가라앉음', Icons.water_drop_outlined),
-      ('ember', '답답함', Icons.local_fire_department_outlined),
-    ];
     return MongrooPanel(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('오늘 마음의 날씨는 어떤가요?',
+          Text('오늘 기억에 남은 순간을 적어 보세요',
               style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 7),
           Text(
-            '정답은 없어요. 지금 가장 가까운 느낌 하나만 골라 보세요.',
+            '무엇을 느꼈는지 먼저 고르지 않아도 돼요. 있었던 일을 그대로 적으면 돼요.',
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final choice in choices)
-                ChoiceChip(
-                  avatar: Icon(choice.$3, size: 18),
-                  label: Text(choice.$2),
-                  selected: _emotion == choice.$1,
-                  onSelected: _submitting
-                      ? null
-                      : (_) => setState(() => _emotion = choice.$1),
-                ),
-            ],
-          ),
-          const SizedBox(height: 9),
-          Text(
-            '체험에서는 서버 분석 없이 바로 모습을 보여 주기 위해 가까운 느낌을 함께 골라요. 실제 기록은 일기 본문에서 마음의 결을 읽어요.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
           ),
           const SizedBox(height: 18),
           TextField(
@@ -612,7 +585,36 @@ class _TrialDiaryState extends State<_TrialDiary> {
               label: const Text('예시로 빠르게 체험'),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          // 본편은 여기서 글을 읽어 결을 정한다. 체험은 서버를 부르지 않기로
+          // 했으니 읽어 줄 사람이 없어 대신 물어본다. 그래서 이 물음은 글보다
+          // **뒤에** 온다 - 앞에 두면 `감정을 먼저 고르지 않는다`는 이 앱의
+          // 약속을 첫 화면부터 뒤집는 셈이 된다.
+          Text(
+            '체험에는 글을 읽어 줄 서버가 없어요. 적은 글에 가장 가까운 결을 하나만 골라 주세요.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              // 여섯 결은 서로 우열이 없다. 셋만 내놓으면 불안·놀람·여러
+              // 마음을 적은 사람이 고를 칸을 못 찾는다.
+              for (final form in PlantGrowthForm.values)
+                ChoiceChip(
+                  key: Key('trial-emotion-${form.code}'),
+                  label: Text('${form.emotionLabel} · ${form.personalityName}'),
+                  selected: _emotion == form.code,
+                  onSelected: _submitting
+                      ? null
+                      : (_) => setState(() => _emotion = form.code),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
           FilledButton.icon(
             key: const Key('trial-save-diary'),
             onPressed: _canSubmit ? _submit : null,
@@ -643,12 +645,9 @@ class _TrialGrowth extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final formLabel = switch (progress.growthForm) {
-      'sunny' => '따뜻한 햇살형',
-      'rainy' => '차분한 빗결형',
-      'ember' => '단단한 불씨형',
-      _ => '여러 빛의 모자이크형',
-    };
+    // 이름은 본편 표에서 읽는다. 체험만 `햇살형`이라고 부르면 가입한 뒤에
+    // 같은 것을 `햇살결`로 다시 배워야 한다.
+    final formLabel = progress.growth.personalityName;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

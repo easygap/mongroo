@@ -7,6 +7,7 @@ import 'package:mongroo/features/auth/presentation/auth_controller.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_scene.dart';
 import 'package:mongroo/features/expedition/presentation/moss_archive_scene.dart';
 import 'package:mongroo/features/trial/data/trial_progress_store.dart';
+import 'package:mongroo/features/home/domain/plant.dart';
 import 'package:mongroo/features/trial/domain/trial_progress.dart';
 import 'package:mongroo/features/trial/presentation/trial_screen.dart';
 
@@ -95,8 +96,20 @@ void main() {
     expect(find.byType(MossArchiveScene), findsNothing);
 
     await _tapVisible(tester, find.byKey(const Key('trial-start')));
-    expect(find.text('오늘 마음의 날씨는 어떤가요?'), findsOneWidget);
-    expect(find.textContaining('체험에서는 서버 분석 없이'), findsOneWidget);
+    // 마음을 먼저 고르라고 묻지 않는다. 글 칸이 먼저고, 결 고르기는
+    // 서버가 없어서 대신 묻는 것이라 그 아래에 온다.
+    expect(find.text('오늘 기억에 남은 순간을 적어 보세요'), findsOneWidget);
+    expect(find.textContaining('먼저 고르지 않아도 돼요'), findsOneWidget);
+    expect(find.textContaining('글을 읽어 줄 서버가 없어요'), findsOneWidget);
+    // 여섯 결이 모두 있고 본편과 같은 이름을 쓴다.
+    for (final form in PlantGrowthForm.values) {
+      expect(
+        find.byKey(Key('trial-emotion-${form.code}')),
+        findsOneWidget,
+        reason: form.personalityName,
+      );
+    }
+    expect(find.text('불안 · 달빛결'), findsOneWidget);
 
     await _tapVisible(tester, find.byKey(const Key('trial-sample')));
     final save = tester.widget<FilledButton>(
@@ -105,7 +118,7 @@ void main() {
     expect(save.onPressed, isNotNull);
     await _tapVisible(tester, find.byKey(const Key('trial-save-diary')));
 
-    expect(find.textContaining('햇살형 새싹'), findsOneWidget);
+    expect(find.textContaining('햇살결 새싹'), findsOneWidget);
     expect(find.text('성장 +30 · 씨앗 +12'), findsOneWidget);
     await _tapVisible(tester, find.byKey(const Key('trial-open-exploration')));
 
@@ -143,7 +156,7 @@ void main() {
 
     await _pumpTrial(tester, storage);
 
-    expect(find.textContaining('빗결형 새싹'), findsOneWidget);
+    expect(find.textContaining('빗물결 새싹'), findsOneWidget);
     expect(find.byKey(const Key('trial-start')), findsNothing);
   });
 
@@ -153,7 +166,7 @@ void main() {
 
     await _tapVisible(tester, find.byKey(const Key('trial-start')));
     expect(find.textContaining('저장소를 사용할 수 없어'), findsOneWidget);
-    expect(find.text('오늘 마음의 날씨는 어떤가요?'), findsOneWidget);
+    expect(find.text('오늘 기억에 남은 순간을 적어 보세요'), findsOneWidget);
   });
 
   testWidgets('마음 기록 칸의 안내 문구가 글자 수 표시에 밀려 잘리지 않는다', (tester) async {
