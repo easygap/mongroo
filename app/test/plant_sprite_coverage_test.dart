@@ -106,4 +106,21 @@ void main() {
     expect(filtered, isNotEmpty);
     expect(filtered.every(bundled.contains), isTrue);
   });
+
+  test('README가 말하는 성장 계보 수가 실제 종 수와 같다', () {
+    // 08-25에 가시니·해바라기의 다섯 단계를 채우면서 종이 15에서 17이 됐는데
+    // README는 그 직전에 쓰여 15에 멈춰 있었다. 숫자는 손으로 맞추면 반드시
+    // 다시 어긋나므로, 이 목록을 유일한 원본으로 두고 문서가 따라오게 한다.
+    final readme = File('../README.md').readAsStringSync();
+    final matches = RegExp(r'(\d+)종 성장 계보').allMatches(readme).toList();
+    final sentence =
+        RegExp(r'지금 (\d+)종 있습니다').firstMatch(readme);
+
+    expect(matches, isNotEmpty, reason: 'README에 계보 수가 없다');
+    expect(sentence, isNotNull, reason: 'README 본문에 계보 수가 없다');
+    for (final match in matches) {
+      expect(int.parse(match.group(1)!), species.length);
+    }
+    expect(int.parse(sentence!.group(1)!), species.length);
+  });
 }
