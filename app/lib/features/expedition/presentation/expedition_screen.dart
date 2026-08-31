@@ -23,6 +23,7 @@ import 'expedition_battle_dock.dart';
 import 'expedition_battle_panel.dart';
 import 'expedition_combat_overlay.dart';
 import 'expedition_combat_audio.dart';
+import 'expedition_discovery_audio.dart';
 import 'expedition_walk_path.dart';
 import 'expedition_free_walk.dart';
 import 'expedition_walk_area.dart';
@@ -152,10 +153,28 @@ class _ActiveExpedition extends ConsumerStatefulWidget {
 class _ActiveExpeditionState extends ConsumerState<_ActiveExpedition> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _encounterStageKey = GlobalKey();
+  final ExpeditionDiscoveryAudio _discoveries = ExpeditionDiscoveryAudio();
+
+  @override
+  void didUpdateWidget(covariant _ActiveExpedition oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 지도 걷기·스테이지 필드·전투가 각자 다른 화면을 그리지만 스냅숏은 전부
+    // 여기를 지난다. 발견을 알아채는 자리를 하나만 두려고 build가 아니라
+    // 여기에서 본다 - build는 스크롤에도 다시 돌아 같은 소식을 되풀이한다.
+    final cue = expeditionDiscoveryCueFor(oldWidget.expedition, widget.expedition);
+    if (cue == null) return;
+    unawaited(
+      _discoveries.play(
+        cue,
+        enabled: ref.read(expeditionBattleSettingsProvider).sfxEnabled,
+      ),
+    );
+  }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    unawaited(_discoveries.dispose());
     super.dispose();
   }
 
