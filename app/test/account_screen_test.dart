@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'tap_target.dart';
 import 'package:mongroo/core/api/token_store.dart';
 import 'package:mongroo/core/error/api_exception.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
@@ -200,6 +202,7 @@ void main() {
     // 세 문서는 가입 화면에만 링크가 있었다. 가입하고 나면 내가 무엇에
     // 동의했는지 앱 안에서 확인할 길이 없었다.
     await pumpAccount(tester, _AccountRepository());
+    expectTapTargets(tester, screen: '계정과 데이터');
 
     for (final entry in const [
       ('terms', '이용약관'),

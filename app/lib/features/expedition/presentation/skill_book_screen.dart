@@ -318,7 +318,9 @@ class _EquipButton extends StatelessWidget {
       label: semantics,
       button: true,
       child: SizedBox(
-        height: 44,
+        // 기록서를 갈아 끼우는 자리다. Android 핵심 앱 품질 지침의 48dp를
+        // 따른다 - 44는 Apple 기준만 만족한다.
+        height: 48,
         child: FilterChip(
           key: ValueKey('equip-$slot-${code ?? 'clear'}'),
           selected: selected,

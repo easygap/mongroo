@@ -182,7 +182,10 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
     final autoChip = Semantics(
       label: '자동 지휘 $autoLabel. 눌러서 끔, 보조, 연속 순서로 바꿔요',
       child: SizedBox(
-        height: 44,
+        // 옆의 설정·후퇴 아이콘 버튼은 48이다. 이 칩만 44라서 Android 핵심 앱
+        // 품질 지침의 48dp에 못 미쳤다 - 매 턴 고쳐 잡는 지휘 판단이라 가장
+        // 자주 눌리는 자리다. 줄 높이는 이미 48이라 배치는 그대로다.
+        height: 48,
         child: FilterChip(
           key: const ValueKey('seq-dock-auto'),
           selected: settings.autoMode != ExpeditionAutoMode.off,

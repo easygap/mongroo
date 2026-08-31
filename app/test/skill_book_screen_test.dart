@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'tap_target.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mongroo/core/error/api_exception.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
@@ -196,6 +198,7 @@ void main() {
   _retiredBookTests();
   testWidgets('두 칸의 현재 내용과 서고 전체를 함께 보여 준다', (tester) async {
     await _pump(tester);
+    expectTapTargets(tester, screen: '기록서 서고');
 
     expect(find.byKey(const ValueKey('slot-B1')), findsOneWidget);
     expect(find.byKey(const ValueKey('slot-B2')), findsOneWidget);

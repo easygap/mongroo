@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'tap_target.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/expedition/data/expedition_settings_store.dart';
 import 'package:mongroo/features/expedition/domain/expedition_models.dart';
@@ -1514,6 +1516,36 @@ void main() {
     expect(tester.widget<FilterChip>(autoToggle).selected, isTrue);
     expect(find.text('AUTO·보조'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('전투 화면의 조작부가 48dp보다 작지 않다', (tester) async {
+    // AUTO 칩만 44였다. 바로 옆 설정·후퇴 아이콘 버튼은 48인데, 매 턴 고쳐
+    // 잡는 지휘 판단이 제일 작은 과녁이었다.
+    await tester.binding.setSurfaceSize(const Size(390, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final snapshot = ExpeditionSnapshot.fromJson(_battleSnapshotJson());
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          expeditionControllerProvider.overrideWith(
+            () => _FakeExpeditionController(
+              ExpeditionUiState(
+                loading: false,
+                expedition: snapshot,
+                selectedMemberId: 11,
+              ),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const ExpeditionScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+    expectTapTargets(tester, screen: '전투');
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
