@@ -189,6 +189,53 @@ class ExpeditionCombatCommand(BaseModel):
     choice: str | None = Field(default=None, max_length=48)
 
 
+class JointGuardSlot(BaseModel):
+    """명단 한 자리. `plant_id`가 없으면 길잡이가 대신 선다."""
+
+    plant_id: int | None = Field(default=None, ge=1)
+    formation: str = Field(pattern="^(front|back)$")
+
+
+class JointGuardStartRequest(BaseModel):
+    beast_code: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9_]+$")
+    difficulty: str = Field(pattern="^(outer_walk|three_layers)$")
+    formation: list[JointGuardSlot] = Field(min_length=6, max_length=6)
+
+    @model_validator(mode="after")
+    def validate_formation(self) -> "JointGuardStartRequest":
+        if sum(1 for slot in self.formation if slot.formation == "front") != 3:
+            raise ValueError("전열은 3명이어야 합니다")
+        picked = [slot.plant_id for slot in self.formation if slot.plant_id is not None]
+        if len(picked) != len(set(picked)):
+            raise ValueError("같은 캐릭터를 두 번 넣을 수 없습니다")
+        return self
+
+
+class JointGuardCommand(BaseModel):
+    # 길잡이는 음수 id를 쓴다 - 보유 캐릭터 id와 겹치지 않게 하려는 것이라
+    # 여기서는 양수만 받는 다른 명령과 달리 부호를 제한하지 않는다.
+    member_id: int
+    action: str = Field(
+        pattern="^(attack|skill|unique_1|unique_2|selected_1|selected_2|guard)$"
+    )
+    choice: str | None = Field(default=None, max_length=48)
+
+
+class JointGuardTurnRequest(ExpeditionActionRequest):
+    command: JointGuardCommand
+
+
+class JointGuardSwapRequest(ExpeditionActionRequest):
+    out_member_id: int
+    in_member_id: int
+
+    @model_validator(mode="after")
+    def validate_pair(self) -> "JointGuardSwapRequest":
+        if self.out_member_id == self.in_member_id:
+            raise ValueError("같은 대원끼리는 교대할 수 없습니다")
+        return self
+
+
 class ExpeditionCombatTurnRequest(ExpeditionActionRequest):
     commands: list[ExpeditionCombatCommand] = Field(min_length=1, max_length=3)
     # 스테이지 개편의 순차 명령. True면 commands는 대원 한 명의 행동 하나만 담고,

@@ -2330,6 +2330,181 @@
         }
       }
     },
+    "/api/v1/adventure/joint-guard": {
+      "get": {
+        "tags": [
+          "joint-guard"
+        ],
+        "summary": "Joint Guard Entry",
+        "operationId": "joint_guard_entry_api_v1_adventure_joint_guard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "joint-guard"
+        ],
+        "summary": "Start Joint Guard",
+        "operationId": "start_joint_guard_api_v1_adventure_joint_guard_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JointGuardStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/joint-guard/active": {
+      "get": {
+        "tags": [
+          "joint-guard"
+        ],
+        "summary": "Active Joint Guard",
+        "operationId": "active_joint_guard_api_v1_adventure_joint_guard_active_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/joint-guard/{run_id}/turns": {
+      "post": {
+        "tags": [
+          "joint-guard"
+        ],
+        "summary": "Submit Joint Guard Turn",
+        "operationId": "submit_joint_guard_turn_api_v1_adventure_joint_guard__run_id__turns_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JointGuardTurnRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/joint-guard/{run_id}/swap": {
+      "post": {
+        "tags": [
+          "joint-guard"
+        ],
+        "summary": "Swap Joint Guard",
+        "operationId": "swap_joint_guard_api_v1_adventure_joint_guard__run_id__swap_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Run Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JointGuardSwapRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/skill-books": {
       "get": {
         "tags": [
@@ -2973,6 +3148,154 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "JointGuardCommand": {
+        "properties": {
+          "member_id": {
+            "type": "integer",
+            "title": "Member Id"
+          },
+          "action": {
+            "type": "string",
+            "pattern": "^(attack|skill|unique_1|unique_2|selected_1|selected_2|guard)$",
+            "title": "Action"
+          },
+          "choice": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 48
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Choice"
+          }
+        },
+        "type": "object",
+        "required": [
+          "member_id",
+          "action"
+        ],
+        "title": "JointGuardCommand"
+      },
+      "JointGuardSlot": {
+        "properties": {
+          "plant_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plant Id"
+          },
+          "formation": {
+            "type": "string",
+            "pattern": "^(front|back)$",
+            "title": "Formation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "formation"
+        ],
+        "title": "JointGuardSlot",
+        "description": "명단 한 자리. `plant_id`가 없으면 길잡이가 대신 선다."
+      },
+      "JointGuardStartRequest": {
+        "properties": {
+          "beast_code": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Beast Code"
+          },
+          "difficulty": {
+            "type": "string",
+            "pattern": "^(outer_walk|three_layers)$",
+            "title": "Difficulty"
+          },
+          "formation": {
+            "items": {
+              "$ref": "#/components/schemas/JointGuardSlot"
+            },
+            "type": "array",
+            "maxItems": 6,
+            "minItems": 6,
+            "title": "Formation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "beast_code",
+          "difficulty",
+          "formation"
+        ],
+        "title": "JointGuardStartRequest"
+      },
+      "JointGuardSwapRequest": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "client_action_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 8,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Client Action Id"
+          },
+          "out_member_id": {
+            "type": "integer",
+            "title": "Out Member Id"
+          },
+          "in_member_id": {
+            "type": "integer",
+            "title": "In Member Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "client_action_id",
+          "out_member_id",
+          "in_member_id"
+        ],
+        "title": "JointGuardSwapRequest"
+      },
+      "JointGuardTurnRequest": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "client_action_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 8,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Client Action Id"
+          },
+          "command": {
+            "$ref": "#/components/schemas/JointGuardCommand"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_revision",
+          "client_action_id",
+          "command"
+        ],
+        "title": "JointGuardTurnRequest"
       },
       "LoginRequest": {
         "properties": {

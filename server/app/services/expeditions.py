@@ -64,6 +64,7 @@ from app.models.plant import Plant, PlantSpecies
 from app.models.reward import RewardEvent
 from app.models.skill_book import PlantSkillLoadout
 from app.services import game as game_service
+from app.services import expedition_runs
 from app.services import skill_books as skill_book_service
 from app.services import skill_mastery
 from app.services import rewards
@@ -1663,51 +1664,12 @@ def _secure_stage_objective(db: AsyncSession, run: ExpeditionRun) -> None:
     )
 
 
-async def _lock_run(db: AsyncSession, user_id: int, run_id: int) -> ExpeditionRun:
-    run = await db.scalar(
-        sa.select(ExpeditionRun)
-        .where(ExpeditionRun.id == run_id, ExpeditionRun.user_id == user_id)
-        .with_for_update()
-    )
-    if run is None:
-        raise AppError(404, "EXPEDITION_NOT_FOUND", "탐험 기록을 찾을 수 없습니다.")
-    return run
-
-
-async def _existing_action(
-    db: AsyncSession,
-    run: ExpeditionRun,
-    client_action_id: str,
-    action_type: str,
-    request_payload: dict,
-) -> dict | None:
-    action = await db.scalar(
-        sa.select(ExpeditionAction).where(
-            ExpeditionAction.run_id == run.id,
-            ExpeditionAction.client_action_id == client_action_id,
-        )
-    )
-    if action is None:
-        return None
-    if action.action_type != action_type or action.request_payload != request_payload:
-        raise AppError(
-            409,
-            "EXPEDITION_ACTION_ID_CONFLICT",
-            "같은 행동 키로 다른 요청을 보냈습니다.",
-        )
-    return action.result_payload
-
-
-def _check_revision(run: ExpeditionRun, expected_revision: int) -> None:
-    if run.status != "active":
-        raise AppError(409, "EXPEDITION_FINISHED", "이미 끝난 탐험입니다.")
-    if run.revision != expected_revision:
-        raise AppError(
-            409,
-            "EXPEDITION_REVISION_CONFLICT",
-            "탐험 상태가 바뀌었습니다. 최신 지도를 불러와 주세요.",
-            {"expected_revision": expected_revision, "current_revision": run.revision},
-        )
+# 세 함수는 `expedition_runs`로 옮겼다. 합동 수호전이 같은 run 행을 쓰면서
+# 같은 잠금·멱등·revision 규칙이 필요해졌고, 사본을 두면 두 곳의 충돌 처리가
+# 갈라진다. 이 이름들은 호출부를 그대로 두려고 남긴 별칭이다.
+_lock_run = expedition_runs.lock_run
+_existing_action = expedition_runs.existing_action
+_check_revision = expedition_runs.check_revision
 
 
 async def _finish_action(
