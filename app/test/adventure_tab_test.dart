@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'tap_target.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/adventure/data/adventure_repository.dart';
 import 'package:mongroo/features/adventure/domain/adventure_models.dart';
@@ -331,6 +333,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expectTapTargets(tester, screen: '모험 탭');
 
     await tester.scrollUntilVisible(
       find.text('이번 주 탐험 약속'),

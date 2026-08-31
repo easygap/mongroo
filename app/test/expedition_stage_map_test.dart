@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'tap_target.dart';
 import 'package:mongroo/core/text/korean_particles.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/expedition/domain/expedition_models.dart';
@@ -220,6 +222,7 @@ Future<_FakeStageController> _pumpShell(
     ),
   );
   await tester.pump();
+    expectTapTargets(tester, screen: '스테이지 지도');
   return controller;
 }
 

@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'tap_target.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/mood/presentation/mood_entries_by_ids_screen.dart';
@@ -124,6 +126,7 @@ void main() {
       ),
     );
     await tester.pump();
+    expectTapTargets(tester, screen: '회고');
     await tester.pumpAndSettle();
     return openedArgs;
   }

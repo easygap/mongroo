@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'tap_target.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/mood/data/mood_repository.dart';
 import 'package:mongroo/features/mood/domain/mood_entry.dart';
@@ -74,6 +76,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expectTapTargets(tester, screen: '달력');
 
     expect(find.text('기록 달력'), findsOneWidget);
     expect(tester.takeException(), isNull);

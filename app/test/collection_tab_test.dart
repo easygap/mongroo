@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'tap_target.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/garden/domain/garden_models.dart';
 import 'package:mongroo/features/garden/presentation/collection_tab.dart';
@@ -81,6 +83,7 @@ void main() {
       collection,
       textScaler: const TextScaler.linear(2),
     );
+    expectTapTargets(tester, screen: '도감');
 
     expect(find.text('선인장'), findsOneWidget);
     expect(find.text('상점에서 첫 꾸미기 아이템을 만나 보세요.'), findsOneWidget);

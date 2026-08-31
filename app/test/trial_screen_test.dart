@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'tap_target.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/auth/presentation/auth_controller.dart';
 import 'package:mongroo/features/expedition/presentation/expedition_scene.dart';
@@ -87,6 +89,7 @@ void main() {
   testWidgets('가입 없이 일기부터 선택 탐험과 귀환까지 직접 진행한다', (tester) async {
     final storage = _MemoryTrialStorage();
     await _pumpTrial(tester, storage);
+    expectTapTargets(tester, screen: '체험');
 
     expect(find.text('회원가입 없는 로컬 체험'), findsOneWidget);
     expect(find.text('이 기기에만 저장'), findsOneWidget);

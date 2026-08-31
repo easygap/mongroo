@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'tap_target.dart';
 import 'package:mongroo/core/error/api_exception.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/gallery/data/gallery_repository.dart';
@@ -160,6 +162,7 @@ void main() {
 
   testWidgets('최근 식물을 최종 형태로 전시하고 상세 감정 분포를 연다', (tester) async {
     await pumpMuseum(tester, _FakeGalleryRepository(plants: [_sunnyPlant]));
+    expectTapTargets(tester, screen: '박물관');
     final semantics = tester.ensureSemantics();
 
     expect(find.text('마음 식물 박물관'), findsOneWidget);

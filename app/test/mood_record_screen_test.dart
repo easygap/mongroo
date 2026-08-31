@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'tap_target.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mongroo/core/error/api_exception.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
@@ -216,6 +218,7 @@ void main() {
 
   testWidgets('일기 본문이 비어 있으면 저장 버튼이 비활성화된다', (tester) async {
     await _pumpRecordScreen(tester, repository: FakeMoodRepository());
+    expectTapTargets(tester, screen: '기록 작성');
 
     expect(find.text('저장하기'), findsOneWidget);
     expect(_saveButton(tester).onPressed, isNull);
