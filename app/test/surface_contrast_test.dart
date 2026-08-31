@@ -96,4 +96,66 @@ void main() {
       );
     }
   });
+
+  test('색 구성표의 짝 전체가 두 테마에서 AA를 넘는다', () {
+    // 지금까지는 눈에 띈 짝 셋만 쟀다. 실제로 화면 대부분은
+    // `onSurfaceVariant`로 보조 문장을 쓰는데 그 짝은 검사에 없었다.
+    // 구성표가 정한 짝을 통째로 잰다 - 팔레트를 조금만 손봐도 여기서 걸린다.
+    //
+    // 밝은 테마의 `onSurfaceVariant/surface`가 4.69로 가장 아슬아슬하다.
+    // 이 값이 4.5 아래로 내려가면 앱 전체의 보조 문장이 한꺼번에 안 읽힌다.
+    for (final entry in {
+      '밝은': AppTheme.light(),
+      '어두운': AppTheme.dark(),
+    }.entries) {
+      final scheme = entry.value.colorScheme;
+      final pairs = <String, (Color, Color)>{
+        'onSurface/surface': (scheme.onSurface, scheme.surface),
+        'onSurfaceVariant/surface': (scheme.onSurfaceVariant, scheme.surface),
+        'onSurfaceVariant/surfaceContainerLowest': (
+          scheme.onSurfaceVariant,
+          scheme.surfaceContainerLowest,
+        ),
+        'onSurfaceVariant/surfaceContainer': (
+          scheme.onSurfaceVariant,
+          scheme.surfaceContainer,
+        ),
+        'onSurfaceVariant/surfaceContainerHighest': (
+          scheme.onSurfaceVariant,
+          scheme.surfaceContainerHighest,
+        ),
+        'onPrimary/primary': (scheme.onPrimary, scheme.primary),
+        'onPrimaryContainer/primaryContainer': (
+          scheme.onPrimaryContainer,
+          scheme.primaryContainer,
+        ),
+        'onSecondary/secondary': (scheme.onSecondary, scheme.secondary),
+        'onSecondaryContainer/secondaryContainer': (
+          scheme.onSecondaryContainer,
+          scheme.secondaryContainer,
+        ),
+        'onTertiary/tertiary': (scheme.onTertiary, scheme.tertiary),
+        'onTertiaryContainer/tertiaryContainer': (
+          scheme.onTertiaryContainer,
+          scheme.tertiaryContainer,
+        ),
+        'onError/error': (scheme.onError, scheme.error),
+        'onErrorContainer/errorContainer': (
+          scheme.onErrorContainer,
+          scheme.errorContainer,
+        ),
+        'onInverseSurface/inverseSurface': (
+          scheme.onInverseSurface,
+          scheme.inverseSurface,
+        ),
+      };
+      for (final pair in pairs.entries) {
+        expect(
+          contrastRatio(pair.value.$1, pair.value.$2),
+          greaterThanOrEqualTo(4.5),
+          reason: '${entry.key} 테마의 ${pair.key}',
+        );
+      }
+    }
+  });
 }
