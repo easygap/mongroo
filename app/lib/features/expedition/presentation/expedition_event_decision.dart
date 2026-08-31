@@ -36,6 +36,32 @@ class _EventDecisionPanel extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(event.text),
+          // 스킬이 판정 기준을 낮추면 미리보기 숫자는 조용히 내려간다. 왜
+          // 내려갔는지 말해 주지 않으면 스킬을 쓴 값을 받은 줄 모른다.
+          if (event.skillHint case final hint? when hint.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              key: const ValueKey('event-skill-hint'),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.auto_awesome_outlined,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.tertiary,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    hint,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.tertiary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (guardianEncounter) ...[
             const SizedBox(height: 12),
             _GuardianEncounterBrief(encounter: event.encounter!),

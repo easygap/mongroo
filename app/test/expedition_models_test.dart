@@ -4009,4 +4009,23 @@ void _freeWalkTests() {
     expect(expeditionDestinationRegion(const [], 'echo_well'), isNull);
   });
 
+  test('선택에 걸린 탐험 스킬이 남긴 문장을 사건이 들고 온다', () {
+    final event = ExpeditionEvent.fromJson(const {
+      'code': 'wet_labels',
+      'title': '젖은 이름표',
+      'text': '이름이 번진 이름표가 흩어져 있어요.',
+      'skill_hint': '이 선택이 남길 기록 종류를 결과 전에 확인했어요.',
+      'choices': [],
+    });
+    expect(event.skillHint, '이 선택이 남길 기록 종류를 결과 전에 확인했어요.');
+
+    // 스킬을 안 썼으면 없다. 없는 문장을 지어내지 않는다.
+    final plain = ExpeditionEvent.fromJson(const {
+      'code': 'wet_labels',
+      'title': '젖은 이름표',
+      'text': '이름이 번진 이름표가 흩어져 있어요.',
+      'choices': [],
+    });
+    expect(plain.skillHint, isNull);
+  });
 }

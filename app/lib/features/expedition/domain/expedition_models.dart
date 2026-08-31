@@ -526,6 +526,7 @@ class ExpeditionEvent {
     required this.title,
     required this.text,
     required this.spotlightMemberId,
+    this.skillHint,
     required this.encounter,
     this.battle,
     required this.choices,
@@ -535,6 +536,12 @@ class ExpeditionEvent {
   final String title;
   final String text;
   final int? spotlightMemberId;
+
+  /// 지금 걸려 있는 탐험 스킬이 이 선택에 무엇을 해 줬는지.
+  ///
+  /// 설화의 스킬은 판정 기준을 2 낮추고 이 문장을 남긴다. 기준이 내려간 것은
+  /// 미리보기 숫자로 보이지만, 왜 내려갔는지는 이 문장에만 있다.
+  final String? skillHint;
   final ExpeditionEncounter? encounter;
   final ExpeditionBattle? battle;
   final List<ExpeditionChoice> choices;
@@ -544,6 +551,7 @@ class ExpeditionEvent {
         code: json['code'] as String? ?? '',
         title: json['title'] as String? ?? '',
         text: json['text'] as String? ?? '',
+        skillHint: json['skill_hint'] as String?,
         spotlightMemberId: json['spotlight_member_id'] is num
             ? (json['spotlight_member_id'] as num).toInt()
             : null,
