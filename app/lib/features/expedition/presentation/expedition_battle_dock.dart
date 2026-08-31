@@ -373,17 +373,38 @@ class _BattleSettingRow extends StatelessWidget {
 }
 
 /// 순차 명령 카드 독 본체.
+/// 순차 명령 독. 무엇을 지휘하는지는 호출부가 정한다.
+///
+/// 스테이지 수호전과 합동 수호전이 같은 여섯 슬롯을 쓴다. 화면마다 사본을
+/// 만들면 비용·잠금·상성 표시가 조용히 갈라지므로, 필요한 것만 받아서
+/// 두 화면이 같은 독을 쓴다.
 class ExpeditionSequentialCommandDock extends ConsumerStatefulWidget {
   const ExpeditionSequentialCommandDock({
     super.key,
-    required this.expedition,
-    required this.event,
-    required this.state,
+    required this.battle,
+    required this.members,
+    required this.locked,
+    required this.fingerprintSeed,
+    required this.selectedMemberId,
+    required this.onSelectMember,
+    required this.onSubmit,
   });
 
-  final ExpeditionSnapshot expedition;
-  final ExpeditionEvent event;
-  final ExpeditionUiState state;
+  final ExpeditionBattle battle;
+
+  /// 슬롯이 이름과 스프라이트를 읽는 대원 목록.
+  final List<ExpeditionMember> members;
+
+  /// 지금 명령을 받을 수 없는 상태인가. 연출 중이거나 판이 끝났을 때 참이다.
+  final bool locked;
+
+  /// 이 값이 바뀌면 고른 대원을 비우고 AUTO를 다시 건다. run과 라운드처럼
+  /// `다른 판이 되었다`를 뜻하는 값을 넣는다.
+  final String fingerprintSeed;
+
+  final int? selectedMemberId;
+  final void Function(int memberId) onSelectMember;
+  final Future<bool> Function(ExpeditionCombatCommand command) onSubmit;
 
   @override
   ConsumerState<ExpeditionSequentialCommandDock> createState() =>
@@ -399,10 +420,10 @@ class _ExpeditionSequentialCommandDockState
   bool _detailsOpen = false;
   bool _skillIconsPrecached = false;
 
-  ExpeditionBattle get _battle => widget.event.battle!;
+  ExpeditionBattle get _battle => widget.battle;
 
   bool get _locked =>
-      widget.state.interactionLocked ||
+      widget.locked ||
       _submitting ||
       _detailsOpen ||
       !_battle.isActive;
@@ -442,7 +463,7 @@ class _ExpeditionSequentialCommandDockState
       _scheduleAuto();
       return;
     }
-    if (oldWidget.state.interactionLocked && !widget.state.interactionLocked) {
+    if (oldWidget.locked && !widget.locked) {
       _scheduleAuto();
     }
   }
@@ -454,7 +475,7 @@ class _ExpeditionSequentialCommandDockState
   }
 
   String _battleFingerprint() =>
-      '${widget.expedition.run.id}:${widget.expedition.run.revision}:'
+      '${widget.fingerprintSeed}:'
       '${_battle.round}:${_battle.pendingRound?.acted.join(',') ?? ''}';
 
   List<ExpeditionBattleMember> get _awaiting => _battle.awaitingParty;
@@ -462,15 +483,14 @@ class _ExpeditionSequentialCommandDockState
   ExpeditionBattleMember? get _actor {
     final awaiting = _awaiting;
     if (awaiting.isEmpty) return null;
-    return awaiting
-            .where((member) => member.memberId == _selectedMemberId)
-            .firstOrNull ??
+    // 독이 방금 고른 대원이 먼저고, 없으면 화면이 들고 있던 선택을 따른다.
+    final wanted = _selectedMemberId ?? widget.selectedMemberId;
+    return awaiting.where((member) => member.memberId == wanted).firstOrNull ??
         awaiting.first;
   }
 
-  ExpeditionMember? _plantOf(int memberId) => widget.expedition.party
-      .where((member) => member.id == memberId)
-      .firstOrNull;
+  ExpeditionMember? _plantOf(int memberId) =>
+      widget.members.where((member) => member.id == memberId).firstOrNull;
 
   /// 적의 예고 대상. front 의도는 이번 라운드 첫 행동 대원(아직 없으면 지금
   /// 고른 대원)을 노린다는 서버 규칙을 그대로 읽는다.
@@ -570,7 +590,7 @@ class _ExpeditionSequentialCommandDockState
     if (!_awaiting.any((member) => member.memberId == memberId)) return;
     HapticFeedback.selectionClick();
     setState(() => _selectedMemberId = memberId);
-    ref.read(expeditionControllerProvider.notifier).selectMember(memberId);
+    widget.onSelectMember(memberId);
   }
 
   Future<void> _submit(String actionCode) async {
@@ -591,15 +611,13 @@ class _ExpeditionSequentialCommandDockState
     HapticFeedback.mediumImpact();
     setState(() => _submitting = true);
     try {
-      final accepted = await ref
-          .read(expeditionControllerProvider.notifier)
-          .resolveCombatAction(
-            ExpeditionCombatCommand(
-              memberId: actor.memberId,
-              action: actionCode,
-              choice: choice,
-            ),
-          );
+      final accepted = await widget.onSubmit(
+        ExpeditionCombatCommand(
+          memberId: actor.memberId,
+          action: actionCode,
+          choice: choice,
+        ),
+      );
       if (accepted) {
         ref.read(expeditionBattleSettingsProvider.notifier).finishAssist();
       }
@@ -1032,6 +1050,11 @@ class _ExpeditionSequentialCommandDockState
             battle: battle,
             onTap: _showBattleDiscovery,
           ),
+          // 같은 라운드에 예고가 더 있으면 주 예고 **바로 아래**에 이어 붙인다.
+          // 합동 수호전의 잠꼬대가 여기 온다. 예고가 하나뿐인 전투에서는 이
+          // 목록이 비어 있어 화면이 달라지지 않는다.
+          for (final extra in battle.enemy.extraIntents)
+            _ExtraIntentLine(key: ValueKey('seq-dock-extra-${extra.code}'), intent: extra),
           const SizedBox(height: 7),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -1283,6 +1306,52 @@ class _IntentLine extends StatelessWidget {
     );
   }
 }
+
+/// 주 예고 아래에 한 줄 더 붙는 예고.
+///
+/// 스크린리더가 `주 의도` 다음에 `잠꼬대`를 읽도록 역할 이름을 앞에 붙인다.
+/// 위력과 대상은 주 예고와 같은 어휘를 쓰므로 다시 배울 것이 없다.
+class _ExtraIntentLine extends StatelessWidget {
+  const _ExtraIntentLine({super.key, required this.intent});
+
+  final ExpeditionBattleIntent intent;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: '잠꼬대. ${intent.name}. ${intent.telegraph}',
+      child: ExcludeSemantics(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.bedtime_outlined,
+                size: 14,
+                color: scheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${intent.name} · ${intent.telegraph}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
 class _DiscoverySheetLine extends StatelessWidget {
   const _DiscoverySheetLine({

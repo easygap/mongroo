@@ -304,6 +304,7 @@ class ExpeditionBattleEnemy {
     required this.weakness,
     required this.weaknessLabel,
     required this.intent,
+    this.extraIntents = const [],
     this.nextIntent,
     this.elite = false,
     this.weakElement,
@@ -322,6 +323,10 @@ class ExpeditionBattleEnemy {
   final String weakness;
   final String weaknessLabel;
   final ExpeditionBattleIntent intent;
+
+  /// 같은 라운드에 함께 오는 예고들. 합동 수호전의 잠꼬대와 여운이 여기
+  /// 들어오고, 예고가 하나뿐인 전투에서는 비어 있다.
+  final List<ExpeditionBattleIntent> extraIntents;
 
   /// 다음 라운드 예고. `잔향 읽기`를 쓴 전투에서만 서버가 열어 준다.
   ///
@@ -348,6 +353,10 @@ class ExpeditionBattleEnemy {
         weakness: json['weakness'] as String? ?? 'insight',
         weaknessLabel: json['weakness_label'] as String? ?? '관찰',
         intent: ExpeditionBattleIntent.fromJson(_combatMap(json['intent'])),
+        extraIntents: (json['extra_intents'] as List? ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .map(ExpeditionBattleIntent.fromJson)
+            .toList(growable: false),
         nextIntent: json['next_intent'] is Map<String, dynamic>
             ? ExpeditionBattleIntent.fromJson(
                 json['next_intent'] as Map<String, dynamic>,

@@ -264,6 +264,30 @@ def swap_joint_guard_member(
     return state
 
 
+#: 명단 한 명이 화면으로 나가는 필드. 스냅샷을 통째로 흘려보내지 않는다 -
+#: 화면이 안 읽는 값(경험치·능력치 상한 계산 재료 등)까지 나가면 응답이
+#: 커지고, `재화가 없어야 한다`는 계약도 흐려진다.
+MEMBER_FIELDS = ("name", "species", "stage", "form", "outfit_key", "stats")
+
+
+def _member_payload(entry: dict[str, Any]) -> dict[str, Any]:
+    """대원 한 명. 스프라이트를 그릴 만큼만 담는다."""
+    snapshot = entry["profile"].get("snapshot", {})
+    payload = {key: snapshot.get(key) for key in MEMBER_FIELDS}
+    payload.update(
+        {
+            # 앱의 대원 모델은 `id`를, 교대 조작은 `member_id`를 읽는다.
+            "id": int(entry["member_id"]),
+            "member_id": int(entry["member_id"]),
+            "is_guide": bool(entry["profile"].get("is_guide")),
+            "formation": str(entry["formation"]),
+            "hp": int(entry["hp"] or 0),
+            "max_hp": int(entry["max_hp"] or 0),
+        }
+    )
+    return payload
+
+
 def joint_guard_payload(state: dict[str, Any]) -> dict[str, Any]:
     """앱이 읽는 모양. 경제 보상은 어디에도 없다(설계서 6장)."""
     beast = BEAST_CATALOG[str(state["beast_code"])]
@@ -299,23 +323,9 @@ def joint_guard_payload(state: dict[str, Any]) -> dict[str, Any]:
         "swaps_left": max(
             0, SWAPS_PER_ROUND - int(state.get("swaps_used_this_round", 0))
         ),
-        "front": [
-            {
-                "member_id": int(entry["member_id"]),
-                "name": entry["profile"].get("snapshot", {}).get("name", "대원"),
-                "hp": int(entry["hp"] or 0),
-                "max_hp": int(entry["max_hp"] or 0),
-            }
-            for entry in _front_entries(state)
-        ],
+        "front": [_member_payload(entry) for entry in _front_entries(state)],
         "reserves": [
-            {
-                "member_id": int(entry["member_id"]),
-                "name": entry["profile"].get("snapshot", {}).get("name", "대원"),
-                "hp": int(entry["hp"] or 0),
-                "max_hp": int(entry["max_hp"] or 0),
-                "can_swap_in": int(entry["hp"] or 0) > 0,
-            }
+            {**_member_payload(entry), "can_swap_in": int(entry["hp"] or 0) > 0}
             for entry in state["roster"]
             if entry["formation"] == "back"
         ],

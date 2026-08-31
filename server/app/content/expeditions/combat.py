@@ -1256,6 +1256,15 @@ def guardian_battle_payload(
                 state.get("resist_kel"), state.get("resist_kel")
             ),
             "intent": intent,
+            # 같은 라운드에 함께 오는 예고들. 합동 수호전의 잠꼬대와 여운이
+            # 여기로 오고, 앱은 주 예고 아래에 한 줄씩 더 읽는다. 예고가 하나뿐인
+            # 기존 전투에서는 빈 목록이라 화면이 달라지지 않는다.
+            "extra_intents": _round_secondary_intents(
+                encounter,
+                int(state.get("intent_index", 0)),
+                wave=wave,
+                boss_phase=boss_phase,
+            ),
             # 잔향 읽기 — 다음 라운드 예고를 미리 열어 준다. 공정한 선택 정보라
             # 숨기지 않고, 책을 쓰지 않은 전투에서는 아예 나타나지 않는다.
             "next_intent": (

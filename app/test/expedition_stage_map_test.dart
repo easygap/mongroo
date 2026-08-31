@@ -572,15 +572,39 @@ void main() {
 
     await _pumpShell(tester, clearedCount: 8, deep: true);
 
-    // 지역을 다 깨도 열리지 않는다. `조건을 채우면 열린다`고 약속하지 않는다.
-    expect(find.text('합동 수호전'), findsOneWidget);
+    // 장거리 개척은 아직 서버에 없다. `조건을 채우면 열린다`고 약속하지 않고
+    // 준비 중이라고 그대로 말한다.
     expect(find.text('장거리 개척'), findsOneWidget);
-    expect(find.text('아직 만들고 있어요.'), findsNWidgets(2));
-    expect(find.byKey(const ValueKey('hub-entry-합동 수호전')), findsNothing);
+    expect(find.text('아직 만들고 있어요.'), findsOneWidget);
     expect(find.byKey(const ValueKey('hub-entry-장거리 개척')), findsNothing);
 
     // 순찰은 탐험 탭이 들고 있으므로 여기서는 진입만 열려 있다.
     expect(find.byKey(const ValueKey('hub-entry-자동 순찰')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('수호짐승을 만나 본 뒤에는 합동 수호전 입구가 선다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpShell(tester, clearedCount: 8, deep: true);
+
+    expect(find.text('합동 수호전'), findsOneWidget);
+    expect(find.byKey(const ValueKey('hub-entry-합동 수호전')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('아직 수호짐승을 못 만났으면 합동 수호전이 이유와 함께 잠긴다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpShell(tester, clearedCount: 2);
+
+    expect(find.byKey(const ValueKey('hub-entry-합동 수호전')), findsNothing);
+    expect(
+      find.text('수호짐승의 장벽을 한 번 열면 관리인이 편지를 보내요.'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 }

@@ -27,9 +27,15 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
         expedition.party.firstOrNull;
 
     final Widget commandDock = ExpeditionSequentialCommandDock(
-      expedition: expedition,
-      event: event,
-      state: state,
+      battle: battle,
+      members: expedition.party,
+      locked: state.interactionLocked,
+      fingerprintSeed: '${expedition.run.id}:${expedition.run.revision}',
+      selectedMemberId: state.selectedMemberId,
+      onSelectMember:
+          ref.read(expeditionControllerProvider.notifier).selectMember,
+      onSubmit:
+          ref.read(expeditionControllerProvider.notifier).resolveCombatAction,
     );
     final topBar = ExpeditionBattleTopBar(
       battle: battle,

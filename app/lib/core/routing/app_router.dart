@@ -10,6 +10,7 @@ import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/chat/presentation/chat_screen.dart';
 import '../../features/expedition/presentation/expedition_screen.dart';
+import '../../features/expedition/presentation/joint_guard_screen.dart';
 import '../../features/expedition/presentation/skill_book_screen.dart';
 import '../../features/gallery/presentation/gallery_screen.dart';
 import '../../features/garden/presentation/garden_screen.dart';
@@ -154,6 +155,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/expedition',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const ExpeditionScreen(),
+      ),
+      GoRoute(
+        path: '/joint-guard',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const JointGuardScreen(),
       ),
       GoRoute(
         // 장착은 출발 전과 캐릭터 상세 두 곳에서 연다. 전투 중에는 열지 않는다.

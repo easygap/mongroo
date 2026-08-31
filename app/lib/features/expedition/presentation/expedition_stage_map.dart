@@ -93,6 +93,10 @@ class _ExpeditionHub extends ConsumerWidget {
     // 카탈로그의 `deepAvailable`은 첫 지역 기준이라, 지역을 옮기고 나면
     // 잠긴 곳이 열린 것처럼 보인다.
     final deepAvailable = stageMap.regionCleared;
+    // 합동 수호전은 지역별이 아니라 계정 단위로 열린다. 한 지역이라도
+    // 수호짐승을 만나 봤으면 입구가 선다.
+    final jointGuardOpen = stageMap.regions.any((region) => region.cleared) ||
+        stageMap.regionCleared;
     return [
       _HubEntry(
         icon: Icons.hiking_rounded,
@@ -114,12 +118,19 @@ class _ExpeditionHub extends ConsumerWidget {
             : '${stageMap.region.shortName} 8까지 완주하면 열려요.',
         onTap: deepAvailable ? notifier.openDeepPreparation : null,
       ),
-      const _HubEntry(
+      _HubEntry(
         icon: Icons.groups_2_rounded,
         title: '합동 수호전',
         description: '여섯이서 깊이 잠든 수호짐승을 깨워 줘요.',
-        lockReason: '아직 만들고 있어요.',
-        comingSoon: true,
+        // 수호짐승의 장벽을 **어디서든** 한 번 열면 입구가 상시 열린다.
+        // 지금 보고 있는 지역으로 재면, 첫 지역을 깬 사람이 다음 지역
+        // 지도를 보는 동안 잠긴 것처럼 보인다.
+        lockReason: jointGuardOpen
+            ? null
+            : '수호짐승의 장벽을 한 번 열면 관리인이 편지를 보내요.',
+        onTap: jointGuardOpen
+            ? () => context.push('/joint-guard')
+            : null,
       ),
       const _HubEntry(
         icon: Icons.map_outlined,
