@@ -108,6 +108,24 @@ class AuthRepository {
     }
   }
 
+  /// 이 계정의 모든 로그인 세션을 서버에서 끊는다.
+  ///
+  /// 지금 쓰는 기기도 함께 끊긴다 — 서버가 폐기하지 않은 세션 전부를 지우고,
+  /// 접근 토큰 검사도 매번 세션이 살아 있는지 본다. 잃어버린 기기에 열려
+  /// 있는 일기를 닫는 것이 목적이므로 그게 맞는 동작이다.
+  ///
+  /// `logout()`과 달리 실패를 삼키지 않는다. 여기서 조용히 넘어가면 사용자는
+  /// 다른 기기가 끊긴 줄 알고 화면을 닫는다.
+  Future<void> logoutAllDevices() async {
+    await guardApi(() => _dio.post<void>('/auth/logout-all'));
+    try {
+      await _tokenStore.clear();
+    } catch (_) {
+      // 서버가 이미 다 끊었으므로 남은 토큰은 다음 요청에서 어차피 거절된다.
+      // 저장소 정리 실패를 `못 끊었다`로 보여 주지 않는다.
+    }
+  }
+
   Future<User> _applyAuthResponse(Map<String, dynamic> body) async {
     final access = body['access_token'] as String?;
     final refresh = body['refresh_token'] as String?;

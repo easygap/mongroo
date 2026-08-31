@@ -55,6 +55,58 @@ async def test_logout_revokes_session(client):
     assert res.status_code == 401
 
 
+async def test_logout_all_revokes_every_session_including_the_caller(client):
+    """잃어버린 기기에 열려 있는 일기를 닫는 것이 이 API의 목적이다.
+
+    그러려면 지금 부른 기기까지 함께 끊겨야 한다. 남는 세션이 하나라도 있으면
+    `모두 로그아웃`이라고 말할 수 없다.
+    """
+
+    first = await signup(client, email="logout-all@example.com")
+    second = await client.post(
+        "/auth/login",
+        json={"email": "logout-all@example.com", "password": "password123"},
+    )
+    assert second.status_code == 200
+    second_tokens = second.json()
+    assert second_tokens["refresh_token"] != first["refresh_token"]
+
+    res = await client.post("/auth/logout-all", headers=auth_headers(first))
+    assert res.status_code == 204
+
+    # 다른 기기의 세션이 끊긴다.
+    res = await client.post(
+        "/auth/refresh", json={"refresh_token": second_tokens["refresh_token"]}
+    )
+    assert res.status_code == 401
+    res = await client.get("/users/me", headers=auth_headers(second_tokens))
+    assert res.status_code == 401
+
+    # 호출한 기기도 함께 끊긴다.
+    res = await client.get("/users/me", headers=auth_headers(first))
+    assert res.status_code == 401
+    res = await client.post(
+        "/auth/refresh", json={"refresh_token": first["refresh_token"]}
+    )
+    assert res.status_code == 401
+
+    # 계정은 남아 있어 다시 로그인하면 그대로 이어진다.
+    res = await client.post(
+        "/auth/login",
+        json={"email": "logout-all@example.com", "password": "password123"},
+    )
+    assert res.status_code == 200
+    assert res.json()["user"]["email"] == "logout-all@example.com"
+
+
+async def test_logout_all_requires_a_live_session(client):
+    tokens = await signup(client, email="logout-all-guard@example.com")
+    await client.post("/auth/logout-all", headers=auth_headers(tokens))
+
+    res = await client.post("/auth/logout-all", headers=auth_headers(tokens))
+    assert res.status_code == 401
+
+
 async def test_signup_creates_default_plant(client):
     tokens = await signup(client)
     res = await client.get("/plants/me", headers=auth_headers(tokens))

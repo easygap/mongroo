@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/core/api/token_store.dart';
+import 'package:mongroo/core/error/api_exception.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/auth/data/auth_repository.dart';
 import 'package:mongroo/features/auth/presentation/account_screen.dart';
@@ -39,6 +40,8 @@ class _AccountRepository extends AuthRepository {
 
   int exportCalls = 0;
   int deleteCalls = 0;
+  int logoutAllCalls = 0;
+  ApiException? logoutAllError;
 
   @override
   Future<Map<String, dynamic>> exportAccount() async {
@@ -60,6 +63,13 @@ class _AccountRepository extends AuthRepository {
     required String confirmation,
   }) async {
     deleteCalls++;
+  }
+
+  @override
+  Future<void> logoutAllDevices() async {
+    logoutAllCalls++;
+    final error = logoutAllError;
+    if (error != null) throw error;
   }
 
   @override
@@ -105,6 +115,60 @@ void main() {
     );
     await tester.pump();
   }
+
+  testWidgets('모든 기기 로그아웃은 이 기기도 끊긴다고 먼저 알린다', (tester) async {
+    final repository = _AccountRepository();
+    await pumpAccount(tester, repository);
+
+    final button = find.byKey(const Key('account-logout-all'));
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+
+    // 누르자마자 끊지 않는다. 이 기기까지 로그아웃된다는 사실이 먼저다.
+    expect(repository.logoutAllCalls, 0);
+    expect(find.text('모든 기기에서 로그아웃할까요?'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.textContaining('이 기기도 함께 로그아웃돼요'),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('account-logout-all-confirm')));
+    // 성공하면 버튼이 진행 표시로 남는다. 라우터가 로그인 화면으로 옮길
+    // 때까지 도는 표시라 `pumpAndSettle`은 영영 끝나지 않는다.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(repository.logoutAllCalls, 1);
+    expect(find.text('로그아웃하는 중…'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('서버가 못 끊으면 이유를 보여 주고 로그인 상태를 지킨다', (tester) async {
+    // 여기서 조용히 화면만 닫으면 사용자는 다른 기기가 끊긴 줄 안다.
+    final repository = _AccountRepository()
+      ..logoutAllError = const ApiException(
+        code: 'AUTH_TOKEN_INVALID',
+        message: '다시 로그인해 주세요.',
+      );
+    await pumpAccount(tester, repository);
+
+    final button = find.byKey(const Key('account-logout-all'));
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('account-logout-all-confirm')));
+    await tester.pumpAndSettle();
+
+    expect(repository.logoutAllCalls, 1);
+    expect(find.text('다시 로그인해 주세요.'), findsOneWidget);
+    expect(find.byKey(const Key('account-logout-all')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('소리는 전투에 들어가지 않고도 계정 화면에서 끌 수 있다', (tester) async {
     // 이 값은 전투뿐 아니라 던전 발걸음·지도 확정음·모험 탭 cue·발견음을

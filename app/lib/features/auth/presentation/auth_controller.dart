@@ -120,6 +120,19 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
+  /// 모든 기기의 로그인을 끊는다. 성공하면 이 기기도 로그인 화면으로 돌아간다.
+  Future<String?> logoutAllDevices() async {
+    try {
+      await ref.read(authRepositoryProvider).logoutAllDevices();
+      state = const AuthState(status: AuthStatus.signedOut);
+      return null;
+    } on ApiException catch (error) {
+      // 서버가 못 끊었는데 화면만 닫으면 `끊었다`고 착각하게 된다. 이 기기는
+      // 로그인된 채로 두고 이유를 보여 준다.
+      return error.message;
+    }
+  }
+
   Future<String?> deleteAccount({
     required String password,
     required String confirmation,

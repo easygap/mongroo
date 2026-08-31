@@ -21,9 +21,13 @@ class AccountScreen extends ConsumerStatefulWidget {
 class _AccountScreenState extends ConsumerState<AccountScreen> {
   bool _exporting = false;
   bool _deleting = false;
+  bool _signingOutAll = false;
+
+  /// 오래 걸리는 계정 작업이 도는 동안에는 다른 계정 작업을 열지 않는다.
+  bool get _busy => _exporting || _deleting || _signingOutAll;
 
   Future<void> _exportAccount() async {
-    if (_exporting || _deleting) return;
+    if (_busy) return;
     setState(() => _exporting = true);
     try {
       final payload = await ref.read(authRepositoryProvider).exportAccount();
@@ -52,8 +56,43 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     }
   }
 
+  Future<void> _logoutAllDevices() async {
+    if (_busy) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('모든 기기에서 로그아웃할까요?'),
+        content: const Text(
+          '이 기기도 함께 로그아웃돼요. 기록과 캐릭터는 그대로 남고, 다시 로그인하면 이어서 볼 수 있어요.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            key: const Key('account-logout-all-confirm'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('모두 로그아웃'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _signingOutAll = true);
+    final error =
+        await ref.read(authControllerProvider.notifier).logoutAllDevices();
+    if (!mounted) return;
+    // 성공하면 라우터가 로그인 화면으로 옮기므로 여기서 상태를 되돌리지 않는다.
+    if (error != null) {
+      setState(() => _signingOutAll = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error)));
+    }
+  }
+
   Future<void> _deleteAccount() async {
-    if (_exporting || _deleting) return;
+    if (_busy) return;
     final credentials = await showDialog<_DeleteCredentials>(
       context: context,
       barrierDismissible: false,
@@ -79,7 +118,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     final user = ref.watch(authControllerProvider).user;
     final scheme = Theme.of(context).colorScheme;
     return PopScope(
-      canPop: !_deleting,
+      canPop: !_deleting && !_signingOutAll,
       child: Scaffold(
         appBar: AppBar(title: const Text('계정과 데이터')),
         body: ListView(
@@ -130,8 +169,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                     ),
                     const SizedBox(height: 12),
                     FilledButton.tonalIcon(
-                      onPressed:
-                          _exporting || _deleting ? null : _exportAccount,
+                      onPressed: _busy ? null : _exportAccount,
                       icon: _exporting
                           ? const SizedBox.square(
                               dimension: 18,
@@ -143,6 +181,37 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                     const SizedBox(height: 24),
                     const Divider(),
                     const SizedBox(height: 16),
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    Text(
+                      '로그인한 기기',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w900,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '다른 기기에 로그인한 채로 두고 왔다면 여기서 한 번에 끊을 수 있어요. 지금 이 기기도 함께 로그아웃돼요.',
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      key: const Key('account-logout-all'),
+                      onPressed: _busy ? null : _logoutAllDevices,
+                      icon: _signingOutAll
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.devices_other_outlined),
+                      label: Text(
+                        _signingOutAll ? '로그아웃하는 중…' : '모든 기기에서 로그아웃',
+                      ),
+                    ),
                     // 소리 설정은 전투 HUD 안에만 있었다. 그런데 그 값은 던전
                     // 발걸음·지도 확정음·모험 탭 cue·발견음까지 다스린다.
                     // 소리를 끄려고 전투에 들어가야 하는 건 설정이 아니다.
@@ -173,9 +242,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                     ),
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
-                      onPressed: _exporting || _deleting
-                          ? null
-                          : () => context.push('/trial'),
+                      onPressed: _busy ? null : () => context.push('/trial'),
                       icon: const Icon(Icons.school_outlined),
                       label: const Text('처음 사용 가이드 다시 보기'),
                     ),
@@ -190,7 +257,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                     ]) ...[
                       OutlinedButton.icon(
                         key: Key('account-legal-${legal.$1}'),
-                        onPressed: _exporting || _deleting
+                        onPressed: _busy
                             ? null
                             : () => context.push('/legal/${legal.$1}'),
                         icon: const Icon(Icons.article_outlined),
@@ -199,7 +266,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                       const SizedBox(height: 8),
                     ],
                     OutlinedButton.icon(
-                      onPressed: _exporting || _deleting
+                      onPressed: _busy
                           ? null
                           : () => showLicensePage(
                                 context: context,
@@ -232,8 +299,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                         foregroundColor: scheme.error,
                         side: BorderSide(color: scheme.error),
                       ),
-                      onPressed:
-                          _exporting || _deleting ? null : _deleteAccount,
+                      onPressed: _busy ? null : _deleteAccount,
                       icon: _deleting
                           ? const SizedBox.square(
                               dimension: 18,
@@ -252,7 +318,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     );
   }
 }
-
 
 /// 계정 화면에서 소리 단계를 바꾸는 버튼.
 ///
