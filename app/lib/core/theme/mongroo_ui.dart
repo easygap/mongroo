@@ -90,7 +90,9 @@ class MongrooTag extends StatelessWidget {
       final labelText = Text(
         label,
         maxLines: 1,
-        overflow: resolvedMaxWidth == null ? null : TextOverflow.ellipsis,
+        // 항상 말줄임이다. 예전에는 `maxWidth`를 준 태그만 줄였는데, 폭을
+        // 안 준 태그는 글자가 커지면 줄지 못하고 부모를 넘겼다.
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: foreground,
           fontSize: 12,
@@ -125,7 +127,11 @@ class MongrooTag extends StatelessWidget {
                 Icon(icon, size: 14, color: foreground),
                 const SizedBox(width: 5),
               ],
-              constrainedLabel,
+              // 받은 폭 안에서 줄어든다. `maxWidth`를 안 넘긴 태그는 글자가
+              // 커질 때 제 자연 크기를 고집하다 320px·200%에서 부모 Row를
+              // 30px 넘겼다 - 기록 상세의 `읽힌 감정` 태그가 그랬다.
+              // Flexible이면 남은 자리에 맞춰 말줄임으로 접힌다.
+              Flexible(child: constrainedLabel),
             ],
           ),
         ),

@@ -134,6 +134,56 @@ class _MoodDetailScreenState extends ConsumerState<MoodDetailScreen> {
     }
   }
 
+  /// 상단 바의 `수정`·`삭제`. 글자가 커지면 더보기 안으로 접는다.
+  ///
+  /// 320px에 글자 200%면 뒤로가기 + 제목 + 두 글자 버튼이 상단 바를 30px
+  /// 넘겨서 `삭제`가 잘려 나갔다. 글자를 키워 쓰는 사람이 자기가 쓴 기록을
+  /// 지울 수 없다는 뜻이다. 말을 아이콘으로 바꾸는 대신 넘칠 때만 접는다 —
+  /// 한 번 더 누르는 편이 화면 밖으로 사라지는 것보다 낫고, 메뉴 안에서는
+  /// 같은 단어를 그대로 읽어 준다.
+  List<Widget> _appBarActions(BuildContext context) {
+    if (MediaQuery.textScalerOf(context).scale(1) >= 1.5) {
+      return [
+        PopupMenuButton<String>(
+          tooltip: '기록 메뉴',
+          enabled: !_mutating,
+          onSelected: (value) {
+            if (value == 'edit') {
+              context.push('/moods/${widget.moodId}/edit');
+              return;
+            }
+            _delete();
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(value: 'edit', child: Text('수정')),
+            PopupMenuItem(
+              value: 'delete',
+              child: Text(
+                '삭제',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          ],
+        ),
+      ];
+    }
+    return [
+      TextButton(
+        onPressed: _mutating
+            ? null
+            : () => context.push('/moods/${widget.moodId}/edit'),
+        child: const Text('수정'),
+      ),
+      TextButton(
+        onPressed: _mutating ? null : _delete,
+        child: Text(
+          '삭제',
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final detailAsync = ref.watch(moodDetailProvider(widget.moodId));
@@ -141,21 +191,7 @@ class _MoodDetailScreenState extends ConsumerState<MoodDetailScreen> {
       appBar: AppBar(
         title: const Text('기록 상세'),
         actions: [
-          if (detailAsync.hasValue) ...[
-            TextButton(
-              onPressed: _mutating
-                  ? null
-                  : () => context.push('/moods/${widget.moodId}/edit'),
-              child: const Text('수정'),
-            ),
-            TextButton(
-              onPressed: _mutating ? null : _delete,
-              child: Text(
-                '삭제',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          ],
+          if (detailAsync.hasValue) ..._appBarActions(context),
         ],
       ),
       body: detailAsync.when(

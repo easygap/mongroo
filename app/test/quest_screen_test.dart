@@ -8,6 +8,8 @@ import 'package:mongroo/features/quest/data/quest_repository.dart';
 import 'package:mongroo/features/quest/domain/daily_quest.dart';
 import 'package:mongroo/features/quest/presentation/quest_screen.dart';
 
+import 'tap_target.dart';
+
 const _assigned = DailyQuest(
   id: 7,
   questDate: '2026-07-16',
@@ -58,8 +60,9 @@ class _QuestRepository extends QuestRepository {
 }
 
 Future<(_QuestRepository, GoRouter)> _pumpScreen(
-  WidgetTester tester,
-) async {
+  WidgetTester tester, {
+  double textScale = 1,
+}) async {
   final repository = _QuestRepository();
   final router = GoRouter(
     initialLocation: '/quests',
@@ -91,6 +94,12 @@ Future<(_QuestRepository, GoRouter)> _pumpScreen(
       child: MaterialApp.router(
         theme: AppTheme.light(),
         routerConfig: router,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScale),
+          ),
+          child: child!,
+        ),
       ),
     ),
   );
@@ -140,5 +149,20 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('홈 화면'), findsOneWidget);
+  });
+
+  testWidgets('320px 200% 글자에서도 작은 행동이 넘치지 않는다', (tester) async {
+    // 품질 점검표 기준은 320px·글자 200%인데 이 화면만 그 조건으로 도는
+    // 테스트가 없었다. 하루에 한 번 여는 화면이라 조작이 잘리면 그날 할 일을
+    // 아예 시작할 수 없다.
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await _pumpScreen(tester, textScale: 2);
+
+    expect(find.text('창가의 빛 3분 보기'), findsOneWidget);
+    expectTapTargets(tester, screen: '작은 행동');
+    expect(tester.takeException(), isNull);
   });
 }

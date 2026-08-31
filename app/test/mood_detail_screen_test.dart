@@ -5,6 +5,8 @@ import 'package:mongroo/features/mood/data/mood_repository.dart';
 import 'package:mongroo/features/mood/domain/mood_entry.dart';
 import 'package:mongroo/features/mood/presentation/mood_detail_screen.dart';
 
+import 'tap_target.dart';
+
 class _DetailMoodRepository implements MoodRepository {
   _DetailMoodRepository(this.entry);
 
@@ -97,6 +99,39 @@ void main() {
     expect(find.text('내 태그'), findsNothing);
     expect(find.text('고른 태그가 없어요.'), findsNothing);
     expect(find.text('오늘의 기록'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('320px 200% 글자에서도 기록과 조작이 넘치지 않는다', (tester) async {
+    // 품질 점검표의 기준은 320px·글자 200%인데 이 화면만 그 조건으로 도는
+    // 테스트가 없었다. 쓴 글을 다시 읽는 자리라 글자를 키워 보는 사람이
+    // 가장 먼저 오는 화면이기도 하다.
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          moodRepositoryProvider.overrideWithValue(
+            _DetailMoodRepository(_entry(emotionTags: const ['기쁨'])),
+          ),
+        ],
+        child: MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: const TextScaler.linear(2),
+            ),
+            child: child!,
+          ),
+          home: const MoodDetailScreen(moodId: 9),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('오늘의 기록'), findsOneWidget);
+    expectTapTargets(tester, screen: '기록 상세');
     expect(tester.takeException(), isNull);
   });
 }

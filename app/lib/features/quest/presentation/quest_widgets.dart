@@ -332,7 +332,11 @@ class _RewardFact extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: color),
           const SizedBox(width: 5),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+          // 보상 숫자는 줄이면 안 되는 값이라 말줄임 대신 줄바꿈으로 접는다.
+          // 320px에 글자 200%면 `최대 +20 XP` 한 줄이 이 칸을 49px 넘겼다.
+          Flexible(
+            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+          ),
         ],
       );
 }
