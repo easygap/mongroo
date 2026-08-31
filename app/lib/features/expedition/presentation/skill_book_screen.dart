@@ -113,7 +113,11 @@ class _LoadoutBody extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         for (final book in library.catalog)
-          _BookRow(book: book, key: ValueKey('book-${book.code}')),
+          _BookRow(
+            book: book,
+            progress: library.progressFor(book.code),
+            key: ValueKey('book-${book.code}'),
+          ),
       ],
     );
   }
@@ -365,9 +369,12 @@ Color skillBookGradeColor(int grade, ColorScheme scheme) => switch (grade) {
     };
 
 class _BookRow extends StatelessWidget {
-  const _BookRow({super.key, required this.book});
+  const _BookRow({super.key, required this.book, this.progress});
 
   final SkillBook book;
+
+  /// 조건이 얼마나 찼는지. 서버가 세어 준 값이며 조건 없는 책에는 없다.
+  final SkillBookUnlockProgress? progress;
 
   @override
   Widget build(BuildContext context) {
@@ -426,10 +433,30 @@ class _BookRow extends StatelessWidget {
                 ),
                 if (!book.owned)
                   Flexible(
-                    child: Text(
-                      book.acquireLabel,
-                      style: theme.textTheme.labelSmall,
-                      textAlign: TextAlign.end,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          book.acquireLabel,
+                          style: theme.textTheme.labelSmall,
+                          textAlign: TextAlign.end,
+                        ),
+                        // 조건만 적고 얼마나 왔는지 안 적으면 `30회`가
+                        // 시작인지 끝인지 알 수 없다. 서버가 세어 보내는
+                        // 값을 그대로 보여 준다.
+                        if (progress case final counter?)
+                          Text(
+                            '${counter.current} / ${counter.goal}',
+                            key: ValueKey('book-progress-${book.code}'),
+                            textAlign: TextAlign.end,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: counter.complete
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
                     ),
                   ),
               ],

@@ -203,12 +203,58 @@ class SkillLoadout {
   }
 }
 
+/// 아직 없는 책의 조건이 얼마나 찼는지.
+///
+/// 서버가 세어서 내려 준다. 앱이 다시 세면 판정과 화면이 어긋나고, 무엇보다
+/// `수호자 장벽 3종 열기`처럼 가짓수를 묻는 조건은 앱에 셀 근거가 없다.
+class SkillBookUnlockProgress {
+  const SkillBookUnlockProgress({
+    required this.code,
+    required this.source,
+    required this.current,
+    required this.goal,
+    required this.owned,
+  });
+
+  final String code;
+
+  /// `unlock`이면 조건 달성, `challenge`면 도전 과제다.
+  final String source;
+  final int current;
+  final int goal;
+  final bool owned;
+
+  bool get complete => goal > 0 && current >= goal;
+
+  /// 0~1. 목표가 0이면(있을 수 없지만) 0으로 둔다.
+  double get ratio => goal <= 0 ? 0 : (current / goal).clamp(0, 1).toDouble();
+
+  factory SkillBookUnlockProgress.fromJson(Map<String, dynamic> json) =>
+      SkillBookUnlockProgress(
+        code: json['code'] as String? ?? '',
+        source: json['source'] as String? ?? 'unlock',
+        current: _asInt(json['current']),
+        goal: _asInt(json['goal'], 1),
+        owned: json['owned'] == true,
+      );
+}
+
 /// 서고 화면 한 번에 필요한 것.
 class SkillBookLibrary {
-  const SkillBookLibrary({required this.catalog, required this.presets});
+  const SkillBookLibrary({
+    required this.catalog,
+    required this.presets,
+    this.unlockProgress = const {},
+  });
 
   final List<SkillBook> catalog;
   final List<String> presets;
+
+  /// 책 코드 → 조건 진행도. 조건이 없는 책(상점 구매)은 여기에 없다.
+  final Map<String, SkillBookUnlockProgress> unlockProgress;
+
+  /// 이 책의 조건이 얼마나 찼는지. 없으면 `null`이고 화면은 조건 문구만 쓴다.
+  SkillBookUnlockProgress? progressFor(String code) => unlockProgress[code];
 
   List<SkillBook> get owned =>
       catalog.where((book) => book.owned).toList(growable: false);
@@ -223,7 +269,14 @@ class SkillBookLibrary {
   factory SkillBookLibrary.fromJson(Map<String, dynamic> json) {
     final catalog = json['catalog'];
     final presets = json['presets'];
+    final progress = json['unlock_progress'];
     return SkillBookLibrary(
+      unlockProgress: {
+        if (progress is List)
+          for (final item in progress.whereType<Map<String, dynamic>>())
+            if (item['code'] is String)
+              item['code'] as String: SkillBookUnlockProgress.fromJson(item),
+      },
       catalog: catalog is List
           ? catalog
               .whereType<Map<String, dynamic>>()

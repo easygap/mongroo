@@ -208,6 +208,73 @@ void main() {
     expect(find.text('상점 씨앗 120'), findsOneWidget);
   });
 
+  testWidgets('아직 없는 책은 조건과 함께 얼마나 왔는지도 보여 준다', (tester) async {
+    // 서버가 `얼마나 남았는지 숨기지 않는다`며 세어 보내는 값이다. 조건만
+    // 적으면 `약점 30회`가 시작인지 끝인지 알 수 없다.
+    await _pump(
+      tester,
+      library: {
+        'catalog': [
+          _book(
+            'shadow_oath',
+            '그림자 서약',
+            grade: 3,
+            owned: false,
+            acquireKind: 'challenge',
+            priceSeeds: null,
+            unlockHint: '약점 30회',
+            tradeoff: '중립 공격은 ×0.60',
+          ),
+          _book('focus_knot', '집중의 매듭',
+              grade: 2, owned: false, priceSeeds: 120),
+        ],
+        'presets': ['explore', 'guard', 'personal'],
+        'unlock_progress': [
+          {
+            'code': 'shadow_oath',
+            'source': 'challenge',
+            'current': 12,
+            'goal': 30,
+            'owned': false,
+          },
+        ],
+      },
+    );
+
+    expect(find.text('12 / 30'), findsOneWidget);
+    // 상점에서 사는 책에는 셀 조건이 없다. 없는 진행도를 지어내지 않는다.
+    expect(find.byKey(const ValueKey('book-progress-focus_knot')), findsNothing);
+  });
+
+  testWidgets('조건을 다 채운 책은 진행도를 강조해 보여 준다', (tester) async {
+    await _pump(
+      tester,
+      library: {
+        'catalog': [
+          _book('double_leaf', '겹잎',
+              owned: false, acquireKind: 'unlock', priceSeeds: null,
+              unlockHint: '마음 지키기 30회'),
+        ],
+        'presets': ['explore', 'guard', 'personal'],
+        'unlock_progress': [
+          {
+            'code': 'double_leaf',
+            'source': 'unlock',
+            'current': 30,
+            'goal': 30,
+            'owned': false,
+          },
+        ],
+      },
+    );
+
+    final progress = tester.widget<Text>(
+      find.byKey(const ValueKey('book-progress-double_leaf')),
+    );
+    expect(progress.data, '30 / 30');
+    expect(progress.style?.fontWeight, FontWeight.w900);
+  });
+
   testWidgets('효과가 아직 없는 책은 있는 척하지 않는다', (tester) async {
     await _pump(tester);
     expect(find.byKey(const ValueKey('pending-short_cheer')), findsOneWidget);
