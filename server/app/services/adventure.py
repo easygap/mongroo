@@ -1243,7 +1243,7 @@ async def state_payload(db: AsyncSession, user_id: int) -> dict:
         },
         "economy": [
             {"code": "diary", "label": "마음 일기", "exp": 40, "seeds": 15},
-            {"code": "quest", "label": "일일 미션", "exp": 20, "seeds": 5},
+            {"code": "quest", "label": "작은 행동", "exp": 20, "seeds": 5},
             {"code": "dungeon", "label": "던전", "exp": 10, "seeds": 4},
             {"code": "patrol", "label": "순찰", "exp": 0, "seeds": 3},
         ],
