@@ -2124,7 +2124,7 @@ void main() {
       'y': .50,
       'cost': 1,
       'scene_key': 'monster_den',
-      'scene_label': '몬스터 소굴',
+      'scene_label': '수호자 소굴',
       'scene_description': '돌비늘 장부지기가 길을 막고 있어요.',
       'depth_label': '지하 4층 · 수호 구역',
       'threat_level': 3,

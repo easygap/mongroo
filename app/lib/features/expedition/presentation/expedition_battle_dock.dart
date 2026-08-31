@@ -877,7 +877,7 @@ class _ExpeditionSequentialCommandDockState
                     switch (source) {
                       'signature' => '출처 · 캐릭터 고유',
                       'emotion' => '출처 · 현재 성장결',
-                      'skillbook' => '출처 · 스킬북',
+                      'skillbook' => '출처 · 기록서',
                       _ => '출처 · $source',
                     },
                     style: Theme.of(context).textTheme.labelMedium,

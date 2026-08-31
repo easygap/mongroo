@@ -251,7 +251,7 @@ class _RegionCard extends StatelessWidget {
     (key: 'dungeon_gate', label: '폐허 던전'),
     (key: 'flooded_cave', label: '침수 동굴'),
     (key: 'root_tunnel', label: '뿌리 땅굴'),
-    (key: 'monster_den', label: '몬스터 소굴'),
+    (key: 'monster_den', label: '수호자 소굴'),
     (key: 'treasure_vault', label: '압화 보물고'),
     (key: 'moon_tower', label: '기억탑'),
   ];
