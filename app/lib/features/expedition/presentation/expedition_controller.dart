@@ -34,6 +34,7 @@ class ExpeditionUiState {
     this.actionCue,
     this.pendingExpedition,
     this.settlingResult = false,
+    this.advancing = false,
     this.unlockedSkillBooks = const [],
   });
 
@@ -54,6 +55,10 @@ class ExpeditionUiState {
   final ExpeditionActionCue? actionCue;
   final ExpeditionSnapshot? pendingExpedition;
   final bool settlingResult;
+
+  /// 마친 걸음에서 다음 걸음을 여는 중. [interactionLocked]에 넣지 않는다 —
+  /// 이 값이 켜진 채로 [ExpeditionController.start]가 지나가야 하기 때문이다.
+  final bool advancing;
 
   /// 방금 조건을 채워 열린 기록서. 한 번 알린 뒤 비운다.
   final List<ExpeditionUnlockedSkillBook> unlockedSkillBooks;
@@ -82,6 +87,7 @@ class ExpeditionUiState {
     Object? actionCue = _unset,
     Object? pendingExpedition = _unset,
     bool? settlingResult,
+    bool? advancing,
     List<ExpeditionUnlockedSkillBook>? unlockedSkillBooks,
   }) =>
       ExpeditionUiState(
@@ -116,6 +122,7 @@ class ExpeditionUiState {
             ? this.pendingExpedition
             : pendingExpedition as ExpeditionSnapshot?,
         settlingResult: settlingResult ?? this.settlingResult,
+        advancing: advancing ?? this.advancing,
         unlockedSkillBooks: unlockedSkillBooks ?? this.unlockedSkillBooks,
       );
 }
@@ -403,6 +410,52 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
       );
     } on ApiException {
       // 이야기 확인 표시는 보조 정보다. 실패를 사용자에게 알리지 않는다.
+    }
+  }
+
+  /// 마친 걸음에서 다음 걸음으로 곧장 넘어간다.
+  ///
+  /// 설계서 3.6: `스테이지 사이에는 불투명 로딩 카드나 흰 결과 페이지를
+  /// 끼우지 않는다.` 지금까지는 한 판이 끝나면 결과 페이지를 지나 허브로
+  /// 돌아왔다가 거기서 다시 떠나야 했다.
+  ///
+  /// **판을 비우지 않는 것**이 핵심이다. [start]가 새 스냅숏으로 갈아 끼울
+  /// 때까지 방금 마친 무대가 화면에 남아 있어야 장면도 음악도 끊기지 않는다.
+  /// 그래서 [ExpeditionUiState.advancing]은 [ExpeditionUiState.interactionLocked]에
+  /// 넣지 않았다 — 넣으면 이 함수가 부른 [start]가 스스로에게 막힌다.
+  Future<bool> advanceToNextStage() async {
+    final finished = state.expedition;
+    final region = state.stageMap?.region.code;
+    if (finished == null || finished.run.isActive || region == null) return false;
+    if (state.advancing || state.interactionLocked) return false;
+    state = state.copyWith(advancing: true, error: null);
+    final repository = ref.read(expeditionRepositoryProvider);
+    try {
+      // 방금 마친 걸음이 완주로 잡혀야 다음 번호가 나온다. 오늘의 마음 공명이
+      // 이 걸음에 이미 쓰였을 수 있으니 카탈로그도 같이 다시 읽는다.
+      final results = await Future.wait([
+        repository.getStageMap(regionCode: region),
+        repository.getCatalog(),
+      ]);
+      final stageMap = results[0] as ExpeditionStageMap;
+      final catalog = results[1] as ExpeditionCatalog;
+      state = state.copyWith(stageMap: stageMap, catalog: catalog);
+      final next = stageMap.nextStage;
+      if (next == null || !next.unlocked) {
+        // 지역을 다 걸었다. 다음에 어디가 열리는지는 허브가 안내한다.
+        state = state.copyWith(advancing: false);
+        await leaveSummary();
+        return false;
+      }
+      state = state.copyWith(selectedStageNo: next.no);
+      final started = await start(
+        catalog.heartResonanceAvailable ? 'heart_resonance' : 'free_explore',
+      );
+      state = state.copyWith(advancing: false);
+      return started;
+    } on ApiException catch (error) {
+      state = state.copyWith(advancing: false, error: error.message);
+      return false;
     }
   }
 

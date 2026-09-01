@@ -39,6 +39,7 @@ part 'expedition_event_decision.dart';
 part 'expedition_map.dart';
 part 'expedition_preparation.dart';
 part 'expedition_progress_rail.dart';
+part 'expedition_stage_advance.dart';
 part 'expedition_stage_map.dart';
 part 'expedition_stage_scene.dart';
 part 'expedition_tile_world.dart';
@@ -85,6 +86,7 @@ class ExpeditionScreen extends ConsumerWidget {
           loading: state.loading,
           expedition: state.expedition,
           shellView: state.shellView,
+          advancing: stageAdvanceAvailable(state),
         ),
       ),
     );
@@ -126,7 +128,11 @@ class ExpeditionScreen extends ConsumerWidget {
           child: shell.loading
               ? const Center(child: CircularProgressIndicator())
               : expedition != null
-                  ? expedition.run.isActive
+                  // 마친 걸음도 무대를 그대로 쓴다. 결과 페이지로 갈아 끼우면
+                  // 설계서 3.6이 금지한 `흰 결과 페이지`가 되고 다음 걸음까지
+                  // 장면도 음악도 한 번 끊긴다. 지역을 다 걸었을 때만 다음
+                  // 지역 안내가 있는 기존 결과 화면으로 간다.
+                  ? expedition.run.isActive || shell.advancing
                       ? _ActiveExpedition(expedition: expedition)
                       : _ExpeditionSummary(expedition: expedition)
                   : switch (shell.shellView) {
@@ -151,13 +157,91 @@ class _ActiveExpedition extends ConsumerStatefulWidget {
   ConsumerState<_ActiveExpedition> createState() => _ActiveExpeditionState();
 }
 
-class _ActiveExpeditionState extends ConsumerState<_ActiveExpedition> {
+class _ActiveExpeditionState extends ConsumerState<_ActiveExpedition>
+    with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   final ExpeditionDiscoveryAudio _discoveries = ExpeditionDiscoveryAudio();
+
+  /// 지역 음악은 이 화면이 든다.
+  ///
+  /// 예전에는 전장 위젯이 들고 있었다. 그래서 전투가 끝나 전장이 사라질 때마다
+  /// 곡이 함께 죽었고, 걸음이 넘어갈 때는 물론이고 **한 걸음 안에서도**
+  /// 전투가 끝나면 음악이 끊겼다. 설계서 3.6은 `approach → encounter →
+  /// combat → release`가 같은 지역 loop의 재생 위치를 유지하고 stem만
+  /// 교차하라고 적어 뒀다.
+  ///
+  /// 이 State는 걸음이 넘어가도 살아남는다 — 마친 판을 비우지 않고 새 판
+  /// 스냅숏으로 갈아 끼우기 때문이다([ExpeditionController.advanceToNextStage]).
+  /// 그래서 재생 세션의 경계가 설계서가 말한 대로 `지역 pack 교체`와
+  /// 탐험 화면을 벗어나는 순간뿐이 된다.
+  ///
+  /// 효과음은 여기서 들지 않는다. 접촉·예고·풀려남은 연출 시각과 맞물려야
+  /// 해서 전장이 그대로 들고 있는 편이 맞다.
+  final ExpeditionCombatAudio _music =
+      ExpeditionCombatAudio(musicEnabled: false, sfxEnabled: false);
+
+  ExpeditionAudioMode? _appliedAudioMode;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    unawaited(_syncRegionMusic());
+  }
+
+  /// 앱이 뒤로 가면 곡을 줄여 멈추고 돌아오면 같은 위치에서 되살린다.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        unawaited(_music.handleAppResumed());
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.hidden:
+        unawaited(_music.handleAppPaused());
+    }
+  }
+
+  /// 지금 스냅숏이 요구하는 stem으로 갈아 끼운다.
+  ///
+  /// 지역이 같으면 [ExpeditionCombatAudio.playMusic]이 재생 위치를 물려주므로
+  /// 걸음이 넘어가도 곡은 이어진다. 지역이 바뀌면 곡 자체가 달라 처음부터
+  /// 시작하는데, 그것이 설계서가 둔 유일한 재생 세션 경계다.
+  Future<void> _syncRegionMusic() async {
+    final mode = ref.read(expeditionBattleSettingsProvider).audioMode;
+    if (mode != _appliedAudioMode) {
+      _appliedAudioMode = mode;
+      // 채널을 먼저 켜고 나서 곡을 건다. 순서가 바뀌면 아직 꺼져 있는 채널이
+      // 재생 요청을 그대로 버린다.
+      await _music.setChannels(
+        music: mode == ExpeditionAudioMode.all,
+        sfx: false,
+      );
+      if (!mounted) return;
+    }
+    if (mode != ExpeditionAudioMode.all) return;
+    final expedition = widget.expedition;
+    final battle = expedition.currentEvent?.battle;
+    final encounter = expedition.currentEvent?.encounter;
+    final musicState = battle?.enemyKind == 'guardian' ||
+            encounter?.kind == 'guardian'
+        ? ExpeditionMusicState.guardian
+        : battle != null
+            ? ExpeditionMusicState.combat
+            : ExpeditionMusicState.base;
+    await _music.playMusic(musicState, regionCode: expedition.region.code);
+  }
 
   @override
   void didUpdateWidget(covariant _ActiveExpedition oldWidget) {
     super.didUpdateWidget(oldWidget);
+    unawaited(_syncRegionMusic());
     // 지도 걷기·스테이지 필드·전투가 각자 다른 화면을 그리지만 스냅숏은 전부
     // 여기를 지난다. 발견을 알아채는 자리를 하나만 두려고 build가 아니라
     // 여기에서 본다 - build는 스크롤에도 다시 돌아 같은 소식을 되풀이한다.
@@ -173,13 +257,22 @@ class _ActiveExpeditionState extends ConsumerState<_ActiveExpedition> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     unawaited(_discoveries.dispose());
+    unawaited(_music.dispose());
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // 전장 설정 시트에서 음악을 껐다 켜면 그 시트만 다시 그려진다. 부모인
+    // 여기는 didUpdateWidget이 돌지 않으므로, 설정을 직접 듣지 않으면 다음
+    // 스냅숏이 올 때까지 곡이 그대로 흐르거나 그대로 멈춰 있다.
+    ref.listen(
+      expeditionBattleSettingsProvider.select((settings) => settings.audioMode),
+      (previous, next) => unawaited(_syncRegionMusic()),
+    );
     final expedition = widget.expedition;
     if (expedition.currentEvent?.battle != null) {
       return _ImmersiveExpeditionBattle(expedition: expedition);

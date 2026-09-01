@@ -251,6 +251,10 @@ class _ImmersiveStageScene extends ConsumerWidget {
                         icon: const Icon(Icons.home_outlined),
                         label: const Text('기록을 안고 귀환'),
                       ),
+                    // 이 걸음을 마쳤고 다음 걸음이 남았으면, 결과도 다음
+                    // 출발도 이 무대 위에서 끝난다.
+                    if (stageAdvanceAvailable(state))
+                      _StageAdvancePanel(expedition: expedition),
                   ],
                 ],
               ),
