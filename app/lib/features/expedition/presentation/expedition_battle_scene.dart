@@ -191,6 +191,9 @@ class _ImmersiveBattleStage extends StatelessWidget {
           paceScale: paceScale,
           shortEffects: shortEffects,
           audioMode: audioMode,
+          // 지역 음악은 탐험 화면이 든다. 전투가 끝나 이 전장이 사라져도
+          // 곡이 이어져야 걸음과 걸음이 한 장면으로 붙는다.
+          ownsMusic: false,
           bottomHudInset: bottomHudInset,
           topHudInset: topHudInset,
           onCueCompleted: onCueCompleted,

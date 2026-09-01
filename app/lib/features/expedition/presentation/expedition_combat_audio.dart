@@ -98,8 +98,7 @@ class ExpeditionCombatAudio {
     bool? musicEnabled,
     bool? sfxEnabled,
   })  : _musicEnabled = musicEnabled ?? enabled,
-        _sfxEnabled = sfxEnabled ?? enabled,
-        _ready = _loadPools();
+        _sfxEnabled = sfxEnabled ?? enabled;
 
   /// 백그라운드 진입 fade out과 복귀 fade in 시간.
   /// 기준 문서의 `300ms fade out / 500ms fade in`을 그대로 따른다.
@@ -214,7 +213,15 @@ class ExpeditionCombatAudio {
   /// 진폭으로는 약 0.79배다.
   static const _ambienceDuck = 0.79;
 
-  final Future<Map<ExpeditionCombatSound, AudioPool>> _ready;
+  Future<Map<ExpeditionCombatSound, AudioPool>>? _pools;
+
+  /// 효과음 pool 15개. **처음 소리를 낼 때** 굽는다.
+  ///
+  /// 예전에는 생성자가 무조건 구웠다. 그래서 음악만 드는 인스턴스(화면이 든
+  /// 지역 음악)나 발소리만 내는 인스턴스도 한 번도 안 쓸 pool 열다섯 개를
+  /// 만들었다 — 웹에서는 쓰지도 않을 wav를 그만큼 더 받는다는 뜻이다.
+  Future<Map<ExpeditionCombatSound, AudioPool>> get _ready =>
+      _pools ??= _loadPools();
   final Map<ExpeditionCombatSound, DateTime> _lastPlayedAt = {};
 
   /// 품종·성장결·엉킴 저마다의 소리. 공용음과 달리 필요할 때 올린다.
@@ -654,7 +661,8 @@ class ExpeditionCombatAudio {
     ++_transitionGeneration;
     await _signatures.dispose();
     try {
-      final pools = await _ready;
+      // 한 번도 소리를 안 냈으면 해제할 pool도 없다.
+      final pools = await (_pools ?? Future.value(const {}));
       await Future.wait([
         ...pools.values.map((pool) => pool.dispose()),
         _activeMusic.dispose(),

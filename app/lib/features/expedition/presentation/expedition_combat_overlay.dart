@@ -35,6 +35,7 @@ class ExpeditionEncounterStage extends StatefulWidget {
     this.paceScale = 1.0,
     this.shortEffects = false,
     this.audioMode = ExpeditionAudioMode.all,
+    this.ownsMusic = true,
     this.bottomHudInset = 0,
     this.topHudInset = 0,
   });
@@ -57,6 +58,13 @@ class ExpeditionEncounterStage extends StatefulWidget {
 
   /// 음악·효과음 단계. 어느 단계에서도 시각·촉각 판정은 그대로 남는다.
   final ExpeditionAudioMode audioMode;
+
+  /// 이 전장이 지역 음악까지 드는가.
+  ///
+  /// 탐험 스테이지에서는 화면 쪽이 들고 있어서 `false`다 — 전장이 들면 전투가
+  /// 끝나 위젯이 사라질 때마다 곡이 함께 죽는다. 합동 수호전처럼 전장 하나가
+  /// 곧 한 판인 화면은 그대로 자기가 든다.
+  final bool ownsMusic;
 
   bool get audioEnabled => audioMode != ExpeditionAudioMode.muted;
 
@@ -95,7 +103,8 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
       duration: const Duration(milliseconds: 3600),
     );
     _audio = ExpeditionCombatAudio(
-      musicEnabled: widget.audioMode == ExpeditionAudioMode.all,
+      musicEnabled:
+          widget.ownsMusic && widget.audioMode == ExpeditionAudioMode.all,
       sfxEnabled: widget.audioEnabled,
     );
     WidgetsBinding.instance.addObserver(this);
@@ -105,6 +114,8 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   /// 500ms에 걸쳐 돌아온다. 다른 앱의 소리를 갑자기 자르지 않기 위해서다.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 음악을 안 드는 전장에는 멈출 곡이 없다. 화면 쪽이 같은 일을 한다.
+    if (!widget.ownsMusic) return;
     switch (state) {
       case AppLifecycleState.resumed:
         unawaited(_audio.handleAppResumed());
@@ -196,7 +207,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
 
   Future<void> _applyAudioMode() async {
     await _audio.setChannels(
-      music: widget.audioMode == ExpeditionAudioMode.all,
+      music: widget.ownsMusic && widget.audioMode == ExpeditionAudioMode.all,
       sfx: widget.audioEnabled,
     );
     if (!mounted) return;
@@ -228,6 +239,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   }
 
   void _syncMusic() {
+    if (!widget.ownsMusic) return;
     if (widget.audioMode != ExpeditionAudioMode.all) return;
     final state = widget.battle?.enemyKind == 'guardian' ||
             widget.encounter?.kind == 'guardian'
