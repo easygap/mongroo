@@ -38,6 +38,7 @@ part 'expedition_decision.dart';
 part 'expedition_event_decision.dart';
 part 'expedition_map.dart';
 part 'expedition_preparation.dart';
+part 'expedition_progress_rail.dart';
 part 'expedition_stage_map.dart';
 part 'expedition_stage_scene.dart';
 part 'expedition_tile_world.dart';

@@ -92,6 +92,10 @@ class _ImmersiveStageScene extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (expedition.run.stageNo != null) ...[
+                    _StageProgressRail(stageNo: expedition.run.stageNo!),
+                    const SizedBox(height: 2),
+                  ],
                   SizedBox(
                     // 이 줄에 후퇴 버튼이 들어간다. 44로 두면 버튼이 그 높이로
                     // 눌려 48dp 입력 영역을 못 채운다.
@@ -309,6 +313,10 @@ class _StageWalkingField extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (expedition.run.stageNo != null) ...[
+                    _StageProgressRail(stageNo: expedition.run.stageNo!),
+                    const SizedBox(height: 2),
+                  ],
                   SizedBox(
                     height: 48,
                     child: Row(

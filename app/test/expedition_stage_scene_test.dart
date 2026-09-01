@@ -272,10 +272,55 @@ class _FakeSceneController extends ExpeditionController {
   }
 }
 
+/// 진행 rail이 읽는 8점 지도. 걷는 판 밖의 상태라 장면 스냅숏과 따로 온다.
+ExpeditionStageMap _railStageMap({int clearedCount = 1}) =>
+    ExpeditionStageMap.fromJson({
+      'content_version': '2026.08.4',
+      'region': {
+        'code': 'moss_archive',
+        'name': '이끼 기억서고',
+        'short_name': '기억서고',
+        'description': '첫 탐험지',
+        'recommended_stage': 2,
+      },
+      'progress': {
+        'cleared_count': clearedCount,
+        'total': 8,
+        'next_stage_no': clearedCount + 1,
+        'region_cleared': false,
+      },
+      'active_run': null,
+      'regions': <Map<String, dynamic>>[],
+      'stages': [
+        for (var no = 1; no <= 8; no++)
+          {
+            'no': no,
+            'kind': switch (no) {
+              2 || 6 => 'event',
+              5 => 'camp',
+              8 => 'boss',
+              _ => 'battle',
+            },
+            'kind_label': '전투',
+            'label': '기억서고 $no',
+            'title': '$no번째 자리',
+            'summary': '$no번째 자리에서 벌어지는 일이에요.',
+            'estimated_seconds': 75,
+            'tangles': <Map<String, dynamic>>[],
+            'cleared': no <= clearedCount,
+            'clear_count': no <= clearedCount ? 1 : 0,
+            'story_seen': false,
+            'unlocked': no <= clearedCount + 1,
+            'lock_reason': no <= clearedCount + 1 ? null : '앞 걸음을 먼저 마쳐요.',
+          },
+      ],
+    });
+
 Future<_FakeSceneController> _pump(
   WidgetTester tester,
-  Map<String, dynamic> json,
-) async {
+  Map<String, dynamic> json, {
+  ExpeditionStageMap? stageMap,
+}) async {
   final snapshot = ExpeditionSnapshot.fromJson(json);
   late _FakeSceneController controller;
   await tester.pumpWidget(
@@ -286,6 +331,7 @@ Future<_FakeSceneController> _pump(
             ExpeditionUiState(
               loading: false,
               expedition: snapshot,
+              stageMap: stageMap,
               selectedMemberId: 11,
             ),
           );
@@ -470,6 +516,9 @@ void main() {
               ExpeditionUiState(
                 loading: false,
                 expedition: snapshot,
+                // 진행 rail도 같이 세워 둔다. 8개 점과 숫자가 320px에서
+                // 넘치는지가 이 검사의 몫이다.
+                stageMap: _railStageMap(clearedCount: 3),
                 selectedMemberId: 11,
               ),
             ),
@@ -506,6 +555,9 @@ void main() {
               ExpeditionUiState(
                 loading: false,
                 expedition: snapshot,
+                // 진행 rail도 같이 세워 둔다. 8개 점과 숫자가 320px에서
+                // 넘치는지가 이 검사의 몫이다.
+                stageMap: _railStageMap(clearedCount: 3),
                 selectedMemberId: 11,
               ),
             ),
@@ -532,5 +584,106 @@ void main() {
     expect(mapSize.width, closeTo(296, .01));
     expect(mapSize.width / mapSize.height, closeTo(1.45, .01));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('걷는 중에도 상단 rail이 몇 번째 걸음인지 말한다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pump(
+      tester,
+      _walkingSnapshotJson(),
+      stageMap: _railStageMap(clearedCount: 1),
+    );
+
+    final rail = find.byKey(const ValueKey('stage-progress-rail'));
+    expect(rail, findsOneWidget);
+    expect(find.text('2/8'), findsOneWidget);
+    // 손끝이 닿는 크기여야 rail이 실제로 눌린다.
+    expect(tester.getSize(rail).height, greaterThanOrEqualTo(24));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('rail을 누르면 무대 위에 경로가 열리고 닫으면 걷던 자리 그대로다', (tester) async {
+    // 설계서 3.6: `상단 progress rail을 탭하면 현재 무대 위에 열리고,
+    // 닫으면 같은 카메라 위치로 돌아간다.`
+    await tester.binding.setSurfaceSize(const Size(390, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = await _pump(
+      tester,
+      _walkingSnapshotJson(),
+      stageMap: _railStageMap(clearedCount: 3),
+    );
+
+    String playerPosition() => tester
+        .widget<Semantics>(
+          find.byKey(const ValueKey('tile-world-player-position')),
+        )
+        .properties
+        .value!;
+    final field = find.byKey(const ValueKey('stage-field-map'));
+    final before = playerPosition();
+    final fieldElement = tester.element(field);
+
+    await tester.tap(find.byKey(const ValueKey('stage-progress-rail')));
+    // 무대의 숨·잎은 계속 움직이므로 pumpAndSettle은 멈추지 않는다.
+    // 오버레이가 열리는 190ms만 넘긴다.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 260));
+
+    expect(find.byKey(const ValueKey('stage-route-overlay')), findsOneWidget);
+    // 무대 위에 겹친다 — 다른 화면으로 밀려나면 아래 판은 offstage가 되어
+    // 기본 finder에 잡히지 않는다. 잡힌다는 것이 곧 겹쳤다는 뜻이다.
+    expect(field, findsOneWidget);
+    // 걷던 판을 두고 지도 화면으로 넘어가지 않는다.
+    expect(controller.state.shellView, ExpeditionShellView.hub);
+    expect(find.byKey(const ValueKey('stage-point-1')), findsNothing);
+
+    // 여덟 점이 모두 서고, 지금 자리와 완주한 자리를 읽어 준다.
+    for (var no = 1; no <= 8; no++) {
+      expect(find.byKey(ValueKey('route-point-$no')), findsOneWidget);
+    }
+    expect(
+      tester
+          .widget<Semantics>(find.byKey(const ValueKey('route-point-2')))
+          .properties
+          .label,
+      contains('지금 여기'),
+    );
+    // 지나온 걸음에는 완주 표식이 남는다.
+    expect(
+      tester
+          .widget<Semantics>(find.byKey(const ValueKey('route-point-1')))
+          .properties
+          .label,
+      contains('완주'),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('stage-route-close')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 260));
+
+    expect(find.byKey(const ValueKey('stage-route-overlay')), findsNothing);
+    // 같은 요소가 그대로 살아 있으니 카메라도 걸음도 처음부터 다시 서지 않는다.
+    expect(identical(tester.element(field), fieldElement), isTrue);
+    expect(playerPosition(), before);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('8점 지도를 아직 못 읽었으면 rail 자리를 비워 둔다', (tester) async {
+    // 이어하기로 곧장 들어오면 판이 지도보다 먼저 선다. 그때 빈 rail을
+    // 그려 두면 걸음 수를 0/0으로 말하게 된다.
+    await tester.binding.setSurfaceSize(const Size(390, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pump(tester, _walkingSnapshotJson());
+
+    expect(find.byKey(const ValueKey('stage-progress-rail')), findsNothing);
+    expect(find.byKey(const ValueKey('stage-field-map')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 }
