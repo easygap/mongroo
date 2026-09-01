@@ -1,0 +1,291 @@
+{
+  "auto_vs_manual": {
+    "outer_walk": {
+      "gap_points": -4.38,
+      "naive_clear_rate": 85.97,
+      "reference_clear_rate": 90.35
+    },
+    "three_layers": {
+      "gap_points": -4.93,
+      "naive_clear_rate": 62.92,
+      "reference_clear_rate": 67.85
+    }
+  },
+  "beast": {
+    "echo_keeper": {
+      "average_animation_seconds": 16.6,
+      "average_rounds": 5.58,
+      "average_swaps": 0.91,
+      "clear_rate": 72.22,
+      "max_rounds": 9,
+      "runs": 720
+    },
+    "ledger_keeper": {
+      "average_animation_seconds": 16.0,
+      "average_rounds": 5.34,
+      "average_swaps": 0.85,
+      "clear_rate": 87.64,
+      "max_rounds": 9,
+      "runs": 720
+    },
+    "record_keeper": {
+      "average_animation_seconds": 17.0,
+      "average_rounds": 5.74,
+      "average_swaps": 0.88,
+      "clear_rate": 77.78,
+      "max_rounds": 10,
+      "runs": 720
+    },
+    "seed_keeper": {
+      "average_animation_seconds": 16.9,
+      "average_rounds": 5.63,
+      "average_swaps": 0.88,
+      "clear_rate": 78.75,
+      "max_rounds": 9,
+      "runs": 720
+    }
+  },
+  "difficulty": {
+    "outer_walk": {
+      "average_animation_seconds": 11.6,
+      "average_rounds": 3.59,
+      "average_swaps": 0.0,
+      "clear_rate": 90.35,
+      "max_rounds": 4,
+      "runs": 1440
+    },
+    "three_layers": {
+      "average_animation_seconds": 21.7,
+      "average_rounds": 7.56,
+      "average_swaps": 1.77,
+      "clear_rate": 67.85,
+      "max_rounds": 10,
+      "runs": 1440
+    }
+  },
+  "difficulty_barrier_scale_bp": {
+    "outer_walk": 22900,
+    "three_layers": 10000
+  },
+  "dimensions": {
+    "beasts": 4,
+    "cases_per_policy": 2880,
+    "forms": 6,
+    "species": 15,
+    "total_battles": 5760
+  },
+  "effects": {
+    "observed": [
+      "den_guardian_roar",
+      "golden_seam",
+      "heal_lowest",
+      "last_stand",
+      "patina_parry",
+      "prism_shift",
+      "resonance_boost",
+      "shield_all",
+      "steady_read",
+      "triage_heal",
+      "weaken_intent",
+      "weakness_pierce",
+      "white_garden_oath"
+    ],
+    "with_answers": {
+      "average_animation_seconds": 16.7,
+      "average_rounds": 5.61,
+      "average_swaps": 0.91,
+      "clear_rate": 78.38,
+      "max_rounds": 10,
+      "runs": 2784
+    },
+    "without_answers": {
+      "average_animation_seconds": 13.5,
+      "average_rounds": 4.4,
+      "average_swaps": 0.24,
+      "clear_rate": 100.0,
+      "max_rounds": 8,
+      "runs": 96
+    }
+  },
+  "engine": "deterministic-exact-enumeration",
+  "form": {
+    "ember": {
+      "average_animation_seconds": 16.3,
+      "average_rounds": 5.47,
+      "average_swaps": 0.8,
+      "clear_rate": 83.54,
+      "max_rounds": 10,
+      "runs": 480
+    },
+    "moonlit": {
+      "average_animation_seconds": 16.3,
+      "average_rounds": 5.49,
+      "average_swaps": 0.93,
+      "clear_rate": 82.92,
+      "max_rounds": 9,
+      "runs": 480
+    },
+    "mosaic": {
+      "average_animation_seconds": 16.7,
+      "average_rounds": 5.59,
+      "average_swaps": 0.92,
+      "clear_rate": 73.54,
+      "max_rounds": 10,
+      "runs": 480
+    },
+    "rainy": {
+      "average_animation_seconds": 16.2,
+      "average_rounds": 5.47,
+      "average_swaps": 0.94,
+      "clear_rate": 82.08,
+      "max_rounds": 9,
+      "runs": 480
+    },
+    "sparkling": {
+      "average_animation_seconds": 16.8,
+      "average_rounds": 5.61,
+      "average_swaps": 0.97,
+      "clear_rate": 76.25,
+      "max_rounds": 10,
+      "runs": 480
+    },
+    "sunny": {
+      "average_animation_seconds": 17.5,
+      "average_rounds": 5.81,
+      "average_swaps": 0.74,
+      "clear_rate": 76.25,
+      "max_rounds": 9,
+      "runs": 480
+    }
+  },
+  "form_by_difficulty": {
+    "outer_walk": {
+      "ember": {
+        "average_animation_seconds": 11.5,
+        "average_rounds": 3.57,
+        "average_swaps": 0.0,
+        "clear_rate": 92.08,
+        "max_rounds": 4,
+        "runs": 240
+      },
+      "moonlit": {
+        "average_animation_seconds": 11.3,
+        "average_rounds": 3.52,
+        "average_swaps": 0.0,
+        "clear_rate": 95.0,
+        "max_rounds": 4,
+        "runs": 240
+      },
+      "mosaic": {
+        "average_animation_seconds": 11.8,
+        "average_rounds": 3.63,
+        "average_swaps": 0.0,
+        "clear_rate": 84.58,
+        "max_rounds": 4,
+        "runs": 240
+      },
+      "rainy": {
+        "average_animation_seconds": 11.3,
+        "average_rounds": 3.52,
+        "average_swaps": 0.0,
+        "clear_rate": 93.33,
+        "max_rounds": 4,
+        "runs": 240
+      },
+      "sparkling": {
+        "average_animation_seconds": 12.0,
+        "average_rounds": 3.67,
+        "average_swaps": 0.0,
+        "clear_rate": 84.58,
+        "max_rounds": 4,
+        "runs": 240
+      },
+      "sunny": {
+        "average_animation_seconds": 11.6,
+        "average_rounds": 3.6,
+        "average_swaps": 0.0,
+        "clear_rate": 92.5,
+        "max_rounds": 4,
+        "runs": 240
+      }
+    },
+    "three_layers": {
+      "ember": {
+        "average_animation_seconds": 21.0,
+        "average_rounds": 7.38,
+        "average_swaps": 1.61,
+        "clear_rate": 75.0,
+        "max_rounds": 10,
+        "runs": 240
+      },
+      "moonlit": {
+        "average_animation_seconds": 21.4,
+        "average_rounds": 7.45,
+        "average_swaps": 1.87,
+        "clear_rate": 70.83,
+        "max_rounds": 9,
+        "runs": 240
+      },
+      "mosaic": {
+        "average_animation_seconds": 21.6,
+        "average_rounds": 7.54,
+        "average_swaps": 1.84,
+        "clear_rate": 62.5,
+        "max_rounds": 10,
+        "runs": 240
+      },
+      "rainy": {
+        "average_animation_seconds": 21.2,
+        "average_rounds": 7.41,
+        "average_swaps": 1.88,
+        "clear_rate": 70.83,
+        "max_rounds": 9,
+        "runs": 240
+      },
+      "sparkling": {
+        "average_animation_seconds": 21.6,
+        "average_rounds": 7.54,
+        "average_swaps": 1.93,
+        "clear_rate": 67.92,
+        "max_rounds": 10,
+        "runs": 240
+      },
+      "sunny": {
+        "average_animation_seconds": 23.3,
+        "average_rounds": 8.02,
+        "average_swaps": 1.48,
+        "clear_rate": 60.0,
+        "max_rounds": 9,
+        "runs": 240
+      }
+    }
+  },
+  "gates": {
+    "form_spread_within_10_points": true,
+    "manual_vs_auto": "unmeasurable",
+    "matchup_reading_pays_off": true,
+    "no_answer_round_penalty_within_2_5": true,
+    "outer_walk_band_85_95": true,
+    "role_axis": "unmeasurable",
+    "run_length_seconds": "unmeasurable",
+    "solo_three_layers_at_least_45": true,
+    "three_layers_band_50_70": true
+  },
+  "joint_guard_version": "joint-guard-v1.1",
+  "layer_barriers": [
+    70,
+    93,
+    115
+  ],
+  "naive_policy": "max_damage",
+  "reference_policy": "weakness_first",
+  "schema_version": 1,
+  "solo": {
+    "average_animation_seconds": 23.2,
+    "average_rounds": 8.31,
+    "average_swaps": 2.72,
+    "clear_rate": 45.56,
+    "max_rounds": 10,
+    "runs": 720
+  }
+}

@@ -109,9 +109,15 @@ def test_layers_for_fills_barriers_and_matchups():
     # 결 이름은 코드가 아니라 사람이 읽는 말로도 함께 나간다.
     assert layers[0]["weak_kel_label"] == KEL_LABELS[layers[0]["weak_kel"]]
 
+    # `겉꿈 산책`은 같은 첫 겹을 걷지만 장벽이 더 두껍다. 한 겹으로 끝나는
+    # 난이도라 뒤에 남길 체력을 아낄 이유가 없고, 두 난이도가 같은 장벽을
+    # 쓰면 두 밴드를 동시에 만족시킬 수 없다는 것이 R4에서 확인됐다.
     walk = layers_for("ledger_keeper", "outer_walk")
     assert len(walk) == 1
-    assert walk[0] == layers[0]
+    assert walk[0]["name"] == layers[0]["name"]
+    assert walk[0]["weak_kel"] == layers[0]["weak_kel"]
+    assert walk[0]["barrier"] > layers[0]["barrier"]
+    assert walk[0]["barrier"] == walk[0]["max_barrier"]
 
 
 @pytest.mark.parametrize("beast_code", sorted(BEAST_CATALOG))

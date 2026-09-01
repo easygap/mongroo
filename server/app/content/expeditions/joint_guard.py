@@ -13,9 +13,15 @@
    그래서 결정적 순간은 역할이 아니라 **효과**로 적는다 - 전원 방어가 있으면
    화려하게 넘고, 없으면 행동을 더 써서 우직하게 넘는다. 어느 쪽도 막히지 않는다.
 
-겹별 상성표(설계서 4.5.1)는 여섯 결이 약점 2회·내성 2회씩 정확히 나오도록
-짜여 있다. 감정의 우열이 아니라 편성·교대 판단을 만드는 수평 상성이며,
+겹별 상성표는 여섯 결이 약점 2회·내성 2회씩 정확히 나오도록 짜여 있다.
+감정의 우열이 아니라 편성·교대 판단을 만드는 수평 상성이며,
 `validate_joint_guard_content`가 이 균형을 매번 다시 센다.
+
+**겹마다도 네 결이 서로 달라야 한다.** 설계서 4.5.1의 표는 열(결)로는
+균형이 맞지만 행(겹)으로는 안 맞았다 — 첫 겹의 약점이 햇살결 둘·달빛결
+둘이라 나머지 네 결은 유리한 자리가 한 번도 없었다. `겉꿈 산책`은 첫 겹만
+걷는 난이도라 그 행이 곧 전부이고, R4 시뮬레이션에서 달빛결만 99.6%로
+밴드를 벗어났다. 열 균형은 그대로 두고 행도 네 결이 서로 다르도록 다시 짰다.
 """
 
 from typing import Any
@@ -36,22 +42,40 @@ AFFINITY_CYCLE = ("insight", "care", "courage", "focus")
 
 # 겹별 기준 장벽과 라운드(설계서 4.1). 짐승별 수치 변주는 첫 출시에 넣지
 # 않는다 - 학습 비용을 낮추고 밸런스 변수를 줄이기 위해서다.
-LAYER_BARRIERS: tuple[int, int, int] = (70, 90, 110)
+#
+# 값은 R4 시뮬레이션으로 정했다. 설계서가 적어 둔 70·90·110에서는 `세 겹의 꿈`이
+# 86%로 끝나 5.1의 50~70% 밴드를 크게 웃돌았다. 깊은 두 겹만 올려 밴드 안으로
+# 넣었고, 첫 겹은 그대로 뒀다 - 여기를 올리면 HP가 이어지는 뒤 두 겹을 못 넘어
+# 단독 편성 승률이 무너진다.
+#
+# 창이 좁다. 93·115에서 세 겹 67.9% / 단독 45.6%인데, 한 칸만 더 올리면 단독이
+# 45% 밑으로 떨어진다. 이 두 값을 건드릴 때는 반드시 시뮬레이터를 다시 돌린다.
+LAYER_BARRIERS: tuple[int, int, int] = (70, 93, 115)
 LAYER_ROUNDS = 4
 
 # 난이도 두 단계(설계서 5.1). `겉꿈 산책`은 튜토리얼을 겸한다.
+# 난이도마다 장벽 배율이 따로 있다.
+#
+# 두 난이도가 **같은 첫 겹**을 쓰는데 하나는 그 한 겹이 전부이고 다른 하나는
+# 세 겹의 시작이다. HP가 겹을 건너 이어지므로, 한 겹짜리 연습을 제대로 된
+# 시험으로 만들 만큼 첫 겹을 두껍게 하면 세 겹 쪽은 뒤 두 겹을 넘지 못한다.
+# R4 시뮬레이션에서 두 밴드를 동시에 만족시키는 단일 장벽이 **없다는 것**이
+# 확인돼(첫 겹 160이면 겉꿈 91%·세 겹 44%·단독 20%), 난이도별 배율을 뒀다.
 DIFFICULTIES: dict[str, dict[str, Any]] = {
     "outer_walk": {
         "name": "겉꿈 산책",
         "summary": "한 겹만 걸어요. 교대와 결정적 순간을 한 번씩 익혀요.",
         "layers": 1,
         "tutorial": True,
+        # 한 겹으로 끝나므로 뒤에 남길 체력을 아낄 이유가 없다. 그만큼 두껍게.
+        "barrier_scale_bp": 22900,
     },
     "three_layers": {
         "name": "세 겹의 꿈",
         "summary": "세 겹을 모두 얕게 만들어요. 순서와 교대가 중요해요.",
         "layers": 3,
         "tutorial": False,
+        "barrier_scale_bp": 10000,
     },
 }
 
@@ -157,9 +181,9 @@ BEAST_CATALOG: dict[str, dict[str, Any]] = {
             "power": 1,
         },
         "layers": [
-            {"name": "겉꿈", "weak_kel": "sunny", "resist_kel": "rainy"},
-            {"name": "선잠", "weak_kel": "rainy", "resist_kel": "ember"},
-            {"name": "깊은 꿈", "weak_kel": "ember", "resist_kel": "moonlit"},
+            {"name": "겉꿈", "weak_kel": "sunny", "resist_kel": "ember"},
+            {"name": "선잠", "weak_kel": "sparkling", "resist_kel": "sunny"},
+            {"name": "깊은 꿈", "weak_kel": "ember", "resist_kel": "sparkling"},
         ],
     },
     "echo_keeper": {
@@ -192,9 +216,9 @@ BEAST_CATALOG: dict[str, dict[str, Any]] = {
             "power": 1,
         },
         "layers": [
-            {"name": "겉꿈", "weak_kel": "moonlit", "resist_kel": "sparkling"},
-            {"name": "선잠", "weak_kel": "sparkling", "resist_kel": "mosaic"},
-            {"name": "깊은 꿈", "weak_kel": "mosaic", "resist_kel": "sunny"},
+            {"name": "겉꿈", "weak_kel": "rainy", "resist_kel": "moonlit"},
+            {"name": "선잠", "weak_kel": "mosaic", "resist_kel": "rainy"},
+            {"name": "깊은 꿈", "weak_kel": "moonlit", "resist_kel": "mosaic"},
         ],
     },
     "seed_keeper": {
@@ -227,9 +251,9 @@ BEAST_CATALOG: dict[str, dict[str, Any]] = {
             "power": 1,
         },
         "layers": [
-            {"name": "겉꿈", "weak_kel": "sunny", "resist_kel": "ember"},
-            {"name": "선잠", "weak_kel": "rainy", "resist_kel": "moonlit"},
-            {"name": "깊은 꿈", "weak_kel": "ember", "resist_kel": "sparkling"},
+            {"name": "겉꿈", "weak_kel": "ember", "resist_kel": "sparkling"},
+            {"name": "선잠", "weak_kel": "sunny", "resist_kel": "ember"},
+            {"name": "깊은 꿈", "weak_kel": "sparkling", "resist_kel": "sunny"},
         ],
     },
     "record_keeper": {
@@ -263,7 +287,7 @@ BEAST_CATALOG: dict[str, dict[str, Any]] = {
         },
         "layers": [
             {"name": "겉꿈", "weak_kel": "moonlit", "resist_kel": "mosaic"},
-            {"name": "선잠", "weak_kel": "sparkling", "resist_kel": "sunny"},
+            {"name": "선잠", "weak_kel": "rainy", "resist_kel": "moonlit"},
             {"name": "깊은 꿈", "weak_kel": "mosaic", "resist_kel": "rainy"},
         ],
     },
@@ -338,16 +362,19 @@ def moment_code_for_layer(index: int) -> str:
 def layers_for(beast_code: str, difficulty: str) -> list[dict[str, Any]]:
     """난이도가 정한 겹 수만큼, 장벽과 상성을 채운 겹 목록을 만든다."""
     beast = BEAST_CATALOG[beast_code]
-    count = int(DIFFICULTIES[difficulty]["layers"])
+    spec = DIFFICULTIES[difficulty]
+    count = int(spec["layers"])
+    scale = int(spec.get("barrier_scale_bp", 10_000))
     layers: list[dict[str, Any]] = []
     for index in range(count):
         layer = beast["layers"][index]
+        barrier = (LAYER_BARRIERS[index] * scale + 5_000) // 10_000
         layers.append(
             {
                 "index": index,
                 "name": layer["name"],
-                "barrier": LAYER_BARRIERS[index],
-                "max_barrier": LAYER_BARRIERS[index],
+                "barrier": barrier,
+                "max_barrier": barrier,
                 "rounds": LAYER_ROUNDS,
                 "weak_kel": layer["weak_kel"],
                 "resist_kel": layer["resist_kel"],
@@ -545,6 +572,25 @@ def validate_joint_guard_content() -> list[str]:
                 f"joint_guard.balance: {korean_subject(label)} 내성으로 2번 "
                 f"나와야 합니다 (현재 {resist_counts[kel]}번)"
             )
+
+    # 겹마다 네 짐승의 상성이 서로 달라야 한다.
+    #
+    # 열(결) 균형만 보면 표가 맞아 보이지만, `겉꿈 산책`은 첫 겹만 걷는
+    # 난이도라 그 행이 곧 전부다. 행이 한쪽으로 쏠리면 그 난이도에서만
+    # 특정 결이 유리해진다 - 실제로 첫 겹 약점이 햇살결 둘·달빛결 둘이라
+    # 달빛결만 승률 밴드를 벗어났다.
+    for index in range(3):
+        for axis in ("weak_kel", "resist_kel"):
+            row = [
+                beast["layers"][index][axis]
+                for beast in BEAST_CATALOG.values()
+                if len(beast.get("layers") or []) == 3
+            ]
+            if len(row) == len(BEAST_CATALOG) and len(set(row)) != len(row):
+                errors.append(
+                    f"joint_guard.balance: {index}겹의 {axis}가 겹칩니다 "
+                    f"({', '.join(row)})"
+                )
 
     # 겹마다 결정적 순간이 정확히 하나씩 있고, 우회 경로가 반드시 있다.
     covered = sorted(int(m["layer_index"]) for m in DECISIVE_MOMENTS.values())
