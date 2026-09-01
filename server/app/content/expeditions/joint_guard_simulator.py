@@ -634,6 +634,12 @@ def main() -> int:
     return 1 if failures else 0
 
 
+# 밸런스 테스트의 docstring이 `python -m ...joint_guard_simulator`로 리포트를
+# 다시 만들라고 안내한다. 이 줄이 없으면 그 명령이 아무 일도 하지 않는다.
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+
 __all__ = [
     "JointGuardCase",
     "build_report",
