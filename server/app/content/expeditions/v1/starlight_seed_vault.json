@@ -9,8 +9,8 @@
     "recommended_stage": 4,
     "stat_cap": 9,
     "reward": {
-      "exp": 8,
-      "seeds": 3,
+      "exp": 9,
+      "seeds": 4,
       "item_code": "vault_key",
       "value_units": 1,
       "loot_value_units": 3,

@@ -313,7 +313,7 @@ async def test_reward_lands_once_on_the_deepest_band_at_the_end(
     ).json()
     assert journey["reward_eligible"] is True
 
-    # 첫 구간은 서고(6/2), 둘째 구간은 우물정원(7/2). 우물정원이 더 멀다.
+    # 첫 구간은 서고(6/2), 둘째 구간은 우물정원(8/3). 우물정원이 더 멀다.
     created = await _create_leg(client, headers, journey, "mossy_stair", plant_ids[:2])
     await _finish_leg(
         client, headers, session_factory, created.json()["expedition"]["run"]["id"]
@@ -338,10 +338,10 @@ async def test_reward_lands_once_on_the_deepest_band_at_the_end(
     assert body["status"] == "completed"
     assert body["summary"]["secured_count"] == 2
     assert body["summary"]["deepest_region_code"] == "echo_well"
-    # 우물정원 밴드(7/2)로 한 번. 두 구간을 합산한 13/4이 아니다.
+    # 우물정원 밴드(8/3)로 한 번. 두 구간을 합산한 14/5가 아니다.
     events = body["summary"]["reward"]["events"]
     assert len(events) == 1
-    assert (events[0]["exp_delta"], events[0]["seed_delta"]) == (7, 2)
+    assert (events[0]["exp_delta"], events[0]["seed_delta"]) == (8, 3)
 
     async with session_factory() as db:
         events = list(

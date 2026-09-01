@@ -289,6 +289,18 @@ DUNGEON_APPROACHES = {
     },
 }
 
+#: `오늘의 성장 효율` 패널이 읽는 하루 경제표(설계서 9.1).
+#:
+#: 이 값이 지키는 것은 **순서**다 — 마음 일기 한 편이 어떤 탐험보다 크다.
+#: 지역 보상을 올릴 때 이 순서가 뒤집히지 않는지 검사가 함께 센다. 상수로
+#: 꺼내 둔 이유가 그것이다.
+DAILY_ECONOMY = (
+    {"code": "diary", "label": "마음 일기", "exp": 40, "seeds": 15},
+    {"code": "quest", "label": "작은 행동", "exp": 20, "seeds": 5},
+    {"code": "dungeon", "label": "던전", "exp": 10, "seeds": 4},
+    {"code": "patrol", "label": "순찰", "exp": 0, "seeds": 3},
+)
+
 ITEMS = {
     "pressed_leaf_map": ("눌러 말린 잎 지도", "다음 길을 찾을 때 쓰는 얇은 지도 조각"),
     "moon_dew": ("달빛 이슬", "밤의 식물에서만 맺히는 맑은 이슬"),
@@ -1247,12 +1259,7 @@ async def state_payload(db: AsyncSession, user_id: int) -> dict:
             "reward_seeds": 15,
             "message": "오늘 마음을 50자 이상 기록하면 탐험이 열려요.",
         },
-        "economy": [
-            {"code": "diary", "label": "마음 일기", "exp": 40, "seeds": 15},
-            {"code": "quest", "label": "작은 행동", "exp": 20, "seeds": 5},
-            {"code": "dungeon", "label": "던전", "exp": 10, "seeds": 4},
-            {"code": "patrol", "label": "순찰", "exp": 0, "seeds": 3},
-        ],
+        "economy": [dict(row) for row in DAILY_ECONOMY],
         "weekly_board": await _weekly_board_payload(
             db,
             user_id,

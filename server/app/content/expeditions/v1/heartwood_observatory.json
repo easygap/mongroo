@@ -9,8 +9,8 @@
     "recommended_stage": 5,
     "stat_cap": 10,
     "reward": {
-      "exp": 9,
-      "seeds": 3,
+      "exp": 10,
+      "seeds": 5,
       "item_code": "heartwood_key",
       "value_units": 2,
       "loot_value_units": 4,
