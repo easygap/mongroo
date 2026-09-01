@@ -51,7 +51,8 @@ class _ExpeditionHub extends ConsumerWidget {
                       stageMap: stageMap,
                       roster: state.roster,
                       busy: state.busyAction != null,
-                      onTap: notifier.openStageMap,
+                      onTap: notifier.continueNextStage,
+                      onChoose: notifier.openStageMap,
                     ),
                     const SizedBox(height: 10),
                     _TodayRewardLine(catalog: catalog),
@@ -160,12 +161,18 @@ class _ContinueAdventureCard extends StatelessWidget {
     required this.roster,
     required this.busy,
     required this.onTap,
+    required this.onChoose,
   });
 
   final ExpeditionStageMap stageMap;
   final List<ExpeditionRosterItem> roster;
   final bool busy;
+
+  /// 카드를 누르면 다음 스테이지로 바로 들어간다.
   final VoidCallback onTap;
+
+  /// 다른 스테이지나 다른 캐릭터로 가고 싶을 때. 지도를 연다.
+  final VoidCallback onChoose;
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +186,8 @@ class _ContinueAdventureCard extends StatelessWidget {
     return Semantics(
       button: true,
       label: '$headline, $detail. '
-          '${stageMap.clearedCount}/${stageMap.total} 스테이지 완주',
+          '${stageMap.clearedCount}/${stageMap.total} 스테이지 완주. '
+          '${stageMap.clearedCount == 0 ? '눌러서 탐험대를 꾸려요' : '눌러서 바로 떠나요'}',
       child: MongrooPanel(
         padding: EdgeInsets.zero,
         radius: 20,
@@ -258,14 +266,17 @@ class _ContinueAdventureCard extends StatelessWidget {
                               ),
                             ),
                           ),
+                        // 예전에는 `고를 수 있어요`라고 말만 하고 누를 곳이
+                        // 없었다. 카드를 누르면 바로 떠나므로, 고르고 싶은
+                        // 사람이 갈 자리를 여기에 만든다.
                         Expanded(
-                          child: Text(
-                            '출발 전에 함께 갈 캐릭터를 고를 수 있어요.',
-                            maxLines: 2,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: scheme.onSurfaceVariant),
+                          child: Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: TextButton(
+                              key: const ValueKey('hub-choose-stage'),
+                              onPressed: busy ? null : onChoose,
+                              child: const Text('다른 스테이지·캐릭터 고르기'),
+                            ),
                           ),
                         ),
                       ],

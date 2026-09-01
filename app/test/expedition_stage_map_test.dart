@@ -170,6 +170,16 @@ class _FakeStageController extends ExpeditionController {
   int loadCalls = 0;
   final List<String> selectedRegions = [];
 
+  /// 실제로 떠난 모드. 허브에서 한 번에 들어가는 길이 생기면서, 어디로 갔는지가
+  /// 아니라 **떠났는지**가 검사의 관심사가 됐다.
+  final List<String> startedModes = [];
+
+  @override
+  Future<bool> start(String mode) async {
+    startedModes.add(mode);
+    return true;
+  }
+
   @override
   ExpeditionUiState build() => initial;
 
@@ -325,7 +335,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await _pumpShell(tester, clearedCount: 2);
-    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
     await tester.pump();
 
     for (var no = 1; no <= 8; no++) {
@@ -360,7 +370,7 @@ void main() {
     );
 
     // 지도의 잠긴 스테이지
-    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
     await tester.pump();
     final lockReason = find.text('기억서고 4를 먼저 완주하면 열려요.').first;
     await tester.ensureVisible(lockReason);
@@ -378,7 +388,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final controller = await _pumpShell(tester, clearedCount: 2);
-    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
     await tester.pump();
 
     await tester.tap(find.byKey(const ValueKey('stage-point-3')));
@@ -407,7 +417,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await _pumpShell(tester, clearedCount: 1);
-    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
     await tester.pump();
 
     await tester.tap(find.byKey(const ValueKey('stage-point-5')));
@@ -423,7 +433,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final controller = await _pumpShell(tester, clearedCount: 2);
-    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
     await tester.pump();
     expect(controller.state.shellView, ExpeditionShellView.stageMap);
 
@@ -488,7 +498,7 @@ void main() {
       clearedCount: 8,
       echoWellUnlocked: true,
     );
-    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
     await tester.pump();
 
     expect(find.byKey(const ValueKey('region-chip-moss_archive')), findsOneWidget);
@@ -506,7 +516,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final controller = await _pumpShell(tester, clearedCount: 3);
-    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
     await tester.pump();
 
     await tester.tap(find.byKey(const ValueKey('region-chip-echo_well')));
@@ -625,6 +635,53 @@ void main() {
       find.text('수호짐승의 장벽을 한 번 열면 관리인이 편지를 보내요.'),
       findsOneWidget,
     );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('걸어 본 지역은 허브 카드 한 번으로 바로 떠난다', (tester) async {
+    // 설계서 3.6: `재도전 사용자는 탭 한 번으로 approach에 들어간다.`
+    // 지도와 시트를 매번 지나면 그 한 번이 네 번이 된다.
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = await _pumpShell(tester, clearedCount: 2);
+    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.pump();
+
+    expect(controller.startedModes, ['heart_resonance']);
+    expect(controller.state.selectedStageNo, 3);
+    // 지도를 거치지 않는다.
+    expect(controller.state.shellView, ExpeditionShellView.hub);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('처음 걷는 지역은 카드를 눌러도 편성부터 연다', (tester) async {
+    // 누구와 갈지 한 번도 정한 적 없는 사람을 말없이 출발시키지 않는다.
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = await _pumpShell(tester, clearedCount: 0);
+    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+    await tester.pump();
+
+    expect(controller.startedModes, isEmpty);
+    expect(controller.state.shellView, ExpeditionShellView.preparation);
+    expect(controller.state.selectedStageNo, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('다른 스테이지로 가고 싶으면 지도를 여는 자리가 따로 있다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = await _pumpShell(tester, clearedCount: 2);
+    expect(find.text('다른 스테이지·캐릭터 고르기'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
+    await tester.pump();
+
+    expect(controller.startedModes, isEmpty);
+    expect(controller.state.shellView, ExpeditionShellView.stageMap);
     expect(tester.takeException(), isNull);
   });
 }

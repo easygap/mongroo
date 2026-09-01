@@ -263,6 +263,40 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
   void openStageMap() =>
       state = state.copyWith(shellView: ExpeditionShellView.stageMap);
 
+  /// 허브에서 다음 스테이지로 **한 번에** 들어간다.
+  ///
+  /// 설계서 3.6이 정한 것: `재도전 사용자는 탭 한 번으로 approach에 들어가며,
+  /// 최초 진입·파티 변경이 필요한 경우에만 준비 화면을 연다.` 지금까지는
+  /// 허브 → 지도 → 시트 → 편성 → 출발로 네 번을 눌러야 어제 걷던 자리에
+  /// 다시 설 수 있었다.
+  ///
+  /// 처음 걷는 지역이거나 고른 캐릭터가 없으면 그대로 편성으로 보낸다 —
+  /// 누구와 갈지 한 번도 정한 적 없는 사람을 말없이 출발시키지 않는다.
+  Future<bool> continueNextStage() async {
+    final stageMap = state.stageMap;
+    final next = stageMap?.nextStage;
+    if (stageMap == null || next == null) {
+      openStageMap();
+      return false;
+    }
+    if (!next.unlocked) {
+      state = state.copyWith(error: next.lockReason);
+      return false;
+    }
+    final ready = state.roster.any(
+      (item) => item.eligible && state.selectedPlantIds.contains(item.plantId),
+    );
+    if (stageMap.clearedCount == 0 || !ready) {
+      openStagePreparation(next.no);
+      return false;
+    }
+    state = state.copyWith(selectedStageNo: next.no, error: null);
+    // 오늘 보상이 남아 있으면 그쪽으로, 아니면 자유 탐험으로. 편성 화면에서
+    // 고르던 것과 같은 규칙이라 한 번에 들어가도 받는 것이 달라지지 않는다.
+    final resonance = state.catalog?.heartResonanceAvailable == true;
+    return start(resonance ? 'heart_resonance' : 'free_explore');
+  }
+
   /// 지도에서 스테이지를 고르고 편성 화면으로 넘어간다.
   /// 잠긴 스테이지는 사유만 알리고 이동하지 않는다.
   void openStagePreparation(int stageNo) {
