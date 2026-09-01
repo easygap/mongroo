@@ -8,7 +8,18 @@
     "description": "숨 쉬는 장부와 새벽 우편의 흔적을 따라, 끊긴 온실 밖 길을 되찾는 첫 던전이에요.",
     "recommended_stage": 2,
     "stat_cap": 7,
-    "reward": {"exp": 6, "seeds": 2, "item_code": "moss_key"}
+    "reward": {
+      "exp": 6,
+      "seeds": 2,
+      "item_code": "moss_key",
+      "value_units": 1,
+      "loot_value_units": 1,
+      "loot_slots": 1,
+      "field_items": [
+        "pressed_leaf_map",
+        "moon_dew"
+      ]
+    }
   },
   "stages": [
     {

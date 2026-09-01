@@ -11,7 +11,14 @@
     "reward": {
       "exp": 7,
       "seeds": 2,
-      "item_code": "echo_key"
+      "item_code": "echo_key",
+      "value_units": 1,
+      "loot_value_units": 2,
+      "loot_slots": 2,
+      "field_items": [
+        "echo_seed",
+        "moon_dew"
+      ]
     }
   },
   "stages": [

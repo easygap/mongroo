@@ -21,6 +21,11 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.errors import AppError
+from app.content.expeditions.loot_budget import (
+    LootBudgetError,
+    budget_of,
+    select_within_budget,
+)
 from app.content.expeditions.journey import (
     DIRECTIONS,
     JOURNEY_VERSION,
@@ -32,7 +37,6 @@ from app.content.expeditions.journey import (
 )
 from app.core.korean import korean_object
 from app.core.timeutil import local_date_of, utcnow
-from app.models.adventure import UserAdventureItem
 from app.models.expedition import (
     ExpeditionJourney,
     ExpeditionLoot,
@@ -151,6 +155,8 @@ async def journey_payload(
     run = await _current_leg_run(db, journey)
     at_camp = run is None and journey.status == "active"
     remaining = journey.max_legs - journey.current_leg_index
+    budget, slots = _journey_budget(journey)
+    candidates = await _candidates(db, journey) if at_camp else []
     return {
         "id": journey.id,
         "direction_code": journey.direction_code,
@@ -180,6 +186,14 @@ async def journey_payload(
         "next_routes": (
             routes_for(journey.direction_code, journey.current_leg_index)
             if at_camp and remaining > 0
+            else []
+        ),
+        # 귀환 sheet가 담을 조합을 고르려면 후보와 예산이 함께 있어야 한다.
+        # 아직 걷는 중이면 고를 자리가 아니므로 비워 둔다.
+        "return_budget": {"value_units": budget, "slots": slots},
+        "return_candidates": (
+            [expedition_service.loot_payload(loot) for loot in candidates]
+            if at_camp
             else []
         ),
         "summary": journey.summary_snapshot,
@@ -465,7 +479,11 @@ async def on_leg_finished(db: AsyncSession, run: ExpeditionRun) -> None:
         )
 
 
-def _summary_of(journey: ExpeditionJourney, reward: dict | None) -> dict[str, Any]:
+def _summary_of(
+    journey: ExpeditionJourney,
+    reward: dict | None,
+    loot: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     secured = [entry for entry in journey.legs_snapshot if entry["objective_secured"]]
     return {
         "title": (
@@ -474,6 +492,7 @@ def _summary_of(journey: ExpeditionJourney, reward: dict | None) -> dict[str, An
             else "오늘은 여기까지 기록했어요"
         ),
         "reward": reward,
+        "loot": loot,
         "leg_count": len(journey.legs_snapshot),
         "secured_count": len(secured),
         "deepest_region_code": journey.deepest_secured_region,
@@ -516,11 +535,13 @@ async def _finish(
         )
         reward_payload = outcome.payload()
 
-    await _settle_loot(db, journey, grant=grant, selected_loot_ids=selected_loot_ids)
+    loot_result = await _settle_loot(
+        db, journey, grant=grant, selected_loot_ids=selected_loot_ids
+    )
 
     journey.status = status
     journey.completed_at = utcnow()
-    journey.summary_snapshot = _summary_of(journey, reward_payload)
+    journey.summary_snapshot = _summary_of(journey, reward_payload, loot_result)
     journey.revision += 1
     await db.execute(
         sa.delete(UserActiveExpedition).where(
@@ -530,57 +551,86 @@ async def _finish(
     return await journey_payload(db, journey)
 
 
+async def _candidates(
+    db: AsyncSession, journey: ExpeditionJourney
+) -> list[ExpeditionLoot]:
+    run_ids = [entry["run_id"] for entry in journey.legs_snapshot]
+    if not run_ids:
+        return []
+    return list(
+        (
+            await db.execute(
+                sa.select(ExpeditionLoot)
+                .where(
+                    ExpeditionLoot.run_id.in_(run_ids),
+                    ExpeditionLoot.disposition == "candidate",
+                )
+                .order_by(ExpeditionLoot.id)
+            )
+        ).scalars()
+    )
+
+
+def _journey_budget(journey: ExpeditionJourney) -> tuple[int, int]:
+    """가장 먼 확보 지역의 가치 예산과 칸 수.
+
+    구간마다 예산을 따로 주지 않는다 — 보상이 한 번뿐인 것과 같은 이유로,
+    담아 올 수 있는 양도 **가장 멀리 간 곳** 하나가 정한다(설계서 9.8).
+    """
+
+    if journey.deepest_secured_region is None:
+        return (0, 0)
+    reward = expedition_service.load_content(journey.deepest_secured_region)[
+        "region"
+    ]["reward"]
+    return budget_of(reward)
+
+
 async def _settle_loot(
     db: AsyncSession,
     journey: ExpeditionJourney,
     *,
     grant: bool,
     selected_loot_ids: list[int] | None,
-) -> None:
-    """구간마다 모아 둔 귀환 후보를 정리한다.
+) -> dict[str, Any] | None:
+    """구간마다 모아 둔 귀환 후보를 가치 예산 안에서 정리한다.
 
-    구간 run은 보상 자격이 없어서 loot가 `candidate`인 채로 남아 있다. 여기서
-    한 번에 넘기거나(`granted`) 기록으로만 남긴다(`recorded`).
+    구간 run은 그 자리에서 지급하지 않아 loot가 `candidate`로 쌓여 있다.
+    여기서 예산만큼 넘기고(`granted`) 나머지는 기록으로 남긴다(`recorded`).
     """
 
-    run_ids = [entry["run_id"] for entry in journey.legs_snapshot]
-    if not run_ids:
-        return
-    loots = list(
-        (
-            await db.execute(
-                sa.select(ExpeditionLoot).where(
-                    ExpeditionLoot.run_id.in_(run_ids),
-                    ExpeditionLoot.disposition == "candidate",
-                )
-            )
-        ).scalars()
-    )
-    chosen = set(selected_loot_ids or [])
-    for loot in loots:
-        if not grant or (chosen and loot.id not in chosen):
+    loots = await _candidates(db, journey)
+    if not loots:
+        return None
+    budget, slots = _journey_budget(journey)
+    if not grant or budget <= 0:
+        for loot in loots:
             loot.disposition = "recorded"
-            continue
-        existing = await db.scalar(
-            sa.select(UserAdventureItem)
-            .where(
-                UserAdventureItem.user_id == journey.user_id,
-                UserAdventureItem.item_code == loot.item_code,
-            )
-            .with_for_update()
+        return None
+
+    try:
+        selection = select_within_budget(
+            loots,
+            budget=budget,
+            slots=slots,
+            selected_ids=selected_loot_ids,
         )
-        if existing:
-            existing.quantity += loot.quantity
-        else:
-            db.add(
-                UserAdventureItem(
-                    user_id=journey.user_id,
-                    item_code=loot.item_code,
-                    quantity=loot.quantity,
-                )
-            )
-        loot.disposition = "granted"
-        loot.granted_at = utcnow()
+    except LootBudgetError as error:
+        raise AppError(422, error.code, error.message) from error
+
+    for loot in selection.granted:
+        await expedition_service.grant_loot(db, journey.user_id, loot)
+    for loot in selection.recorded:
+        loot.disposition = "recorded"
+    return {
+        "value_units": budget,
+        "slots": slots,
+        "spent_units": selection.spent_units,
+        "granted": [expedition_service.loot_payload(loot) for loot in selection.granted],
+        "recorded": [
+            expedition_service.loot_payload(loot) for loot in selection.recorded
+        ],
+    }
 
 
 async def return_home(

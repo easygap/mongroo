@@ -152,6 +152,12 @@ async def _reach_guardian(client, headers: dict, run: dict, key_prefix: str) -> 
 
 
 async def _complete_run(client, headers: dict, run: dict) -> dict:
+    run = await _walk_to_exit(client, headers, run)
+    return await _action(client, headers, run, "extract", {}, "extract-run-0001")
+
+
+async def _walk_to_exit(client, headers: dict, run: dict) -> dict:
+    """귀환 직전까지 걷는다. 담아 올 것을 고르는 검사가 여기서 갈라진다."""
     run = await _action(
         client, headers, run, "move", {"node_code": "wet_labels"}, "move-wet-0001"
     )
@@ -207,7 +213,7 @@ async def _complete_run(client, headers: dict, run: dict) -> dict:
     run = await _action(
         client, headers, run, "move", {"node_code": "exit"}, "move-exit-0001"
     )
-    return await _action(client, headers, run, "extract", {}, "extract-run-0001")
+    return run
 
 
 async def test_expedition_map_actions_are_authoritative_and_replayable(
@@ -668,8 +674,17 @@ async def test_heart_resonance_rewards_only_after_objective_and_return(
     assert completed["summary"]["reward"]["events"] == [
         {"event_type": "expedition_completed", "exp_delta": 6, "seed_delta": 2}
     ]
-    assert completed["loot"][0]["item_code"] == "moss_key"
-    assert completed["loot"][0]["disposition"] == "granted"
+    # 기억서고의 가치 예산은 `1가치 · 1칸`이다(설계서 9.1). 사건에서 현장
+    # 재료를 주웠어도 담아 오는 것은 목표 재료 하나뿐이고, 나머지는 기록으로만
+    # 남아 제작 재료가 되지 않는다.
+    granted = [item for item in completed["loot"] if item["disposition"] == "granted"]
+    recorded = [item for item in completed["loot"] if item["disposition"] == "recorded"]
+    assert [item["item_code"] for item in granted] == ["moss_key"]
+    assert recorded, "예산에 밀린 현장 재료가 기록으로 남아야 한다"
+    assert completed["summary"]["loot"]["value_units"] == 1
+    assert completed["summary"]["loot"]["slots"] == 1
+    assert completed["summary"]["loot"]["spent_units"] == 1
+    assert completed["return_budget"] == {"value_units": 1, "slots": 1}
     assert completed["summary"]["progress"] == {
         "first_clear": True,
         "clear_count": 1,
@@ -930,3 +945,70 @@ async def test_guardian_defeat_forces_safe_return_and_loses_carried_rewards(
     active = await client.get("/adventure/expeditions/active", headers=headers)
     assert active.status_code == 200
     assert active.json()["expedition"] is None
+
+
+async def test_extract_refuses_a_pick_over_the_value_budget(
+    client, user_tokens, session_factory
+):
+    """일반 탐험도 개척과 같은 규칙을 지난다.
+
+    기억서고는 `1가치 · 1칸`이다. 사건에서 재료를 주웠어도 둘을 한꺼번에
+    담아 올 수는 없고, 넘치면 조용히 잘라 내지 않고 422로 돌려준다.
+    """
+
+    headers = auth_headers(user_tokens)
+    await client.post(
+        "/moods",
+        headers={**headers, "Idempotency-Key": "diary-budget-0001"},
+        json={
+            "content": "오늘은 멀리까지 걸어 보기로 했다. 마음이 조금 가벼워졌다. " * 2
+        },
+    )
+    plant = await client.get("/plants/me", headers=headers)
+    plant_id = plant.json()["plant"]["id"]
+    run = await _start(client, headers, plant_id, mode="heart_resonance")
+    run = await _walk_to_exit(client, headers, run)
+
+    assert run["return_budget"] == {"value_units": 1, "slots": 1}
+    candidates = [item for item in run["loot"] if item["disposition"] == "candidate"]
+    assert len(candidates) >= 2, run["loot"]
+
+    refused = await client.post(
+        f"/adventure/expeditions/{run['run']['id']}/extract",
+        headers=headers,
+        json={
+            "expected_revision": run["run"]["revision"],
+            "client_action_id": "extract-over-budget",
+            "selected_loot_ids": [item["id"] for item in candidates[:2]],
+        },
+    )
+    assert refused.status_code == 422, refused.text
+    assert refused.json()["code"] == "EXPEDITION_LOOT_INVALID"
+
+    # 하나만 고르면 통과하고, 고른 그것이 인벤토리로 간다.
+    wanted = candidates[-1]
+    ok = await client.post(
+        f"/adventure/expeditions/{run['run']['id']}/extract",
+        headers=headers,
+        json={
+            "expected_revision": run["run"]["revision"],
+            "client_action_id": "extract-in-budget",
+            "selected_loot_ids": [wanted["id"]],
+        },
+    )
+    assert ok.status_code == 200, ok.text
+    loot = ok.json()["summary"]["loot"]
+    assert [item["id"] for item in loot["granted"]] == [wanted["id"]]
+    assert loot["spent_units"] == wanted["value_units"]
+
+    async with session_factory() as db:
+        items = list(
+            (
+                await db.execute(
+                    sa.select(UserAdventureItem).where(
+                        UserAdventureItem.user_id == user_tokens["user"]["id"]
+                    )
+                )
+            ).scalars()
+        )
+        assert [item.item_code for item in items] == [wanted["item_code"]]

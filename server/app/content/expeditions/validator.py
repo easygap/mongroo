@@ -72,6 +72,42 @@ def expand_map_templates(content: dict[str, Any]) -> list[dict[str, Any]]:
     return maps
 
 
+def _validate_reward_budget(reward: dict[str, Any], errors: list[str]) -> None:
+    """지역 보상의 가치 예산 칸.
+
+    `value_units`는 목표 재료 한 개의 값이고 `loot_value_units`가 그 지역의
+    예산이다. 목표가 예산보다 비싸면 목표조차 못 가져오므로 그 조합을 막는다.
+    `field_items`는 현장 재료 후보다 — 이게 비면 예산은 장식이 된다.
+    """
+
+    def _bounded(key: str, low: int, high: int) -> int | None:
+        value = reward.get(key)
+        if not isinstance(value, int) or not low <= value <= high:
+            errors.append(f"region.reward.{key}: {low}~{high} 사이의 정수가 필요합니다")
+            return None
+        return value
+
+    objective_value = _bounded("value_units", 1, 2)
+    budget = _bounded("loot_value_units", 1, 4)
+    _bounded("loot_slots", 1, 3)
+
+    field_items = reward.get("field_items")
+    if (
+        not isinstance(field_items, list)
+        or len(field_items) < 2
+        or any(not isinstance(code, str) or not code for code in field_items)
+    ):
+        errors.append("region.reward.field_items: 현장 재료 코드가 둘 이상 필요합니다")
+    if (
+        objective_value is not None
+        and budget is not None
+        and objective_value > budget
+    ):
+        errors.append(
+            f"region.reward: 목표 재료 가치({objective_value})가 예산({budget})보다 큽니다"
+        )
+
+
 def validate_content(content: dict[str, Any]) -> None:
     errors: list[str] = []
     if content.get("schema_version") != 1:
@@ -88,6 +124,10 @@ def validate_content(content: dict[str, Any]) -> None:
             for key in ("exp", "seeds")
         ):
             errors.append("region.reward: 0 이상의 exp와 seeds가 필요합니다")
+        else:
+            # 가치 예산(설계서 9.1). 사용자에게 화폐처럼 보여 주지 않는 정수라
+            # 여기서 지키지 않으면 어디서도 안 지켜진다.
+            _validate_reward_budget(reward, errors)
 
     events = content.get("events")
     if not isinstance(events, dict) or not events:

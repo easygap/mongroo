@@ -8,6 +8,7 @@ from app.models.user import User
 from app.schemas.requests import (
     ExpeditionChoiceRequest,
     ExpeditionCombatTurnRequest,
+    ExpeditionExtractRequest,
     ExpeditionFinishRequest,
     ExpeditionMoveRequest,
     ExpeditionSkillRequest,
@@ -198,7 +199,7 @@ async def resolve_expedition_combat_turn(
 @router.post("/{run_id}/extract")
 async def extract_expedition(
     run_id: int,
-    body: ExpeditionFinishRequest,
+    body: ExpeditionExtractRequest,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -209,6 +210,7 @@ async def extract_expedition(
             run_id,
             expected_revision=body.expected_revision,
             client_action_id=body.client_action_id,
+            selected_loot_ids=body.selected_loot_ids,
         )
         await db.commit()
         return result

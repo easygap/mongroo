@@ -91,16 +91,41 @@ async def _create_leg(client, headers, journey, route_code, plant_ids, key=None)
     )
 
 
-async def _secure(session_factory, run_id: int) -> None:
+async def _secure(session_factory, run_id: int, *, field_items: int = 0) -> None:
     """구간의 목표를 확보하고 귀환 지점에 세운다.
 
     지도를 실제로 걷는 것은 다른 검사가 본다. 여기서 필요한 것은 `구간이
-    목표를 안고 끝났다`는 상태뿐이다.
+    목표를 안고 끝났다`는 상태와, 그때 남는 **귀환 후보**다. 서비스가 걷는
+    도중에 만드는 것과 같은 모양으로 넣는다.
     """
     async with session_factory() as db:
         run = await db.get(ExpeditionRun, run_id)
         run.objective_secured = True
         run.current_node_code = run.map_snapshot["entrance"]
+        reward = run.map_snapshot["region"]["reward"]
+        db.add(
+            ExpeditionLoot(
+                run_id=run.id,
+                node_code="objective",
+                item_code=reward["item_code"],
+                quantity=1,
+                value_units=int(reward.get("value_units", 1)),
+                loot_kind="objective",
+                disposition="candidate",
+            )
+        )
+        for index in range(field_items):
+            db.add(
+                ExpeditionLoot(
+                    run_id=run.id,
+                    node_code=f"field_{index}",
+                    item_code=reward["field_items"][index % len(reward["field_items"])],
+                    quantity=1,
+                    value_units=1,
+                    loot_kind="field",
+                    disposition="candidate",
+                )
+            )
         await db.commit()
 
 
@@ -121,8 +146,10 @@ async def _run_revision(client, headers, run_id: int) -> int:
     return response.json()["run"]["revision"]
 
 
-async def _finish_leg(client, headers, session_factory, run_id: int) -> dict:
-    await _secure(session_factory, run_id)
+async def _finish_leg(
+    client, headers, session_factory, run_id: int, *, field_items: int = 0
+) -> dict:
+    await _secure(session_factory, run_id, field_items=field_items)
     revision = await _run_revision(client, headers, run_id)
     response = await _extract(client, headers, run_id, revision)
     assert response.status_code == 200, response.text
@@ -485,3 +512,130 @@ async def test_another_user_cannot_touch_someone_elses_journey(
         json={"expected_revision": journey["revision"]},
     )
     assert stolen.status_code == 404
+
+
+async def test_return_fills_the_value_budget_of_the_deepest_region(
+    client, user_tokens, session_factory
+):
+    """구간마다 모은 후보를 **가장 먼 곳의 예산** 안에서만 담아 온다.
+
+    우물정원은 `2가치 · 2칸`이다(설계서 9.1). 목표 하나와 현장 재료 둘을 모아도
+    담아 오는 것은 둘까지이고 나머지는 기록으로 남는다.
+    """
+
+    user_id = user_tokens["user"]["id"]
+    headers = auth_headers(user_tokens)
+    await _clear_regions(session_factory, user_id, "moss_archive", "echo_well")
+    plant_ids = await _ready_plants(session_factory, user_id, 4)
+    diary = await client.post(
+        "/moods",
+        headers={**headers, "Idempotency-Key": uuid.uuid4().hex},
+        json={"content": "멀리까지 걸어 보기로 했다. " * 4},
+    )
+    assert diary.status_code == 201, diary.text
+
+    journey = (await _start_journey(client, headers, mode="heart_resonance")).json()
+    created = await _create_leg(client, headers, journey, "mossy_stair", plant_ids[:2])
+    await _finish_leg(
+        client,
+        headers,
+        session_factory,
+        created.json()["expedition"]["run"]["id"],
+        field_items=1,
+    )
+    journey = await _journey(client, headers)
+    created = await _create_leg(client, headers, journey, "deeper_water", plant_ids[2:4])
+    await _finish_leg(
+        client,
+        headers,
+        session_factory,
+        created.json()["expedition"]["run"]["id"],
+        field_items=1,
+    )
+
+    journey = await _journey(client, headers)
+    # 야영지에서 후보와 예산을 함께 보여 준다. 넷을 모았지만 예산은 둘이다.
+    assert journey["return_budget"] == {"value_units": 2, "slots": 2}
+    assert len(journey["return_candidates"]) == 4
+    assert all(item["name"] for item in journey["return_candidates"])
+
+    returned = await client.post(
+        f"/adventure/journeys/{journey['id']}/return",
+        headers={**headers, "Idempotency-Key": uuid.uuid4().hex},
+        json={"expected_revision": journey["revision"]},
+    )
+    assert returned.status_code == 200, returned.text
+    loot = returned.json()["summary"]["loot"]
+    assert loot["value_units"] == 2
+    assert loot["spent_units"] == 2
+    assert len(loot["granted"]) == 2
+    assert len(loot["recorded"]) == 2
+    # 목표 재료가 먼저다. 둘 다 목표이므로 둘 다 담아 온다.
+    assert {item["loot_kind"] for item in loot["granted"]} == {"objective"}
+
+    async with session_factory() as db:
+        rows = list(
+            (
+                await db.execute(
+                    sa.select(ExpeditionLoot).order_by(ExpeditionLoot.id)
+                )
+            ).scalars()
+        )
+        assert sorted(row.disposition for row in rows) == [
+            "granted",
+            "granted",
+            "recorded",
+            "recorded",
+        ]
+
+
+async def test_picking_more_than_the_budget_is_refused(
+    client, user_tokens, session_factory
+):
+    user_id = user_tokens["user"]["id"]
+    headers = auth_headers(user_tokens)
+    await _clear_regions(session_factory, user_id, "moss_archive", "echo_well")
+    plant_ids = await _ready_plants(session_factory, user_id, 2)
+    diary = await client.post(
+        "/moods",
+        headers={**headers, "Idempotency-Key": uuid.uuid4().hex},
+        json={"content": "멀리까지 걸어 보기로 했다. " * 4},
+    )
+    assert diary.status_code == 201
+
+    journey = (await _start_journey(client, headers, mode="heart_resonance")).json()
+    created = await _create_leg(client, headers, journey, "mossy_stair", plant_ids[:2])
+    await _finish_leg(
+        client,
+        headers,
+        session_factory,
+        created.json()["expedition"]["run"]["id"],
+        field_items=2,
+    )
+    journey = await _journey(client, headers)
+    # 기억서고만 확보했으므로 예산은 `1가치 · 1칸`이다.
+    assert journey["return_budget"] == {"value_units": 1, "slots": 1}
+    ids = [item["id"] for item in journey["return_candidates"]]
+    assert len(ids) == 3
+
+    refused = await client.post(
+        f"/adventure/journeys/{journey['id']}/return",
+        headers={**headers, "Idempotency-Key": uuid.uuid4().hex},
+        json={"expected_revision": journey["revision"], "selected_loot_ids": ids[:2]},
+    )
+    assert refused.status_code == 422
+    assert refused.json()["code"] == "EXPEDITION_LOOT_INVALID"
+
+    # 예산 안으로 줄이면 통과하고, 고른 그것이 들어온다.
+    chosen = [item for item in journey["return_candidates"] if item["loot_kind"] == "field"][0]
+    ok = await client.post(
+        f"/adventure/journeys/{journey['id']}/return",
+        headers={**headers, "Idempotency-Key": uuid.uuid4().hex},
+        json={
+            "expected_revision": journey["revision"],
+            "selected_loot_ids": [chosen["id"]],
+        },
+    )
+    assert ok.status_code == 200, ok.text
+    granted = ok.json()["summary"]["loot"]["granted"]
+    assert [item["id"] for item in granted] == [chosen["id"]]

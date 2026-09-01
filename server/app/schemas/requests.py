@@ -291,6 +291,13 @@ class ExpeditionFinishRequest(ExpeditionActionRequest):
     pass
 
 
+class ExpeditionExtractRequest(ExpeditionActionRequest):
+    #: 담아 올 귀환 후보. 비우면 서버가 가치 예산을 채운다 — 목표 재료 우선,
+    #: 그다음 먼저 발견한 순서다(설계서 9.8). 목표 전 귀환에는 고를 것이
+    #: 없으므로 이 칸은 `extract`에만 있다.
+    selected_loot_ids: list[int] | None = Field(default=None, max_length=20)
+
+
 class ChatSessionCreateRequest(BaseModel):
     plant_id: int | None = None
 

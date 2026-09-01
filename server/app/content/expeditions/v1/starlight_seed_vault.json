@@ -11,7 +11,14 @@
     "reward": {
       "exp": 8,
       "seeds": 3,
-      "item_code": "vault_key"
+      "item_code": "vault_key",
+      "value_units": 1,
+      "loot_value_units": 3,
+      "loot_slots": 3,
+      "field_items": [
+        "starlight_pollen",
+        "glass_leaf_vein"
+      ]
     }
   },
   "stages": [

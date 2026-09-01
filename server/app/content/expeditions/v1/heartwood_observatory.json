@@ -11,7 +11,14 @@
     "reward": {
       "exp": 9,
       "seeds": 3,
-      "item_code": "heartwood_key"
+      "item_code": "heartwood_key",
+      "value_units": 2,
+      "loot_value_units": 4,
+      "loot_slots": 3,
+      "field_items": [
+        "dawn_bark_rubbing",
+        "heartwood_seed_sample"
+      ]
     }
   },
   "stages": [

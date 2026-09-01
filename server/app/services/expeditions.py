@@ -25,6 +25,11 @@ from app.content.expeditions.combat import (
     resolve_guardian_round,
     submit_guardian_action,
 )
+from app.content.expeditions.loot_budget import (
+    LootBudgetError,
+    budget_of,
+    select_within_budget,
+)
 from app.content.expeditions.skills import skill_definition
 from app.content.expeditions.tangles import tangle_definition
 from app.content.expeditions.relationship_story import (
@@ -1065,6 +1070,25 @@ def _choice_preview(choice: dict, member: ExpeditionPartyMember, effects: dict) 
     }
 
 
+def _return_budget_payload(run: ExpeditionRun) -> dict[str, int]:
+    """이 run이 귀환할 때 쓸 수 있는 가치 예산과 칸 수."""
+
+    budget, slots = budget_of(run.map_snapshot["region"]["reward"])
+    return {"value_units": budget, "slots": slots}
+
+
+def loot_payload(loot: ExpeditionLoot) -> dict[str, Any]:
+    return {
+        "id": loot.id,
+        "item_code": loot.item_code,
+        "name": ITEMS.get(loot.item_code, (loot.item_code, ""))[0],
+        "quantity": loot.quantity,
+        "value_units": loot.value_units,
+        "loot_kind": loot.loot_kind,
+        "disposition": loot.disposition,
+    }
+
+
 async def run_payload(db: AsyncSession, run: ExpeditionRun) -> dict:
     members = await _party_rows(db, run.id)
     node_states = await _node_rows(db, run.id)
@@ -1252,15 +1276,10 @@ async def run_payload(db: AsyncSession, run: ExpeditionRun) -> dict:
         "available_actions": available,
         "run_thread": run.run_thread_snapshot,
         "memory": run.run_memory_snapshot,
-        "loot": [
-            {
-                "item_code": loot.item_code,
-                "name": ITEMS.get(loot.item_code, (loot.item_code, ""))[0],
-                "quantity": loot.quantity,
-                "disposition": loot.disposition,
-            }
-            for loot in loots
-        ],
+        # 가치 예산과 후보를 함께 준다. 화면이 담을 조합을 고르려면 값과
+        # 종류가 후보마다 있어야 한다.
+        "return_budget": _return_budget_payload(run),
+        "loot": [loot_payload(loot) for loot in loots],
         "summary": run.summary_snapshot,
     }
 
@@ -1665,6 +1684,47 @@ async def start_run(
     return await run_payload(db, run)
 
 
+def _loot_disposition(run: ExpeditionRun) -> str:
+    """이 run에서 나온 재료를 후보로 둘지, 기록으로만 남길지.
+
+    **구간 run은 그 자리에서 정하지 않는다.** 장거리 개척은 마지막 귀환에서
+    한꺼번에 고르므로, 구간 run의 보상 자격이 꺼져 있어도 후보로 남겨야 한다.
+    여기를 `reward_eligible`만 보고 정하면 개척 내내 후보가 하나도 안 모인다.
+    """
+
+    if run.journey_id is not None:
+        return "candidate"
+    return "candidate" if run.reward_eligible else "recorded"
+
+
+def _add_field_loot(db: AsyncSession, run: ExpeditionRun, *, node_code: str) -> None:
+    """사건을 매듭지은 자리에 현장 재료 하나를 남긴다.
+
+    이게 있어야 가치 예산이 고를 거리를 만든다 — 목표 재료 하나뿐이면 어느
+    지역이든 예산이 남아돌고, 예산은 장식이 된다.
+
+    무엇이 나올지는 지도 seed와 자리로 정한다. 같은 자리에서 늘 같은 것이
+    나와야 재도전이 재료 뽑기가 되지 않는다.
+    """
+
+    reward = run.map_snapshot["region"]["reward"]
+    items = list(reward.get("field_items") or [])
+    if not items:
+        return
+    digest = hashlib.sha256(f"{run.map_seed}:{node_code}".encode()).hexdigest()
+    db.add(
+        ExpeditionLoot(
+            run_id=run.id,
+            node_code=node_code,
+            item_code=items[int(digest, 16) % len(items)],
+            quantity=1,
+            value_units=1,
+            loot_kind="field",
+            disposition=_loot_disposition(run),
+        )
+    )
+
+
 def _secure_stage_objective(db: AsyncSession, run: ExpeditionRun) -> None:
     """스테이지 세션의 목표 확보 — 그 장면을 끝낸 것이 곧 목표다.
 
@@ -1685,9 +1745,11 @@ def _secure_stage_objective(db: AsyncSession, run: ExpeditionRun) -> None:
             node_code=run.current_node_code,
             item_code=reward["item_code"],
             quantity=1,
-            value_units=1,
+            # 관측실 목표만 제작 단계가 길어 가치 2다(설계서 9.1). 예전에
+            # 시작한 run의 스냅샷에는 이 칸이 없으므로 1로 읽는다.
+            value_units=int(reward.get("value_units", 1)),
             loot_kind="objective",
-            disposition="candidate" if run.reward_eligible else "recorded",
+            disposition=_loot_disposition(run),
         )
     )
 
@@ -1873,9 +1935,9 @@ async def move(
                 node_code=node_code,
                 item_code=reward["item_code"],
                 quantity=1,
-                value_units=1,
+                value_units=int(reward.get("value_units", 1)),
                 loot_kind="objective",
-                disposition="candidate" if run.reward_eligible else "recorded",
+                disposition=_loot_disposition(run),
             )
         )
     return await _finish_action(
@@ -2033,6 +2095,10 @@ async def choose(
         },
     ]
     run.run_memory_snapshot = memory
+    # 우회로 끝나면 재료가 남지 않는다. 판정이 후보 수를 바꾸고, 후보 수가
+    # 예산 안에서 고를 거리를 만든다.
+    if outcome != "detour":
+        _add_field_loot(db, run, node_code=run.current_node_code)
     spotlights = [dict(item) for item in run.spotlight_snapshot]
     for item in spotlights:
         if item["event_code"] == state.event_code and item["member_id"] == member.id:
@@ -2746,6 +2812,31 @@ async def _record_completion_progress(
     }
 
 
+async def grant_loot(db: AsyncSession, user_id: int, loot: ExpeditionLoot) -> None:
+    """후보 하나를 인벤토리에 넘긴다. 일반 탐험과 장거리 개척이 함께 쓴다."""
+
+    existing = await db.scalar(
+        sa.select(UserAdventureItem)
+        .where(
+            UserAdventureItem.user_id == user_id,
+            UserAdventureItem.item_code == loot.item_code,
+        )
+        .with_for_update()
+    )
+    if existing:
+        existing.quantity += loot.quantity
+    else:
+        db.add(
+            UserAdventureItem(
+                user_id=user_id,
+                item_code=loot.item_code,
+                quantity=loot.quantity,
+            )
+        )
+    loot.disposition = "granted"
+    loot.granted_at = utcnow()
+
+
 async def _notify_journey(db: AsyncSession, run: ExpeditionRun) -> None:
     """이 run이 장거리 개척의 한 구간이면 부모를 갱신한다.
 
@@ -2767,9 +2858,17 @@ async def extract(
     *,
     expected_revision: int,
     client_action_id: str,
+    selected_loot_ids: list[int] | None = None,
 ) -> dict:
     run = await _lock_run(db, user_id, run_id)
-    request_payload = {"expected_revision": expected_revision}
+    request_payload = {
+        "expected_revision": expected_revision,
+        **(
+            {"selected_loot_ids": sorted(selected_loot_ids)}
+            if selected_loot_ids
+            else {}
+        ),
+    }
     replay = await _existing_action(
         db, run, client_action_id, "extract", request_payload
     )
@@ -2823,28 +2922,34 @@ async def extract(
             )
         ).scalars()
     )
+    loot_result: dict[str, Any] | None = None
     if run.reward_eligible:
-        for loot in loots:
-            existing = await db.scalar(
-                sa.select(UserAdventureItem)
-                .where(
-                    UserAdventureItem.user_id == user_id,
-                    UserAdventureItem.item_code == loot.item_code,
-                )
-                .with_for_update()
+        # 찾은 것을 전부 주지 않는다. 지역마다 정해진 가치 예산 안에서만
+        # 담아 오고 나머지는 기록으로 남는다(설계서 9.1).
+        budget, slots = budget_of(run.map_snapshot["region"]["reward"])
+        candidates = [
+            loot for loot in loots if loot.disposition == "candidate"
+        ]
+        try:
+            selection = select_within_budget(
+                candidates,
+                budget=budget,
+                slots=slots,
+                selected_ids=selected_loot_ids,
             )
-            if existing:
-                existing.quantity += loot.quantity
-            else:
-                db.add(
-                    UserAdventureItem(
-                        user_id=user_id,
-                        item_code=loot.item_code,
-                        quantity=loot.quantity,
-                    )
-                )
-            loot.disposition = "granted"
-            loot.granted_at = utcnow()
+        except LootBudgetError as error:
+            raise AppError(422, error.code, error.message) from error
+        for loot in selection.granted:
+            await grant_loot(db, user_id, loot)
+        for loot in selection.recorded:
+            loot.disposition = "recorded"
+        loot_result = {
+            "value_units": budget,
+            "slots": slots,
+            "spent_units": selection.spent_units,
+            "granted": [loot_payload(loot) for loot in selection.granted],
+            "recorded": [loot_payload(loot) for loot in selection.recorded],
+        }
     completion_progress = await _record_completion_progress(db, run)
     story_cue = _stage_story_cue(run, completion_progress.get("stage"))
     run.status = "completed"
@@ -2854,6 +2959,7 @@ async def extract(
         "reward": reward_payload,
         "memory_count": len(run.run_memory_snapshot.get("outcomes", [])),
         "objective_secured": True,
+        "loot": loot_result,
         "progress": completion_progress,
         "story_cue": story_cue,
         "return_scene": await _return_scene(db, run),
