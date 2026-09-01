@@ -243,9 +243,10 @@ async def mark_story_seen(
     책갈피 표시로만 남는다.
     """
 
-    content = load_content()
-    if region_code != content["region"]["code"]:
-        raise AppError(404, "EXPEDITION_REGION_NOT_FOUND", "탐험 지역을 찾을 수 없습니다.")
+    # 지역 코드를 안 넘기면 첫 지역 팩이 와서, 기억서고가 **아닌** 모든 지역의
+    # 이야기 표시가 404로 막혔다. 지도의 책갈피가 영영 안 지워지던 원인이다.
+    # 없는 지역은 load_content가 같은 404로 막아 준다.
+    load_content(region_code)
     if not 1 <= stage_no <= STAGE_COUNT:
         raise AppError(404, "EXPEDITION_STAGE_NOT_FOUND", "스테이지를 찾을 수 없습니다.")
     record = await db.scalar(

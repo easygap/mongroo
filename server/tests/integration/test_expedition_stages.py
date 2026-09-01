@@ -288,6 +288,33 @@ async def test_story_seen_is_recorded_only_for_cleared_stages(
     assert missing.status_code == 404
 
 
+async def test_story_seen_works_outside_the_first_region(
+    client, user_tokens, session_factory
+):
+    """첫 지역이 아닌 곳에서도 이야기 표시가 남는다.
+
+    지역 코드를 안 넘기고 첫 지역 팩과 비교하는 바람에, 우물정원·보관고·
+    관측실의 이야기 표시가 전부 404로 막혀 있었다. 지도의 책갈피가 영영
+    안 지워지는데 아무도 몰랐다 — 이 검사가 첫 지역만 보고 있었기 때문이다.
+    """
+
+    headers = auth_headers(user_tokens)
+    await _prepare_stage_two(session_factory, user_tokens["user"]["id"])
+
+    for region_code in ("echo_well", "starlight_seed_vault", "heartwood_observatory"):
+        response = await client.post(
+            f"/adventure/stages/{region_code}/1/story-seen", headers=headers
+        )
+        assert response.status_code == 200, (region_code, response.text)
+        # 아직 완주하지 않았으므로 표시는 남지 않지만, 막히지도 않는다.
+        assert response.json() == {"stage_no": 1, "story_seen": False}
+
+    unknown = await client.post(
+        "/adventure/stages/no_such_region/1/story-seen", headers=headers
+    )
+    assert unknown.status_code == 404
+
+
 async def test_battle_stage_walks_to_the_tangle_fight(
     client, user_tokens, session_factory
 ):
