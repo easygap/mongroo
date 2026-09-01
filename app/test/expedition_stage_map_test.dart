@@ -198,6 +198,7 @@ Future<_FakeStageController> _pumpShell(
   bool heartResonance = true,
   bool deep = false,
   bool echoWellUnlocked = false,
+  String regionCode = 'moss_archive',
   bool? diaryReady,
   ExpeditionShellView shellView = ExpeditionShellView.hub,
   int? selectedStageNo,
@@ -220,6 +221,7 @@ Future<_FakeStageController> _pumpShell(
               roster: _roster(),
               stageMap: _stageMap(
                 clearedCount: clearedCount,
+                regionCode: regionCode,
                 echoWellUnlocked: echoWellUnlocked,
               ),
               selectedPlantIds: const {11},
@@ -566,20 +568,38 @@ void main() {
     expect(controller.state.shellView, ExpeditionShellView.hub);
   });
 
-  testWidgets('아직 만들지 않은 길은 자물쇠가 아니라 준비 중으로 알린다', (tester) async {
+  testWidgets('우물정원을 완주하기 전에는 장거리 개척이 이유와 함께 잠긴다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
+    // 기억서고를 다 걸어도 아직이다. 온실 밖으로 나가려면 두 번째 지역까지
+    // 마쳐야 한다(설계서 9.8).
     await _pumpShell(tester, clearedCount: 8, deep: true);
 
-    // 장거리 개척은 아직 서버에 없다. `조건을 채우면 열린다`고 약속하지 않고
-    // 준비 중이라고 그대로 말한다.
     expect(find.text('장거리 개척'), findsOneWidget);
-    expect(find.text('아직 만들고 있어요.'), findsOneWidget);
+    expect(find.text('우물정원을 완주하면 온실 밖으로 나가는 길이 열려요.'), findsOneWidget);
     expect(find.byKey(const ValueKey('hub-entry-장거리 개척')), findsNothing);
 
     // 순찰은 탐험 탭이 들고 있으므로 여기서는 진입만 열려 있다.
     expect(find.byKey(const ValueKey('hub-entry-자동 순찰')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('우물정원을 완주하면 장거리 개척 입구가 선다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await _pumpShell(
+      tester,
+      clearedCount: 8,
+      deep: true,
+      regionCode: 'echo_well',
+    );
+
+    expect(find.byKey(const ValueKey('hub-entry-장거리 개척')), findsOneWidget);
+    expect(find.text('우물정원을 완주하면 온실 밖으로 나가는 길이 열려요.'), findsNothing);
+    // 허브의 네 길이 전부 서버에 있다. `준비 중`으로 남은 자리는 없다.
+    expect(find.text('아직 만들고 있어요.'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

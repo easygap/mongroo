@@ -80,9 +80,11 @@ class _ExpeditionHub extends ConsumerWidget {
   /// **누를 수 없는 것을 열린 것처럼 두지 않는다.** 예전에는 네 항목이 모두
   /// 그냥 판이라, 잠기지 않은 `자동 순찰`·`깊은 조사`를 눌러도 아무 일이 없고
   /// 아직 만들지 않은 `합동 수호전`은 지역을 깨면 열린 모습이 되었다.
-  /// 지금은 셋으로 갈린다 — 갈 수 있으면 [_HubEntry.onTap]이 있고, 조건이
-  /// 모자라면 [_HubEntry.lockReason], 서버에 아직 없는 길은
-  /// [_HubEntry.comingSoon]이다.
+  /// 지금은 둘로 갈린다 — 갈 수 있으면 [_HubEntry.onTap]이 있고, 조건이
+  /// 모자라면 [_HubEntry.lockReason]이 이유를 문장으로 말한다.
+  ///
+  /// `준비 중` 상태는 없앴다. 장거리 개척까지 들어와서 허브의 네 길이 전부
+  /// 서버에 있다 — 남은 것은 `아직 못 여는 길`뿐이고, 그건 잠김이 말한다.
   List<_HubEntry> _hubEntries(
     BuildContext context,
     WidgetRef ref,
@@ -97,6 +99,11 @@ class _ExpeditionHub extends ConsumerWidget {
     // 수호짐승을 만나 봤으면 입구가 선다.
     final jointGuardOpen = stageMap.regions.any((region) => region.cleared) ||
         stageMap.regionCleared;
+    // 장거리 개척은 **우물정원을 완주**해야 첫 방향이 열린다(설계서 9.8).
+    // 진짜 관문은 서버에 있고 여기는 문패일 뿐이라, 조건이 어긋나도 잠긴
+    // 이유를 개척 화면이 방향마다 다시 읽어 준다.
+    final journeyOpen = stageMap.regions
+        .any((region) => region.code == 'echo_well' && region.cleared);
     return [
       _HubEntry(
         icon: Icons.hiking_rounded,
@@ -132,12 +139,16 @@ class _ExpeditionHub extends ConsumerWidget {
             ? () => context.push('/joint-guard')
             : null,
       ),
-      const _HubEntry(
+      _HubEntry(
         icon: Icons.map_outlined,
         title: '장거리 개척',
         description: '여러 구간을 다른 조로 나눠 멀리까지 다녀와요.',
-        lockReason: '아직 만들고 있어요.',
-        comingSoon: true,
+        // 우물정원을 완주하면 첫 방향이 열린다(설계서 9.8). 합동 수호전과
+        // 달리 **지역을 끝까지** 걸어야 하므로 조건이 한 칸 더 높다.
+        lockReason: journeyOpen
+            ? null
+            : '우물정원을 완주하면 온실 밖으로 나가는 길이 열려요.',
+        onTap: journeyOpen ? () => context.push('/journey') : null,
       ),
     ];
   }
@@ -313,7 +324,6 @@ class _HubEntry {
     required this.description,
     required this.lockReason,
     this.onTap,
-    this.comingSoon = false,
   });
 
   final IconData icon;
@@ -326,7 +336,6 @@ class _HubEntry {
 
   /// 조건이 모자란 것이 아니라 아직 만들지 않은 길. 자물쇠 대신 공사 표시를
   /// 쓴다 — 자물쇠는 `무언가를 하면 열린다`는 약속인데 그럴 조건이 없다.
-  final bool comingSoon;
 }
 
 class _HubEntryTile extends StatelessWidget {
@@ -339,11 +348,7 @@ class _HubEntryTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final locked = entry.lockReason != null;
     final onTap = entry.onTap;
-    final leading = entry.comingSoon
-        ? Icons.handyman_outlined
-        : locked
-            ? Icons.lock_outline_rounded
-            : entry.icon;
+    final leading = locked ? Icons.lock_outline_rounded : entry.icon;
     final panel = MongrooPanel(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
@@ -395,11 +400,9 @@ class _HubEntryTile extends StatelessWidget {
     );
     return Semantics(
       button: onTap != null,
-      label: entry.comingSoon
-          ? '${entry.title}, 준비 중. ${entry.description}'
-          : locked
-              ? '${entry.title}, 잠김. ${entry.description} ${entry.lockReason}'
-              : '${entry.title}. ${entry.description}',
+      label: locked
+          ? '${entry.title}, 잠김. ${entry.description} ${entry.lockReason}'
+          : '${entry.title}. ${entry.description}',
       // 잠김은 아이콘과 사유 줄이 이미 말한다. 여기에 불투명도까지 곱하면
       // 설명·사유가 쓰는 `onSurfaceVariant`(4.62:1)가 2.35:1로 떨어져서,
       // 정작 무엇을 하는 길인지 읽을 수 없게 된다.
