@@ -153,7 +153,7 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
                       const _SectionTitle(
                         icon: Icons.auto_stories_outlined,
                         title: '탐험 기록장',
-                        description: '순찰과 던전에서 남긴 최근 발자국을 모아 봐요.',
+                        description: '순찰과 발견한 던전에서 남긴 최근 발자국을 모아 봐요.',
                       ),
                       const SizedBox(height: 10),
                       _AdventureJournalCard(journal: data.journal),
@@ -253,7 +253,7 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
         .runDungeon(dungeon.code, approachCode);
     if (!mounted || !success) return;
     final outcome = ref.read(adventureControllerProvider).actionMessage;
-    _showSuccess(outcome ?? '던전 탐험을 마치고 성장 보상을 받았어요.');
+    _showSuccess(outcome ?? '발견한 던전을 다녀와 성장 보상을 받았어요.');
     await HapticFeedback.lightImpact();
     unawaited(_playCue(AdventureCue.dungeonClear));
   }
@@ -682,8 +682,13 @@ class _EconomyStrip extends StatelessWidget {
                   width: width,
                   child: MongrooPanel(
                     padding: const EdgeInsets.all(12),
+                    // 일기가 가장 큰 것은 색으로도 말한다. 직접 탐험은 이
+                    // 화면이 권하는 길이라 테두리로만 짚어 준다.
                     color: entry.code == 'diary'
                         ? Theme.of(context).colorScheme.primaryContainer
+                        : null,
+                    borderColor: entry.code == 'expedition'
+                        ? Theme.of(context).colorScheme.primary.withAlpha(110)
                         : null,
                     shadowOffset: Offset.zero,
                     child: Column(
@@ -693,7 +698,7 @@ class _EconomyStrip extends StatelessWidget {
                             style:
                                 const TextStyle(fontWeight: FontWeight.w800)),
                         const SizedBox(height: 7),
-                        Text('${entry.exp} XP · 씨앗 ${entry.seeds}',
+                        Text(entry.amountLabel,
                             style: const TextStyle(
                                 fontWeight: FontWeight.w700, fontSize: 13)),
                       ],
@@ -1619,7 +1624,7 @@ class _AdventureJournalCard extends StatelessWidget {
                 foregroundColor: palette.night,
               ),
               MongrooTag(
-                label: '던전 탐험 ${journal.totalClearCount}회',
+                label: '발견한 던전 ${journal.totalClearCount}회',
                 icon: Icons.door_sliding_outlined,
               ),
             ],

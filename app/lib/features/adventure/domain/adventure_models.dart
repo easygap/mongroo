@@ -16,6 +16,8 @@ class AdventureEconomyEntry {
     required this.label,
     required this.exp,
     required this.seeds,
+    this.expMax,
+    this.seedsMax,
   });
 
   final String code;
@@ -23,12 +25,29 @@ class AdventureEconomyEntry {
   final int exp;
   final int seeds;
 
+  /// 값이 하나로 정해지지 않는 활동의 위쪽 끝. 직접 탐험은 지역마다 달라서
+  /// `6~10 XP`처럼 폭으로 읽어 준다. 폭이 없으면 둘 다 null이다.
+  final int? expMax;
+  final int? seedsMax;
+
+  bool get hasRange =>
+      (expMax != null && expMax != exp) || (seedsMax != null && seedsMax != seeds);
+
+  String _span(int low, int? high) =>
+      high == null || high == low ? '$low' : '$low~$high';
+
+  /// `6~10 XP · 씨앗 2~5`처럼 한 줄로.
+  String get amountLabel =>
+      '${_span(exp, expMax)} XP · 씨앗 ${_span(seeds, seedsMax)}';
+
   factory AdventureEconomyEntry.fromJson(Map<String, dynamic> json) =>
       AdventureEconomyEntry(
         code: json['code']?.toString() ?? '',
         label: json['label']?.toString() ?? '',
         exp: _int(json['exp']),
         seeds: _int(json['seeds']),
+        expMax: json['exp_max'] == null ? null : _int(json['exp_max']),
+        seedsMax: json['seeds_max'] == null ? null : _int(json['seeds_max']),
       );
 }
 

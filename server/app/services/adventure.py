@@ -294,12 +294,52 @@ DUNGEON_APPROACHES = {
 #: 이 값이 지키는 것은 **순서**다 — 마음 일기 한 편이 어떤 탐험보다 크다.
 #: 지역 보상을 올릴 때 이 순서가 뒤집히지 않는지 검사가 함께 센다. 상수로
 #: 꺼내 둔 이유가 그것이다.
-DAILY_ECONOMY = (
+#:
+#: `직접 탐험`은 여기에 없다. 지역마다 값이 달라 한 줄로 못 적고, 손으로 적어
+#: 두면 지역 보상을 올릴 때 화면만 옛 숫자를 말한다. `daily_economy()`가
+#: 콘텐츠 팩에서 직접 읽어 끼워 넣는다.
+FIXED_DAILY_ECONOMY = (
     {"code": "diary", "label": "마음 일기", "exp": 40, "seeds": 15},
     {"code": "quest", "label": "작은 행동", "exp": 20, "seeds": 5},
-    {"code": "dungeon", "label": "던전", "exp": 10, "seeds": 4},
+    # `던전`이 아니라 `발견한 던전`이다. 같은 화면 아래쪽의 그 구역을 가리키는
+    # 것이지 직접 탐험이 아니라는 것을, 이름 하나로 갈라 둔다.
+    {"code": "dungeon", "label": "발견한 던전", "exp": 10, "seeds": 4},
     {"code": "patrol", "label": "순찰", "exp": 0, "seeds": 3},
 )
+
+
+def _expedition_economy_row() -> dict[str, int | str]:
+    """직접 탐험 한 줄. 폭은 실려 있는 지역 팩에서 잰다.
+
+    가까운 지역과 가장 먼 지역이 다른 값을 주므로 `6~10 XP · 씨앗 2~5`처럼
+    폭으로 읽어 준다. 지역이 하나뿐이면 폭이 없어 한 값으로 접힌다.
+    """
+
+    from app.services.expeditions import load_content, shipped_region_codes
+
+    bands = [
+        load_content(code)["region"]["reward"] for code in shipped_region_codes()
+    ]
+    exps = sorted(int(band["exp"]) for band in bands)
+    seeds = sorted(int(band["seeds"]) for band in bands)
+    return {
+        "code": "expedition",
+        "label": "직접 탐험",
+        "exp": exps[0],
+        "seeds": seeds[0],
+        "exp_max": exps[-1],
+        "seeds_max": seeds[-1],
+    }
+
+
+def daily_economy() -> list[dict[str, int | str]]:
+    """화면에 서는 순서 그대로. 큰 것부터 작은 것으로 내려간다."""
+
+    rows = [dict(row) for row in FIXED_DAILY_ECONOMY]
+    # `작은 행동` 다음, `발견한 던전` 앞에 끼운다. 직접 탐험이 두 던전 활동
+    # 중 지금 화면이 권하는 쪽이라 먼저 읽혀야 한다.
+    rows.insert(2, _expedition_economy_row())
+    return rows
 
 ITEMS = {
     "pressed_leaf_map": ("눌러 말린 잎 지도", "다음 길을 찾을 때 쓰는 얇은 지도 조각"),
@@ -343,7 +383,7 @@ WEEKLY_GOALS = {
         "reward_seeds": 8,
     },
     "dungeon_2": {
-        "name": "던전 탐험 2회",
+        "name": "발견한 던전 2회",
         "description": "발견한 던전을 이번 주에 2번 탐험해요.",
         "metric": "dungeon_runs",
         "target": 2,
@@ -1259,7 +1299,7 @@ async def state_payload(db: AsyncSession, user_id: int) -> dict:
             "reward_seeds": 15,
             "message": "오늘 마음을 50자 이상 기록하면 탐험이 열려요.",
         },
-        "economy": [dict(row) for row in DAILY_ECONOMY],
+        "economy": daily_economy(),
         "weekly_board": await _weekly_board_payload(
             db,
             user_id,

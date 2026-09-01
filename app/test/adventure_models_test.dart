@@ -13,7 +13,15 @@ void main() {
       'economy': [
         {'code': 'diary', 'label': '마음 일기', 'exp': 40, 'seeds': 15},
         {'code': 'quest', 'label': '일일 미션', 'exp': 20, 'seeds': 5},
-        {'code': 'dungeon', 'label': '던전', 'exp': 10, 'seeds': 4},
+        {
+          'code': 'expedition',
+          'label': '직접 탐험',
+          'exp': 6,
+          'seeds': 2,
+          'exp_max': 10,
+          'seeds_max': 5,
+        },
+        {'code': 'dungeon', 'label': '발견한 던전', 'exp': 10, 'seeds': 4},
       ],
       'weekly_board': {
         'week_start': '2026-08-03',
@@ -154,6 +162,17 @@ void main() {
     expect(state.diaryReady, isTrue);
     expect(state.economy.first.exp, 40);
     expect(state.economy.first.seeds, 15);
+    // 지역마다 값이 다른 직접 탐험은 폭으로 읽는다. 값이 하나뿐인 줄은
+    // 지금까지처럼 한 값으로 접힌다.
+    final expedition =
+        state.economy.firstWhere((entry) => entry.code == 'expedition');
+    expect(expedition.hasRange, isTrue);
+    expect(expedition.amountLabel, '6~10 XP · 씨앗 2~5');
+    final dungeon = state.economy.firstWhere((entry) => entry.code == 'dungeon');
+    expect(dungeon.hasRange, isFalse);
+    expect(dungeon.amountLabel, '10 XP · 씨앗 4');
+    // 같은 화면에 나란히 서는 두 활동이 같은 이름을 쓰지 않는다.
+    expect(dungeon.label, isNot(expedition.label));
     expect(
         state.economy.first.exp,
         greaterThan(state.economy

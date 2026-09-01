@@ -319,7 +319,11 @@ class _StageWalkingField extends StatelessWidget {
                             child: LayoutBuilder(
                               builder: (context, tagConstraints) => MongrooTag(
                                 label:
-                                    '${chapter == null ? '던전' : '$chapter장'} · 직접 걷기',
+                                    // 장이 없는 판은 `던전`이라고 불렀는데,
+                                    // 모험 탭의 `발견한 던전`과 같은 말이라
+                                    // 어느 활동인지 흐려졌다. 이 화면이 이미
+                                    // 쓰는 말로 바꾼다.
+                                    '${chapter == null ? '현장' : '$chapter장'} · 직접 걷기',
                                 icon: Icons.directions_walk_rounded,
                                 maxWidth: tagConstraints.maxWidth,
                                 backgroundColor:

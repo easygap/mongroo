@@ -43,12 +43,15 @@ class _AdventureRepository extends AdventureRepository {
   }
 }
 
-AdventureState _adventureState({Map<String, dynamic>? patrol}) =>
+AdventureState _adventureState({
+  Map<String, dynamic>? patrol,
+  List<Map<String, dynamic>> economy = const [],
+}) =>
     AdventureState.fromJson({
       'suspended': false,
       'diary_ready': true,
       'diary_requirement': {'message': '오늘 탐험이 열렸어요.'},
-      'economy': const <dynamic>[],
+      'economy': economy,
       'weekly_board': {
         'week_start': '2026-08-03',
         'week_end': '2026-08-09',
@@ -358,7 +361,9 @@ void main() {
     await tester.pump();
 
     expect(find.text('장소 발견 4/4'), findsOneWidget);
-    expect(find.text('던전 탐험 7회'), findsOneWidget);
+    // 구버전 던전은 이름으로 직접 탐험과 갈라 둔다. 두 활동이 같은 화면에
+    // 서 있어서 `던전`만으로는 어느 쪽인지 읽히지 않았다.
+    expect(find.text('발견한 던전 7회'), findsOneWidget);
     expect(find.text('비어 있는 나이테'), findsOneWidget);
     expect(find.textContaining('오래된 나이테 한 칸이 비어 있어'), findsOneWidget);
     expect(find.text('성장 공명'), findsOneWidget);
@@ -472,5 +477,54 @@ void main() {
     expect(find.byType(SnackBar), findsOneWidget);
     expect(find.textContaining('첫 새소리의 자리:'), findsOneWidget);
     expect(find.textContaining('모아: “서로 다른 흔적을 모으니'), findsOneWidget);
+  });
+
+  testWidgets('성장 효율 표가 직접 탐험과 발견한 던전을 갈라 보여 준다', (tester) async {
+    // 두 활동이 같은 화면에 서 있는데 `던전` 한 줄만 있어서, 탐험을 권하는
+    // 자리에서 다른 활동의 숫자를 읽게 되어 있었다.
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repository = _AdventureRepository(
+      _adventureState(
+        economy: const [
+          {'code': 'diary', 'label': '마음 일기', 'exp': 40, 'seeds': 15},
+          {
+            'code': 'expedition',
+            'label': '직접 탐험',
+            'exp': 6,
+            'seeds': 2,
+            'exp_max': 10,
+            'seeds_max': 5,
+          },
+          {'code': 'dungeon', 'label': '발견한 던전', 'exp': 10, 'seeds': 4},
+        ],
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          adventureRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const Scaffold(body: AdventureTab()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('직접 탐험'), findsOneWidget);
+    // 지역마다 달라서 한 값으로 못 적는다. 폭으로 읽어 준다.
+    expect(find.text('6~10 XP · 씨앗 2~5'), findsOneWidget);
+    // 효율 표의 줄과 아래쪽 구역 제목이 **같은 이름**이다. 그 줄이 어느
+    // 활동을 말하는지 화면 안에서 이어진다.
+    expect(find.text('발견한 던전'), findsNWidgets(2));
+    expect(find.text('10 XP · 씨앗 4'), findsOneWidget);
+    // 어느 줄도 그냥 `던전`이라고 하지 않는다.
+    expect(find.text('던전'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 }
