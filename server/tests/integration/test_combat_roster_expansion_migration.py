@@ -5,6 +5,7 @@ from pathlib import Path
 from alembic import command
 from alembic.config import Config
 
+from app.api.routers.health import EXPECTED_SCHEMA_REVISION
 from app.core.config import get_settings
 
 
@@ -99,7 +100,9 @@ def test_combat_roster_migration_links_characters_growth_and_existing_owners(
                 "SELECT version_num FROM alembic_version"
             ).fetchone()[0]
 
-        assert revision == "0039_small_action_wording"
+        # 마이그레이션을 하나 더 붙일 때마다 손으로 고치지 않는다. `head`까지
+        # 올린 뒤이므로 헬스체크가 기대하는 그 값이어야 한다.
+        assert revision == EXPECTED_SCHEMA_REVISION
         assert len(species_rows) == 15
         assert {row[0] for row in species_rows} >= {"maestro-pot", "nurse-pot"}
         assert all(

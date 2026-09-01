@@ -11,6 +11,7 @@ from app.api.routers import (
     game,
     health,
     joint_guard,
+    journeys,
     moods,
     plants,
     reports,
@@ -64,6 +65,7 @@ def create_app() -> FastAPI:
     app.include_router(expeditions.router, prefix=prefix)
     app.include_router(expeditions.stage_router, prefix=prefix)
     app.include_router(joint_guard.router, prefix=prefix)
+    app.include_router(journeys.router, prefix=prefix)
     app.include_router(skill_books.router, prefix=prefix)
     app.include_router(health.router, prefix=prefix)
     return app

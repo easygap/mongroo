@@ -2505,6 +2505,221 @@
         }
       }
     },
+    "/api/v1/adventure/journeys": {
+      "get": {
+        "tags": [
+          "journeys"
+        ],
+        "summary": "Journey Entry",
+        "operationId": "journey_entry_api_v1_adventure_journeys_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "journeys"
+        ],
+        "summary": "Start Journey",
+        "operationId": "start_journey_api_v1_adventure_journeys_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JourneyStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/journeys/active": {
+      "get": {
+        "tags": [
+          "journeys"
+        ],
+        "summary": "Active Journey",
+        "operationId": "active_journey_api_v1_adventure_journeys_active_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/journeys/{journey_id}": {
+      "get": {
+        "tags": [
+          "journeys"
+        ],
+        "summary": "Get Journey",
+        "operationId": "get_journey_api_v1_adventure_journeys__journey_id__get",
+        "parameters": [
+          {
+            "name": "journey_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Journey Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/journeys/{journey_id}/legs": {
+      "post": {
+        "tags": [
+          "journeys"
+        ],
+        "summary": "Create Journey Leg",
+        "operationId": "create_journey_leg_api_v1_adventure_journeys__journey_id__legs_post",
+        "parameters": [
+          {
+            "name": "journey_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Journey Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JourneyLegRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/adventure/journeys/{journey_id}/return": {
+      "post": {
+        "tags": [
+          "journeys"
+        ],
+        "summary": "Return Journey",
+        "operationId": "return_journey_api_v1_adventure_journeys__journey_id__return_post",
+        "parameters": [
+          {
+            "name": "journey_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Journey Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JourneyReturnRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/skill-books": {
       "get": {
         "tags": [
@@ -3296,6 +3511,94 @@
           "command"
         ],
         "title": "JointGuardTurnRequest"
+      },
+      "JourneyLegRequest": {
+        "properties": {
+          "route_choice_code": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Route Choice Code"
+          },
+          "plant_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 2,
+            "title": "Plant Ids"
+          },
+          "guide_count": {
+            "type": "integer",
+            "maximum": 2.0,
+            "minimum": 0.0,
+            "title": "Guide Count"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "route_choice_code",
+          "guide_count",
+          "expected_revision"
+        ],
+        "title": "JourneyLegRequest"
+      },
+      "JourneyReturnRequest": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "selected_loot_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array",
+                "maxItems": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Loot Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_revision"
+        ],
+        "title": "JourneyReturnRequest"
+      },
+      "JourneyStartRequest": {
+        "properties": {
+          "direction_code": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Direction Code"
+          },
+          "mode": {
+            "type": "string",
+            "pattern": "^(heart_resonance|free_explore)$",
+            "title": "Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "direction_code",
+          "mode"
+        ],
+        "title": "JourneyStartRequest"
       },
       "LoginRequest": {
         "properties": {

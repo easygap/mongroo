@@ -196,6 +196,34 @@ class JointGuardSlot(BaseModel):
     formation: str = Field(pattern="^(front|back)$")
 
 
+class JourneyStartRequest(BaseModel):
+    direction_code: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9_]+$")
+    mode: str = Field(pattern="^(heart_resonance|free_explore)$")
+
+
+class JourneyLegRequest(BaseModel):
+    route_choice_code: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9_]+$")
+    # 캐릭터가 없어도 된다. 두 자리를 길잡이만으로 채우는 편성이 정상이다.
+    plant_ids: list[int] = Field(default_factory=list, max_length=2)
+    guide_count: int = Field(ge=0, le=2)
+    expected_revision: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def validate_party(self) -> "JourneyLegRequest":
+        if len(self.plant_ids) != len(set(self.plant_ids)):
+            raise ValueError("같은 캐릭터를 두 번 넣을 수 없습니다")
+        if len(self.plant_ids) + self.guide_count != 2:
+            raise ValueError("한 구간은 두 명이어야 합니다")
+        return self
+
+
+class JourneyReturnRequest(BaseModel):
+    expected_revision: int = Field(ge=0)
+    #: 비우면 모은 후보를 전부 가져온다. 골라 보내면 그것만 챙기고 나머지는
+    #: 기록으로만 남는다.
+    selected_loot_ids: list[int] | None = Field(default=None, max_length=50)
+
+
 class JointGuardStartRequest(BaseModel):
     beast_code: str = Field(min_length=1, max_length=40, pattern=r"^[a-z0-9_]+$")
     difficulty: str = Field(pattern="^(outer_walk|three_layers)$")

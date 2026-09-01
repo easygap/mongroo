@@ -1290,6 +1290,8 @@ async def start_run(
     plant_ids: list[int],
     guide_count: int,
     stage_no: int | None = None,
+    journey_id: int | None = None,
+    journey_leg_index: int | None = None,
 ) -> dict:
     # 요청한 지역의 팩을 연다. 없는 지역이면 loader가 404로 막는다.
     content = _content(region_code)
@@ -1321,15 +1323,20 @@ async def start_run(
                 "앞 스테이지를 먼저 완주하면 이 길이 열려요.",
             )
         stage_data = stages[stage_no - 1]
-    if (
-        not plant_ids
-        or len(plant_ids) != len(set(plant_ids))
-        or not 1 <= len(plant_ids) + guide_count <= 3
+    # 장거리 개척의 한 구간은 **두 자리**이고, 두 자리 모두 길잡이여도 된다.
+    # 캐릭터가 하나뿐인 사람도 끝까지 갈 수 있어야 하기 때문이다(설계서 9.8).
+    # 편성 자체는 개척 서비스가 이미 검사했고 여기서는 규격만 다시 본다.
+    is_journey_leg = journey_id is not None
+    party_size = len(plant_ids) + guide_count
+    if len(plant_ids) != len(set(plant_ids)) or (
+        party_size != 2 if is_journey_leg else not (plant_ids and 1 <= party_size <= 3)
     ):
         raise AppError(
             422,
             "INVALID_EXPEDITION_PARTY",
-            "서로 다른 보유 캐릭터를 한 명 이상, 전체 세 명 이하로 편성해 주세요.",
+            "한 구간은 두 명이에요. 빈자리는 길잡이가 채워요."
+            if is_journey_leg
+            else "서로 다른 보유 캐릭터를 한 명 이상, 전체 세 명 이하로 편성해 주세요.",
         )
     today = local_date_of(utcnow())
     if await game_service.safety_active_today(db, user_id, today):
@@ -1340,6 +1347,17 @@ async def start_run(
         )
     if await _active_run(db, user_id):
         raise AppError(409, "EXPEDITION_ALREADY_ACTIVE", "진행 중인 탐험이 있습니다.")
+    # 야영 중인 개척은 진행 중인 run이 없어도 슬롯을 잡고 있다. 이 검사가
+    # 없으면 구간 사이에 일반 탐험이 끼어들어 돌아올 개척이 미아가 된다.
+    slot = await db.scalar(
+        sa.select(UserActiveExpedition).where(UserActiveExpedition.user_id == user_id)
+    )
+    if not is_journey_leg and slot is not None and slot.journey_id is not None:
+        raise AppError(
+            409,
+            "JOURNEY_ALREADY_ACTIVE",
+            "진행 중인 개척이 있어요. 먼저 마치고 다시 떠나 주세요.",
+        )
     if mode == "heart_resonance":
         if not await _diary_ready(db, user_id, today):
             raise AppError(
@@ -1460,10 +1478,20 @@ async def start_run(
         trail_light=10,
         resolve=6,
         reward_eligible=mode == "heart_resonance",
+        journey_id=journey_id,
+        journey_leg_index=journey_leg_index,
     )
     db.add(run)
     await db.flush()
-    db.add(UserActiveExpedition(user_id=user_id, run_id=run.id))
+    if is_journey_leg:
+        # 개척이 이미 잡고 있는 슬롯에 이번 구간의 run을 얹는다.
+        await db.execute(
+            sa.update(UserActiveExpedition)
+            .where(UserActiveExpedition.user_id == user_id)
+            .values(run_id=run.id, journey_id=journey_id)
+        )
+    else:
+        db.add(UserActiveExpedition(user_id=user_id, run_id=run.id))
 
     members: list[ExpeditionPartyMember] = []
     active_plant_id = next(
@@ -2718,6 +2746,20 @@ async def _record_completion_progress(
     }
 
 
+async def _notify_journey(db: AsyncSession, run: ExpeditionRun) -> None:
+    """이 run이 장거리 개척의 한 구간이면 부모를 갱신한다.
+
+    `journeys`가 `expeditions`를 부르므로 모듈 맨 위에서 되부를 수 없다.
+    일반 run은 `journey_id`가 없어 바로 빠져나간다.
+    """
+
+    if run.journey_id is None:
+        return
+    from app.services import journeys as journey_service
+
+    await journey_service.on_leg_finished(db, run)
+
+
 async def extract(
     db: AsyncSession,
     user_id: int,
@@ -2819,6 +2861,7 @@ async def extract(
     await db.execute(
         sa.delete(UserActiveExpedition).where(UserActiveExpedition.run_id == run.id)
     )
+    await _notify_journey(db, run)
     return await _finish_action(
         db,
         run,
@@ -2863,6 +2906,7 @@ async def retreat(
         )
         .values(disposition="recorded")
     )
+    await _notify_journey(db, run)
     return await _finish_action(
         db,
         run,

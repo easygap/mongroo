@@ -69,6 +69,75 @@ class ExpeditionRun(Base):
     home_reflection_seen_at: Mapped[datetime | None] = mapped_column(
         PreciseDateTime, nullable=True
     )
+    # 장거리 개척의 한 구간이면 부모를 가리킨다. 일반 탐험은 둘 다 NULL이다.
+    #
+    # 구간이 끝났을 때 부모를 O(1)로 찾으려고 run 쪽에 둔다. 개척 행에도
+    # 구간 목록이 있지만, 그쪽만 두면 run 하나가 끝날 때마다 개척을 훑어야 한다.
+    journey_id: Mapped[int | None] = mapped_column(
+        sa.ForeignKey("expedition_journeys.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    journey_leg_index: Mapped[int | None] = mapped_column(
+        sa.SmallInteger, nullable=True
+    )
+
+
+class ExpeditionJourney(Base):
+    """장거리 개척 한 번. 구간 run 둘~셋을 하나의 원정 기록으로 묶는다.
+
+    구간·참가자 목록은 JSON 한 칸씩이다. 설계서는 표를 셋으로 나눠 뒀지만
+    (`legs`, `members`, `actions`) 둘 다 최대 여섯 줄이고 언제나 통째로만
+    읽는다. 표를 늘리는 대신 여기에 두고, `UNIQUE(journey_id, plant_id)`가
+    하던 일은 서비스가 대신 지킨다 — 합동 수호전이 판 상태를 run 한 줄에
+    얹은 것과 같은 판단이다.
+    """
+
+    __tablename__ = "expedition_journeys"
+    __table_args__ = (
+        sa.CheckConstraint(
+            "status IN ('active','completed','retreated','safe_returned')",
+            name="ck_expedition_journey_status",
+        ),
+        sa.CheckConstraint(
+            "max_legs BETWEEN 2 AND 3", name="ck_expedition_journey_max_legs"
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(BigIntPK, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    direction_code: Mapped[str] = mapped_column(sa.String(40), nullable=False)
+    status: Mapped[str] = mapped_column(sa.String(24), nullable=False, default="active")
+    mode: Mapped[str] = mapped_column(sa.String(24), nullable=False)
+    local_date: Mapped[date] = mapped_column(sa.Date, nullable=False)
+    content_version: Mapped[str] = mapped_column(sa.String(32), nullable=False)
+    max_legs: Mapped[int] = mapped_column(sa.SmallInteger, nullable=False)
+    #: 다음에 만들 구간의 번호. 구간을 시작할 때가 아니라 **끝났을 때** 오른다.
+    current_leg_index: Mapped[int] = mapped_column(
+        sa.SmallInteger, nullable=False, default=0
+    )
+    #: 지금까지 목표를 확보한 지역 중 가장 먼 곳. 귀환 보상 밴드의 기준이다.
+    deepest_secured_region: Mapped[str | None] = mapped_column(
+        sa.String(40), nullable=True
+    )
+    reward_eligible: Mapped[bool] = mapped_column(
+        sa.Boolean, nullable=False, default=False, server_default=sa.false()
+    )
+    revision: Mapped[int] = mapped_column(sa.Integer, nullable=False, default=0)
+    #: 구간마다 한 줄. `{leg_index, run_id, route_code, route_name, region_code,
+    #: status, objective_secured, started_at, finished_at, party}`
+    legs_snapshot: Mapped[list] = mapped_column(sa.JSON, nullable=False, default=list)
+    #: 이미 나간 캐릭터. `{"<plant_id>": leg_index}`. 중복 출전을 막는 자리다.
+    members_snapshot: Mapped[dict] = mapped_column(sa.JSON, nullable=False, default=dict)
+    summary_snapshot: Mapped[dict | None] = mapped_column(sa.JSON, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(
+        PreciseDateTime, nullable=False, default=utcnow
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        PreciseDateTime, nullable=True
+    )
 
 
 class UserActiveExpedition(Base):
@@ -77,9 +146,16 @@ class UserActiveExpedition(Base):
     user_id: Mapped[int] = mapped_column(
         sa.ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
-    run_id: Mapped[int] = mapped_column(
+    # 야영 중인 개척은 진행 중인 run이 없다. 그래서 둘 다 NULL 허용이지만
+    # 둘 다 NULL인 행은 두지 않는다(설계서 `expedition_runs` 절).
+    run_id: Mapped[int | None] = mapped_column(
         sa.ForeignKey("expedition_runs.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
+        unique=True,
+    )
+    journey_id: Mapped[int | None] = mapped_column(
+        sa.ForeignKey("expedition_journeys.id", ondelete="CASCADE"),
+        nullable=True,
         unique=True,
     )
     created_at: Mapped[datetime] = mapped_column(
