@@ -63,6 +63,9 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
   Offset? _stickTouch;
   Duration _lastTick = Duration.zero;
   double _stride = 0;
+
+  /// 시스템의 동작 줄이기. 매 프레임 [MediaQuery]를 다시 읽지 않으려고 받아 둔다.
+  bool _reduceMotion = false;
   bool _movePending = false;
   ExpeditionCombatAudio? _steps;
   ui.Image? _atlas;
@@ -309,14 +312,21 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
     // 한 발도 못 나간다.
     final seconds = math.min(rawSeconds, .12);
 
+    // 흔들림 시계. 걸음과 달리 **서 있어도 흐른다.** 예전에는 걸을 때만
+    // 흘러서, 멈추는 순간 아이템이 공중에 얼어붙고 등불이 굳었다. 다만 서 있는
+    // 동안 매 프레임 다시 그리는 것은 웹에서 비싸므로, 12분의 1초로 끊어 그
+    // 칸이 바뀔 때만 다시 그린다.
+    final wasEmber = (_stride * 12).floor();
+    if (!_reduceMotion) _stride = (_stride + seconds * 3) % 2;
+
     if (_moving) {
       setState(() {
         _progress = math.min(1, _progress + seconds / _stepSeconds);
-        _stride = (_stride + seconds * 3) % 2;
       });
       if (!_moving) _arrive();
       return;
     }
+    if ((_stride * 12).floor() != wasEmber) setState(() {});
     if (!_movementEnabled) return;
     final held = _held;
     if (held != null) _tryStep(held);
@@ -484,6 +494,11 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
     final scheme = Theme.of(context).colorScheme;
     final nearby = _field.nearestDiscoverable(_position);
     final facing = _movementEnabled ? _facingObject : null;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    _reduceMotion = reduceMotion;
+    // 고대비를 켠 사람에게는 어둠을 걷는다. 분위기보다 길이 먼저다.
+    final lighting = expeditionLightingFor(_field.regionCode)
+        .lifted(MediaQuery.highContrastOf(context) ? .62 : 0);
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: ColoredBox(
@@ -530,9 +545,11 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                           atlasSlots: _atlasSlots,
                           field: _field,
                           camera: camera,
-                          playerY: _position.dy,
+                          player: _position,
                           foreground: false,
                           pulse: _stride,
+                          lighting: lighting,
+                          reduceMotion: reduceMotion,
                         ),
                       ),
                     ),
@@ -569,9 +586,11 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                           atlasSlots: _atlasSlots,
                           field: _field,
                           camera: camera,
-                          playerY: _position.dy,
+                          player: _position,
                           foreground: true,
                           pulse: _stride,
+                          lighting: lighting,
+                          reduceMotion: reduceMotion,
                         ),
                       ),
                     ),
@@ -3020,9 +3039,11 @@ class _TileWorldPainter extends CustomPainter {
     required this.atlasSlots,
     required this.field,
     required this.camera,
-    required this.playerY,
+    required this.player,
     required this.foreground,
     required this.pulse,
+    required this.lighting,
+    required this.reduceMotion,
   });
 
   static const double _atlasCell = 96;
@@ -3057,7 +3078,14 @@ class _TileWorldPainter extends CustomPainter {
   final ui.Image? atlas;
   final _TileField field;
   final _WorldCamera camera;
-  final double playerY;
+  /// 플레이어의 월드 좌표. 앞뒤 정렬과 발밑 그림자가 함께 쓴다.
+  final Offset player;
+
+  /// 이 지역의 빛.
+  final ExpeditionLighting lighting;
+
+  /// 흔들리는 등불을 멈춰 세울지. 시스템의 동작 줄이기를 그대로 따른다.
+  final bool reduceMotion;
   final bool foreground;
   final double pulse;
 
@@ -3071,12 +3099,22 @@ class _TileWorldPainter extends CustomPainter {
         .objectsIn(visible)
         .where((object) => visible.overlaps(object.visualBounds.inflate(1)))
         .where((object) => foreground
-            ? object.position.dy > playerY
-            : object.position.dy <= playerY)
+            ? object.position.dy > player.dy
+            : object.position.dy <= player.dy)
         .toList()
       ..sort((a, b) => a.position.dy.compareTo(b.position.dy));
     for (final object in objects) {
       _paintObject(canvas, object);
+    }
+    // 걷는 사람의 발밑 그림자. 조형물에는 있었는데 사람에게만 없어서, 빛을
+    // 넣기 전에도 바닥에 서 있지 않고 떠 보였다. 뒤쪽 겹에 그려야 사람보다
+    // 아래, 바닥보다 위에 놓인다.
+    if (!foreground) {
+      paintContactShadow(
+        canvas,
+        foot: camera.project(player) - const Offset(0, 2),
+        width: camera.tilePixels * .72,
+      );
     }
     if (foreground) _paintLighting(canvas, size);
     canvas.restore();
@@ -3614,37 +3652,56 @@ class _TileWorldPainter extends CustomPainter {
         Paint()..color = field.palette.glow);
   }
 
-  void _paintLighting(Canvas canvas, Size size) {
-    // 등불은 넓고 밝게, 결정은 좁고 은은하게. 광원이 등불 하나뿐이면 방마다
-    // 같은 빛이라 밤 풍경이 단조롭다.
-    for (final source in field.objectsIn(camera.worldRect.inflate(2)).where(
-        (o) =>
-            (o.kind == _TileObjectKind.lantern ||
-                o.kind == _TileObjectKind.crystal) &&
-            camera.worldRect.inflate(2).contains(o.position))) {
+  /// 이 화면을 밝히는 광원들.
+  ///
+  /// 등불은 넓고 따뜻하게, 결정은 좁고 차갑게. 광원이 한 종류뿐이면 방마다
+  /// 같은 빛이라 어느 방에 있는지 빛으로는 읽히지 않는다.
+  List<SceneLight> _sceneLights() {
+    final visible = camera.worldRect.inflate(2);
+    final lights = <SceneLight>[];
+    var seed = 0;
+    for (final source in field.objectsIn(visible)) {
       final lantern = source.kind == _TileObjectKind.lantern;
-      final radius = camera.tilePixels * (lantern ? 2.1 : 1.55);
-      final center = camera.project(
-        source.position - Offset(0, lantern ? .85 : .6),
+      final crystal = source.kind == _TileObjectKind.crystal;
+      if (!lantern && !crystal) continue;
+      if (!visible.contains(source.position)) continue;
+      seed++;
+      lights.add(
+        SceneLight(
+          // 빛은 불이 붙은 자리에서 난다. 발밑에서 내면 조형물이 통째로
+          // 떠오른 것처럼 보인다.
+          center:
+              camera.project(source.position - Offset(0, lantern ? .85 : .6)),
+          radius: camera.tilePixels * (lantern ? 3.6 : 2.7),
+          color: lantern ? lighting.lantern : lighting.crystal,
+          intensity: lantern
+              ? lanternFlicker(pulse * .5, seed, still: reduceMotion)
+              : .8,
+        ),
       );
-      final rect = Rect.fromCircle(center: center, radius: radius);
-      canvas.drawCircle(
-          center,
-          radius,
-          Paint()
-            ..shader = RadialGradient(colors: [
-              field.palette.glow.withAlpha(lantern ? 42 : 30),
-              Colors.transparent
-            ]).createShader(rect));
     }
-    canvas.drawRect(
+    // 걷는 사람이 드는 빛.
+    //
+    // 등불이 없는 복도가 완전히 어두우면 분위기가 아니라 길 잃음이 된다.
+    // 다만 **좁고 약해야** 한다. 처음에 세 칸 반경으로 넉넉히 줬더니 화면
+    // 절반이 늘 밝아서, 방을 밝히는 게 등불인지 사람인지 구분이 안 됐다.
+    lights.add(
+      SceneLight(
+        center: camera.project(player - const Offset(0, .5)),
+        radius: camera.tilePixels * 2,
+        color: lighting.lantern,
+        intensity: .3,
+      ),
+    );
+    return lights;
+  }
+
+  void _paintLighting(Canvas canvas, Size size) {
+    paintExpeditionLighting(
+      canvas,
       Offset.zero & size,
-      Paint()
-        ..shader = RadialGradient(
-          radius: .86,
-          colors: [Colors.transparent, field.palette.voidColor.withAlpha(82)],
-          stops: const [.54, 1],
-        ).createShader(Offset.zero & size),
+      lighting: lighting,
+      lights: _sceneLights(),
     );
   }
 
@@ -3652,7 +3709,9 @@ class _TileWorldPainter extends CustomPainter {
   bool shouldRepaint(covariant _TileWorldPainter oldDelegate) =>
       oldDelegate.atlasSlots != atlasSlots ||
       oldDelegate.camera.origin != camera.origin ||
-      oldDelegate.playerY != playerY ||
+      oldDelegate.player != player ||
+      oldDelegate.lighting != lighting ||
+      oldDelegate.reduceMotion != reduceMotion ||
       oldDelegate.foreground != foreground ||
       oldDelegate.pulse != pulse ||
       oldDelegate.atlas != atlas ||

@@ -25,6 +25,7 @@ import 'expedition_combat_audio.dart';
 import 'expedition_discovery_audio.dart';
 import 'expedition_walk_path.dart';
 import 'expedition_free_walk.dart';
+import 'expedition_lighting.dart';
 import 'expedition_walk_area.dart';
 import 'expedition_scene.dart';
 import 'moss_archive_scene.dart';
