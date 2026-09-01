@@ -130,7 +130,8 @@ class JourneyController extends Notifier<JourneyUiState> {
     }
   }
 
-  Future<void> returnHome() async {
+  /// 귀환한다. 고른 것이 없으면 서버가 가치 예산을 채운다.
+  Future<void> returnHome({List<int> selectedLootIds = const []}) async {
     final journey = state.journey;
     if (journey == null || state.busy != null) return;
     state = state.copyWith(busy: 'return', error: null);
@@ -138,7 +139,10 @@ class JourneyController extends Notifier<JourneyUiState> {
       final finished = await _repository.returnHome(
         journeyId: journey.id,
         expectedRevision: journey.revision,
-        idempotencyKey: _key('return:${journey.id}'),
+        // 고른 조합이 거절되면(예산 초과) 다시 고르게 해야 하므로, 같은 키로
+        // 되풀이하지 않도록 고른 목록을 키에 넣는다.
+        idempotencyKey: _key('return:${journey.id}:${selectedLootIds.join(",")}'),
+        selectedLootIds: selectedLootIds,
       );
       _keys.clear();
       state = state.copyWith(busy: null, journey: finished);

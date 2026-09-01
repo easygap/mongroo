@@ -158,6 +158,53 @@ class JourneyMember {
       );
 }
 
+/// 귀환할 때 담아 올지 고르는 재료 하나.
+class JourneyLoot {
+  const JourneyLoot({
+    required this.id,
+    required this.name,
+    required this.valueUnits,
+    required this.kind,
+    required this.quantity,
+  });
+
+  final int id;
+  final String name;
+
+  /// 이 재료가 쓰는 가치. 관측실 목표처럼 제작 단계가 긴 것은 2다.
+  final int valueUnits;
+
+  /// `objective`이면 목표 재료다. 자동으로 채울 때 맨 앞에 선다.
+  final String kind;
+
+  final int quantity;
+
+  bool get isObjective => kind == 'objective';
+
+  factory JourneyLoot.fromJson(Map<String, dynamic> json) => JourneyLoot(
+        id: _asInt(json['id']),
+        name: json['name'] as String? ?? json['item_code'] as String? ?? '',
+        valueUnits: _asInt(json['value_units'], 1),
+        kind: json['loot_kind'] as String? ?? 'field',
+        quantity: _asInt(json['quantity'], 1),
+      );
+}
+
+/// 가치 예산 — 이번 귀환에 담아 올 수 있는 총 가치와 칸 수.
+class JourneyBudget {
+  const JourneyBudget({required this.valueUnits, required this.slots});
+
+  final int valueUnits;
+  final int slots;
+
+  bool get isEmpty => valueUnits <= 0 || slots <= 0;
+
+  factory JourneyBudget.fromJson(Map<String, dynamic> json) => JourneyBudget(
+        valueUnits: _asInt(json['value_units']),
+        slots: _asInt(json['slots']),
+      );
+}
+
 /// 진행 중이거나 막 끝난 개척 하나.
 class Journey {
   const Journey({
@@ -173,6 +220,8 @@ class Journey {
     required this.atCamp,
     required this.canContinue,
     required this.nextRoutes,
+    required this.returnBudget,
+    required this.returnCandidates,
     this.activeRunId,
     this.deepestRegionName,
     this.rewardExp,
@@ -200,6 +249,13 @@ class Journey {
   final bool canContinue;
 
   final List<JourneyRoute> nextRoutes;
+
+  /// 이번 귀환의 가치 예산.
+  final JourneyBudget returnBudget;
+
+  /// 구간마다 모아 둔 귀환 후보. 야영지에서만 채워진다.
+  final List<JourneyLoot> returnCandidates;
+
   final int? activeRunId;
   final String? deepestRegionName;
   final int? rewardExp;
@@ -228,6 +284,10 @@ class Journey {
       nextRoutes: _list(json['next_routes'])
           .map(JourneyRoute.fromJson)
           .toList(growable: false),
+      returnBudget: JourneyBudget.fromJson(_map(json['return_budget'])),
+      returnCandidates: _list(json['return_candidates'])
+          .map(JourneyLoot.fromJson)
+          .toList(growable: false),
       activeRunId:
           json['active_run_id'] is num ? _asInt(json['active_run_id']) : null,
       deepestRegionName: json['deepest_secured_region_name'] as String?,
@@ -247,6 +307,8 @@ class JourneySummary {
     required this.legCount,
     required this.securedCount,
     required this.legs,
+    required this.granted,
+    required this.recorded,
     this.deepestRegionName,
     this.rewardExp,
     this.rewardSeeds,
@@ -256,6 +318,11 @@ class JourneySummary {
   final int legCount;
   final int securedCount;
   final List<JourneyLeg> legs;
+
+  /// 담아 온 재료와, 예산에 밀려 기록으로만 남은 재료.
+  final List<JourneyLoot> granted;
+  final List<JourneyLoot> recorded;
+
   final String? deepestRegionName;
   final int? rewardExp;
   final int? rewardSeeds;
@@ -271,6 +338,12 @@ class JourneySummary {
       legCount: _asInt(json['leg_count']),
       securedCount: _asInt(json['secured_count']),
       legs: _list(json['legs']).map(JourneyLeg.fromJson).toList(growable: false),
+      granted: _list(_map(json['loot'])['granted'])
+          .map(JourneyLoot.fromJson)
+          .toList(growable: false),
+      recorded: _list(_map(json['loot'])['recorded'])
+          .map(JourneyLoot.fromJson)
+          .toList(growable: false),
       deepestRegionName: json['deepest_region_name'] as String?,
       rewardExp: first['exp_delta'] is num ? _asInt(first['exp_delta']) : null,
       rewardSeeds:

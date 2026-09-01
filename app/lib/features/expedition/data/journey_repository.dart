@@ -73,15 +73,22 @@ class JourneyRepository {
         );
       });
 
+  /// 귀환한다. [selectedLootIds]를 비우면 서버가 가치 예산을 채운다 —
+  /// 목표 재료 우선, 그다음 먼저 발견한 순서다.
   Future<Journey> returnHome({
     required int journeyId,
     required int expectedRevision,
     required String idempotencyKey,
+    List<int> selectedLootIds = const [],
   }) =>
       guardApi(() async {
         final response = await _dio.post<Map<String, dynamic>>(
           '/adventure/journeys/$journeyId/return',
-          data: {'expected_revision': expectedRevision},
+          data: {
+            'expected_revision': expectedRevision,
+            if (selectedLootIds.isNotEmpty)
+              'selected_loot_ids': selectedLootIds,
+          },
           options: Options(headers: {'Idempotency-Key': idempotencyKey}),
         );
         return Journey.fromJson(response.data ?? const {});

@@ -59,14 +59,43 @@ class _JourneyWalkingView extends ConsumerWidget {
 ///
 /// 갈 곳이 남아 있으면 편성 화면이 곧 야영지라 여기로 오지 않는다. 이 화면은
 /// 마지막 구간까지 걸은 사람만 본다.
-class _JourneyCampView extends ConsumerWidget {
+class _JourneyCampView extends ConsumerStatefulWidget {
   const _JourneyCampView({required this.journey});
 
   final Journey journey;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_JourneyCampView> createState() => _JourneyCampViewState();
+}
+
+class _JourneyCampViewState extends ConsumerState<_JourneyCampView> {
+  /// 담아 갈 후보. **비어 있으면 서버가 예산을 채운다.**
+  ///
+  /// 앱이 자동 채우기를 흉내 내지 않는다. 같은 규칙을 두 곳에 두면 언젠가
+  /// 갈라지고, 그때 화면이 약속한 것과 실제로 담아 온 것이 달라진다.
+  final Set<int> _picked = {};
+
+  int get _spent => widget.journey.returnCandidates
+      .where((loot) => _picked.contains(loot.id))
+      .fold(0, (sum, loot) => sum + loot.valueUnits);
+
+  bool _canAdd(JourneyLoot loot) {
+    final budget = widget.journey.returnBudget;
+    return _picked.length < budget.slots &&
+        _spent + loot.valueUnits <= budget.valueUnits;
+  }
+
+  void _toggle(JourneyLoot loot) {
+    setState(() {
+      if (_picked.remove(loot.id)) return;
+      if (_canAdd(loot)) _picked.add(loot.id);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final journey = widget.journey;
     final busy = ref.watch(
       journeyControllerProvider.select((value) => value.busy != null),
     );
@@ -113,20 +142,36 @@ class _JourneyCampView extends ConsumerWidget {
                   ),
                 ),
               ],
+              if (journey.returnCandidates.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                _ReturnBudgetPicker(
+                  candidates: journey.returnCandidates,
+                  budget: journey.returnBudget,
+                  picked: _picked,
+                  spent: _spent,
+                  canAdd: _canAdd,
+                  onToggle: busy ? null : _toggle,
+                ),
+              ],
               const SizedBox(height: 18),
               FilledButton.icon(
                 key: const ValueKey('journey-return'),
                 onPressed: busy
                     ? null
-                    : () =>
-                        ref.read(journeyControllerProvider.notifier).returnHome(),
+                    : () => ref
+                        .read(journeyControllerProvider.notifier)
+                        .returnHome(selectedLootIds: _picked.toList()),
                 icon: busy
                     ? const SizedBox.square(
                         dimension: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.home_outlined),
-                label: const Text('원정 기록을 안고 돌아가기'),
+                label: Text(
+                  _picked.isEmpty
+                      ? '예산만큼 담아 돌아가기'
+                      : '고른 ${_picked.length}개만 담아 돌아가기',
+                ),
               ),
               const SizedBox(height: 6),
               Text(
@@ -142,6 +187,87 @@ class _JourneyCampView extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// 담아 올 재료를 고르는 자리.
+///
+/// 설계서 10.3의 `귀환 sheet`다. 예산은 사용자에게 화폐처럼 보여 주지 않으므로
+/// 숫자 대신 **몇 칸 중 몇 칸**과 남은 여유로 읽어 준다.
+class _ReturnBudgetPicker extends StatelessWidget {
+  const _ReturnBudgetPicker({
+    required this.candidates,
+    required this.budget,
+    required this.picked,
+    required this.spent,
+    required this.canAdd,
+    required this.onToggle,
+  });
+
+  final List<JourneyLoot> candidates;
+  final JourneyBudget budget;
+  final Set<int> picked;
+  final int spent;
+  final bool Function(JourneyLoot loot) canAdd;
+  final void Function(JourneyLoot loot)? onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return MongrooPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.backpack_outlined),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text('담아 올 재료', style: theme.textTheme.titleSmall),
+              ),
+              MongrooTag(label: '${picked.length}/${budget.slots}칸'),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            picked.isEmpty
+                ? '고르지 않으면 목표 재료부터 예산만큼 담아 와요.'
+                : '남은 여유 ${budget.valueUnits - spent}. 나머지는 기록으로만 남아요.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 4),
+          // 판 위에 얹은 타일이라 잉크 물결이 판 배경에 가려진다. 투명한
+          // `Material`을 한 겹 두면 누른 자리가 실제로 보인다.
+          for (final loot in candidates)
+            Material(
+              type: MaterialType.transparency,
+              child: CheckboxListTile(
+                key: ValueKey('journey-loot-${loot.id}'),
+                value: picked.contains(loot.id),
+                onChanged: onToggle == null ||
+                        (!picked.contains(loot.id) && !canAdd(loot))
+                    ? null
+                    : (_) => onToggle!(loot),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                title: Text(loot.name),
+                subtitle: Text(
+                  loot.isObjective ? '목표 재료' : '현장 재료',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                secondary: loot.valueUnits > 1
+                    ? MongrooTag(label: '두 칸 값')
+                    : null,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -197,6 +323,36 @@ class _JourneySummaryView extends ConsumerWidget {
                         label: '${summary.rewardExp ?? 0} XP · '
                             '씨앗 ${summary.rewardSeeds ?? 0}',
                       ),
+                    ],
+                  ),
+                ),
+              ],
+              if (summary != null && summary.granted.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                MongrooPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('담아 온 재료', style: theme.textTheme.titleSmall),
+                      const SizedBox(height: 6),
+                      Text(
+                        summary.granted
+                            .map((loot) => loot.name)
+                            .join(', '),
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      if (summary.recorded.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          // 마지막 이름에 맞춰 조사를 고른다. 자리표시자를
+                          // 그대로 두면 저장소 검사가 잡는다.
+                          '${koreanTopic(summary.recorded.map((loot) => loot.name).join(', '))} '
+                          '기록으로만 남았어요.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

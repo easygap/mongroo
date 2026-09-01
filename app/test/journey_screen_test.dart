@@ -78,6 +78,9 @@ Map<String, dynamic> _journey({
   String status = 'active',
   List<int> usedPlantIds = const [],
   Map<String, dynamic>? summary,
+  List<Map<String, dynamic>> candidates = const [],
+  int budgetUnits = 0,
+  int budgetSlots = 0,
 }) =>
     {
       'id': 3,
@@ -99,6 +102,8 @@ Map<String, dynamic> _journey({
       'active_run_id': activeRunId,
       'at_camp': atCamp,
       'can_continue': canContinue,
+      'return_budget': {'value_units': budgetUnits, 'slots': budgetSlots},
+      'return_candidates': candidates,
       'next_routes': canContinue
           ? [
               {
@@ -116,6 +121,22 @@ Map<String, dynamic> _journey({
             ]
           : const [],
       'summary': summary,
+    };
+
+Map<String, dynamic> _loot({
+  required int id,
+  required String name,
+  String kind = 'field',
+  int valueUnits = 1,
+}) =>
+    {
+      'id': id,
+      'item_code': 'code_$id',
+      'name': name,
+      'quantity': 1,
+      'value_units': valueUnits,
+      'loot_kind': kind,
+      'disposition': 'candidate',
     };
 
 class _FakeJourneyRepository implements JourneyRepository {
@@ -165,13 +186,17 @@ class _FakeJourneyRepository implements JourneyRepository {
     return Journey.fromJson(active!);
   }
 
+  List<int>? lastSelectedLootIds;
+
   @override
   Future<Journey> returnHome({
     required int journeyId,
     required int expectedRevision,
     required String idempotencyKey,
+    List<int> selectedLootIds = const [],
   }) async {
     returnCalls++;
+    lastSelectedLootIds = selectedLootIds;
     active = _journey(
       status: 'completed',
       atCamp: false,
@@ -394,6 +419,8 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  _budgetTests();
+
   testWidgets('320px 200% 글자에서도 편성 화면이 오버플로우하지 않는다', (tester) async {
     await _pump(
       tester,
@@ -403,6 +430,67 @@ void main() {
     );
 
     expect(find.byKey(const ValueKey('journey-depart')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+}
+
+
+Map<String, dynamic> _campWithCandidates() => _journey(
+      currentLegIndex: 2,
+      legs: [_leg()],
+      canContinue: false,
+      budgetUnits: 2,
+      budgetSlots: 2,
+      candidates: [
+        _loot(id: 1, name: '메아리 열쇠', kind: 'objective'),
+        _loot(id: 2, name: '메아리 씨앗'),
+        _loot(id: 3, name: '달빛 이슬'),
+      ],
+    );
+
+void _budgetTests() {
+  testWidgets('예산을 넘기면 남은 후보를 더 고를 수 없다', (tester) async {
+    await _pump(tester, active: _campWithCandidates());
+
+    expect(find.text('담아 올 재료'), findsOneWidget);
+    expect(find.text('0/2칸'), findsOneWidget);
+    expect(find.text('고르지 않으면 목표 재료부터 예산만큼 담아 와요.'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('journey-loot-1')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('journey-loot-2')));
+    await tester.pump();
+
+    // 두 칸을 다 썼다. 세 번째는 눌러도 켜지지 않는다.
+    expect(find.text('2/2칸'), findsOneWidget);
+    final third = tester.widget<CheckboxListTile>(
+      find.byKey(const ValueKey('journey-loot-3')),
+    );
+    expect(third.onChanged, isNull);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('고른 것만 담아 돌아가면 그 목록이 그대로 서버로 간다', (tester) async {
+    final repository = await _pump(tester, active: _campWithCandidates());
+
+    await tester.tap(find.byKey(const ValueKey('journey-loot-2')));
+    await tester.pump();
+    expect(find.text('고른 1개만 담아 돌아가기'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('journey-return')));
+    await tester.pumpAndSettle();
+    expect(repository.lastSelectedLootIds, [2]);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('아무것도 안 고르면 빈 목록을 보내 서버가 예산을 채운다', (tester) async {
+    // 앱이 자동 채우기를 흉내 내지 않는다. 같은 규칙이 두 곳에 있으면 갈라진다.
+    final repository = await _pump(tester, active: _campWithCandidates());
+
+    expect(find.text('예산만큼 담아 돌아가기'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('journey-return')));
+    await tester.pumpAndSettle();
+    expect(repository.lastSelectedLootIds, isEmpty);
     expect(tester.takeException(), isNull);
   });
 }

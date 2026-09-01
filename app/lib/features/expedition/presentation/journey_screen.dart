@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/text/korean_particles.dart';
 import '../../../core/theme/mongroo_ui.dart';
 import '../data/expedition_repository.dart';
 import '../domain/expedition_models.dart';
