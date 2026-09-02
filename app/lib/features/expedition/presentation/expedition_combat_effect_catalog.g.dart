@@ -94,7 +94,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         'DD0857CA06B4C3A162484580888D3040F2DDF8BF367EBB5D6A353D5B55AF25AB',
     runtimeHash:
@@ -113,7 +113,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '65D8B2F4A9DE9F2B14A9AB47C58B5899D0C14785DB53B9BE8E0BB036EBDFD5AF',
     runtimeHash:
@@ -132,7 +132,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '9167130DAF4D984F8C25FFFBD6FF06528DB9EF61687925E62B6F0D228057FF96',
     runtimeHash:
@@ -151,7 +151,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '621204A9C9FA86AFD3510A21610A3C4D61162E127B8B279A33C5CE3E57712849',
     runtimeHash:
@@ -189,7 +189,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.94,
     pivotY: 0.58,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '07043847B4917BEBE87F0975D6D408E2E9890C0F2D46620298BB50E381602755',
     runtimeHash:
@@ -208,7 +208,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '9D91C78727C883C15B076337927941CDD54AF97487C950DAE2DBEAF1C81A6AEE',
     runtimeHash:
@@ -303,7 +303,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.72,
     pivotY: 0.5,
     anchor: 'party_all',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         'F7DF08B245079949480C9C4EE0111DB047F04451537819FB4FB8E1DECD669EF5',
     runtimeHash:
@@ -322,7 +322,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.97,
     pivotY: 0.58,
     anchor: 'guardian_foreleg_r',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '964BF0359681CA02E49A94B5BF755BE6FF8DCCD357A524B96B2117BE1E1FBCA3',
     runtimeHash:
@@ -360,7 +360,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'party_all',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         'E57E2204E1FBC32F495706021ABE23B55357A603C6AB052613D6E45715FD17C3',
     runtimeHash:
@@ -379,7 +379,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.72,
     pivotY: 0.5,
     anchor: 'party_all',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         'B5D5493599E3A22A47A83EA4A22A44FE02B8662C7A91237C80203E475372AD83',
     runtimeHash:
@@ -398,7 +398,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'party_all',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '7090E74AD89D8A78298B677DC61D690A9D5922F17654A614D3B5D17A3C4E4AD2',
     runtimeHash:
@@ -607,7 +607,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         'B6FD3D1E81124F2C4AE764C56D4CD35146CE9BD361D5AF0231C56029050D8796',
     runtimeHash:
@@ -626,7 +626,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         'B9D751C91FB47898BE7A32317F692511E857317D8E9E2932B3277E538CF0AF65',
     runtimeHash:
@@ -759,7 +759,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '18DD48FD1B2C73F47870B9B1AF721D1A5B12D633965A509407605B9D42E11358',
     runtimeHash:
@@ -778,7 +778,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '11FC8A7B5491F02DA11D387BE4AE2DB299E34EF8821D2060635A14CB5093BE72',
     runtimeHash:
@@ -949,7 +949,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         'A188C084D29934B82EDCCBCB37098A6F387EA2B1ED95506B99AE3127480FE668',
     runtimeHash:
@@ -968,7 +968,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '790AC8C9AEA1A70116AF6FE31983EA2523352D468C277CA62B5C7AD7BC62A335',
     runtimeHash:
@@ -987,7 +987,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '36678B5FF255A61C2E72616265BDCECF115C68F559A75E19D1859E1317490E29',
     runtimeHash:
@@ -1006,7 +1006,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '00F2B0E7C98915BC68B75723EE3DBC319888C6205B2AAEF762003F67D30C02D8',
     runtimeHash:
@@ -1025,7 +1025,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '2EB637219DF1BA55F99B1237499A6A62762680FADEFE3FFB56D2F055C289EA4F',
     runtimeHash:
@@ -1044,7 +1044,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '86D594A50327576F2B0306883C86A56C45EC4E1E3E4158AC95CD9F932DDC6431',
     runtimeHash:
@@ -1063,7 +1063,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '20D5A75CCD32DEB0C7AB884B733122DD86C6B0BA44B28BD09DB313873C249E67',
     runtimeHash:
@@ -1082,7 +1082,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5',
     runtimeHash:
@@ -1101,7 +1101,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '03B108BF2C03FAB3979E71A9BB6B31701EBE7FDB9D0706C3C779F048985F72C9',
     runtimeHash:
@@ -1120,7 +1120,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '3BEC1533588558B33C8BCD99395B0DAC92F2DCF6D5EBD6275013C3C2942DDA91',
     runtimeHash:
@@ -1139,7 +1139,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         'F1A6B86565E1C69F169EBB12BE2DF009554291640D929E76D2286F7218588F03',
     runtimeHash:
@@ -1158,7 +1158,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.5,
     pivotY: 0.5,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '3024859A1C04EA5A647E42637D58C95557F07EB04AE69F38E54537860114957A',
     runtimeHash:
@@ -1215,7 +1215,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.94,
     pivotY: 0.58,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '5D6997FE0C57D5BD990916D444E1D65FB59FF25690AC0C0A089A927F51D6ECE0',
     runtimeHash:
@@ -1234,7 +1234,7 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     pivotX: 0.94,
     pivotY: 0.58,
     anchor: 'tangle_center',
-    productionReady: false,
+    productionReady: true,
     sourceHash:
         '7D315AF77A3A61946D682727CF02541A1B610ACC626EE444616D52A554F04F5B',
     runtimeHash:
