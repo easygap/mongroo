@@ -26,6 +26,7 @@
 
 from typing import Any
 
+from app.content.expeditions.combat_motion import combat_motion, kel_fallback_family
 from app.content.expeditions.combat_identity import (
     CURRENT_KEL_MAP_VERSION,
     KEL_LABELS,
@@ -521,6 +522,73 @@ def layer_encounter(
         "contact_material": "paper",
         "intents": round_schedule(beast_code, layer_index),
     }
+
+
+#: 짐승 의도 하나가 화면에서 어떻게 보이는가. `(성장결, 동작 원형, 접촉 재질)`.
+#:
+#: 이 표가 생기기 전까지 열두 의도 전부가 `guardian.enemy-wave` 하나를 나눠
+#: 썼다. `present_intent`의 docstring이 스스로를 `아직 전용 연출이 없는 일반
+#: 수호자`용 호환 계층이라고 적어 두고 있었는데, 정작 짐승 넷이 거기에
+#: 얹혀 있었다 — 설계서 9장이 금지한 그 상태다.
+#:
+#: 짐승들은 **자고 있다.** 페이지가 쏟아지고 두레박이 기울고 씨앗함이 넘어지는
+#: 것은 공격이 아니라 뒤척임이다. 그래서 동작 원형도 달려들거나 내리치는
+#: 것(`dash`)이 아니라 기울고(`brace`) 번지고(`channel`) 흩뿌리는(`cast`) 쪽으로 고른다.
+BEAST_INTENT_PRESENTATION: dict[str, tuple[str, str, str]] = {
+    # 돌비늘 장부지기 — 서고, 종이
+    "page_snow": ("moonlit", "cast", "paper"),
+    "spine_lean": ("mosaic", "brace", "wood"),
+    "margin_murmur": ("sunny", "channel", "paper"),
+    # 물거울 메아리지기 — 우물, 물
+    "ripple_hug": ("rainy", "channel", "water"),
+    "well_lean": ("rainy", "brace", "wood"),
+    "half_echo": ("moonlit", "channel", "stone"),
+    # 별가루 씨앗지기 — 보관고, 별가루
+    "stardust_drift": ("sparkling", "cast", "leaf"),
+    "shelf_tilt": ("mosaic", "brace", "wood"),
+    "sprout_sigh": ("sunny", "channel", "leaf"),
+    # 옹이등 기록지기 — 관측실, 나이테
+    "ring_wave": ("ember", "channel", "wood"),
+    "lamp_lean": ("sunny", "brace", "wood"),
+    "unfinished_line": ("moonlit", "channel", "paper"),
+}
+
+
+def _present_beast_intent(beast_code: str, intent: dict[str, Any]) -> None:
+    """짐승 의도 하나에 표현 계약을 채운다.
+
+    엉킴 카탈로그와 같은 방식이다 — 콘텐츠가 자기 연출을 명시하고, 앱은
+    exact family를 먼저 찾는다. 비워 두면 `present_intent`가 공용 연출로
+    떨어뜨리는데, 그러면 짐승 넷의 열두 의도가 다시 같은 그림이 된다.
+    """
+
+    code = str(intent["code"])
+    kel, archetype, material = BEAST_INTENT_PRESENTATION[code]
+    family_stem = beast_code.replace("_", "-")
+    profile = f"beast.{code.replace('_', '-')}"
+    intent.update(
+        {
+            "kel": kel,
+            "archetype": archetype,
+            "contact_material": material,
+            "vfx_family": f"{family_stem}.{code.replace('_', '-')}",
+            "kel_fallback_family": kel_fallback_family(kel),
+            # 의도 코드가 곧 이펙트 키다. 엉킴과 같은 규칙이다.
+            "effect_key": code,
+            "motion_profile": profile,
+            "motion": combat_motion(
+                profile,
+                archetype=archetype,
+                facing="left",
+            ),
+        }
+    )
+
+
+for _beast_code, _beast in BEAST_CATALOG.items():
+    for _beast_intent in _beast["intents"]:
+        _present_beast_intent(_beast_code, _beast_intent)
+    _present_beast_intent(_beast_code, _beast["sleeptalk"])
 
 
 def validate_joint_guard_content() -> list[str]:

@@ -346,9 +346,13 @@ def member_battle_kit(
             "emotion_vfx_primary": emotion_palette["primary"],
             "emotion_vfx_secondary": emotion_palette["secondary"],
             "damage_type_label": DAMAGE_TYPE_LABELS[skill["damage_type"]],
+            # 전용 연출이 있는 것은 자기 코드를, 없는 것만 원소별 공용 키를
+            # 보낸다. 감정 스킬 6종은 2026-09-02에 전용 시트가 생겨 넘어왔다 —
+            # 공용 키를 그대로 두면 앱이 새 연출을 만들어 두고도 성장결 공용
+            # 연출을 재생한다.
             "effect_key": (
                 str(skill["code"])
-                if source == "signature"
+                if source in ("signature", "emotion")
                 else ELEMENT_RUNTIME_EFFECTS[element]
             ),
             "kel_fallback_family": kel_fallback_family(skill_kel),

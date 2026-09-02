@@ -171,3 +171,29 @@ def test_validator_catches_a_row_that_leans_one_way(monkeypatch):
     monkeypatch.setattr("app.content.expeditions.joint_guard.BEAST_CATALOG", broken)
     errors = validate_joint_guard_content()
     assert any("겹의 weak_kel" in error for error in errors), errors
+
+
+def test_every_beast_intent_has_its_own_visual_family():
+    """짐승 열두 의도가 저마다의 연출을 쓴다.
+
+    이 검사가 생기기 전까지 전부 `guardian.enemy-wave` 하나로 떨어졌다.
+    `present_intent`가 `아직 전용 연출이 없는 일반 수호자`용 호환 계층이라고
+    스스로 적어 두고 있었는데, 정작 짐승 넷이 거기에 얹혀 있었다 — 설계서
+    9장이 금지한 `공용 연출로 끝내는 것`이다.
+
+    잠꼬대도 자기 이름과 대상을 가진 의도라 함께 센다.
+    """
+
+    from app.content.expeditions.joint_guard import BEAST_CATALOG
+
+    families: set[str] = set()
+    for beast in BEAST_CATALOG.values():
+        for intent in list(beast["intents"]) + [beast["sleeptalk"]]:
+            family = intent["vfx_family"]
+            assert family, intent["code"]
+            assert family != "guardian.enemy-wave", intent["code"]
+            # 의도 코드가 곧 이펙트 키다. 엉킴과 같은 규칙이다.
+            assert intent["effect_key"] == intent["code"]
+            assert intent["kel_fallback_family"] == f"kel.{intent['kel']}"
+            families.add(family)
+    assert len(families) == 12
