@@ -71,6 +71,9 @@ def _action_index() -> dict[str, dict[str, object]]:
         SPECIES_SECONDARY_SKILLS,
         SPECIES_SKILLS,
     )
+    from app.content.expeditions.combat_motion import (  # noqa: PLC0415
+        KEL_FALLBACK_FAMILIES,
+    )
     from app.content.expeditions.joint_guard import BEAST_CATALOG  # noqa: PLC0415
     from app.content.expeditions.tangles import TANGLE_CATALOG  # noqa: PLC0415
 
@@ -130,6 +133,21 @@ def _action_index() -> dict[str, dict[str, object]]:
             "kel": kel,
             "effect_key": code,
             "anchor": MEMBER_SKILL_ANCHORS[code],
+        }
+
+    # 성장결 폴백. 기본 공격은 자기 family가 따로 없어서 **여기로 떨어진다**
+    # (4.2가 그 자리를 `공격 glyph + 성장결`로 정했다). 그러니 이 여섯은
+    # 빈자리를 메우는 임시 그림이 아니라 여섯 성장결의 기본 공격 그림이다.
+    #
+    # 서버가 키로 지목하지 않고 `kel_fallback_family`로만 닿기 때문에
+    # `effect_key`는 비운다. 없는 키를 적어 두면 그 키로 찾을 수 있는 것처럼
+    # 보인다.
+    for kel, family in KEL_FALLBACK_FAMILIES.items():
+        index[f"kel_{kel}"] = {
+            "family": family,
+            "kel": kel,
+            "effect_key": None,
+            "anchor": "actor_hand_r",
         }
     return index
 
@@ -239,7 +257,8 @@ def _entry(built: dict[str, object], meta: dict[str, object]) -> dict[str, objec
     return {
         "family": meta["family"],
         # 앱은 서버가 보낸 effect_key로도 찾는다. 카탈로그의 값을 그대로 쓴다.
-        "effect_keys": [meta["effect_key"]],
+        # family로만 닿는 것(성장결 폴백)은 비운다.
+        "effect_keys": [] if meta["effect_key"] is None else [meta["effect_key"]],
         "kel": meta["kel"],
         "directory": built["runtime_directory"],
         "frame_count": built["frame_count"],

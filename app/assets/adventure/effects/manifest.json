@@ -2574,35 +2574,35 @@
       "family": "kel.mosaic",
       "effect_keys": [],
       "kel": "mosaic",
-      "directory": "echo-wave",
+      "directory": "kel-mosaic-v1",
       "frame_count": 8,
       "frame_size": [
         576,
         288
       ],
       "frame_durations_ms": [
-        80,
-        70,
-        65,
-        65,
-        75,
-        85,
+        150,
         110,
-        125
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
       ],
       "contact_frame": 5,
       "pivot": [
-        0.08,
-        0.7
+        0.5,
+        0.5
       ],
       "anchor": "actor_hand_r",
       "production_ready": true,
-      "source_hash": "D5100395CDC01F5364B03499AAD0879F0972E3C5B08B172D71D621FEE3606C40",
-      "runtime_hash": "A01F85ECB51BA8F5FAAC0764161855D0A4DB24E7A3EAD194CD9F0B96C8A18A55",
+      "source_hash": "A988BA82BFB1CAD8C2D7E995C391B4839B55597F17CA76127347D23F3C5E8DEE",
+      "runtime_hash": "AD1A218FF22D84E2614478F7EF35CE2AD99BC435AB6B7BB6CBBF66E45236B2ED",
       "gate": {
         "decoded_mb": 5.06,
         "key_share": 0.0,
-        "backdrop_contrast": 0.3682,
+        "backdrop_contrast": 0.3097,
         "backdrop": "expedition-monster-den-battle-v1.webp",
         "checks": [
           "frame_integrity",
@@ -2616,14 +2616,17 @@
         ]
       },
       "delivery": {
-        "onion_025x": "design-system/deliveries/echo-wave/onion-025x.webp",
-        "on_backdrop": "design-system/deliveries/echo-wave/on-backdrop.webp",
+        "onion_025x": "design-system/deliveries/kel-mosaic-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/kel-mosaic-v1/on-backdrop.webp",
         "backdrop": "expedition-monster-den-battle-v1.webp",
-        "missing": [
-          "prompt_hash"
-        ]
+        "jobs_file": "design-system/concepts/mosaic-kel-effect-v17/jobs.json",
+        "prompt_sha256": "2C0F6D861B0A05789160582853DE2B62196C04D5F8280C258BEF058FB1C2A968",
+        "reference_sha256": [
+          "CCB65C612A8167464E10668E0485B7EFC957B2C4D350D648FFFB67C1E3F5A446"
+        ],
+        "missing": []
       },
-      "art_complete": false
+      "art_complete": true
     },
     {
       "family": "kel.rainy",

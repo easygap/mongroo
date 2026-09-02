@@ -1,0 +1,14 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "kel_mosaic",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. PAINT EVERY PART OF THE EFFECT FULLY OPAQUE, with hard painted edges. No motion blur, no speed streaks, no smear trails, no soft glow haze, no semi-transparent or faded edges anywhere - anything drawn thin or see-through picks up the cyan background and keys out as a green stain. Show movement with the position and tilt of solid pieces, not with streaks. The effect must contain no cyan, aqua, turquoise, teal, mint or pale sky-blue anywhere, and the greys must be neutral-to-warm gunmetal, never blue-tinted. This is a plain basic attack, not a signature skill: compact, quiet and readable, smaller and less ornate than the reference. Even the final frame must still show a clearly visible shape, never fade to nothing. The effect is gathered steel: loose angular plates draw together into one wedge, strike, and scatter back into plates. Frame 1 five small slate plates hang apart and tilt inward. Frame 2 they lock into a single blunt wedge with a thin brass seam along its edge. Frames 3-4 the wedge sits further right each frame, flat and level, with two or three separate solid plates trailing behind it as distinct outlined shapes. Frame 5 the brass seam brightens just before contact. Frame 6 the wedge splits into a broad fan of solid plates around one warm brass-white flash. Frames 7-8 the plates tumble outward and settle, all still solid and outlined. Palette: gunmetal and slate grey, warm pewter, soft charcoal outline, brass seam, warm cream-white at the contact flash. No blue, no green, no cyan, no mint.",
+   "references": [
+    "design-system/concepts/emotion-skill-effects-v12/mosaic-steel-equilibrium/sources/mosaic_steel_equilibrium-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/mosaic-kel-effect-v17/_raw/kel_mosaic-sheet.png"
+  }
+ ]
+}
