@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_battle_dock.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/expedition/data/expedition_repository.dart';
 import 'package:mongroo/features/expedition/data/joint_guard_repository.dart';
@@ -324,6 +325,18 @@ void main() {
     // 색만으로 구분하지 않는다.
     expect(find.text('잘 통해요 햇살결'), findsOneWidget);
     expect(find.text('잘 안 통해요 빗물결'), findsOneWidget);
+
+    // 글자도 못 읽는 경우까지 본다. 화살표는 통하고 안 통하고만 말했지
+    // **어느 성장결인지**는 이름으로만 있었다. 성장결마다 다른 마크가 붙는다.
+    final marks = tester
+        .widgetList<Image>(find.byType(Image))
+        .map((image) => image.image)
+        .whereType<AssetImage>()
+        .map((asset) => asset.assetName)
+        .where((name) => name.contains('/skill-icons/kel/'))
+        .toList();
+    expect(marks, contains(expeditionKelIconAsset('sunny')));
+    expect(marks, contains(expeditionKelIconAsset('rainy')));
     expect(tester.takeException(), isNull);
   });
 

@@ -879,7 +879,7 @@ class _ExpeditionSequentialCommandDockState
                           // null을 줘야 빈자리만 남지 않는다.
                           leading: action.kels.isEmpty
                               ? null
-                              : _KelMarks(kels: action.kels),
+                              : ExpeditionKelMarks(kels: action.kels),
                           icon: action.kels.isEmpty ? Icons.hub_outlined : null,
                         ),
                       if (action.fusionVariant != null)
@@ -1988,8 +1988,11 @@ class _DockImageIcon extends StatelessWidget {
 ///
 /// 색이나 글자를 못 읽어도 갈리도록 성장결마다 다른 모양을 쓴다 - 해·물방울·
 /// 불꽃·초승달·별·육각 타일. 예고 아이콘에 이미 같은 계약이 걸려 있다.
-class _KelMarks extends StatelessWidget {
-  const _KelMarks({required this.kels});
+///
+/// 합동 수호전 머리말의 `잘 통해요`·`잘 안 통해요`도 같은 것을 쓴다. 거기도
+/// 성장결 이름이 글자로만 있었다.
+class ExpeditionKelMarks extends StatelessWidget {
+  const ExpeditionKelMarks({super.key, required this.kels});
 
   final List<String> kels;
 

@@ -141,13 +141,22 @@ class _LayerBar extends StatelessWidget {
                 label: '${layer.name} · ${layer.progressLabel}',
                 icon: Icons.bedtime_rounded,
               ),
+              // 화살표는 통하고 안 통하고를 말하지만, **어느 성장결인지**는
+              // 글자로만 있었다. 마크를 앞에 붙여 글자를 못 읽어도 갈리게 한다.
               MongrooTag(
                 label: '잘 통해요 ${layer.weakKelLabel}',
-                icon: Icons.trending_up_rounded,
+                leading: layer.weakKel.isEmpty
+                    ? null
+                    : ExpeditionKelMarks(kels: [layer.weakKel]),
+                icon: layer.weakKel.isEmpty ? Icons.trending_up_rounded : null,
               ),
               MongrooTag(
                 label: '잘 안 통해요 ${layer.resistKelLabel}',
-                icon: Icons.trending_down_rounded,
+                leading: layer.resistKel.isEmpty
+                    ? null
+                    : ExpeditionKelMarks(kels: [layer.resistKel]),
+                icon:
+                    layer.resistKel.isEmpty ? Icons.trending_down_rounded : null,
               ),
             ],
           ),

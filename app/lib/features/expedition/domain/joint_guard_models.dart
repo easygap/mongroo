@@ -176,7 +176,9 @@ class JointGuardLayer {
     required this.index,
     required this.name,
     required this.count,
+    required this.weakKel,
     required this.weakKelLabel,
+    required this.resistKel,
     required this.resistKelLabel,
     this.warning,
   });
@@ -186,7 +188,10 @@ class JointGuardLayer {
   final int count;
 
   /// 이 겹에서 잘 통하는 결과 잘 안 통하는 결. 겹에 들어설 때 함께 공개된다.
+  /// 성장결 코드. 마크를 고르는 데 쓴다 - 이름만으로는 글자를 읽어야 안다.
+  final String weakKel;
   final String weakKelLabel;
+  final String resistKel;
   final String resistKelLabel;
 
   /// 라운드 안에 예고할 자리가 없는 결정적 순간. 겹 입장에서 미리 알린다.
@@ -199,7 +204,9 @@ class JointGuardLayer {
         index: _asInt(json['index']),
         name: json['name'] as String? ?? '',
         count: _asInt(json['count'], 1),
+        weakKel: json['weak_kel'] as String? ?? '',
         weakKelLabel: json['weak_kel_label'] as String? ?? '',
+        resistKel: json['resist_kel'] as String? ?? '',
         resistKelLabel: json['resist_kel_label'] as String? ?? '',
         warning: json['warning'] is Map<String, dynamic>
             ? JointGuardMomentWarning.fromJson(_map(json['warning']))
