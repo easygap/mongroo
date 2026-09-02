@@ -1014,6 +1014,33 @@ void main() {
     expect(directories, hasLength(6));
   });
 
+  test('길잡이와 기록서도 성장결 공용 연출로 떨어지지 않는다', () {
+    // 실기에서 합동 수호전을 돌려 보니 여섯 자리 중 다섯이 길잡이였다. 그
+    // 길잡이의 두 스킬과 기록서 한 장이 마지막까지 공용 연출로 나가고 있었다.
+    const skills = <String, (String, String)>{
+      'archive-guide.lantern': ('kel.sunny', 'archive-lantern-v1'),
+      'archive-guide.archive-seal': ('kel.mosaic', 'archive-seal-v1'),
+      'skillbook.field-note-echo': ('kel.mosaic', 'field-note-echo-v1'),
+    };
+    for (final entry in skills.entries) {
+      final (kelFallback, directory) = entry.value;
+      final resolved = resolveExpeditionCombatEffect(
+        vfxFamily: entry.key,
+        kelFallbackFamily: kelFallback,
+      );
+      expect(resolved.family, entry.key);
+      expect(resolved.directory, directory);
+      expect(resolved.frameCount, 8);
+    }
+    // `되울림`은 예전에 echo_wave 키로 내려왔다. 이제 자기 키가 자기 연출을
+    // 가리키는지도 같이 본다 — 키 경로로 들어오는 소리·타격 정지가 여기 걸린다.
+    expect(
+      expeditionCombatEffectForKey('field_note_echo').directory,
+      'field-note-echo-v1',
+    );
+    expect(expeditionCombatEffectForKey('echo_wave').directory, 'echo-wave');
+  });
+
   test('앞열·전체·최저 체력 예고는 색 없이도 서로 다른 형태를 쓴다', () {
     final icons = {
       expeditionIntentTargetIcon('front'),

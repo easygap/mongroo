@@ -34,16 +34,21 @@ RUNTIME_ROOT = REPO / "app/assets/adventure/effects"
 BUILDER = REPO / "design-system/scripts/build_boss_pattern_assets.py"
 
 
-#: 감정 스킬이 어디에서 이는가. 대원 스킬은 카탈로그에 anchor를 적어 두지 않아서
-#: 여기서 정한다 — 기존 대원 고유기들이 쓰는 값과 같은 규칙이다: 스스로에게
-#: 두르는 것은 `actor_center`, 무대를 건너가는 것은 `stage_center`.
-EMOTION_SKILL_ANCHORS = {
+#: 대원 쪽 연출이 어디에서 이는가. 대원 스킬은 카탈로그에 anchor를 적어 두지
+#: 않아서 여기서 정한다 — 기존 대원 고유기들이 쓰는 값과 같은 규칙이다:
+#: 스스로에게 두르는 것은 `actor_center`, 탐험대 전체를 감싸는 것은 `party_all`,
+#: 무대를 건너가는 것은 `stage_center`.
+MEMBER_SKILL_ANCHORS = {
     "sunny_radiant_heart": "stage_center",
     "rainy_frozen_tide": "stage_center",
     "ember_rage_breaker": "actor_center",
     "moonlit_lonesome_tempest": "stage_center",
     "sparkling_shock_wonder": "stage_center",
     "mosaic_steel_equilibrium": "actor_center",
+    # 길잡이 둘과 기록서 하나. 등불은 탐험대를 덮고, 봉인과 되울림은 건너간다.
+    "archive_lantern": "party_all",
+    "archive_seal": "stage_center",
+    "field_note_echo": "stage_center",
 }
 
 
@@ -52,7 +57,11 @@ def _action_index() -> dict[str, dict[str, object]]:
 
     sys.path.insert(0, str(REPO / "server"))
     from app.content.expeditions.combat_identity import (  # noqa: PLC0415
+        ELEMENT_KEL,
+        FIELD_NOTE_SKILL,
         FORM_COMBAT_SKILLS,
+        SPECIES_SECONDARY_SKILLS,
+        SPECIES_SKILLS,
     )
     from app.content.expeditions.joint_guard import BEAST_CATALOG  # noqa: PLC0415
     from app.content.expeditions.tangles import TANGLE_CATALOG  # noqa: PLC0415
@@ -84,12 +93,24 @@ def _action_index() -> dict[str, dict[str, object]]:
                 ),
             }
 
-    for kel, skill in FORM_COMBAT_SKILLS.items():
+    # 감정 스킬은 자기 성장결이 곧 이름이다.
+    member_skills = [(kel, skill) for kel, skill in FORM_COMBAT_SKILLS.items()]
+    # 길잡이 둘과 기록서 하나는 성장결이 따로 적혀 있지 않아 원소에서 끌어온다.
+    # 서버의 `ELEMENT_KEL`을 그대로 쓴다 — 손으로 옮기면 어긋난다.
+    member_skills += [
+        (ELEMENT_KEL[str(skill["element"])], skill)
+        for skill in (
+            SPECIES_SKILLS["archive_guide"],
+            SPECIES_SECONDARY_SKILLS["archive_guide"],
+            FIELD_NOTE_SKILL,
+        )
+    ]
+    for kel, skill in member_skills:
         index[str(skill["code"])] = {
             "family": skill["vfx_family"],
             "kel": kel,
             "effect_key": skill["code"],
-            "anchor": EMOTION_SKILL_ANCHORS[str(skill["code"])],
+            "anchor": MEMBER_SKILL_ANCHORS[str(skill["code"])],
         }
     return index
 

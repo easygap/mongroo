@@ -1,0 +1,32 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "archive-lantern",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This belongs to the party's archivist guide — it should read as careful, orderly and protective, the work of someone who keeps records, never wild or violent. Even the final dissipation frame must still show a clearly visible shape, never fade to nothing. The effect is a hanging archive lantern that flares and casts a wide protective dome of warm light. Frame 1 the lantern glass brightens from within. Frames 2-4 the light opens outward in broad tiers, carrying faint drifting page-fragments in its glow. Frame 6 the light reaches its widest as a low warm dome with a bright rim, sheltering rather than striking. Frames 7-8 the dome settles and thins to a steady halo. Palette: warm lamplight gold and honey, aged brass, cream paper, soft amber shadow.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/guide-and-skillbook-effects-v13/_raw/archive_lantern-sheet.png"
+  },
+  {
+   "id": "archive-seal",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This belongs to the party's archivist guide — it should read as careful, orderly and protective, the work of someone who keeps records, never wild or violent. Even the final dissipation frame must still show a clearly visible shape, never fade to nothing. The effect is a long paper seal-band that unrolls, snaps taut, and locks into a standing barrier. Frame 1 a rolled band starts to unwind. Frames 2-4 it unrolls rightward in a long ribbon, stamped sigils lighting one after another along its length. Frame 6 the band snaps taut and locks into an upright lattice with every sigil lit at once. Frames 7-8 the lattice relaxes and the band curls back. Palette: cream and bone paper, deep vermilion seal ink, warm gold sigil light, sepia shadow.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/guide-and-skillbook-effects-v13/_raw/archive_seal-sheet.png"
+  },
+  {
+   "id": "field-note-echo",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This belongs to the party's archivist guide — it should read as careful, orderly and protective, the work of someone who keeps records, never wild or violent. Even the final dissipation frame must still show a clearly visible shape, never fade to nothing. The effect is a recorded sound waveform sent back out as a dart of ink. Frame 1 a tight coil of written waveform gathers. Frames 2-4 it launches right as a slim ink dart trailing a ribbon of waveform script behind it. Frame 6 it lands and the waveform blooms outward as concentric ink rings with a bright warm core. Frames 7-8 the rings blot and soak away. Palette: deep sepia and near-black ink, cream paper, warm gold accents, dusty plum shadow.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/guide-and-skillbook-effects-v13/_raw/field_note_echo-sheet.png"
+  }
+ ]
+}

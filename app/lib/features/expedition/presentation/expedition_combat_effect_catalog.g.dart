@@ -43,6 +43,44 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     runtimeHash:
         '406AF55EE6D4D2C67CDC02AB1BF51AE258C76C028E57078AB565841C6ECCBED6',
   ),
+  'archive-guide.archive-seal': ExpeditionCombatEffectSpec(
+    family: 'archive-guide.archive-seal',
+    effectKeys: ['archive_seal'],
+    kel: 'mosaic',
+    directory: 'archive-seal-v1',
+    frameCount: 8,
+    frameWidth: 576,
+    frameHeight: 288,
+    frameDurationsMs: [150, 110, 90, 90, 80, 100, 80, 80],
+    contactFrame: 5,
+    pivotX: 0.5,
+    pivotY: 0.5,
+    anchor: 'stage_center',
+    productionReady: true,
+    sourceHash:
+        'B71BCCF83A1E4AEBF6B634905CEA5E277996316A7837982517197FC1C6563051',
+    runtimeHash:
+        'A314B3E87D79AAB417CFD3C63B5FF1C328032611C39060C1C1D83FD1D1047597',
+  ),
+  'archive-guide.lantern': ExpeditionCombatEffectSpec(
+    family: 'archive-guide.lantern',
+    effectKeys: ['archive_lantern'],
+    kel: 'sunny',
+    directory: 'archive-lantern-v1',
+    frameCount: 8,
+    frameWidth: 576,
+    frameHeight: 288,
+    frameDurationsMs: [150, 110, 90, 90, 80, 100, 80, 80],
+    contactFrame: 5,
+    pivotX: 0.5,
+    pivotY: 0.5,
+    anchor: 'party_all',
+    productionReady: true,
+    sourceHash:
+        '0F8BA07ED6D20C0E9E91F35E2D77E6A6948B047DCDC8D8D50607238BC263C68D',
+    runtimeHash:
+        'E581255CF506D9EF784EA1F92F94DD39EFA3D581EC224D03C5DF9E74EFCDB9D3',
+  ),
   'baby-pot.care-vines': ExpeditionCombatEffectSpec(
     family: 'baby-pot.care-vines',
     effectKeys: ['sprout_cheer'],
@@ -1430,6 +1468,25 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
     runtimeHash:
         '684740304D4426ACF1ED643F010339E750AC3BD6518C9A09E72177F740A1CE91',
   ),
+  'skillbook.field-note-echo': ExpeditionCombatEffectSpec(
+    family: 'skillbook.field-note-echo',
+    effectKeys: ['field_note_echo'],
+    kel: 'mosaic',
+    directory: 'field-note-echo-v1',
+    frameCount: 8,
+    frameWidth: 576,
+    frameHeight: 288,
+    frameDurationsMs: [150, 110, 90, 90, 80, 100, 80, 80],
+    contactFrame: 5,
+    pivotX: 0.5,
+    pivotY: 0.5,
+    anchor: 'stage_center',
+    productionReady: true,
+    sourceHash:
+        '9F7323F92152E312013A196FA251884B5E2D7CA25AB75BE4F25CA913A75250B9',
+    runtimeHash:
+        '867A93AFCB0EADDA370B03C4E11473325608D01330FC2C4E445BC2B5F862BEE9',
+  ),
   'snarled-stardust.dust-flare': ExpeditionCombatEffectSpec(
     family: 'snarled-stardust.dust-flare',
     effectKeys: ['dust_flare'],
@@ -1663,6 +1720,8 @@ const Map<String, ExpeditionCombatEffectSpec> expeditionCombatEffectsByFamily =
 const Map<String, String> expeditionCombatFamilyByEffectKey = {
   'absolute_zero_read': 'aloof-pot.absolute-zero',
   'steel_verdict': 'aloof-pot.steel-verdict',
+  'archive_seal': 'archive-guide.archive-seal',
+  'archive_lantern': 'archive-guide.lantern',
   'sprout_cheer': 'baby-pot.care-vines',
   'root_embrace': 'baby-pot.root-embrace',
   'gear_grind': 'backwound-clockspring.gear-grind',
@@ -1735,6 +1794,7 @@ const Map<String, String> expeditionCombatFamilyByEffectKey = {
   'stardust_drift': 'seed-keeper.stardust-drift',
   'catalogue_rain': 'shelf-snarl.catalogue-rain',
   'shelf_sweep': 'shelf-snarl.shelf-sweep',
+  'field_note_echo': 'skillbook.field-note-echo',
   'dust_flare': 'snarled-stardust.dust-flare',
   'dust_lash': 'snarled-stardust.dust-lash',
   'splash_wave': 'splashing-droplets.splash-wave',

@@ -94,7 +94,7 @@ MIN_CONTRAST = 0.20
 GATE_PROFILE = {
     "runtime": "windows-desktop-profile",
     "harness": "design-system/benchmarks/effect-frame-time",
-    "effects": 87,
+    "effects": 90,
     "runs": [
         {"effects": 69, "sampled_frames": 3371, "raster_p95_ms": 0.635,
          "raster_p99_ms": 0.846, "raster_max_ms": 6.758, "build_p95_ms": 0.566,
@@ -108,6 +108,9 @@ GATE_PROFILE = {
         {"effects": 87, "sampled_frames": 4292, "raster_p95_ms": 0.582,
          "raster_p99_ms": 0.765, "raster_max_ms": 2.108, "build_p95_ms": 0.495,
          "total_p95_ms": 15.899, "over_20ms": 0, "over_33_4ms": 0},
+        {"effects": 90, "sampled_frames": 4453, "raster_p95_ms": 0.481,
+         "raster_p99_ms": 0.613, "raster_max_ms": 1.072, "build_p95_ms": 0.427,
+         "total_p95_ms": 15.641, "over_20ms": 0, "over_33_4ms": 0},
     ],
     "scope": "effect_layer_only",
     "pending": ["low_end_android_p95", "ios_p95"],
