@@ -215,3 +215,64 @@ def test_a_skill_book_keeps_the_effect_key_of_the_art_that_plays():
         # 연출이 있는 자리면, 보내는 키가 그 연출이 주장하는 키여야 한다.
         if family in keys_by_family:
             assert entry["effect_key"] in keys_by_family[family], family
+
+
+def test_art_complete_means_the_whole_47_delivery_bundle_exists():
+    """`art_complete:true`는 4.7이 요구한 일곱 가지가 다 있다는 뜻이어야 한다.
+
+    4.7은 `RGBA master, 프레임 contact sheet, 0.25× onion-skin 영상, 실제 배경
+    합성 영상, atlas/WebP, manifest, 프롬프트·참조 hash`를 한 묶음으로 요구하고
+    `어느 하나가 없으면 art_complete=false`라고 적어 뒀다. 그런데 그 필드가
+    manifest에 아예 없어서 아무도 그렇게 세지 않았다 — `production_ready`가
+    이름값으로만 붙어 있던 것과 같은 종류의 일이다.
+
+    이 검사는 **적어 둔 것이 실제로 있는지**만 본다. 파일을 지우거나 옮기면
+    여기서 걸린다.
+    """
+
+    manifest = json.loads((EFFECT_ROOT / "manifest.json").read_text(encoding="utf-8"))
+
+    for effect in manifest["effects"]:
+        family = str(effect["family"])
+        delivery = effect.get("delivery")
+        assert delivery is not None, family
+        for field in ("onion_025x", "on_backdrop"):
+            path = REPOSITORY_ROOT / str(delivery[field])
+            assert path.is_file(), f"{family}: {field}"
+            assert path.stat().st_size > 2_000, f"{family}: {field}"
+        if not effect.get("art_complete"):
+            # 안 채워진 것은 왜 안 채워졌는지가 적혀 있어야 한다.
+            assert delivery["missing"] or not effect["production_ready"], family
+            continue
+        assert delivery["missing"] == [], family
+        assert delivery["prompt_sha256"], family
+        assert delivery["reference_sha256"], family
+        assert (REPOSITORY_ROOT / str(delivery["jobs_file"])).is_file(), family
+        assert effect["production_ready"] is True, family
+
+
+def test_every_effect_made_by_the_current_pipeline_is_art_complete():
+    """지금 파이프라인으로 만든 것은 하나도 빠짐없이 묶음이 차 있어야 한다.
+
+    프롬프트 기록이 없어 `art_complete`가 아닌 51종은 이 파이프라인이 생기기
+    전에 다른 경로로 만들어진 것들이다. 그건 되살릴 수 없으니 그대로 둔다.
+    다만 **`jobs*.json`이 있는 concept에서 나온 것은 전부 차 있어야** 한다 —
+    앞으로 만드는 것이 조용히 빠지는 것을 여기서 막는다.
+    """
+
+    manifest = json.loads((EFFECT_ROOT / "manifest.json").read_text(encoding="utf-8"))
+    jobs_ids: set[str] = set()
+    for jobs_path in (REPOSITORY_ROOT / "design-system/concepts").glob("*/jobs*.json"):
+        payload = json.loads(jobs_path.read_text(encoding="utf-8"))
+        for job in payload.get("jobs", []):
+            jobs_ids.add(str(job["id"]).replace("-", "_"))
+
+    assert len(jobs_ids) >= 39
+    covered = 0
+    for effect in manifest["effects"]:
+        keys = {str(key) for key in effect.get("effect_keys", [])}
+        if not keys & jobs_ids:
+            continue
+        covered += 1
+        assert effect["art_complete"] is True, effect["family"]
+    assert covered == len(jobs_ids)
