@@ -112,6 +112,7 @@ class _StageAdvancePanel extends ConsumerWidget {
             key: ValueKey('stage-story-${story.$1.code}'),
             story: story.$1,
             audioEnabled: audioEnabled,
+            regionCode: stageMap?.region.code,
           ),
           const SizedBox(height: 10),
         ],

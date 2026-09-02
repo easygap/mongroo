@@ -271,11 +271,18 @@ class _StageStoryRevealCard extends StatefulWidget {
     super.key,
     required this.story,
     required this.audioEnabled,
+    this.regionCode,
     this.replay = false,
   });
 
   final ExpeditionStageStory story;
   final bool audioEnabled;
+
+  /// 어느 지역의 이야기인가.
+  ///
+  /// 없으면 공용 원화로 떨어진다. 지역 전용 원화를 열넷이나 만들어 두고도
+  /// 이 화면은 지역을 안 넘겨서 전부 기억서고 그림을 쓰고 있었다.
+  final String? regionCode;
   final bool replay;
 
   @override
@@ -361,7 +368,10 @@ class _StageStoryRevealCardState extends State<_StageStoryRevealCard> {
     final palette = MongrooPalette.of(context);
     final scheme = Theme.of(context).colorScheme;
     final frames = _storyFrames(widget.story.visualAsset);
-    final scene = expeditionSceneTheme(widget.story.sceneKey);
+    final scene = expeditionSceneTheme(
+      widget.story.sceneKey,
+      regionCode: widget.regionCode,
+    );
     return Semantics(
       liveRegion: !widget.replay,
       image: true,

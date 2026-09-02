@@ -252,8 +252,10 @@ class _MapColumn extends StatelessWidget {
         MongrooPanel(
           padding: EdgeInsets.zero,
           radius: 20,
-          borderColor:
-              expeditionSceneTheme(current.sceneKey).accent.withAlpha(90),
+          borderColor: expeditionSceneTheme(
+            current.sceneKey,
+            regionCode: expedition.region.code,
+          ).accent.withAlpha(90),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -272,7 +274,10 @@ class _MapColumn extends StatelessWidget {
                       width: 4,
                       height: 34,
                       decoration: BoxDecoration(
-                        color: expeditionSceneTheme(current.sceneKey).accent,
+                        color: expeditionSceneTheme(
+                          current.sceneKey,
+                          regionCode: expedition.region.code,
+                        ).accent,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),

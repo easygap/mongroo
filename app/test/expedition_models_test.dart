@@ -3625,6 +3625,27 @@ void _regionSceneTests() {
     }
   });
 
+  test('이야기 컷은 지역을 넘겨야 전용 원화를 고른다', () {
+    // 원화를 열넷이나 만들어 두고도 이야기 컷이 지역을 안 넘겨서 전부
+    // 기억서고 그림을 쓰고 있었다. 실기에서 관측실 5장을 열었더니 전용
+    // 원화가 있는데도 공용 `moon-tower-v3`가 내려왔다.
+    //
+    // 지역을 넘기면 전용 원화가, 안 넘기면 공용이 나온다는 것을 두 방향으로
+    // 못 박는다.
+    const cases = <(String, String, String)>[
+      ('moon_tower', 'heartwood_observatory', 'heartwood-observatory'),
+      ('flooded_cave', 'echo_well', 'echo-well'),
+      ('root_tunnel', 'echo_well', 'echo-well'),
+      ('root_tunnel', 'heartwood_observatory', 'heartwood-observatory'),
+    ];
+    for (final (scene, region, marker) in cases) {
+      final shared = expeditionSceneTheme(scene);
+      final regional = expeditionSceneTheme(scene, regionCode: region);
+      expect(regional.assetPath, contains(marker), reason: '$region/$scene');
+      expect(regional.assetPath, isNot(shared.assetPath), reason: '$region/$scene');
+    }
+  });
+
   testWidgets('지역 전용 장면 원화가 표대로 번들에 있다', (tester) async {
     // 표에만 적고 파일이 없으면 그 장면만 검은 화면이 된다. 번들에서 실제로
     // 읽어 봐야 잡힌다 — 경로 문자열만 검사하면 오타를 놓친다.

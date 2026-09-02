@@ -479,7 +479,12 @@ class _ExpeditionStageMapView extends ConsumerWidget {
                               key: ValueKey('stage-point-${stage.no}'),
                               stage: stage,
                               isNext: stage.no == stageMap.nextStageNo,
-                              onTap: () => _openStageSheet(context, ref, stage),
+                              onTap: () => _openStageSheet(
+                                context,
+                                ref,
+                                stage,
+                                stageMap.region.code,
+                              ),
                             ),
                           ),
                       ],
@@ -498,13 +503,15 @@ class _ExpeditionStageMapView extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     ExpeditionStage stage,
+    String regionCode,
   ) async {
     HapticFeedback.selectionClick();
     final start = await showModalBottomSheet<bool>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
-      builder: (context) => _StageDetailSheet(stage: stage),
+      builder: (context) =>
+          _StageDetailSheet(stage: stage, regionCode: regionCode),
     );
     if (start != true) return;
     ref.read(expeditionControllerProvider.notifier).openStagePreparation(
@@ -846,9 +853,12 @@ class _StagePointBadge extends StatelessWidget {
 
 /// 스테이지 상세 시트 — 종류, 등장 엉킴과 약점, 예상 시간, 출발.
 class _StageDetailSheet extends ConsumerWidget {
-  const _StageDetailSheet({required this.stage});
+  const _StageDetailSheet({required this.stage, required this.regionCode});
 
   final ExpeditionStage stage;
+
+  /// 이야기 컷이 지역 전용 원화를 고르는 데 쓴다.
+  final String regionCode;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -986,7 +996,8 @@ class _StageDetailSheet extends ConsumerWidget {
             if (stage.cleared && stage.story != null) ...[
               OutlinedButton.icon(
                 key: const ValueKey('stage-story-replay'),
-                onPressed: () => _showStory(context, ref, stage.story!),
+                onPressed: () =>
+                    _showStory(context, ref, stage.story!, regionCode),
                 icon: const Icon(Icons.auto_stories_outlined),
                 label: const Text('이야기 다시 보기'),
               ),
@@ -1018,6 +1029,7 @@ class _StageDetailSheet extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     ExpeditionStageStory story,
+    String regionCode,
   ) async {
     final sfxEnabled = ref.read(expeditionBattleSettingsProvider).sfxEnabled;
     await showDialog<void>(
@@ -1035,6 +1047,7 @@ class _StageDetailSheet extends ConsumerWidget {
                 _StageStoryRevealCard(
                   story: story,
                   audioEnabled: sfxEnabled,
+                  regionCode: regionCode,
                   replay: true,
                 ),
                 const SizedBox(height: 8),

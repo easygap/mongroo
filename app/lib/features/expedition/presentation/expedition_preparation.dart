@@ -303,7 +303,13 @@ class _RegionCard extends StatelessWidget {
               separatorBuilder: (context, index) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
                 final zone = _zones[index];
-                final scene = expeditionSceneTheme(zone.key);
+                // 지역을 안 넘기면 네 지역이 전부 첫 지역 원화를 쓴다.
+                // 실기에서 관측실 준비 화면이 `-v3` 공용 원화만 여섯 장
+                // 받아 오는 것을 보고 알았다.
+                final scene = expeditionSceneTheme(
+                  zone.key,
+                  regionCode: region.code,
+                );
                 return Semantics(
                   image: true,
                   label: zone.label,
