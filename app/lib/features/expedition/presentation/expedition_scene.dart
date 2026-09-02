@@ -268,9 +268,13 @@ String expeditionTerrainAsset(String? regionCode) =>
 const expeditionRegionSceneAssets = <String, String>{
   // 기억서고는 공용 원화가 곧 자기 원화다(먼저 만들어진 지역이라 그렇다).
   //
-  // 아래 여덟은 재사용이 가장 거슬리던 자리다 — 수호자 소굴 셋(보스방은 가장
+  // 처음 여덟은 재사용이 가장 거슬리던 자리였다 — 수호자 소굴 셋(보스방은 가장
   // 오래 보는 화면), 지역 입구 셋(새 지역 첫 화면), 그리고 두 지역의 상징 공간.
-  // 나머지 장면은 여전히 공용 원화 + 지역 색 보정으로 간다.
+  //
+  // 2026-09-02에 남은 셋을 채웠다. 각 지역이 **실제로 쓰는** 장면만 세면 그때
+  // 빌려 쓰던 칸이 셋이었다(우물정원의 잠긴 동굴·뿌리 터널, 관측실의 뿌리
+  // 터널). 이제 네 지역 모두 자기가 쓰는 장면을 전부 자기 원화로 갖는다.
+  // 기억서고는 먼저 만들어진 지역이라 공용 원화가 곧 자기 것이다.
   'echo_well/monster_den':
       'assets/adventure/expedition-monster-den-echo-well-v1.webp',
   'starlight_seed_vault/monster_den':
@@ -291,6 +295,12 @@ const expeditionRegionSceneAssets = <String, String>{
   // 가장 절제된 원화라 나머지 둘의 화풍 기준으로 썼다.
   'echo_well/treasure_vault':
       'assets/adventure/expedition-treasure-vault-echo-well-v1.webp',
+  'echo_well/flooded_cave':
+      'assets/adventure/expedition-flooded-cave-echo-well-v1.webp',
+  'echo_well/root_tunnel':
+      'assets/adventure/expedition-root-tunnel-echo-well-v1.webp',
+  'heartwood_observatory/root_tunnel':
+      'assets/adventure/expedition-root-tunnel-heartwood-observatory-v1.webp',
   'echo_well/echo_well':
       'assets/adventure/expedition-echo-well-echo-well-v1.webp',
   'starlight_seed_vault/root_tunnel':

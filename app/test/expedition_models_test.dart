@@ -3588,15 +3588,19 @@ void _regionSceneTests() {
     expect(archive.accent, shared.accent);
 
     // 뒤 지역은 강조색이 갈린다. 전용 원화가 오기 전까지의 최소 장치다.
-    final well = expeditionSceneTheme('flooded_cave', regionCode: 'echo_well');
+    final wood = expeditionSceneTheme(
+      'flooded_cave',
+      regionCode: 'heartwood_observatory',
+    );
     final vault = expeditionSceneTheme(
       'flooded_cave',
       regionCode: 'starlight_seed_vault',
     );
-    expect(well.accent, isNot(shared.accent));
-    expect(vault.accent, isNot(well.accent));
-    // 전용 원화가 아직 없으니 그림은 공용 그대로다.
-    expect(well.assetPath, shared.assetPath);
+    expect(wood.accent, isNot(shared.accent));
+    expect(vault.accent, isNot(wood.accent));
+    // 관측실은 잠긴 동굴을 콘텐츠에서 쓰지 않아 전용 원화를 만들지 않는다.
+    // 안 쓰는 칸까지 채우는 것은 그림이 아니라 표를 채우는 일이다.
+    expect(wood.assetPath, shared.assetPath);
 
     // 모르는 지역은 공용으로 떨어져 무음이 아니라 무화면이 되지 않는다.
     expect(
@@ -3621,10 +3625,24 @@ void _regionSceneTests() {
     }
   });
 
-  testWidgets('전용 원화 표에 적힌 8장이 실제로 번들에 있다', (tester) async {
+  testWidgets('지역 전용 장면 원화가 표대로 번들에 있다', (tester) async {
     // 표에만 적고 파일이 없으면 그 장면만 검은 화면이 된다. 번들에서 실제로
     // 읽어 봐야 잡힌다 — 경로 문자열만 검사하면 오타를 놓친다.
-    expect(expeditionRegionSceneAssets, hasLength(11));
+    //
+    // 빌려 쓰던 셋(우물정원의 잠긴 동굴·뿌리 터널, 관측실의 뿌리 터널)을
+    // 채워 열넷이 됐다. 이제 네 지역 모두 자기가 쓰는 장면을 전부 자기
+    // 원화로 갖는다 — 기억서고는 먼저 만들어진 지역이라 공용 원화가 곧
+    // 자기 것이라 표에 없다.
+    expect(expeditionRegionSceneAssets, hasLength(14));
+    expect(
+      expeditionRegionSceneAssets.keys.where((key) => key.startsWith('echo_well/')),
+      hasLength(6),
+    );
+    expect(
+      expeditionRegionSceneAssets.keys
+          .where((key) => key.startsWith('heartwood_observatory/')),
+      hasLength(4),
+    );
     for (final entry in expeditionRegionSceneAssets.entries) {
       expect(entry.key.split('/'), hasLength(2), reason: entry.key);
       final data = await rootBundle.load(entry.value);
@@ -3679,7 +3697,7 @@ void _regionSceneTests() {
     );
     // 전용 원화가 없는 장면은 여전히 보정을 받는다.
     expect(
-      expeditionRegionGrade('echo_well', sceneKey: 'flooded_cave').a,
+      expeditionRegionGrade('heartwood_observatory', sceneKey: 'flooded_cave').a,
       greaterThan(0),
     );
     // 장면을 모르면 지역 기준으로만 판단한다(기존 동작).
@@ -3697,9 +3715,15 @@ void _regionSceneTests() {
     expect(vault.assetPath, isNot(well.assetPath));
     expect(well.assetPath, contains('echo-well'));
 
-    // 전용 원화가 없는 조합은 공용으로 떨어진다.
+    // 우물정원의 잠긴 동굴·뿌리 터널도 이제 자기 원화를 쓴다.
     expect(
       expeditionSceneTheme('flooded_cave', regionCode: 'echo_well').assetPath,
+      contains('echo-well'),
+    );
+    // 전용 원화가 없는 조합은 공용으로 떨어진다.
+    expect(
+      expeditionSceneTheme('flooded_cave', regionCode: 'heartwood_observatory')
+          .assetPath,
       expeditionSceneTheme('flooded_cave').assetPath,
     );
   });

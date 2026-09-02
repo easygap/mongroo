@@ -1,0 +1,32 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "echo-well-flooded-cave",
+   "prompt": "A 1600x900 hand-painted game background illustration in the exact style of the reference: a painterly storybook interior with soft volumetric light, restrained saturation and confident brushwork. No characters, no creatures, no people, no UI, no text, no numbers, no borders. CRITICAL COMPOSITION: the centre and lower-middle of the frame must be an OPEN, uncluttered floor with clear standing room - party members and props are drawn on top of it at runtime. Put the interesting shapes along the walls, the upper half and the edges. The floor should read as a continuous walkable surface receding into the frame. Light comes from one or two warm practical sources so the empty floor still has something to catch. The place is a flooded cave beneath a well-garden. Still black water fills the lower left, and a broad wet stone shelf runs through the centre as the walkable floor - damp, reflective, but clearly standable. Rope-and-plank walkways and hanging buckets line the walls; slow drips ring outward on the water. Palette: deep navy and midnight indigo water, wet grey-green stone, one warm lantern glow reflected in the pool.",
+   "references": [
+    "app/assets/adventure/expedition-root-tunnel-starlight-seed-vault-v1.webp"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/region-scene-art-v16/_raw/echo-well-flooded-cave.png"
+  },
+  {
+   "id": "echo-well-root-tunnel",
+   "prompt": "A 1600x900 hand-painted game background illustration in the exact style of the reference: a painterly storybook interior with soft volumetric light, restrained saturation and confident brushwork. No characters, no creatures, no people, no UI, no text, no numbers, no borders. CRITICAL COMPOSITION: the centre and lower-middle of the frame must be an OPEN, uncluttered floor with clear standing room - party members and props are drawn on top of it at runtime. Put the interesting shapes along the walls, the upper half and the edges. The floor should read as a continuous walkable surface receding into the frame. Light comes from one or two warm practical sources so the empty floor still has something to catch. The place is a root tunnel bored through the wall of a well-garden. Thick wet roots arch overhead and grip the stone, beaded with water; a shallow channel of water runs along one edge while the centre stays a dry packed-earth floor. Small bells and coiled rope hang from the roots. Palette: deep navy shadow, sodden dark bark, mossy grey stone, one warm lantern glow far down the tunnel.",
+   "references": [
+    "app/assets/adventure/expedition-root-tunnel-starlight-seed-vault-v1.webp"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/region-scene-art-v16/_raw/echo-well-root-tunnel.png"
+  },
+  {
+   "id": "heartwood-observatory-root-tunnel",
+   "prompt": "A 1600x900 hand-painted game background illustration in the exact style of the reference: a painterly storybook interior with soft volumetric light, restrained saturation and confident brushwork. No characters, no creatures, no people, no UI, no text, no numbers, no borders. CRITICAL COMPOSITION: the centre and lower-middle of the frame must be an OPEN, uncluttered floor with clear standing room - party members and props are drawn on top of it at runtime. Put the interesting shapes along the walls, the upper half and the edges. The floor should read as a continuous walkable surface receding into the frame. Light comes from one or two warm practical sources so the empty floor still has something to catch. The place is a root tunnel cut through the heartwood beneath an observatory. The walls are living wood whose growth rings read like contour lines, and brass instruments and rolled charts are pinned into the timber. Knot-lamps hang at intervals. The centre is a swept plank floor with clear standing room. Palette: warm amber and honey heartwood, aged brass, deep umber shadow, warm lamp glow.",
+   "references": [
+    "app/assets/adventure/expedition-root-tunnel-starlight-seed-vault-v1.webp"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/region-scene-art-v16/_raw/heartwood-observatory-root-tunnel.png"
+  }
+ ]
+}
