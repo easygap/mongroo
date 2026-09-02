@@ -18,7 +18,7 @@
 ## 재는 것
 
 1. **프레임 무결성** — 선언한 수만큼 있고, 크기가 맞고, 진짜 알파가 있는가.
-2. **크로마 잔류** — 걷다 만 배경이 그림인 척 남았는가(`verify_enemy_attack_effects`와 같은 잣대).
+2. **크로마 잔류** — 걷다 만 배경이 그림인 척 남았는가(`verify_effect_chroma`와 같은 잣대).
 3. **실제 배경 위 가독성** — 설계서 4.7의 `실제 배경 합성`. 평평한 회색이 아니라
    그 지역의 진짜 전투 배경 위에 얹어, 연출이 배경과 구분되는지를 본다.
    밝은 곳과 어두운 곳 **양쪽**에서 본다(README들이 `밝은·어두운 전투 배경`을
@@ -67,7 +67,7 @@ BACKDROPS = {
 }
 DEFAULT_BACKDROP = "expedition-monster-den-battle-v1.webp"
 
-#: 키 색 범위와 상한. `verify_enemy_attack_effects.py`와 같은 값을 쓴다.
+#: 키 색 범위와 상한. `verify_effect_chroma.py`와 같은 값을 쓴다.
 KEY_MAX_RED, KEY_MIN_GREEN, KEY_MIN_BLUE = 96, 200, 200
 MAX_KEY_FRAME_SHARE = 0.01
 
@@ -84,20 +84,30 @@ MIN_CONTRAST = 0.20
 
 #: 재생 프레임 타임 실측. `design-system/benchmarks/effect-frame-time`이 낸 값이다.
 #:
-#: 69종을 이어 재생하며 Windows 데스크톱 profile 빌드에서 두 번 쟀다. 합격
-#: 판단에 쓰는 값은 `raster`와 `build`다 — `total`은 모니터 주사율(약 120Hz)에
-#: 묶여서 연출의 비용이 아니라 화면의 리듬을 보여 준다.
+#: 실려 있는 연출을 전부 이어 재생하며 Windows 데스크톱 profile 빌드에서 쟀다.
+#: 합격 판단에 쓰는 값은 `raster`와 `build`다 — `total`은 모니터 주사율(약
+#: 120Hz)에 묶여서 연출의 비용이 아니라 화면의 리듬을 보여 준다.
+#:
+#: `effects`를 run마다 적는다. 연출을 더 넣고 다시 재지 않으면 이 표는 새
+#: 에셋을 잰 적 없이 잰 척하게 된다 — 실제로 69종 때의 값이 81종 manifest에
+#: 그대로 붙어 있던 적이 있다.
 GATE_PROFILE = {
     "runtime": "windows-desktop-profile",
     "harness": "design-system/benchmarks/effect-frame-time",
-    "effects": 69,
+    "effects": 87,
     "runs": [
-        {"sampled_frames": 3371, "raster_p95_ms": 0.635, "raster_p99_ms": 0.846,
-         "raster_max_ms": 6.758, "build_p95_ms": 0.566, "total_p95_ms": 15.749,
-         "over_20ms": 3, "over_33_4ms": 0},
-        {"sampled_frames": 3370, "raster_p95_ms": 0.580, "raster_p99_ms": 0.734,
-         "raster_max_ms": 1.175, "build_p95_ms": 0.497, "total_p95_ms": 15.796,
-         "over_20ms": 0, "over_33_4ms": 0},
+        {"effects": 69, "sampled_frames": 3371, "raster_p95_ms": 0.635,
+         "raster_p99_ms": 0.846, "raster_max_ms": 6.758, "build_p95_ms": 0.566,
+         "total_p95_ms": 15.749, "over_20ms": 3, "over_33_4ms": 0},
+        {"effects": 69, "sampled_frames": 3370, "raster_p95_ms": 0.580,
+         "raster_p99_ms": 0.734, "raster_max_ms": 1.175, "build_p95_ms": 0.497,
+         "total_p95_ms": 15.796, "over_20ms": 0, "over_33_4ms": 0},
+        {"effects": 81, "sampled_frames": 4001, "raster_p95_ms": 0.503,
+         "raster_p99_ms": 0.786, "raster_max_ms": 2.482, "build_p95_ms": 0.436,
+         "total_p95_ms": 2.510, "over_20ms": 0, "over_33_4ms": 0},
+        {"effects": 87, "sampled_frames": 4292, "raster_p95_ms": 0.582,
+         "raster_p99_ms": 0.765, "raster_max_ms": 2.108, "build_p95_ms": 0.495,
+         "total_p95_ms": 15.899, "over_20ms": 0, "over_33_4ms": 0},
     ],
     "scope": "effect_layer_only",
     "pending": ["low_end_android_p95", "ios_p95"],
@@ -215,6 +225,16 @@ def main() -> int:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     passed: list[str] = []
     failed: list[tuple[str, list[str]]] = []
+
+    # 프레임 타임은 여기서 잴 수 없지만, **잰 적 없는 것을 잰 척하는 것**은 여기서
+    # 막을 수 있다. 연출을 더 넣고 하네스를 다시 돌리지 않으면 이 줄에서 걸린다.
+    if len(manifest["effects"]) != GATE_PROFILE["effects"]:
+        print(
+            f"프레임 타임 실측이 연출 {GATE_PROFILE['effects']}종 때의 것인데 "
+            f"지금은 {len(manifest['effects'])}종입니다. "
+            f"{GATE_PROFILE['harness']}를 다시 돌리고 GATE_PROFILE을 고쳐 주세요."
+        )
+        return 1
 
     for effect in manifest["effects"]:
         family = str(effect["family"])

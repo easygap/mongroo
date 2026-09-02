@@ -1,0 +1,32 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "sunny-radiant-heart",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This is a hero's own skill, willed and composed — it should read as resolve, not as a threat. Even the final dissipation frame must still show a clearly visible shape, never fade to nothing. The effect is a heart of gathered light that opens outward, flies, and blooms. Frame 1 a small warm point folds in on itself. Frames 2-4 it opens into a heart-shaped bloom of light and travels right, trailing soft petals of glow. Frame 6 it opens fully into a broad radiant ring with a heart at its core. Frames 7-8 the ring softens and a few warm motes settle downward like a kindness returning. Palette: warm gold and honey, rose-cream, white-hot core, no blue of any kind.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/emotion-skill-effects-v12/_raw/sunny_radiant_heart-sheet.png"
+  },
+  {
+   "id": "rainy-frozen-tide",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This is a hero's own skill, willed and composed — it should read as resolve, not as a threat. Even the final dissipation frame must still show a clearly visible shape, never fade to nothing. The effect is a low wave that rolls forward and freezes solid at its crest. Frame 1 the water gathers into a low swell. Frames 2-4 it rolls right as a broad flat wave, crest curling, foam trailing. Frame 6 the crest locks into hard angular ice blades at the moment of contact, still and sharp. Frames 7-8 the ice fractures into shards and the water flattens back. Palette: deep navy and midnight indigo water, cream-white foam, and ice rendered as WHITE and pale violet — the ice must not be blue-green or icy blue.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/emotion-skill-effects-v12/_raw/rainy_frozen_tide-sheet.png"
+  },
+  {
+   "id": "ember-rage-breaker",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This is a hero's own skill, willed and composed — it should read as resolve, not as a threat. Even the final dissipation frame must still show a clearly visible shape, never fade to nothing. The effect is a compressed fist of flame that drives forward, shatters a barrier, and wraps back as a guard. Frame 1 fire compresses into a tight dense knot. Frames 2-4 it drives right as a hard forward lance of flame, soot peeling off behind it. Frame 6 it breaks through with a wide flat burst and radiating crack lines. Frames 7-8 the flame curls back inward into a low protective ring of embers. Palette: ember orange and deep crimson, soot black, warm gold sparks.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/emotion-skill-effects-v12/_raw/ember_rage_breaker-sheet.png"
+  }
+ ]
+}

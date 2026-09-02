@@ -1,0 +1,41 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "page-snow",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This comes from a large sleeping guardian animal stirring in its dream, not from an attacker: the motion is soft, heavy and accidental, never sharp or aggressive. The effect is a slow snowfall of loose ledger pages drifting down and spreading wide across the whole cell. Frame 1 a few pages lift and hang. Frames 2-4 they multiply into a broad soft curtain of tumbling cream sheets, turning gently as they fall. Frame 6 the curtain is at its thickest and settles across the full width with a pale moonlit shimmer. Frames 7-8 the pages thin out and drift to rest. Palette: cream and bone-white paper, dusty lavender shadow, warm grey stone.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/guardian-beast-attacks-v11/_raw/page_snow-sheet.png"
+  },
+  {
+   "id": "spine-lean",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This comes from a large sleeping guardian animal stirring in its dream, not from an attacker: the motion is soft, heavy and accidental, never sharp or aggressive. The effect is a tall stack of heavy book spines tipping slowly to the right and coming to rest against something. Frame 1 the stack stands and begins to lean. Frames 2-4 it tips further, the spines sliding against each other, dust puffing from the gaps. Frame 6 the stack presses at the right with a soft heavy contact and a low dust bloom, no impact flash. Frames 7-8 it settles and the dust falls. Palette: deep book-cloth reds and browns, aged gilt lettering, warm grey stone dust.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/guardian-beast-attacks-v11/_raw/spine_lean-sheet.png"
+  },
+  {
+   "id": "margin-murmur",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This comes from a large sleeping guardian animal stirring in its dream, not from an attacker: the motion is soft, heavy and accidental, never sharp or aggressive. The effect is faint handwriting escaping from a page margin and curling outward as a soft ribbon of ink. Frame 1 a thin ink line wells up at the left. Frames 2-4 it uncurls into a slow looping ribbon of script-like strokes drifting toward the right. Frame 6 the ribbon gathers into a small warm golden bloom. Frames 7-8 it unravels into faint specks and fades. Palette: warm sepia ink, cream paper, soft golden glow.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/guardian-beast-attacks-v11/_raw/margin_murmur-sheet.png"
+  },
+  {
+   "id": "ripple-hug",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This comes from a large sleeping guardian animal stirring in its dream, not from an attacker: the motion is soft, heavy and accidental, never sharp or aggressive. The effect is a wide ring of water rippling outward and closing gently around, like an embrace rather than a blow. Frame 1 the surface dips into a shallow bowl. Frames 2-4 broad concentric rings roll outward across the full width, low and slow, with soft crests. Frame 6 the widest ring peaks and curls inward at the edges with a warm white rim. Frames 7-8 the rings flatten and smooth away. Palette: deep navy and indigo water, warm cream foam, no green.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/guardian-beast-attacks-v11/_raw/ripple_hug-sheet.png"
+  }
+ ]
+}

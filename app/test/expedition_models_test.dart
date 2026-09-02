@@ -61,6 +61,28 @@ String? _assetNameOf(ImageProvider<Object> provider) {
   };
 }
 
+/// WebP가 알파를 들고 있는가. **컨테이너마다 적힌 자리가 다르다.**
+///
+/// 예전에는 `byte20 & 0x10` 한 줄로 봤는데, 그것은 확장 컨테이너(`VP8X`)의
+/// 플래그 자리다. 무손실(`VP8L`)로 구운 파일은 그 자리가 플래그가 아니라
+/// 픽셀 데이터의 첫 바이트라, 알파가 멀쩡히 있는데도 없다고 읽힌다. 손으로
+/// 적어 둔 20종 목록에 `VP8L` 파일이 하나도 없어서 여태 안 드러났다 —
+/// 실려 있는 87종 중 25종이 `VP8L`이다.
+bool _webpHasAlpha(ByteData data) {
+  final chunk = String.fromCharCodes(
+    List.generate(4, (index) => data.getUint8(12 + index)),
+  );
+  return switch (chunk) {
+    // 확장 컨테이너는 플래그 바이트의 ALPHA 비트로 알린다.
+    'VP8X' => data.getUint8(20) & 0x10 == 0x10,
+    // 무손실은 헤더 비트스트림의 28번째 비트가 alpha_is_used다.
+    'VP8L' => (data.getUint32(21, Endian.little) >> 28) & 1 == 1,
+    // 단순 손실 압축에는 알파 채널 자체가 없다.
+    'VP8 ' => false,
+    _ => throw FormatException('지원하지 않는 WebP 청크: $chunk'),
+  };
+}
+
 Map<String, dynamic> _snapshotJson() => {
       'run': {
         'id': 7,
@@ -660,11 +682,7 @@ void main() {
       );
       if (expeditionCombatAssets.contains(asset) ||
           expeditionTangleCombatAssets.contains(asset)) {
-        expect(
-          data.getUint8(20) & 0x10,
-          0x10,
-          reason: '$mobileAsset 알파 채널',
-        );
+        expect(_webpHasAlpha(data), isTrue, reason: '$mobileAsset 알파 채널');
       }
     }
   });
@@ -772,28 +790,11 @@ void main() {
   });
 
   testWidgets('플레이어와 몬스터 공격을 효과별 투명 스프라이트로 읽는다', (tester) async {
-    const effectKeys = [
-      'care_vines',
-      'ledger_claw',
-      'safe_guard',
-      'ember_arc',
-      'prism_burst',
-      'mist_dash',
-      'venom_seam',
-      'insight_arc',
-      'echo_wave',
-      'enemy_wave',
-      'paper_flurry',
-      'ink_mist',
-      'petal_gust',
-      'petal_dart',
-      'shelf_sweep',
-      'catalogue_rain',
-      'record_wave',
-      'seal_crush',
-      'root_lockdown',
-      'final_redaction',
-    ];
+    // 손으로 적은 20종 목록이었는데, 그 뒤로 연출이 87종이 되도록 목록은 그대로
+    // 였다. 새로 들어온 것들은 번들에 있는지 아무도 안 봤다는 뜻이다. 카탈로그가
+    // 아는 키를 전부 돈다 — 연출을 더 넣어도 여기는 손대지 않아도 된다.
+    final effectKeys = expeditionCombatEffectKeys;
+    expect(effectKeys.length, greaterThanOrEqualTo(86));
 
     for (final effectKey in effectKeys) {
       final assets = expeditionCombatEffectAssets(effectKey);
@@ -805,7 +806,7 @@ void main() {
         final data = await rootBundle.load(asset);
         final size = _webpCanvasSize(data);
         expect(size, (width: 576, height: 288), reason: asset);
-        expect(data.getUint8(20) & 0x10, 0x10, reason: '$asset 알파 채널');
+        expect(_webpHasAlpha(data), isTrue, reason: '$asset 알파 채널');
       }
     }
 
@@ -975,6 +976,42 @@ void main() {
       resolveExpeditionCombatEffect(vfxFamily: 'not-yet-produced').family,
       'fallback.echo-wave',
     );
+  });
+
+  test('감정 스킬 여섯은 성장결 공용 연출로 떨어지지 않는다', () {
+    // 여섯 다 `emotion.*`를 적어 두고도 그 family가 manifest에 없어서 성장결
+    // 공용 연출이 나가고 있었다. 결 대체를 **같이 넘긴 채로** 확인해야 exact가
+    // 이기는 것을 본다 — 안 넘기면 이 검사는 아무것도 증명하지 않는다.
+    const skills = <String, (String, String)>{
+      'emotion.sunny-radiant-heart': ('kel.sunny', 'sunny-radiant-heart-v1'),
+      'emotion.rainy-frozen-tide': ('kel.rainy', 'rainy-frozen-tide-v1'),
+      'emotion.ember-rage-breaker': ('kel.ember', 'ember-rage-breaker-v1'),
+      'emotion.moonlit-lonesome-tempest': (
+        'kel.moonlit',
+        'moonlit-lonesome-tempest-v1',
+      ),
+      'emotion.sparkling-shock-wonder': (
+        'kel.sparkling',
+        'sparkling-shock-wonder-v1',
+      ),
+      'emotion.mosaic-steel-equilibrium': (
+        'kel.mosaic',
+        'mosaic-steel-equilibrium-v1',
+      ),
+    };
+    final directories = <String>{};
+    for (final entry in skills.entries) {
+      final (kelFallback, directory) = entry.value;
+      final resolved = resolveExpeditionCombatEffect(
+        vfxFamily: entry.key,
+        kelFallbackFamily: kelFallback,
+      );
+      expect(resolved.family, entry.key);
+      expect(resolved.directory, directory);
+      expect(resolved.frameCount, 8);
+      directories.add(resolved.directory);
+    }
+    expect(directories, hasLength(6));
   });
 
   test('앞열·전체·최저 체력 예고는 색 없이도 서로 다른 형태를 쓴다', () {

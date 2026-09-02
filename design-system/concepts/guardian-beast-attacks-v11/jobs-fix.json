@@ -1,0 +1,14 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "ripple-hug",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This comes from a large sleeping guardian animal stirring in its dream, not from an attacker: the motion is soft, heavy and accidental, never sharp or aggressive. The effect is a wide ring of water rippling outward and closing gently around, like an embrace rather than a blow. Frame 1 the surface dips into a shallow bowl. Frames 2-4 broad concentric rings roll outward across the full width, low and slow, with soft crests. Frame 6 the widest ring peaks and curls inward at the edges with a warm white rim. Frames 7-8 the rings flatten and smooth away. Palette: deep navy and indigo water, warm cream foam, no green. Important: even the final dissipation frame must still show a clearly visible ring, thinner and dimmer but never almost empty; every one of the eight cells must contain a substantial, clearly drawn effect.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/guardian-beast-attacks-v11/_raw/ripple_hug-sheet.png"
+  }
+ ]
+}

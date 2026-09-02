@@ -27,7 +27,7 @@
 
 ## 추출·블렌딩 계약
 
-`design-system/scripts/register_enemy_attack_effects.py`가 시트를 받아
+`design-system/scripts/register_combat_effects.py`가 시트를 받아
 `build_boss_pattern_assets.py`로 자르고, 그 결과를 앱이 읽는 효과 manifest에
 등록한다. 등록에 쓰는 family·성장결·이펙트 키는 **서버 엉킴 카탈로그에서
 읽는다** — 손으로 옮기면 어긋나고, 어긋나면 앱은 조용히 공용 연출로 떨어진다.
@@ -67,7 +67,7 @@
 | `snarled-stardust.dust-flare` | 9.0% → 0.30% |
 | `knotted-echo.echo-ring` | 8.3% → 0.16% |
 
-`design-system/scripts/verify_enemy_attack_effects.py`가 이 값을 잰다. 비율이
+`design-system/scripts/verify_effect_chroma.py`가 이 값을 잰다. 비율이
 아니라 **프레임에서 배경이 차지하는 넓이**로 세는데, 소멸 프레임처럼 남은
 그림이 몇백 픽셀뿐인 곳에서는 잔류 60픽셀도 16%로 찍혀 비율이 거짓말을 하기
 때문이다. 지금 실려 있는 69종 전부 기준(1%) 아래다.

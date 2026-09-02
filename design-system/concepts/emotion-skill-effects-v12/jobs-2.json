@@ -1,0 +1,32 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "moonlit-lonesome-tempest",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This is a hero's own skill, willed and composed — it should read as resolve, not as a threat. Even the final dissipation frame must still show a clearly visible shape, never fade to nothing. The effect is a circling gust that searches for a gap, finds one, and drives through it. Frame 1 thin wind lines begin to orbit. Frames 2-4 they tighten into a slow circling tempest, leaves and dust caught in the turn. Frame 6 the circle breaks and a single hard spear of wind lances through the opening. Frames 7-8 the tempest unwinds into drifting streaks. Palette: dusty lavender and deep indigo-violet, warm silver-lilac moonlight, cream highlights — the silver must lean warm and lilac, never blue-green.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/emotion-skill-effects-v12/_raw/moonlit_lonesome_tempest-sheet.png"
+  },
+  {
+   "id": "sparkling-shock-wonder",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This is a hero's own skill, willed and composed — it should read as resolve, not as a threat. Even the final dissipation frame must still show a clearly visible shape, never fade to nothing. The effect is a crooked bolt that strikes, then forks a second time from the same point. Frame 1 charge gathers into a bright knot. Frames 2-4 a jagged bolt cracks right in hard angular segments. Frame 6 it lands and immediately splits into a second smaller fork from the same impact point, both branches lit. Frames 7-8 the branches thin into afterimage filaments and wink out. Palette: warm gold and violet lightning with a cream-white core and magenta accents — the lightning must NOT be blue-white or electric blue.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/emotion-skill-effects-v12/_raw/sparkling_shock_wonder-sheet.png"
+  },
+  {
+   "id": "mosaic-steel-equilibrium",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This is a hero's own skill, willed and composed — it should read as resolve, not as a threat. Even the final dissipation frame must still show a clearly visible shape, never fade to nothing. The effect is steel plates that assemble into a balanced field, then re-tile into a new arrangement. Frame 1 loose flat plates hang scattered. Frames 2-4 they swing together into an even lattice, edges meeting cleanly. Frame 6 the lattice locks into a full balanced shield-field with a warm brass seam glowing along every joint. Frames 7-8 the plates rotate a quarter turn into a different arrangement and settle. Palette: warm graphite and pewter, brass and amber seams, soot shadow — the steel must read warm grey and brassy, never blue-grey or steel-blue.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/emotion-skill-effects-v12/_raw/mosaic_steel_equilibrium-sheet.png"
+  }
+ ]
+}

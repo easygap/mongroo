@@ -533,6 +533,438 @@
       }
     },
     {
+      "family": "echo-keeper.half-echo",
+      "effect_keys": [
+        "half_echo"
+      ],
+      "kel": "moonlit",
+      "directory": "half-echo-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "beast_center",
+      "production_ready": true,
+      "source_hash": "C80459ACD981C2BA50AA10C86DD5C13AAC472B7FB3B6D3C6A68A143B69DE90B9",
+      "runtime_hash": "230B9F14B66CD56FFBFB83D7B86C96B68C025E1B82D1F34140325D64D3E8C083",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.3606,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "echo-keeper.ripple-hug",
+      "effect_keys": [
+        "ripple_hug"
+      ],
+      "kel": "rainy",
+      "directory": "ripple-hug-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "beast_center",
+      "production_ready": true,
+      "source_hash": "C650DA86B213F66737D2D3734CA48B7666E028BE02A6836D718FC42A38996656",
+      "runtime_hash": "89D5F76B5E3BF22A4CA145A5FB1DEF26BB273850BDF3D2A7AA78D12DA336369E",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.3978,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "echo-keeper.well-lean",
+      "effect_keys": [
+        "well_lean"
+      ],
+      "kel": "rainy",
+      "directory": "well-lean-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "beast_center",
+      "production_ready": true,
+      "source_hash": "68924CACB46B01F1FF5AE8A5AE79DE31FBA0F2EB427F3EE24BDCA670C44C7A5C",
+      "runtime_hash": "4953BCD321FB6D5C2CA3A9DBD9D32A102E10470AEF73F0358E0FA102F98AD721",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.4026,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "emotion.ember-rage-breaker",
+      "effect_keys": [
+        "ember_rage_breaker"
+      ],
+      "kel": "ember",
+      "directory": "ember-rage-breaker-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "actor_center",
+      "production_ready": true,
+      "source_hash": "8F819DF4BE5006CDEBE91C7FD4EFF61C3059D26882D17E44B1F68D5BB215C6AD",
+      "runtime_hash": "C42D2F74E32A104789DF678A33DD5AB31103A303CC4FD967481D6B892D725D09",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.3346,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "emotion.moonlit-lonesome-tempest",
+      "effect_keys": [
+        "moonlit_lonesome_tempest"
+      ],
+      "kel": "moonlit",
+      "directory": "moonlit-lonesome-tempest-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "F4D66B745383BA9060377005F1DB8516116D1DD5F81599BADD408CFEAF8965A6",
+      "runtime_hash": "35B3E7F2E406FAA5E7B828B72EC928EB1E57FDCF49F4C9DF304E0334BDCE6456",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.3557,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "emotion.mosaic-steel-equilibrium",
+      "effect_keys": [
+        "mosaic_steel_equilibrium"
+      ],
+      "kel": "mosaic",
+      "directory": "mosaic-steel-equilibrium-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "actor_center",
+      "production_ready": true,
+      "source_hash": "CCB65C612A8167464E10668E0485B7EFC957B2C4D350D648FFFB67C1E3F5A446",
+      "runtime_hash": "04D2E0DE81E3AB9E4898DEDC85D9EA7916AA4AE9C36750B8AACAA545519F0202",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.2801,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "emotion.rainy-frozen-tide",
+      "effect_keys": [
+        "rainy_frozen_tide"
+      ],
+      "kel": "rainy",
+      "directory": "rainy-frozen-tide-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "C13ACDFBB60230D8E310C3955A97561CD9FDD82F05D83D7746223D43480CF79A",
+      "runtime_hash": "76FDF03B3CDF84D31FFE5E0DE62EB70CEF29F36B800397A44CA8FBEC8FBF52C6",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.3867,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "emotion.sparkling-shock-wonder",
+      "effect_keys": [
+        "sparkling_shock_wonder"
+      ],
+      "kel": "sparkling",
+      "directory": "sparkling-shock-wonder-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "2F9C8B801D183795339584D5016398D1FD32CAA47DB3A44C88454E0B821CBA7E",
+      "runtime_hash": "5522B4B79A3ACCA714F472548BFFFD23BE0BB91901C0A2F47D8FDA5C061EF237",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.4225,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "emotion.sunny-radiant-heart",
+      "effect_keys": [
+        "sunny_radiant_heart"
+      ],
+      "kel": "sunny",
+      "directory": "sunny-radiant-heart-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "7BB93C50CD0C4947C5E099DE3408A65F03CE57C3C8932BE76CFCE5F1003F7E9D",
+      "runtime_hash": "974AC46349E3C9DB15B4038007E38CEA33CF959A65FF0FA9AE37F50B340C5364",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.5977,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
       "family": "fallback.echo-wave",
       "effect_keys": [
         "echo_wave"
@@ -1584,6 +2016,150 @@
       }
     },
     {
+      "family": "ledger-keeper.margin-murmur",
+      "effect_keys": [
+        "margin_murmur"
+      ],
+      "kel": "sunny",
+      "directory": "margin-murmur-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "beast_center",
+      "production_ready": true,
+      "source_hash": "2B86F2833DD2DEDFABCAB2D366B5AE9ABBCFF7F0A562FEC13416214A1036AA8E",
+      "runtime_hash": "B8B6B1300930D9F4DD4D07AE9B12CDF7FCF78E6C14C64A4260FF534EA346C485",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.4795,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "ledger-keeper.page-snow",
+      "effect_keys": [
+        "page_snow"
+      ],
+      "kel": "moonlit",
+      "directory": "page-snow-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "beast_center",
+      "production_ready": true,
+      "source_hash": "BC9198A238A4037A15A952244252C65F3C3D2BC83F836942CDADB2ADF966F1AC",
+      "runtime_hash": "E105CFEAE8B4F227DAB64F40060171C0AF5A54CCB44A4604C049CCA329BB6236",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.5749,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "ledger-keeper.spine-lean",
+      "effect_keys": [
+        "spine_lean"
+      ],
+      "kel": "mosaic",
+      "directory": "spine-lean-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "beast_center",
+      "production_ready": true,
+      "source_hash": "DC8C10598D720E3273C7A110B361EBD8A2C62DFDF7EC374D574015DDB21B918F",
+      "runtime_hash": "209F8DAF77F94CACE0AB8BF477E8914AAE7D6D5F69B0C59CD2267D20F7AD2E92",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.3457,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
       "family": "maestro-pot.golden-downbeat",
       "effect_keys": [
         "golden_downbeat"
@@ -2244,6 +2820,150 @@
       }
     },
     {
+      "family": "record-keeper.lamp-lean",
+      "effect_keys": [
+        "lamp_lean"
+      ],
+      "kel": "sunny",
+      "directory": "lamp-lean-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "beast_center",
+      "production_ready": true,
+      "source_hash": "FC0245942489AF4107A860C7F2F3E1BB9D85C03B6EBFE0A3AEE86FCBBEDE194B",
+      "runtime_hash": "8DCD530A603DCC22599ACD42A46C202FC8423B68D50B8ABFA84B7F531A75FCF4",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.5173,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "record-keeper.ring-wave",
+      "effect_keys": [
+        "ring_wave"
+      ],
+      "kel": "ember",
+      "directory": "ring-wave-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "beast_center",
+      "production_ready": true,
+      "source_hash": "60FC3A490005E0FA88587AB07215F3F4898C7610FD2D1313D96468507E9BEA13",
+      "runtime_hash": "BD82578719043D95B2550685B223DA9FEB75D64DFD677720BD25214DC458E3D3",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.3504,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "record-keeper.unfinished-line",
+      "effect_keys": [
+        "unfinished_line"
+      ],
+      "kel": "moonlit",
+      "directory": "unfinished-line-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "beast_center",
+      "production_ready": true,
+      "source_hash": "5AB895F441A90495F30BD80B94028DA3EFBE4E96A413323EC9D033B884AB059A",
+      "runtime_hash": "454F2EFF39F985CBA6FACE27DB7989FD88A1A4A8B69A98C85B9917E04D786A02",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.3394,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
       "family": "restorer-pot.golden-seam",
       "effect_keys": [
         "golden_seam"
@@ -2613,6 +3333,150 @@
         "key_share": 0.0,
         "backdrop_contrast": 0.594,
         "backdrop": "expedition-monster-den-heartwood-observatory-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "seed-keeper.shelf-tilt",
+      "effect_keys": [
+        "shelf_tilt"
+      ],
+      "kel": "mosaic",
+      "directory": "shelf-tilt-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "beast_center",
+      "production_ready": true,
+      "source_hash": "4E79C3044DAF31EBD7BD77E689C2E7EA58B8A1D008A6D8166839CDC5AC88B893",
+      "runtime_hash": "026288A7F4D5951DEE62D1B1DB2A18DC5737BDF8B76E9EA92A00FB545FDBEDE5",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.3581,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "seed-keeper.sprout-sigh",
+      "effect_keys": [
+        "sprout_sigh"
+      ],
+      "kel": "sunny",
+      "directory": "sprout-sigh-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "beast_center",
+      "production_ready": true,
+      "source_hash": "5937BF487AC8831D3BE25F0C20683148974B5E635A1E0B2F80800440FAFC17F4",
+      "runtime_hash": "ECFC6B6253DDF35740555797C9269FA4965AD0258451D37D7066C3D1BBB9E642",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.4985,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      }
+    },
+    {
+      "family": "seed-keeper.stardust-drift",
+      "effect_keys": [
+        "stardust_drift"
+      ],
+      "kel": "sparkling",
+      "directory": "stardust-drift-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "beast_center",
+      "production_ready": true,
+      "source_hash": "CF87FD23BEF4B691C448AE017BFFF87DD00D0BE7B3ABC433CD873CB62A0F8D46",
+      "runtime_hash": "0394C83190E5F9AB721473A19786178772D6A05209BBAA2A69005AB28B76BD51",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.3353,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
         "checks": [
           "frame_integrity",
           "chroma_residue",
@@ -3293,9 +4157,10 @@
   "gate_profile": {
     "runtime": "windows-desktop-profile",
     "harness": "design-system/benchmarks/effect-frame-time",
-    "effects": 69,
+    "effects": 87,
     "runs": [
       {
+        "effects": 69,
         "sampled_frames": 3371,
         "raster_p95_ms": 0.635,
         "raster_p99_ms": 0.846,
@@ -3306,12 +4171,35 @@
         "over_33_4ms": 0
       },
       {
+        "effects": 69,
         "sampled_frames": 3370,
         "raster_p95_ms": 0.58,
         "raster_p99_ms": 0.734,
         "raster_max_ms": 1.175,
         "build_p95_ms": 0.497,
         "total_p95_ms": 15.796,
+        "over_20ms": 0,
+        "over_33_4ms": 0
+      },
+      {
+        "effects": 81,
+        "sampled_frames": 4001,
+        "raster_p95_ms": 0.503,
+        "raster_p99_ms": 0.786,
+        "raster_max_ms": 2.482,
+        "build_p95_ms": 0.436,
+        "total_p95_ms": 2.51,
+        "over_20ms": 0,
+        "over_33_4ms": 0
+      },
+      {
+        "effects": 87,
+        "sampled_frames": 4292,
+        "raster_p95_ms": 0.582,
+        "raster_p99_ms": 0.765,
+        "raster_max_ms": 2.108,
+        "build_p95_ms": 0.495,
+        "total_p95_ms": 15.899,
         "over_20ms": 0,
         "over_33_4ms": 0
       }

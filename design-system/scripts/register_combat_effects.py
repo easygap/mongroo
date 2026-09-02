@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-"""엉킴 공격 시트를 런타임 프레임으로 굽고 효과 manifest에 등록한다.
+"""전투 연출 시트를 런타임 프레임으로 굽고 효과 manifest에 등록한다.
 
 `build_boss_pattern_assets.py`가 시트 한 장을 자르고 크로마를 걷어 내는 일까지
 해 주지만, 그 결과를 **앱이 읽는** `app/assets/adventure/effects/manifest.json`에
-넣는 일은 여태 손으로 했다. 손으로 넣으면 family 이름이나 kel을 적으면서
-엉킴 카탈로그와 어긋나기 쉽다 — 어긋나면 앱은 조용히 감정결 fallback으로
-떨어지고, 고유 연출을 만들어 놓고도 공용 연출이 나간다.
+넣는 일은 여태 손으로 했다. 손으로 넣으면 family 이름이나 성장결을 적으면서
+서버 콘텐츠와 어긋나기 쉽다 — 어긋나면 앱은 조용히 공용 연출로 떨어지고,
+고유 연출을 만들어 놓고도 공용 연출이 나간다.
 
 그래서 등록에 필요한 값은 전부 **서버 콘텐츠에서 읽는다**. 이 스크립트가
-아는 것은 `어느 시트가 어느 intent인가` 하나뿐이다.
+아는 것은 `어느 시트가 어느 행동인가` 하나뿐이고, 그것도 파일 이름으로 안다.
+
+엉킴 의도 24종, 수호짐승 의도 12종, 대원 감정 스킬 6종을 같은 표에 담는다.
+셋 다 자기 콘텐츠에 `vfx_family`를 적어 두므로, 굽는 쪽은 어느 쪽인지 알 필요가
+없다. 예전 이름은 `register_enemy_attack_effects.py`였는데, 대원 스킬까지
+들어오면서 `enemy`가 거짓말이 됐다.
 """
 
 from __future__ import annotations
@@ -29,25 +34,63 @@ RUNTIME_ROOT = REPO / "app/assets/adventure/effects"
 BUILDER = REPO / "design-system/scripts/build_boss_pattern_assets.py"
 
 
-def _intent_index() -> dict[str, dict[str, object]]:
-    """`intent 코드 → 등록에 필요한 값`. 서버 엉킴 카탈로그가 원본이다."""
+#: 감정 스킬이 어디에서 이는가. 대원 스킬은 카탈로그에 anchor를 적어 두지 않아서
+#: 여기서 정한다 — 기존 대원 고유기들이 쓰는 값과 같은 규칙이다: 스스로에게
+#: 두르는 것은 `actor_center`, 무대를 건너가는 것은 `stage_center`.
+EMOTION_SKILL_ANCHORS = {
+    "sunny_radiant_heart": "stage_center",
+    "rainy_frozen_tide": "stage_center",
+    "ember_rage_breaker": "actor_center",
+    "moonlit_lonesome_tempest": "stage_center",
+    "sparkling_shock_wonder": "stage_center",
+    "mosaic_steel_equilibrium": "actor_center",
+}
+
+
+def _action_index() -> dict[str, dict[str, object]]:
+    """`행동 코드 → 등록에 필요한 값`. 서버 콘텐츠가 원본이다."""
 
     sys.path.insert(0, str(REPO / "server"))
+    from app.content.expeditions.combat_identity import (  # noqa: PLC0415
+        FORM_COMBAT_SKILLS,
+    )
+    from app.content.expeditions.joint_guard import BEAST_CATALOG  # noqa: PLC0415
     from app.content.expeditions.tangles import TANGLE_CATALOG  # noqa: PLC0415
 
     index: dict[str, dict[str, object]] = {}
-    for tangle in TANGLE_CATALOG.values():
-        for intent in tangle["intents"]:
+
+    intent_sources = [tangle["intents"] for tangle in TANGLE_CATALOG.values()]
+    for beast in BEAST_CATALOG.values():
+        # 잠꼬대도 자기 이름과 대상을 가진 의도다. 빼면 그것만 공용 연출로
+        # 떨어져서, 고치려던 문제가 넷 남는다.
+        intent_sources.append(list(beast["intents"]) + [beast["sleeptalk"]])
+
+    for intents in intent_sources:
+        for intent in intents:
             index[intent["code"]] = {
                 "family": intent["vfx_family"],
                 "kel": intent["kel"],
-                # 카탈로그의 `effect_key`가 아니라 **intent 코드**를 쓴다.
+                # 카탈로그의 `effect_key`가 아니라 **행동 코드**를 쓴다.
                 # 아직 고유 연출이 없던 의도들은 그 자리에 `prism_burst`처럼
                 # 공용 키가 적혀 있어서, 그대로 등록하면 새 연출이 공용 연출의
                 # 레거시 매핑을 빼앗는다. 이미 고유 연출이 있는 의도들도
-                # intent 코드를 키로 쓰고 있다.
+                # 행동 코드를 키로 쓰고 있다.
                 "effect_key": intent["code"],
+                # 엉킴은 몸 한가운데서, 짐승은 잠든 몸 전체에서 인다.
+                "anchor": (
+                    "beast_center"
+                    if "-keeper." in str(intent["vfx_family"])
+                    else "tangle_center"
+                ),
             }
+
+    for kel, skill in FORM_COMBAT_SKILLS.items():
+        index[str(skill["code"])] = {
+            "family": skill["vfx_family"],
+            "kel": kel,
+            "effect_key": skill["code"],
+            "anchor": EMOTION_SKILL_ANCHORS[str(skill["code"])],
+        }
     return index
 
 
@@ -164,7 +207,7 @@ def _entry(built: dict[str, object], meta: dict[str, object]) -> dict[str, objec
         "frame_durations_ms": built["frame_durations_ms"],
         "contact_frame": CONTACT_FRAME,
         "pivot": [0.5, 0.5],
-        "anchor": "tangle_center",
+        "anchor": meta["anchor"],
         # 실기 프로파일·배경 합성 검수 전에는 후보다(설계서 4.7).
         "production_ready": False,
         "source_hash": built["source_sha256"],
@@ -185,7 +228,7 @@ def main() -> int:
 
     concept_root = (REPO / args.concept_root).resolve()
     raw = (REPO / args.raw).resolve() if args.raw else concept_root / "_raw"
-    intents = _intent_index()
+    actions = _action_index()
 
     manifest = json.loads(RUNTIME_MANIFEST.read_text(encoding="utf-8"))
     existing = {entry["family"]: index for index, entry in enumerate(manifest["effects"])}
@@ -201,9 +244,9 @@ def main() -> int:
     added: list[str] = []
     for sheet in sheets:
         effect_key = sheet.stem.removesuffix("-sheet").removesuffix("-sheet-chroma")
-        meta = intents.get(effect_key)
+        meta = actions.get(effect_key)
         if meta is None:
-            raise SystemExit(f"{effect_key}는 엉킴 카탈로그에 없는 intent입니다")
+            raise SystemExit(f"{effect_key}는 서버 콘텐츠에 없는 행동입니다")
         built = _build(sheet, effect_key, concept_root / effect_key.replace("_", "-"))
         runtime = RUNTIME_ROOT / str(built["runtime_directory"])
         _despill(runtime)

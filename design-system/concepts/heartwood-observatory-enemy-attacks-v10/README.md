@@ -27,7 +27,7 @@
 
 ## 추출·블렌딩 계약
 
-`design-system/scripts/register_enemy_attack_effects.py`가 시트를 받아
+`design-system/scripts/register_combat_effects.py`가 시트를 받아
 `build_boss_pattern_assets.py`로 자르고, 그 결과를 앱이 읽는 효과 manifest에
 등록한다. 등록에 쓰는 family·성장결·이펙트 키는 **서버 엉킴 카탈로그에서
 읽는다** — 손으로 옮기면 어긋나고, 어긋나면 앱은 조용히 공용 연출로 떨어진다.

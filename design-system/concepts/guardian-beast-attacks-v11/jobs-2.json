@@ -1,0 +1,41 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "well-lean",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This comes from a large sleeping guardian animal stirring in its dream, not from an attacker: the motion is soft, heavy and accidental, never sharp or aggressive. The effect is a heavy wooden well bucket tipping over and pouring its water forward to the right. Frame 1 the bucket rocks and begins to tilt, rope slack. Frames 2-4 it tips and a thick rope of water pours out in a slow arc. Frame 6 the water lands at the right in a broad soft splash, rounded rather than sharp. Frames 7-8 the pour thins to drips and the bucket rights itself. Palette: dark oiled wood, iron banding, deep navy water with cream foam.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/guardian-beast-attacks-v11/_raw/well_lean-sheet.png"
+  },
+  {
+   "id": "half-echo",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This comes from a large sleeping guardian animal stirring in its dream, not from an attacker: the motion is soft, heavy and accidental, never sharp or aggressive. The effect is a single incomplete sound ring that expands, then breaks before it can close. Frame 1 a small dense arc forms. Frames 2-4 it widens into a large ring with an obvious gap in one side, edges fraying. Frame 6 the ring reaches full size and its open ends flare pale silver. Frames 7-8 it comes apart into loose arcs and fades. Palette: dusty lavender and deep indigo, warm silver-grey stone, cream highlights.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/guardian-beast-attacks-v11/_raw/half_echo-sheet.png"
+  },
+  {
+   "id": "stardust-drift",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This comes from a large sleeping guardian animal stirring in its dream, not from an attacker: the motion is soft, heavy and accidental, never sharp or aggressive. The effect is settled stardust lifting off a surface and drifting sideways across the whole cell, weightless. Frame 1 the dust lies in a low bank and begins to stir. Frames 2-4 it lifts into a wide slow drift of fine motes, layered like smoke. Frame 6 the drift fills the width at its densest and glows warm gold through its middle. Frames 7-8 the motes thin and sink. Palette: deep violet and plum, warm golden starlight, cream-white core.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/guardian-beast-attacks-v11/_raw/stardust_drift-sheet.png"
+  },
+  {
+   "id": "shelf-tilt",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. This comes from a large sleeping guardian animal stirring in its dream, not from an attacker: the motion is soft, heavy and accidental, never sharp or aggressive. The effect is a heavy wooden seed chest tilting over to the right and spilling its contents slowly. Frame 1 the chest rocks on one corner. Frames 2-4 it leans further and seeds begin to pour from the open lid in a slow stream. Frame 6 the chest comes to rest against the right with a soft heavy contact and a low dust bloom. Frames 7-8 the last seeds trickle out and settle. Palette: dark oiled wood, iron banding, warm ochre seeds and dust.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/guardian-beast-attacks-v11/_raw/shelf_tilt-sheet.png"
+  }
+ ]
+}

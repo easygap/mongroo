@@ -93,6 +93,18 @@ flutter:
     - assets/adventure/effects/final-redaction-v1/
     - assets/adventure/effects/record-wave-v1/
     - assets/adventure/effects/seal-crush-v1/
+    - assets/adventure/effects/half-echo-v1/
+    - assets/adventure/effects/lamp-lean-v1/
+    - assets/adventure/effects/margin-murmur-v1/
+    - assets/adventure/effects/page-snow-v1/
+    - assets/adventure/effects/ring-wave-v1/
+    - assets/adventure/effects/ripple-hug-v1/
+    - assets/adventure/effects/shelf-tilt-v1/
+    - assets/adventure/effects/spine-lean-v1/
+    - assets/adventure/effects/sprout-sigh-v1/
+    - assets/adventure/effects/stardust-drift-v1/
+    - assets/adventure/effects/unfinished-line-v1/
+    - assets/adventure/effects/well-lean-v1/
     - assets/adventure/effects/bell-spin-v1/
     - assets/adventure/effects/box-roll-v1/
     - assets/adventure/effects/deep-toll-v1/
@@ -111,6 +123,12 @@ flutter:
     - assets/adventure/effects/spring-snap-v1/
     - assets/adventure/effects/tape-whip-v1/
     - assets/adventure/effects/water-pop-v1/
+    - assets/adventure/effects/ember-rage-breaker-v1/
+    - assets/adventure/effects/moonlit-lonesome-tempest-v1/
+    - assets/adventure/effects/mosaic-steel-equilibrium-v1/
+    - assets/adventure/effects/rainy-frozen-tide-v1/
+    - assets/adventure/effects/sparkling-shock-wonder-v1/
+    - assets/adventure/effects/sunny-radiant-heart-v1/
     - assets/adventure/skill-icons/baby-pot/
     - assets/adventure/skill-icons/gumiho-pot/
     - assets/adventure/skill-icons/ninja-pot/
