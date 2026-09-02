@@ -11,6 +11,7 @@ from app.content.expeditions.combat_identity import (
     EMOTION_DISCIPLINES,
     FIELD_NOTE_SKILL,
     FORM_COMBAT_SKILLS,
+    FUSION_LAYER_PROFILES,
 )
 
 
@@ -80,6 +81,18 @@ def test_every_signature_gains_a_new_tactical_gimmick_at_t2_and_t3():
 
 
 def test_all_six_emotion_fusion_layers_are_production_ready():
+    """T3 감정층 여섯이 저마다의 연출을 쓴다.
+
+    이 검사는 예전에 `kel.{form}`을 봤다. 그건 아직 자기 연출이 없는 행동이
+    떨어지는 **성장결 공용 연출**이라, 늘 통과하면서 아무것도 확인하지 않았다.
+    실제로 `kel.sunny`는 아기화분의 `care-vines`고 `kel.mosaic`은
+    `fallback.echo-wave`와 같은 디렉터리다 — 햇살결 캐릭터가 T3를 쓰면 자기
+    연출 위에 아기화분 덩굴이 겹쳐 나오고 있었다.
+
+    이제 감정층은 `fusion.*`로 자기 시트를 쓴다. 공용 연출과 **다른 디렉터리**를
+    쓰는지까지 본다 — family 이름만 바꾸고 같은 그림을 가리키면 고친 게 아니다.
+    """
+
     manifest = json.loads((EFFECT_ROOT / "manifest.json").read_text(encoding="utf-8"))
     by_family = {entry["family"]: entry for entry in manifest["effects"]}
     assert set(EMOTION_DISCIPLINES) == {
@@ -90,10 +103,25 @@ def test_all_six_emotion_fusion_layers_are_production_ready():
         "sparkling",
         "mosaic",
     }
-    for form in EMOTION_DISCIPLINES:
-        entry = by_family[f"kel.{form}"]
+    assert set(FUSION_LAYER_PROFILES) == set(EMOTION_DISCIPLINES)
+
+    directories = set()
+    for form, profile in FUSION_LAYER_PROFILES.items():
+        family = str(profile["vfx_family"])
+        assert family == f"fusion.{form}", form
+        entry = by_family[family]
+        assert entry["kel"] == form, form
+        assert entry["frame_count"] >= 8, form
+        # 승격 여부는 프로필이 데이터로 들고 있다. 그 값이 manifest와 어긋나면
+        # 서버가 앱에 거짓말을 보내는 것이다.
+        assert profile["production_ready"] is entry["production_ready"], form
         assert entry["production_ready"] is True, form
         assert (EFFECT_ROOT / entry["directory"] / "frame-00.webp").is_file()
+        # 성장결 공용 연출과 같은 그림이면 고친 것이 아니다.
+        generic = by_family[f"kel.{form}"]
+        assert entry["directory"] != generic["directory"], form
+        directories.add(entry["directory"])
+    assert len(directories) == 6
 
 
 def test_all_six_emotion_skills_have_their_own_vfx():

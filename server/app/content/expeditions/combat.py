@@ -341,7 +341,13 @@ def member_battle_kit(
                 if fusion_profile is not None
                 else None
             ),
-            "fusion_production_ready": True if fusion_profile is not None else None,
+            # 호출부에 True를 박지 않는다. 감정층 프로필이 자기 승격 여부를
+            # 들고 있고, 단위 테스트가 그 값을 manifest와 맞춰 본다.
+            "fusion_production_ready": (
+                bool(fusion_profile["production_ready"])
+                if fusion_profile is not None
+                else None
+            ),
             "prism_shifted": prism_shifted,
             "presentation_tier": tier,
             "vfx_intensity": vfx_intensity,

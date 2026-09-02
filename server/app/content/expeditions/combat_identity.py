@@ -782,38 +782,49 @@ EMOTION_DISCIPLINES: dict[str, dict[str, Any]] = {
 
 # T3 고유기는 캐릭터 고유 family를 교체하지 않고 이 감정층을 두 번째 레이어로
 # 합성한다. 실제 variant key는 species × form × unique slot으로 만들어 15×6×2
-# 조합을 데이터에서 구분한다. production_ready는 해당 레이어의 실기 QA 뒤에만
-# 별도 manifest에서 승격한다.
-FUSION_LAYER_PROFILES: dict[str, dict[str, str]] = {
+# 조합을 데이터에서 구분한다.
+#
+# **2026-09-02까지 이 여섯이 `kel.*`를 가리키고 있었다.** 그건 아직 자기 연출이
+# 없는 행동이 떨어지는 성장결 공용 연출이라, `kel.sunny`는 아기화분의
+# `care-vines`고 `kel.mosaic`은 `fallback.echo-wave`와 같은 디렉터리다. 햇살결
+# 캐릭터가 T3를 쓰면 자기 연출 위에 아기화분 덩굴이 겹쳐 나왔다는 뜻이다.
+# 전용 시트를 만들어 `fusion.*`로 옮겼고, 공용 연출은 원래 자리에 그대로 둔다.
+FUSION_LAYER_PROFILES: dict[str, dict[str, Any]] = {
     "sunny": {
         "name": "햇살 심광층",
-        "vfx_family": "kel.sunny",
+        "vfx_family": "fusion.sunny",
         "contact_material": "금빛 심광과 하트 광륜",
+        "production_ready": True,
     },
     "rainy": {
         "name": "빗물 빙류층",
-        "vfx_family": "kel.rainy",
+        "vfx_family": "fusion.rainy",
         "contact_material": "물막과 얇은 결빙 파편",
+        "production_ready": True,
     },
     "ember": {
         "name": "불씨 투혼층",
-        "vfx_family": "kel.ember",
+        "vfx_family": "fusion.ember",
         "contact_material": "압축 화염과 격투 충격륜",
+        "production_ready": True,
     },
     "moonlit": {
         "name": "달그늘 폭풍층",
-        "vfx_family": "kel.moonlit",
+        "vfx_family": "fusion.moonlit",
         "contact_material": "초승달 바람과 긴 고독 잔광",
+        "production_ready": True,
     },
     "sparkling": {
         "name": "별빛 전격층",
-        "vfx_family": "kel.sparkling",
+        "vfx_family": "fusion.sparkling",
         "contact_material": "번개 가지와 짧은 음파 고리",
+        "production_ready": True,
     },
     "mosaic": {
         "name": "무채 강철층",
-        "vfx_family": "kel.mosaic",
+        "vfx_family": "fusion.mosaic",
         "contact_material": "강철 편린과 안정 역장",
+        "production_ready": True,
     },
 }
 
