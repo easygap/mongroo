@@ -1,0 +1,23 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "dust-flare",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so that it stays clearly separable from the cyan background when the background is keyed out. The effect is a blooming cloud of stardust that flashes bright enough to blind, spreading across the whole width. Frame 1 fine glitter draws inward into a dense compact seed. Frames 2-4 it blooms outward as a wide soft cloud of drifting motes with long lens-flare needles. Frame 6 the cloud flashes at its brightest with a broad cream-white veil and radiating spikes. Frames 7-8 the veil dims and the motes scatter and drift down. Palette: deep violet and plum, warm golden starlight, cream-white core.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/_raw/dust_flare-sheet.png"
+  },
+  {
+   "id": "dust-lash",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so that it stays clearly separable from the cyan background when the background is keyed out. The effect is a thin whip braided from stardust, cracking left to right across the cell. Frame 1 the whip is drawn back into a tight S-curve, glittering along its length. Frames 2-4 it uncoils into a long taut lash with a fine bright tip and a trailing glitter wake. Frame 6 the tip cracks at the right with a sharp golden star-burst. Frames 7-8 the lash frays, loses its line and drifts apart into loose motes. Palette: deep violet and plum, warm golden starlight, cream-white core.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/_raw/dust_lash-sheet.png"
+  }
+ ]
+}

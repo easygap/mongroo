@@ -1,0 +1,59 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "ring-spin",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a round slab of tree-ring wood tipping over and rolling forward left to right. Frame 1 the disc leans back on its edge, its growth rings clearly concentric. Frames 2-4 it rolls forward, the rings blurring into spinning circles with a low dust trail. Frame 6 it strikes at the right with a hard flat impact, splinters and a shock ring. Frames 7-8 it wobbles, loses speed and the dust settles. Palette: warm amber and honey brown, aged brass, dark heartwood grain, restrained pale gold glow.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/heartwood-observatory-enemy-attacks-v10/_raw/ring_spin-sheet.png"
+  },
+  {
+   "id": "shard-scatter",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a burst of small tree-ring splinters flung wide across the whole cell. Frame 1 the splinters draw together into a tight cluster with tension cracks. Frames 2-4 they explode outward in a broad fan, each a sharp curved chip with a short ember trail. Frame 6 the fan reaches full spread and the leading chips flash hot ember orange on impact. Frames 7-8 the chips tumble, cool to dark and fall. Palette: warm amber and honey brown, aged brass, dark heartwood grain, restrained pale gold glow.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/heartwood-observatory-enemy-attacks-v10/_raw/shard_scatter-sheet.png"
+  },
+  {
+   "id": "page-storm",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a storm of loose record pages that leaps up and sweeps over the whole width. Frame 1 the pages gather low in a tight fluttering pile. Frames 2-4 they surge up and forward in a broad churning wall of overlapping blank sheets, curling and folding as they fly. Frame 6 the wall covers the full width at its densest with a pale moonlit glow behind it. Frames 7-8 the pages thin out, drift apart and settle. Palette: bone-white and cream paper, moonlit pale blue, dark heartwood brown.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/heartwood-observatory-enemy-attacks-v10/_raw/page_storm-sheet.png"
+  },
+  {
+   "id": "paper-cut",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is one single stiff page edge slicing in a short precise arc, aimed at a small area. Frame 1 a single sheet stands on edge and tenses, catching a thin bright rim of light. Frames 2-4 it sweeps forward in a tight crescent, the leading edge razor-thin and glowing. Frame 6 the edge bites with a small hard ember-orange flash and two short cut lines. Frames 7-8 the sheet flutters loose, curls and falls. Palette: bone-white and cream paper, hot ember orange accent, dark heartwood brown.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/heartwood-observatory-enemy-attacks-v10/_raw/paper_cut-sheet.png"
+  },
+  {
+   "id": "lens-glare",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a refracted burst of light thrown from a tilting observatory lens, filling the whole width. Frame 1 light collects into a small dense point behind a curved glass edge. Frames 2-4 it splits into wide fanning beams and stacked lens rings that spread across the cell. Frame 6 the glare peaks as a broad blinding veil of warm sunny white with long radiating needles. Frames 7-8 the beams narrow, break into faint rings and fade. Palette: warm sunny gold and white, brass rims, dark heartwood brown.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/heartwood-observatory-enemy-attacks-v10/_raw/lens_glare-sheet.png"
+  },
+  {
+   "id": "tape-whip",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a long steel measuring tape unspooling and whipping forward left to right. Frame 1 the tape is coiled and quivering, its curved cross-section catching light. Frames 2-4 it unspools into a long ribbon with a rippling wave running down its length toward a bright tip. Frame 6 the tip cracks at the right with a hard metallic flash and short chevrons. Frames 7-8 the ribbon buckles, folds and recoils. Palette: pale steel and mosaic-tile teal, aged brass, dark heartwood brown.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/heartwood-observatory-enemy-attacks-v10/_raw/tape_whip-sheet.png"
+  }
+ ]
+}

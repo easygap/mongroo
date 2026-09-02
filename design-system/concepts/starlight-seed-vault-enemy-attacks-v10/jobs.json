@@ -1,0 +1,59 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "dust-flare",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a blooming cloud of stardust that flashes bright enough to blind, spreading across the whole width. Frame 1 fine glitter draws inward into a dense compact seed. Frames 2-4 it blooms outward as a wide soft cloud of drifting motes with long lens-flare needles. Frame 6 the cloud flashes at its brightest with a broad white veil and radiating spikes. Frames 7-8 the veil dims and the motes scatter and drift down. Palette: violet and indigo night, pale starlight gold, frosted glass and cold metal, restrained white sparkle.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/_raw/dust_flare-sheet.png"
+  },
+  {
+   "id": "dust-lash",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a thin whip braided from stardust, cracking left to right across the cell. Frame 1 the whip is drawn back into a tight S-curve, glittering along its length. Frames 2-4 it uncoils into a long taut lash with a fine bright tip and a trailing glitter wake. Frame 6 the tip cracks at the right with a sharp white star-burst. Frames 7-8 the lash frays, loses its line and drifts apart into loose motes. Palette: violet and indigo night, pale starlight gold, frosted glass and cold metal, restrained white sparkle.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/_raw/dust_lash-sheet.png"
+  },
+  {
+   "id": "box-roll",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a heavy wooden seed crate charging along the ground left to right, shown through its motion, dust and impact rather than fine detail. Frame 1 the crate tips back and compresses, dust gathering under it. Frames 2-4 it rolls forward fast, throwing a low dust plume and speed streaks behind it. Frame 6 it slams in at the right with a hard flat dust burst and splintering shock lines. Frames 7-8 it rocks back and the dust settles. Palette: dark oiled wood, iron banding, warm mosaic-tile ochre dust.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/_raw/box_roll-sheet.png"
+  },
+  {
+   "id": "seed-scatter",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a spray of hard seeds bursting out of a crate lid and flying wide across the whole cell. Frame 1 the lid strains and light leaks from the seam in a tight line. Frames 2-4 seeds erupt outward in a broad fan, each a small dark oval with a short motion streak. Frame 6 the fan reaches full spread with the leading seeds striking hard and flashing sunny gold. Frames 7-8 the seeds bounce, tumble and fall out of the arc. Palette: dark oiled wood, warm sunny gold, dry husk brown.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/_raw/seed_scatter-sheet.png"
+  },
+  {
+   "id": "spring-snap",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a wound clock mainspring that is drawn back and then snaps forward, travelling left to right. Frame 1 the spring is coiled tight, its outer turn quivering with stress lines. Frames 2-4 it releases and lances forward as a stretched steel ribbon with a whipping curl at its tip. Frame 6 the tip stabs in at the right with a hard metallic flash and short shock chevrons. Frames 7-8 the ribbon recoils and rewinds loosely. Palette: blued steel and brass, cold grey stone, mosaic-tile teal glints.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/_raw/spring_snap-sheet.png"
+  },
+  {
+   "id": "gear-grind",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a set of mismatched brass gears meshing and grinding, pressing outward across the whole width. Frame 1 two gear rims touch and compress, sparks pinching between the teeth. Frames 2-4 the grind spreads into a wide low band of shearing teeth, iron filings and pressure rings pushing outward. Frame 6 the band peaks with a broad crushing flare and flying sparks across the full width. Frames 7-8 the gears slip, the sparks die and the band collapses. Palette: brass and blued steel, cold grey stone, mosaic-tile teal glints.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/_raw/gear_grind-sheet.png"
+  }
+ ]
+}

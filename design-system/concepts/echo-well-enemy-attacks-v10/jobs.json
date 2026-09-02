@@ -1,0 +1,59 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "echo-ring",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a stack of concentric sound rings made of pale wet stone-blue light, ringing outward from a knot of rope-like echoes. Frame 1 the rings compress inward into a tight bright knot. Frames 2-4 they burst and expand outward as wide overlapping halos that sweep the whole width of the cell. Frame 6 the widest ring flares hardest with a thin white rim. Frames 7-8 the halos thin, break into short arcs and fade. Cool damp well-garden palette: slate blue, wet grey stone, faint silver sparkle.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/echo-well-enemy-attacks-v10/_raw/echo_ring-sheet.png"
+  },
+  {
+   "id": "sharp-note",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a single narrow lance of sound, a thin bright wedge like a struck high note, travelling left to right. Frame 1 a small compressed spark gathers at the left with two short tension lines. Frames 2-4 it stretches into a long thin blade of pale blue light with a sharp leading point and a trailing whisper. Frame 6 the point drives in at the right with a small hard white burst and three short splinters. Frames 7-8 the lance breaks and dissolves into fine sparks. Cool damp well-garden palette: slate blue, wet grey stone, faint silver sparkle.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/echo-well-enemy-attacks-v10/_raw/sharp_note-sheet.png"
+  },
+  {
+   "id": "splash-wave",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a wide curtain of water droplets leaping upward and outward together. Frame 1 a low flat pool of droplets crouches and gathers. Frames 2-4 the whole line launches upward into a broad arcing sheet of water with round fat droplets and thin connecting threads. Frame 6 the sheet slaps down across the full width with a hard flat splash crown. Frames 7-8 it collapses into scattered falling beads and mist. Cool damp well-garden palette: clear blue-green water, wet grey stone, white foam highlights.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/echo-well-enemy-attacks-v10/_raw/splash_wave-sheet.png"
+  },
+  {
+   "id": "water-pop",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is one single oversized water droplet that swells and bursts downward on a small area. Frame 1 the droplet hangs and wobbles, slightly squashed. Frames 2-4 it stretches taller, tips over and falls as one heavy teardrop. Frame 6 it bursts into a tight radial crown of water with a bright white core. Frames 7-8 the crown falls apart into a ring of small beads that fade. Cool damp well-garden palette: clear blue-green water, wet grey stone, white foam highlights.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/echo-well-enemy-attacks-v10/_raw/water_pop-sheet.png"
+  },
+  {
+   "id": "bell-spin",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a coiled bell rope that unwinds and lashes forward, travelling left to right. Frame 1 the rope is wound into a tight spiral coil with visible braided fibre. Frames 2-4 it whips loose into a long spinning helix that reaches across the cell, trailing soft wooden dust. Frame 6 the rope end snaps taut at the right with a hard flat crack of amber light. Frames 7-8 it recoils, slackens and settles into loose loops. Palette: warm rope brown, dark polished wood, moonlit pale blue rim light.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/echo-well-enemy-attacks-v10/_raw/bell_spin-sheet.png"
+  },
+  {
+   "id": "deep-toll",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one attack effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. The effect is a low bell toll spreading along the ground as heavy pressure rings. Frame 1 a dense dark disc compresses low and flat. Frames 2-4 broad slow rings roll outward along the floor plane, wide and shallow, with dust lifting off their crests. Frame 6 the widest ring peaks with a deep bronze flare across the full width. Frames 7-8 the rings flatten, thin and sink away. Palette: bronze and deep slate blue, wet grey stone, restrained silver sparkle.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/echo-well-enemy-attacks-v10/_raw/deep_toll-sheet.png"
+  }
+ ]
+}
