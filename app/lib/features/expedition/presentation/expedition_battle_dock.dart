@@ -1907,7 +1907,7 @@ class _DockActionVisual extends StatelessWidget {
       // 예전에는 머티리얼 기본 글리프였다. 손그림 화면에 안드로이드 아이콘이
       // 둘 섞여 있었다 - 설계서 4.2가 이 두 자리에도 전용 glyph를 요구한다.
       return _DockImageIcon(
-        asset: 'assets/adventure/skill-icons/action/$actionCode-v1.webp',
+        asset: expeditionActionIconAsset(actionCode),
         size: size,
       );
     }
@@ -1934,6 +1934,27 @@ class _DockActionVisual extends StatelessWidget {
     return _DockEffectThumbnail(effectKey: effectKey, size: size);
   }
 }
+
+/// 성장결 마크의 번들 경로.
+///
+/// 위젯 안에 문자열로 묻어 두면 실기에서 한둘 보고 나머지는 못 본 채 지나간다.
+/// 밖으로 빼서 여섯을 한 번에 짚을 수 있게 한다.
+String expeditionKelIconAsset(String kel) =>
+    'assets/adventure/skill-icons/kel/$kel-v1.webp';
+
+/// 기본 공격·마음 지키기 글리프의 번들 경로.
+String expeditionActionIconAsset(String action) =>
+    'assets/adventure/skill-icons/action/$action-v1.webp';
+
+/// 마크가 있는 성장결. `kel_fallback_family`가 쓰는 여섯과 같다.
+const expeditionKelsWithIcons = <String>[
+  'sunny',
+  'rainy',
+  'ember',
+  'moonlit',
+  'sparkling',
+  'mosaic',
+];
 
 /// 아이콘 자리에 들어가는 그림 한 장. 벨트의 라운드 사각형 틀을 그대로 쓴다.
 class _DockImageIcon extends StatelessWidget {
@@ -1985,7 +2006,7 @@ class _KelMarks extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: Image.asset(
-                'assets/adventure/skill-icons/kel/$kel-v1.webp',
+                expeditionKelIconAsset(kel),
                 width: 14,
                 height: 14,
                 fit: BoxFit.cover,

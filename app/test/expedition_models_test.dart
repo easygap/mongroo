@@ -3058,6 +3058,17 @@ void main() {
     // 같은 파일을 두 번 넣은 사고를 잡는다. 모양이 충분히 다른지는 눈으로
     // 보는 것이고, concept README에 여덟을 나란히 붙여 뒀다.
     expect(bytes.values.toSet(), hasLength(assets.length));
+
+    // 화면이 실제로 부르는 경로가 이 여덟인지. 실기에서는 그때 화면에 나온
+    // 성장결 하나(햇살결)밖에 못 봤다 - 나머지 다섯은 여기서 짚는다.
+    expect(expeditionKelsWithIcons, hasLength(6));
+    for (final kel in expeditionKelsWithIcons) {
+      expect(expeditionKelIconAsset(kel), contains('/kel/$kel-v1.webp'));
+      expect(assets, contains(expeditionKelIconAsset(kel)), reason: kel);
+    }
+    for (final action in const ['attack', 'guard']) {
+      expect(assets, contains(expeditionActionIconAsset(action)), reason: action);
+    }
   });
 
   testWidgets('16품종 × 2의 고유 스킬 signature를 앱 번들에서 읽는다', (tester) async {
