@@ -26,11 +26,18 @@
 4. **디코딩 피크** — 8프레임을 RGBA로 펼쳤을 때의 메모리. 저사양 기기에서
    먼저 터지는 것이 이 값이다.
 
-## 재지 못하는 것
+## 프레임 타임은 여기가 아니라 하네스가 잰다
 
-**실기기 p95 프레임 타임.** 기기가 있어야 한다. 이 검사를 통과해도 그건 남는다.
-그래서 통과한 항목에는 `gate` 증거를 붙이되, 남은 항목을 `pending`에 이름으로
-적어 둔다 — `production_ready:true`가 `전부 끝났다`로 읽히지 않게.
+정적 검사로는 `재생할 때 얼마나 무거운가`를 알 수 없다. 그건
+`design-system/benchmarks/effect-frame-time`이 실제 래스터 파이프라인에서 재고,
+결과는 `docs/performance.md`와 manifest의 `gate_profile`에 있다.
+
+## 그래도 재지 못하는 것
+
+**저사양 Android·iOS 실기기.** 이 기계에는 Android SDK도 실기기도 없다.
+데스크톱 GPU는 모바일의 발열·전력 제한·메모리 압박을 대신하지 않는다.
+`pending`에 이름으로 남겨 둔다 — `production_ready:true`가 `전부 끝났다`로
+읽히지 않게.
 """
 
 from __future__ import annotations
@@ -74,6 +81,27 @@ MAX_KEY_FRAME_SHARE = 0.01
 #: 지웠다. 최솟값의 10분의 1이라 무엇도 걸릴 수 없었고, 걸릴 수 없는 검사는
 #: 검사가 아니다.
 MIN_CONTRAST = 0.20
+
+#: 재생 프레임 타임 실측. `design-system/benchmarks/effect-frame-time`이 낸 값이다.
+#:
+#: 69종을 이어 재생하며 Windows 데스크톱 profile 빌드에서 두 번 쟀다. 합격
+#: 판단에 쓰는 값은 `raster`와 `build`다 — `total`은 모니터 주사율(약 120Hz)에
+#: 묶여서 연출의 비용이 아니라 화면의 리듬을 보여 준다.
+GATE_PROFILE = {
+    "runtime": "windows-desktop-profile",
+    "harness": "design-system/benchmarks/effect-frame-time",
+    "effects": 69,
+    "runs": [
+        {"sampled_frames": 3371, "raster_p95_ms": 0.635, "raster_p99_ms": 0.846,
+         "raster_max_ms": 6.758, "build_p95_ms": 0.566, "total_p95_ms": 15.749,
+         "over_20ms": 3, "over_33_4ms": 0},
+        {"sampled_frames": 3370, "raster_p95_ms": 0.580, "raster_p99_ms": 0.734,
+         "raster_max_ms": 1.175, "build_p95_ms": 0.497, "total_p95_ms": 15.796,
+         "over_20ms": 0, "over_33_4ms": 0},
+    ],
+    "scope": "effect_layer_only",
+    "pending": ["low_end_android_p95", "ios_p95"],
+}
 
 #: 한 연출이 RGBA로 펼쳐졌을 때의 메모리 상한.
 #:
@@ -207,8 +235,8 @@ def main() -> int:
                     "backdrop_legibility",
                     "decoded_peak",
                 ],
-                # 통과해도 이건 남는다. 기기가 있어야 한다.
-                "pending": ["device_p95_frame_time"],
+                # 통과해도 이건 남는다. 실기기가 있어야 한다.
+                "pending": GATE_PROFILE["pending"],
             }
 
     print(f"통과 {len(passed)} / 전체 {len(manifest['effects'])}")
@@ -219,6 +247,7 @@ def main() -> int:
             print(f"  {family}: {', '.join(reasons)}")
 
     if args.promote:
+        manifest["gate_profile"] = GATE_PROFILE
         MANIFEST.write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )

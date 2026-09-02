@@ -48,7 +48,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -94,7 +95,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -143,7 +145,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -189,7 +192,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -236,7 +240,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -283,7 +288,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -330,7 +336,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -377,7 +384,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -424,7 +432,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -470,7 +479,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -517,7 +527,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -564,7 +575,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -610,7 +622,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -656,7 +669,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -703,7 +717,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -750,7 +765,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -799,7 +815,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -845,7 +862,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -892,7 +910,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -939,7 +958,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -986,7 +1006,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1032,7 +1053,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1078,7 +1100,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1124,7 +1147,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1170,7 +1194,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1217,7 +1242,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1264,7 +1290,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1309,7 +1336,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1356,7 +1384,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1403,7 +1432,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1452,7 +1482,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1499,7 +1530,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1546,7 +1578,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1592,7 +1625,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1638,7 +1672,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1684,7 +1719,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1730,7 +1766,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1776,7 +1813,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1822,7 +1860,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1869,7 +1908,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1916,7 +1956,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -1962,7 +2003,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2008,7 +2050,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2054,7 +2097,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2100,7 +2144,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2146,7 +2191,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2192,7 +2238,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2238,7 +2285,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2284,7 +2332,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2331,7 +2380,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2378,7 +2428,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2425,7 +2476,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2472,7 +2524,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2519,7 +2572,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2566,7 +2620,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2613,7 +2668,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2660,7 +2716,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2707,7 +2764,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2754,7 +2812,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2801,7 +2860,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2848,7 +2908,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2894,7 +2955,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2940,7 +3002,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -2986,7 +3049,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -3032,7 +3096,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -3078,7 +3143,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -3124,7 +3190,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -3170,7 +3237,8 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     },
@@ -3216,9 +3284,42 @@
           "decoded_peak"
         ],
         "pending": [
-          "device_p95_frame_time"
+          "low_end_android_p95",
+          "ios_p95"
         ]
       }
     }
-  ]
+  ],
+  "gate_profile": {
+    "runtime": "windows-desktop-profile",
+    "harness": "design-system/benchmarks/effect-frame-time",
+    "effects": 69,
+    "runs": [
+      {
+        "sampled_frames": 3371,
+        "raster_p95_ms": 0.635,
+        "raster_p99_ms": 0.846,
+        "raster_max_ms": 6.758,
+        "build_p95_ms": 0.566,
+        "total_p95_ms": 15.749,
+        "over_20ms": 3,
+        "over_33_4ms": 0
+      },
+      {
+        "sampled_frames": 3370,
+        "raster_p95_ms": 0.58,
+        "raster_p99_ms": 0.734,
+        "raster_max_ms": 1.175,
+        "build_p95_ms": 0.497,
+        "total_p95_ms": 15.796,
+        "over_20ms": 0,
+        "over_33_4ms": 0
+      }
+    ],
+    "scope": "effect_layer_only",
+    "pending": [
+      "low_end_android_p95",
+      "ios_p95"
+    ]
+  }
 }

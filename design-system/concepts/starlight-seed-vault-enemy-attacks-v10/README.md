@@ -1,6 +1,6 @@
 # 별빛 씨앗 보관고 적 공격 VFX v10
 
-상태: **자동 검수 통과 — 실기기 p95 프로파일만 남음**
+상태: **자동 검수·프레임 타임 통과 — 저사양 실기기만 남음**
 
 별빛 씨앗 보관고의 엉킴 3종이 쓰던 공격 6종을 8프레임 전용 연출로 제작했다.
 이 지역의 엉킴 의도는 이제 모두 자기 family를 쓴다 — 여기까지 오기 전에는
@@ -42,8 +42,11 @@
 - `production_ready:true`: `verify_effect_production_gate.py`의 검사를 통과했다 —
   프레임 무결성, 크로마 잔류, **실제 지역 전투 배경 위 가독성**(밝은 쪽·어두운
   쪽), 디코딩 피크. 잰 값은 manifest 각 항목의 `gate`에 붙어 있다.
-- 남은 것은 **실기기 p95 프레임 타임** 하나이고 `gate.pending`에 이름으로 적혀
-  있다. 기기가 있어야 해서 이 검사에 넣을 수 없다.
+- 재생 프레임 타임은 `design-system/benchmarks/effect-frame-time`이 Windows
+  데스크톱 profile에서 쟀다 — 연출 한 프레임에 래스터 0.6ms·빌드 0.5ms로,
+  60Hz 예산 16.7ms의 4% 남짓이다(`docs/performance.md` 5장).
+- 남은 것은 **저사양 Android·iOS 실기기**다. 이 기계에 Android SDK도 실기기도
+  없어서 잴 수 없고, manifest의 `gate_profile.pending`에 이름으로 적혀 있다.
 
 ## 팔레트 재작업 (2026-09-01)
 
