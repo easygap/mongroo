@@ -7,36 +7,259 @@
   "fallback_family": "fallback.echo-wave",
   "effects": [
     {
-      "family": "fallback.echo-wave",
+      "family": "aloof-pot.absolute-zero",
       "effect_keys": [
-        "echo_wave"
+        "absolute_zero_read"
       ],
-      "kel": null,
-      "directory": "echo-wave",
-      "frame_count": 8,
+      "kel": "rainy",
+      "directory": "absolute-zero-read-v1",
+      "frame_count": 7,
       "frame_size": [
         576,
         288
       ],
       "frame_durations_ms": [
-        80,
-        70,
-        65,
-        65,
+        120,
+        90,
+        95,
         75,
-        85,
-        110,
-        125
+        135,
+        100,
+        145
       ],
-      "contact_frame": 5,
+      "contact_frame": 4,
       "pivot": [
         0.5,
         0.5
       ],
       "anchor": "stage_center",
       "production_ready": true,
-      "source_hash": "D5100395CDC01F5364B03499AAD0879F0972E3C5B08B172D71D621FEE3606C40",
-      "runtime_hash": "A01F85ECB51BA8F5FAAC0764161855D0A4DB24E7A3EAD194CD9F0B96C8A18A55"
+      "source_hash": "CD755422985DA6C3404496614FA3FD10BECF9EB984421A6C0690AE3CA45F228E",
+      "runtime_hash": "5132B921B0DEFDE8DB8BA03FBC464569D44E6756DF99D25CD749EA014B216E6A"
+    },
+    {
+      "family": "aloof-pot.steel-verdict",
+      "effect_keys": [
+        "steel_verdict"
+      ],
+      "kel": "mosaic",
+      "directory": "steel-verdict-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        120,
+        90,
+        95,
+        75,
+        135,
+        100,
+        145
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "CD755422985DA6C3404496614FA3FD10BECF9EB984421A6C0690AE3CA45F228E",
+      "runtime_hash": "406AF55EE6D4D2C67CDC02AB1BF51AE258C76C028E57078AB565841C6ECCBED6"
+    },
+    {
+      "family": "baby-pot.care-vines",
+      "effect_keys": [
+        "sprout_cheer"
+      ],
+      "kel": "sunny",
+      "directory": "care-vines-v2",
+      "frame_count": 10,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        90,
+        70,
+        70,
+        65,
+        65,
+        70,
+        75,
+        105,
+        80,
+        110
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.03,
+        0.76
+      ],
+      "anchor": "actor_hand_r",
+      "production_ready": true,
+      "source_hash": "CB4533E1FE2BE77B0279FBFC076AF0C76DDA2D650F9E80D066FE9795F865825B",
+      "runtime_hash": "0A699AAB80FDC8823874EE96803AFCDA27DB84442695AD54130EAF67707BA2F1"
+    },
+    {
+      "family": "baby-pot.root-embrace",
+      "effect_keys": [
+        "root_embrace"
+      ],
+      "kel": "sunny",
+      "directory": "root-embrace-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        120,
+        90,
+        95,
+        75,
+        135,
+        100,
+        145
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "946B8EC10E7B7BE1C123952142935364283D9CF0E0113E7ADAD2E91B8EFB1AA7",
+      "runtime_hash": "16F13CC66FADDC34EE0824B140566523AE1656C114445856B6110E3A1D84B85B"
+    },
+    {
+      "family": "backwound-clockspring.gear-grind",
+      "effect_keys": [
+        "gear_grind"
+      ],
+      "kel": "mosaic",
+      "directory": "gear-grind-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "DD0857CA06B4C3A162484580888D3040F2DDF8BF367EBB5D6A353D5B55AF25AB",
+      "runtime_hash": "69BA37B9DE71B362B9FFAA81E5C0C3924CA914BF6BC401F556D21A2C7A8497EA"
+    },
+    {
+      "family": "backwound-clockspring.spring-snap",
+      "effect_keys": [
+        "spring_snap"
+      ],
+      "kel": "mosaic",
+      "directory": "spring-snap-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "65D8B2F4A9DE9F2B14A9AB47C58B5899D0C14785DB53B9BE8E0BB036EBDFD5AF",
+      "runtime_hash": "0DDA87EBDDDFABC1D10B817D01DBC651BA3968AEB2A2F544156FB4F24A5FEEFB"
+    },
+    {
+      "family": "bell-knot-swirl.bell-spin",
+      "effect_keys": [
+        "bell_spin"
+      ],
+      "kel": "moonlit",
+      "directory": "bell-spin-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "9167130DAF4D984F8C25FFFBD6FF06528DB9EF61687925E62B6F0D228057FF96",
+      "runtime_hash": "3A2771CEB7AC68389CC1E3C81C4A1E332C6CD92C630CE379A0F1B719F2C82373"
+    },
+    {
+      "family": "bell-knot-swirl.deep-toll",
+      "effect_keys": [
+        "deep_toll"
+      ],
+      "kel": "sparkling",
+      "directory": "deep-toll-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "621204A9C9FA86AFD3510A21610A3C4D61162E127B8B279A33C5CE3E57712849",
+      "runtime_hash": "4CE1384DE183C97CC753DE5D2C0DC341AF2A23F4B09AD0004636424A4FC64D69"
     },
     {
       "family": "common.safe-guard",
@@ -71,46 +294,75 @@
       "runtime_hash": "9702E5343BD7401CC04DECA48CE8ECF6A734B0029EE2FA8427382E69211606DB"
     },
     {
-      "family": "kel.sunny",
+      "family": "drifting-pressings.petal-dart",
       "effect_keys": [
-        "care_vines"
+        "petal_dart"
       ],
-      "kel": "sunny",
-      "directory": "care-vines-v2",
-      "frame_count": 10,
+      "kel": "ember",
+      "directory": "petal-dart-v1",
+      "frame_count": 7,
       "frame_size": [
         576,
         288
       ],
       "frame_durations_ms": [
-        90,
-        70,
-        70,
-        65,
-        65,
-        70,
+        140,
+        100,
         75,
-        105,
-        80,
-        110
+        75,
+        70,
+        100,
+        160
       ],
-      "contact_frame": 5,
+      "contact_frame": 4,
       "pivot": [
-        0.03,
-        0.76
+        0.94,
+        0.58
       ],
-      "anchor": "actor_hand_r",
-      "production_ready": true,
-      "source_hash": "CB4533E1FE2BE77B0279FBFC076AF0C76DDA2D650F9E80D066FE9795F865825B",
-      "runtime_hash": "0A699AAB80FDC8823874EE96803AFCDA27DB84442695AD54130EAF67707BA2F1"
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "07043847B4917BEBE87F0975D6D408E2E9890C0F2D46620298BB50E381602755",
+      "runtime_hash": "A9B22813EE8F2508B4E87CAA0DE8ED4B4A9CDFB3B874F48B41EB19BDD3BC2BC7"
     },
     {
-      "family": "kel.rainy",
+      "family": "drifting-pressings.petal-gust",
       "effect_keys": [
-        "mist_dash"
+        "petal_gust"
       ],
-      "kel": "rainy",
-      "directory": "mist-dash",
+      "kel": "moonlit",
+      "directory": "petal-gust-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "9D91C78727C883C15B076337927941CDD54AF97487C950DAE2DBEAF1C81A6AEE",
+      "runtime_hash": "6E2DC444B3E9EE8FD7A38501DEEFDA9F1C2CD02E57607EEAF6E37DB80EF0BC37"
+    },
+    {
+      "family": "fallback.echo-wave",
+      "effect_keys": [
+        "echo_wave"
+      ],
+      "kel": null,
+      "directory": "echo-wave",
       "frame_count": 8,
       "frame_size": [
         576,
@@ -128,13 +380,424 @@
       ],
       "contact_frame": 5,
       "pivot": [
-        0.08,
-        0.72
+        0.5,
+        0.5
       ],
-      "anchor": "actor_hand_r",
+      "anchor": "stage_center",
       "production_ready": true,
-      "source_hash": "4E802C59924774092CEC464EB545188DF616D69F89A6E0FD20262108CFA9FEFC",
-      "runtime_hash": "130DC6CF35ECF430AB77E1CCAEC3FF64735D59BBE85F8B8C67C8D7B61501079F"
+      "source_hash": "D5100395CDC01F5364B03499AAD0879F0972E3C5B08B172D71D621FEE3606C40",
+      "runtime_hash": "A01F85ECB51BA8F5FAAC0764161855D0A4DB24E7A3EAD194CD9F0B96C8A18A55"
+    },
+    {
+      "family": "gal-pot.patchwork-relay",
+      "effect_keys": [
+        "patchwork_relay"
+      ],
+      "kel": "sparkling",
+      "directory": "patchwork-relay-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        160
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "actor_center",
+      "production_ready": true,
+      "source_hash": "2A32E6F3D2ED36871BE1F4EAE6C74AAE4942F66A7389B57675593A6F340F2E13",
+      "runtime_hash": "607A6CA671F5DA61F821279FD60AFD2A6ACD6577F78489F38569078E42EBD8FF"
+    },
+    {
+      "family": "gal-pot.runway-reversal",
+      "effect_keys": [
+        "runway_reversal"
+      ],
+      "kel": "sparkling",
+      "directory": "runway-reversal-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        170,
+        100,
+        65,
+        65,
+        80,
+        120,
+        160
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "7E1B62DE4CBE1D9CEC6218ADEDFF5F06D5EEB17AAC2B0660A4C7C197060F219B",
+      "runtime_hash": "616D323B7412C5D8B0702F9BE0DE9A8EBE423BBCADF827B240BFA5DD8F359462"
+    },
+    {
+      "family": "guardian.enemy-wave",
+      "effect_keys": [
+        "enemy_wave"
+      ],
+      "kel": "mosaic",
+      "directory": "enemy-wave",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        80,
+        70,
+        65,
+        65,
+        75,
+        85,
+        110,
+        125
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.92,
+        0.55
+      ],
+      "anchor": "guardian_center",
+      "production_ready": true,
+      "source_hash": "8C4CEDA96EF679A5797E6574A6C25EA6E3A609E0B58780AEC0BACA313C57EADD",
+      "runtime_hash": "D6DE92A2A6E154312495D44EE6836F1F8043FC603672108232F28BED5E3B53D6"
+    },
+    {
+      "family": "guardian.final-redaction",
+      "effect_keys": [
+        "final_redaction"
+      ],
+      "kel": null,
+      "directory": "final-redaction-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.72,
+        0.5
+      ],
+      "anchor": "party_all",
+      "production_ready": false,
+      "source_hash": "F7DF08B245079949480C9C4EE0111DB047F04451537819FB4FB8E1DECD669EF5",
+      "runtime_hash": "1F790DE05DC83C1113FBF7B148C6D57A9631FBC4551AE912E02CA2BA5499FB7C"
+    },
+    {
+      "family": "guardian.ledger-claw",
+      "effect_keys": [
+        "ledger_claw"
+      ],
+      "kel": "mosaic",
+      "directory": "ledger-claw-v2",
+      "frame_count": 10,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        100,
+        75,
+        65,
+        65,
+        70,
+        95,
+        75,
+        70,
+        80,
+        105
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.97,
+        0.58
+      ],
+      "anchor": "guardian_foreleg_r",
+      "production_ready": false,
+      "source_hash": "964BF0359681CA02E49A94B5BF755BE6FF8DCCD357A524B96B2117BE1E1FBCA3",
+      "runtime_hash": "A336C11DC376EFDC002E40491A86109CFDEF9195A0FC2A48C6FCB0F94E9A8012"
+    },
+    {
+      "family": "guardian.phase-break",
+      "effect_keys": [
+        "boss_phase_break"
+      ],
+      "kel": "mosaic",
+      "directory": "boss-phase-break-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        100,
+        90,
+        80,
+        150,
+        120,
+        180
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "6FF48989F29B49B5B324D0446BA72ACBB7F97E0EEEA98D78C21A5AA55B689298",
+      "runtime_hash": "62102B5A77CCC6EFA5B50CC131875F998B0362DB4547B87DA4120E3AB59BA377"
+    },
+    {
+      "family": "guardian.record-wave",
+      "effect_keys": [
+        "record_wave"
+      ],
+      "kel": "rainy",
+      "directory": "record-wave-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "party_all",
+      "production_ready": false,
+      "source_hash": "E57E2204E1FBC32F495706021ABE23B55357A603C6AB052613D6E45715FD17C3",
+      "runtime_hash": "8F347963BC3009DCA42F4A52C4B250FA84E629D3B7F939507CFE7AF59D27E5BE"
+    },
+    {
+      "family": "guardian.root-lockdown",
+      "effect_keys": [
+        "root_lockdown"
+      ],
+      "kel": null,
+      "directory": "root-lockdown-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.72,
+        0.5
+      ],
+      "anchor": "party_all",
+      "production_ready": false,
+      "source_hash": "B5D5493599E3A22A47A83EA4A22A44FE02B8662C7A91237C80203E475372AD83",
+      "runtime_hash": "1BC00F75833477F4AB8302992007C9DAD839932E3E7AF05E4B75A6B0658806FE"
+    },
+    {
+      "family": "guardian.seal-crush",
+      "effect_keys": [
+        "seal_crush"
+      ],
+      "kel": "ember",
+      "directory": "seal-crush-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "party_all",
+      "production_ready": false,
+      "source_hash": "7090E74AD89D8A78298B677DC61D690A9D5922F17654A614D3B5D17A3C4E4AD2",
+      "runtime_hash": "10369D8EB698C71983D243DD726B88350C17A569A775A89C152B1EC697EC02F3"
+    },
+    {
+      "family": "gumiho-pot.heart-moon-charm",
+      "effect_keys": [
+        "heart_moon_charm"
+      ],
+      "kel": "sunny",
+      "directory": "heart-moon-charm-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        120,
+        90,
+        95,
+        75,
+        135,
+        100,
+        145
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "1AED26BB094C3A48218CB47BA7D8142043747B173BE08D594765675B422C791F",
+      "runtime_hash": "71C17AA65BEE20647A5023AACD0A7E55349C80B6C82A624D43A696DB3EF87FD0"
+    },
+    {
+      "family": "gumiho-pot.nine-tail-eclipse",
+      "effect_keys": [
+        "nine_tail_eclipse"
+      ],
+      "kel": "moonlit",
+      "directory": "nine-tail-eclipse-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        120,
+        90,
+        95,
+        75,
+        135,
+        100,
+        145
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "1AED26BB094C3A48218CB47BA7D8142043747B173BE08D594765675B422C791F",
+      "runtime_hash": "FF37354C9B4624F5AFFB5096DBA4281D0BC18971358AF1423BE4A2D55899C22E"
+    },
+    {
+      "family": "handsome-pot.command-blade",
+      "effect_keys": [
+        "command_blade"
+      ],
+      "kel": "mosaic",
+      "directory": "command-blade-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        120,
+        90,
+        95,
+        75,
+        135,
+        100,
+        145
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "actor_center",
+      "production_ready": true,
+      "source_hash": "D56128C80ADB2A5C45BB2138691AD9ECD0B4DEC8577F6835094CAE31EDE0535D",
+      "runtime_hash": "08FCD60DEED3C9707C63CCDD4AB1B61136B891FF6BB8FCB6C6C4987EF8E88538"
+    },
+    {
+      "family": "handsome-pot.command-crescendo",
+      "effect_keys": [
+        "command_crescendo"
+      ],
+      "kel": "sparkling",
+      "directory": "command-crescendo-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        120,
+        90,
+        95,
+        75,
+        135,
+        100,
+        145
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "D56128C80ADB2A5C45BB2138691AD9ECD0B4DEC8577F6835094CAE31EDE0535D",
+      "runtime_hash": "FAC3BEFAB401DDE0DE416584DD9E556CECD0CAAC4B54FDD834AFDF628CD07F47"
     },
     {
       "family": "kel.ember",
@@ -201,6 +864,68 @@
       "runtime_hash": "F45FEEF6B27B0CF6829CDAC80852404507D7BEA140B9E91C517B7B5D4036D724"
     },
     {
+      "family": "kel.mosaic",
+      "effect_keys": [],
+      "kel": "mosaic",
+      "directory": "echo-wave",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        80,
+        70,
+        65,
+        65,
+        75,
+        85,
+        110,
+        125
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.08,
+        0.7
+      ],
+      "anchor": "actor_hand_r",
+      "production_ready": true,
+      "source_hash": "D5100395CDC01F5364B03499AAD0879F0972E3C5B08B172D71D621FEE3606C40",
+      "runtime_hash": "A01F85ECB51BA8F5FAAC0764161855D0A4DB24E7A3EAD194CD9F0B96C8A18A55"
+    },
+    {
+      "family": "kel.rainy",
+      "effect_keys": [
+        "mist_dash"
+      ],
+      "kel": "rainy",
+      "directory": "mist-dash",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        80,
+        70,
+        65,
+        65,
+        75,
+        85,
+        110,
+        125
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.08,
+        0.72
+      ],
+      "anchor": "actor_hand_r",
+      "production_ready": true,
+      "source_hash": "4E802C59924774092CEC464EB545188DF616D69F89A6E0FD20262108CFA9FEFC",
+      "runtime_hash": "130DC6CF35ECF430AB77E1CCAEC3FF64735D59BBE85F8B8C67C8D7B61501079F"
+    },
+    {
       "family": "kel.sparkling",
       "effect_keys": [
         "prism_burst"
@@ -233,39 +958,9 @@
       "runtime_hash": "D52C349E102120370BBF0AF9ABFF3886F43446DFA76307769AFB61FC1A56AD4C"
     },
     {
-      "family": "kel.mosaic",
-      "effect_keys": [],
-      "kel": "mosaic",
-      "directory": "echo-wave",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        80,
-        70,
-        65,
-        65,
-        75,
-        85,
-        110,
-        125
-      ],
-      "contact_frame": 5,
-      "pivot": [
-        0.08,
-        0.7
-      ],
-      "anchor": "actor_hand_r",
-      "production_ready": true,
-      "source_hash": "D5100395CDC01F5364B03499AAD0879F0972E3C5B08B172D71D621FEE3606C40",
-      "runtime_hash": "A01F85ECB51BA8F5FAAC0764161855D0A4DB24E7A3EAD194CD9F0B96C8A18A55"
-    },
-    {
-      "family": "baby-pot.care-vines",
+      "family": "kel.sunny",
       "effect_keys": [
-        "sprout_cheer"
+        "care_vines"
       ],
       "kel": "sunny",
       "directory": "care-vines-v2",
@@ -297,203 +992,13 @@
       "runtime_hash": "0A699AAB80FDC8823874EE96803AFCDA27DB84442695AD54130EAF67707BA2F1"
     },
     {
-      "family": "ninja-pot.venom-seam",
+      "family": "knotted-echo.echo-ring",
       "effect_keys": [
-        "venom_seam"
+        "echo_ring"
       ],
-      "kel": "rainy",
-      "directory": "venom-seam-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        90,
-        70,
-        65,
-        65,
-        85,
-        105,
-        125
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.08,
-        0.72
-      ],
-      "anchor": "actor_hand_r",
-      "production_ready": true,
-      "source_hash": "66D1A7FC4D3E8CA8D4F2672271D6A50C39652B7DCF567C4C7E31C6F5177E300A",
-      "runtime_hash": "BC3A486C4B733452FA6C994A02D6D075D0435CE342EC28BFA2525F2D8712B12B"
-    },
-    {
-      "family": "guardian.ledger-claw",
-      "effect_keys": [
-        "ledger_claw"
-      ],
-      "kel": "mosaic",
-      "directory": "ledger-claw-v2",
-      "frame_count": 10,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        100,
-        75,
-        65,
-        65,
-        70,
-        95,
-        75,
-        70,
-        80,
-        105
-      ],
-      "contact_frame": 5,
-      "pivot": [
-        0.97,
-        0.58
-      ],
-      "anchor": "guardian_foreleg_r",
-      "production_ready": false,
-      "source_hash": "964BF0359681CA02E49A94B5BF755BE6FF8DCCD357A524B96B2117BE1E1FBCA3",
-      "runtime_hash": "A336C11DC376EFDC002E40491A86109CFDEF9195A0FC2A48C6FCB0F94E9A8012"
-    },
-    {
-      "family": "guardian.enemy-wave",
-      "effect_keys": [
-        "enemy_wave"
-      ],
-      "kel": "mosaic",
-      "directory": "enemy-wave",
+      "kel": "sparkling",
+      "directory": "echo-ring-v1",
       "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        80,
-        70,
-        65,
-        65,
-        75,
-        85,
-        110,
-        125
-      ],
-      "contact_frame": 5,
-      "pivot": [
-        0.92,
-        0.55
-      ],
-      "anchor": "guardian_center",
-      "production_ready": true,
-      "source_hash": "8C4CEDA96EF679A5797E6574A6C25EA6E3A609E0B58780AEC0BACA313C57EADD",
-      "runtime_hash": "D6DE92A2A6E154312495D44EE6836F1F8043FC603672108232F28BED5E3B53D6"
-    },
-    {
-      "family": "tangled-ledger.paper-flurry",
-      "effect_keys": [
-        "paper_flurry"
-      ],
-      "kel": "moonlit",
-      "directory": "paper-flurry-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        100,
-        85,
-        75,
-        75,
-        90,
-        115,
-        140
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.94,
-        0.58
-      ],
-      "anchor": "tangle_center",
-      "production_ready": false,
-      "source_hash": "7D315AF77A3A61946D682727CF02541A1B610ACC626EE444616D52A554F04F5B",
-      "runtime_hash": "1A966C03E49B55FF43F2BAFB60F468CEA4D928AE78C10B4968804D24FC3D062A"
-    },
-    {
-      "family": "tangled-ledger.ink-mist",
-      "effect_keys": [
-        "ink_mist"
-      ],
-      "kel": "mosaic",
-      "directory": "ink-mist-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        170,
-        100,
-        65,
-        65,
-        80,
-        120,
-        160
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.94,
-        0.58
-      ],
-      "anchor": "tangle_center",
-      "production_ready": false,
-      "source_hash": "5D6997FE0C57D5BD990916D444E1D65FB59FF25690AC0C0A089A927F51D6ECE0",
-      "runtime_hash": "A293932925E631EE67688FD03B263F29C6BD716D20FF3A709278557656E5D4D5"
-    },
-    {
-      "family": "drifting-pressings.petal-dart",
-      "effect_keys": [
-        "petal_dart"
-      ],
-      "kel": "ember",
-      "directory": "petal-dart-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        140,
-        100,
-        75,
-        75,
-        70,
-        100,
-        160
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.94,
-        0.58
-      ],
-      "anchor": "tangle_center",
-      "production_ready": false,
-      "source_hash": "07043847B4917BEBE87F0975D6D408E2E9890C0F2D46620298BB50E381602755",
-      "runtime_hash": "A9B22813EE8F2508B4E87CAA0DE8ED4B4A9CDFB3B874F48B41EB19BDD3BC2BC7"
-    },
-    {
-      "family": "nurse-pot.triage-bloom",
-      "effect_keys": [
-        "triage_bloom"
-      ],
-      "kel": "sunny",
-      "directory": "triage-bloom-v1",
-      "frame_count": 7,
       "frame_size": [
         576,
         288
@@ -505,48 +1010,50 @@
         90,
         80,
         100,
-        160
+        80,
+        80
       ],
-      "contact_frame": 4,
+      "contact_frame": 5,
       "pivot": [
-        0.08,
-        0.68
+        0.5,
+        0.5
       ],
-      "anchor": "actor_hand_r",
-      "production_ready": true,
-      "source_hash": "CEC846465122B7896A04BAAF5719DB877ED485738CD0FB6A94FDF0152C18DEDC",
-      "runtime_hash": "D977E7A550CFE88800314363A6A3E9A8AE9A0ECD39264CE57092188B4F2D535E"
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "B6FD3D1E81124F2C4AE764C56D4CD35146CE9BD361D5AF0231C56029050D8796",
+      "runtime_hash": "A9239F800463EB67937BFBE70C2665DADCA909A62E4AC2AA1B0F4C58E921A0DC"
     },
     {
-      "family": "nurse-pot.white-garden-oath",
+      "family": "knotted-echo.sharp-note",
       "effect_keys": [
-        "white_garden_oath"
+        "sharp_note"
       ],
-      "kel": "sunny",
-      "directory": "white-garden-oath-v1",
-      "frame_count": 7,
+      "kel": "sparkling",
+      "directory": "sharp-note-v1",
+      "frame_count": 8,
       "frame_size": [
         576,
         288
       ],
       "frame_durations_ms": [
-        170,
-        100,
-        65,
-        65,
+        150,
+        110,
+        90,
+        90,
         80,
-        120,
-        160
+        100,
+        80,
+        80
       ],
-      "contact_frame": 4,
+      "contact_frame": 5,
       "pivot": [
         0.5,
         0.5
       ],
-      "anchor": "stage_center",
-      "production_ready": true,
-      "source_hash": "302AA70D2595BA9BBAFD5E9381B0062BF1C425F2C02D171B9646EAFC1877447D",
-      "runtime_hash": "DE98354D32BF21B71A5B9BC2C528D2457039FBDDC4E8657101C916E6423D9113"
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "B9D751C91FB47898BE7A32317F692511E857317D8E9E2932B3277E538CF0AF65",
+      "runtime_hash": "F205D13570A1A5B5AB4097BC74D16D8A0A9F7591FE2347C2BAEC2421284CA898"
     },
     {
       "family": "maestro-pot.golden-downbeat",
@@ -611,12 +1118,12 @@
       "runtime_hash": "777169FFFC2A64EA2AAB7B3A283FC94D1CE24F8C2ABF2B6F2241A566D12747C1"
     },
     {
-      "family": "restorer-pot.patina-parry",
+      "family": "magical-pot.prism-meteor",
       "effect_keys": [
-        "patina_parry"
+        "prism_meteor"
       ],
-      "kel": "mosaic",
-      "directory": "patina-parry-v1",
+      "kel": "sparkling",
+      "directory": "prism-meteor-v1",
       "frame_count": 7,
       "frame_size": [
         576,
@@ -624,43 +1131,12 @@
       ],
       "frame_durations_ms": [
         120,
+        90,
+        95,
+        75,
+        135,
         100,
-        100,
-        80,
-        130,
-        80,
-        90
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "actor_center",
-      "production_ready": true,
-      "source_hash": "7596DCE316800098464850A3ECE31E659217B368EE82CC5C95D695CC6E415D42",
-      "runtime_hash": "AD2FDDCCFBD518910B17353523F123C41FE4B372E7A6827666F87E8E427B1064"
-    },
-    {
-      "family": "restorer-pot.golden-seam",
-      "effect_keys": [
-        "golden_seam"
-      ],
-      "kel": "sunny",
-      "directory": "golden-seam-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        170,
-        100,
-        65,
-        65,
-        80,
-        120,
-        160
+        145
       ],
       "contact_frame": 4,
       "pivot": [
@@ -669,39 +1145,39 @@
       ],
       "anchor": "stage_center",
       "production_ready": true,
-      "source_hash": "DE9B54E5EC6A8B84AFC39AF77F9FE384ECCE60B3D79B44A5797AECA6492D07A1",
-      "runtime_hash": "71853B1BB5F99C7913AFD5AB6EEAA46D9EAE8E333084968B4A9D9EDD40BE0638"
+      "source_hash": "1AED26BB094C3A48218CB47BA7D8142043747B173BE08D594765675B422C791F",
+      "runtime_hash": "DF04E3E5A3F8B01BDD599F8B860FFCF90B03206372FFAB2CDE8DB57444B7BBC2"
     },
     {
-      "family": "marten-pot.softpaw-rush",
+      "family": "magical-pot.timefold-comet",
       "effect_keys": [
-        "softpaw_rush"
+        "timefold_comet"
       ],
-      "kel": "moonlit",
-      "directory": "softpaw-rush-v1",
+      "kel": "sparkling",
+      "directory": "timefold-comet-v1",
       "frame_count": 7,
       "frame_size": [
         576,
         288
       ],
       "frame_durations_ms": [
-        100,
+        120,
         90,
-        110,
-        110,
-        70,
-        180,
-        200
+        95,
+        75,
+        135,
+        100,
+        145
       ],
       "contact_frame": 4,
       "pivot": [
         0.5,
         0.5
       ],
-      "anchor": "actor_center",
+      "anchor": "stage_center",
       "production_ready": true,
-      "source_hash": "BB125F0DD5877541C8B8B090423265D3E6DD3F06BA1B40DD6A651AC50259C11D",
-      "runtime_hash": "321D387726189D07852A50B12DBAE9F80AC2EDC436E95BA4E5285B692E7AA4A8"
+      "source_hash": "67BB94B8D92DB24F3C24B02BBAAD5C83010F5F40160B26990155CAAB3E2D4511",
+      "runtime_hash": "878E3697462ED71E8322D2EB34D226BA1E9F994D5EA403F457FB1A3F6A6F38BA"
     },
     {
       "family": "marten-pot.den-guardian-roar",
@@ -735,12 +1211,169 @@
       "runtime_hash": "C469835D7603F590184DD452D79B282035D67583839492EF2B2AABF63ED762EE"
     },
     {
-      "family": "gal-pot.patchwork-relay",
+      "family": "marten-pot.softpaw-rush",
       "effect_keys": [
-        "patchwork_relay"
+        "softpaw_rush"
       ],
-      "kel": "sparkling",
-      "directory": "patchwork-relay-v1",
+      "kel": "moonlit",
+      "directory": "softpaw-rush-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        100,
+        90,
+        110,
+        110,
+        70,
+        180,
+        200
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "actor_center",
+      "production_ready": true,
+      "source_hash": "BB125F0DD5877541C8B8B090423265D3E6DD3F06BA1B40DD6A651AC50259C11D",
+      "runtime_hash": "321D387726189D07852A50B12DBAE9F80AC2EDC436E95BA4E5285B692E7AA4A8"
+    },
+    {
+      "family": "matted-observatory.lens-glare",
+      "effect_keys": [
+        "lens_glare"
+      ],
+      "kel": "sunny",
+      "directory": "lens-glare-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "18DD48FD1B2C73F47870B9B1AF721D1A5B12D633965A509407605B9D42E11358",
+      "runtime_hash": "5B4BCBDB8696E35B9BF29A1523DD6E1FD613F4AB16044F25E46C183A45FD69B9"
+    },
+    {
+      "family": "matted-observatory.tape-whip",
+      "effect_keys": [
+        "tape_whip"
+      ],
+      "kel": "mosaic",
+      "directory": "tape-whip-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "11FC8A7B5491F02DA11D387BE4AE2DB299E34EF8821D2060635A14CB5093BE72",
+      "runtime_hash": "4F70A15AB9D6EB6D8B357ADF11EEF567D96E6D2243BF049500F671E0B4298DAC"
+    },
+    {
+      "family": "ninja-pot.shadow-execution",
+      "effect_keys": [
+        "shadow_execution"
+      ],
+      "kel": "moonlit",
+      "directory": "shadow-execution-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        120,
+        90,
+        95,
+        75,
+        135,
+        100,
+        145
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "actor_center",
+      "production_ready": true,
+      "source_hash": "BD97F393C81AA6A47BEFF9B4863FC15AF1F1361BE30F4DFA7716CD141FBBAD1A",
+      "runtime_hash": "B08E15782962C3DB259BE72F25C29D24F6409F5505B45DD5FB80CBFF9A491E74"
+    },
+    {
+      "family": "ninja-pot.venom-seam",
+      "effect_keys": [
+        "venom_seam"
+      ],
+      "kel": "rainy",
+      "directory": "venom-seam-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        90,
+        70,
+        65,
+        65,
+        85,
+        105,
+        125
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.08,
+        0.72
+      ],
+      "anchor": "actor_hand_r",
+      "production_ready": true,
+      "source_hash": "66D1A7FC4D3E8CA8D4F2672271D6A50C39652B7DCF567C4C7E31C6F5177E300A",
+      "runtime_hash": "BC3A486C4B733452FA6C994A02D6D075D0435CE342EC28BFA2525F2D8712B12B"
+    },
+    {
+      "family": "nurse-pot.triage-bloom",
+      "effect_keys": [
+        "triage_bloom"
+      ],
+      "kel": "sunny",
+      "directory": "triage-bloom-v1",
       "frame_count": 7,
       "frame_size": [
         576,
@@ -757,21 +1390,21 @@
       ],
       "contact_frame": 4,
       "pivot": [
-        0.5,
-        0.5
+        0.08,
+        0.68
       ],
-      "anchor": "actor_center",
+      "anchor": "actor_hand_r",
       "production_ready": true,
-      "source_hash": "2A32E6F3D2ED36871BE1F4EAE6C74AAE4942F66A7389B57675593A6F340F2E13",
-      "runtime_hash": "607A6CA671F5DA61F821279FD60AFD2A6ACD6577F78489F38569078E42EBD8FF"
+      "source_hash": "CEC846465122B7896A04BAAF5719DB877ED485738CD0FB6A94FDF0152C18DEDC",
+      "runtime_hash": "D977E7A550CFE88800314363A6A3E9A8AE9A0ECD39264CE57092188B4F2D535E"
     },
     {
-      "family": "gal-pot.runway-reversal",
+      "family": "nurse-pot.white-garden-oath",
       "effect_keys": [
-        "runway_reversal"
+        "white_garden_oath"
       ],
-      "kel": "sparkling",
-      "directory": "runway-reversal-v1",
+      "kel": "sunny",
+      "directory": "white-garden-oath-v1",
       "frame_count": 7,
       "frame_size": [
         576,
@@ -793,39 +1426,8 @@
       ],
       "anchor": "stage_center",
       "production_ready": true,
-      "source_hash": "7E1B62DE4CBE1D9CEC6218ADEDFF5F06D5EEB17AAC2B0660A4C7C197060F219B",
-      "runtime_hash": "616D323B7412C5D8B0702F9BE0DE9A8EBE423BBCADF827B240BFA5DD8F359462"
-    },
-    {
-      "family": "baby-pot.root-embrace",
-      "effect_keys": [
-        "root_embrace"
-      ],
-      "kel": "sunny",
-      "directory": "root-embrace-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        120,
-        90,
-        95,
-        75,
-        135,
-        100,
-        145
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "stage_center",
-      "production_ready": true,
-      "source_hash": "946B8EC10E7B7BE1C123952142935364283D9CF0E0113E7ADAD2E91B8EFB1AA7",
-      "runtime_hash": "16F13CC66FADDC34EE0824B140566523AE1656C114445856B6110E3A1D84B85B"
+      "source_hash": "302AA70D2595BA9BBAFD5E9381B0062BF1C425F2C02D171B9646EAFC1877447D",
+      "runtime_hash": "DE98354D32BF21B71A5B9BC2C528D2457039FBDDC4E8657101C916E6423D9113"
     },
     {
       "family": "pretty-pot.heart-spotlight",
@@ -890,12 +1492,43 @@
       "runtime_hash": "2BA75A518B20927CE30D17401378D8E22E5D131A4C33ED5D4DC3844B564D2D43"
     },
     {
-      "family": "handsome-pot.command-blade",
+      "family": "restorer-pot.golden-seam",
       "effect_keys": [
-        "command_blade"
+        "golden_seam"
+      ],
+      "kel": "sunny",
+      "directory": "golden-seam-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        170,
+        100,
+        65,
+        65,
+        80,
+        120,
+        160
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "DE9B54E5EC6A8B84AFC39AF77F9FE384ECCE60B3D79B44A5797AECA6492D07A1",
+      "runtime_hash": "71853B1BB5F99C7913AFD5AB6EEAA46D9EAE8E333084968B4A9D9EDD40BE0638"
+    },
+    {
+      "family": "restorer-pot.patina-parry",
+      "effect_keys": [
+        "patina_parry"
       ],
       "kel": "mosaic",
-      "directory": "command-blade-v1",
+      "directory": "patina-parry-v1",
       "frame_count": 7,
       "frame_size": [
         576,
@@ -903,12 +1536,12 @@
       ],
       "frame_durations_ms": [
         120,
-        90,
-        95,
-        75,
-        135,
         100,
-        145
+        100,
+        80,
+        130,
+        80,
+        90
       ],
       "contact_frame": 4,
       "pivot": [
@@ -917,16 +1550,400 @@
       ],
       "anchor": "actor_center",
       "production_ready": true,
-      "source_hash": "D56128C80ADB2A5C45BB2138691AD9ECD0B4DEC8577F6835094CAE31EDE0535D",
-      "runtime_hash": "08FCD60DEED3C9707C63CCDD4AB1B61136B891FF6BB8FCB6C6C4987EF8E88538"
+      "source_hash": "7596DCE316800098464850A3ECE31E659217B368EE82CC5C95D695CC6E415D42",
+      "runtime_hash": "AD2FDDCCFBD518910B17353523F123C41FE4B372E7A6827666F87E8E427B1064"
     },
     {
-      "family": "handsome-pot.command-crescendo",
+      "family": "ring-shard-tangle.ring-spin",
       "effect_keys": [
-        "command_crescendo"
+        "ring_spin"
+      ],
+      "kel": "mosaic",
+      "directory": "ring-spin-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "A188C084D29934B82EDCCBCB37098A6F387EA2B1ED95506B99AE3127480FE668",
+      "runtime_hash": "510A0F79619CEF2049B80D71E4138B363B280092685C641DE72419A9FA1C13FB"
+    },
+    {
+      "family": "ring-shard-tangle.shard-scatter",
+      "effect_keys": [
+        "shard_scatter"
+      ],
+      "kel": "ember",
+      "directory": "shard-scatter-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "790AC8C9AEA1A70116AF6FE31983EA2523352D468C277CA62B5C7AD7BC62A335",
+      "runtime_hash": "2CCFFC2B28EBCE6100FD52B355446D05329C96D48C9C978BAEDB79C45DCEE545"
+    },
+    {
+      "family": "rolling-seedbox.box-roll",
+      "effect_keys": [
+        "box_roll"
+      ],
+      "kel": "mosaic",
+      "directory": "box-roll-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "36678B5FF255A61C2E72616265BDCECF115C68F559A75E19D1859E1317490E29",
+      "runtime_hash": "E08A773563EA707881256F217D6DF30086AEC5FE8856A4680E290AF3654A851F"
+    },
+    {
+      "family": "rolling-seedbox.seed-scatter",
+      "effect_keys": [
+        "seed_scatter"
+      ],
+      "kel": "sunny",
+      "directory": "seed-scatter-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "00F2B0E7C98915BC68B75723EE3DBC319888C6205B2AAEF762003F67D30C02D8",
+      "runtime_hash": "1FEEA3356EC2561D81428784D057228D092A628300BC3A38C236630C4B4255F1"
+    },
+    {
+      "family": "scattered-records.page-storm",
+      "effect_keys": [
+        "page_storm"
+      ],
+      "kel": "moonlit",
+      "directory": "page-storm-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "2EB637219DF1BA55F99B1237499A6A62762680FADEFE3FFB56D2F055C289EA4F",
+      "runtime_hash": "27813960AEC660791237BF5E19429EDACDD221CACDC21BB57E1A48FC9F96A22B"
+    },
+    {
+      "family": "scattered-records.paper-cut",
+      "effect_keys": [
+        "paper_cut"
+      ],
+      "kel": "ember",
+      "directory": "paper-cut-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "86D594A50327576F2B0306883C86A56C45EC4E1E3E4158AC95CD9F932DDC6431",
+      "runtime_hash": "881877E24C9B71C920469B8B0D5FBB13B4A75AD43B4C1A712CCAAA4704DDB2C9"
+    },
+    {
+      "family": "shelf-snarl.catalogue-rain",
+      "effect_keys": [
+        "catalogue_rain"
+      ],
+      "kel": "moonlit",
+      "directory": "catalogue-rain-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "20D5A75CCD32DEB0C7AB884B733122DD86C6B0BA44B28BD09DB313873C249E67",
+      "runtime_hash": "BB5A33EA0CB9A1464E3B28C493A8097C3E95680ABE60461B31A3FFA589D9D94C"
+    },
+    {
+      "family": "shelf-snarl.shelf-sweep",
+      "effect_keys": [
+        "shelf_sweep"
+      ],
+      "kel": "mosaic",
+      "directory": "shelf-sweep-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5",
+      "runtime_hash": "684740304D4426ACF1ED643F010339E750AC3BD6518C9A09E72177F740A1CE91"
+    },
+    {
+      "family": "snarled-stardust.dust-flare",
+      "effect_keys": [
+        "dust_flare"
       ],
       "kel": "sparkling",
-      "directory": "command-crescendo-v1",
+      "directory": "dust-flare-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "03B108BF2C03FAB3979E71A9BB6B31701EBE7FDB9D0706C3C779F048985F72C9",
+      "runtime_hash": "2A42133222FBA16A55160A0664C968277D6E3EB0A7D14EC46C3ABBB2F06696E2"
+    },
+    {
+      "family": "snarled-stardust.dust-lash",
+      "effect_keys": [
+        "dust_lash"
+      ],
+      "kel": "sparkling",
+      "directory": "dust-lash-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "3BEC1533588558B33C8BCD99395B0DAC92F2DCF6D5EBD6275013C3C2942DDA91",
+      "runtime_hash": "076F6675508850DE227AA3BD83E958A1F47CDF1AC2827038D1B835E502B4566F"
+    },
+    {
+      "family": "splashing-droplets.splash-wave",
+      "effect_keys": [
+        "splash_wave"
+      ],
+      "kel": "rainy",
+      "directory": "splash-wave-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "F1A6B86565E1C69F169EBB12BE2DF009554291640D929E76D2286F7218588F03",
+      "runtime_hash": "2026AC3CBAF1790DB4DD4C80F637684B7EE52E9C32870A489D3696A2B0C220B5"
+    },
+    {
+      "family": "splashing-droplets.water-pop",
+      "effect_keys": [
+        "water_pop"
+      ],
+      "kel": "rainy",
+      "directory": "water-pop-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "3024859A1C04EA5A647E42637D58C95557F07EB04AE69F38E54537860114957A",
+      "runtime_hash": "F2F7B53CB869BC4E7BEEC4F01AD003B9F8BCD2CC57AE3ECCE00CB816D8C468AD"
+    },
+    {
+      "family": "student-pot.ink-formula",
+      "effect_keys": [
+        "ink_formula_burst"
+      ],
+      "kel": "mosaic",
+      "directory": "ink-formula-burst-v1",
       "frame_count": 7,
       "frame_size": [
         576,
@@ -948,8 +1965,132 @@
       ],
       "anchor": "stage_center",
       "production_ready": true,
-      "source_hash": "D56128C80ADB2A5C45BB2138691AD9ECD0B4DEC8577F6835094CAE31EDE0535D",
-      "runtime_hash": "FAC3BEFAB401DDE0DE416584DD9E556CECD0CAAC4B54FDD834AFDF628CD07F47"
+      "source_hash": "67BB94B8D92DB24F3C24B02BBAAD5C83010F5F40160B26990155CAAB3E2D4511",
+      "runtime_hash": "BCFC8F55C9BDE2CD20415BCEFFA0036117831727D50C7E20CBF1A12A91B1B29D"
+    },
+    {
+      "family": "student-pot.seal-rewrite",
+      "effect_keys": [
+        "seal_rewrite"
+      ],
+      "kel": "mosaic",
+      "directory": "seal-rewrite-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        120,
+        90,
+        95,
+        75,
+        135,
+        100,
+        145
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "67BB94B8D92DB24F3C24B02BBAAD5C83010F5F40160B26990155CAAB3E2D4511",
+      "runtime_hash": "68DBF88CE53843CA21A3DD21E0BD6C82B3B8BDAB1312C4817F5B3A22D43C2296"
+    },
+    {
+      "family": "tangled-ledger.ink-mist",
+      "effect_keys": [
+        "ink_mist"
+      ],
+      "kel": "mosaic",
+      "directory": "ink-mist-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        170,
+        100,
+        65,
+        65,
+        80,
+        120,
+        160
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.94,
+        0.58
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "5D6997FE0C57D5BD990916D444E1D65FB59FF25690AC0C0A089A927F51D6ECE0",
+      "runtime_hash": "A293932925E631EE67688FD03B263F29C6BD716D20FF3A709278557656E5D4D5"
+    },
+    {
+      "family": "tangled-ledger.paper-flurry",
+      "effect_keys": [
+        "paper_flurry"
+      ],
+      "kel": "moonlit",
+      "directory": "paper-flurry-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        100,
+        85,
+        75,
+        75,
+        90,
+        115,
+        140
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.94,
+        0.58
+      ],
+      "anchor": "tangle_center",
+      "production_ready": false,
+      "source_hash": "7D315AF77A3A61946D682727CF02541A1B610ACC626EE444616D52A554F04F5B",
+      "runtime_hash": "1A966C03E49B55FF43F2BAFB60F468CEA4D928AE78C10B4968804D24FC3D062A"
+    },
+    {
+      "family": "tsundere-pot.blazing-counter",
+      "effect_keys": [
+        "blazing_counter"
+      ],
+      "kel": "ember",
+      "directory": "blazing-counter-v1",
+      "frame_count": 7,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        120,
+        90,
+        95,
+        75,
+        135,
+        100,
+        145
+      ],
+      "contact_frame": 4,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "actor_center",
+      "production_ready": true,
+      "source_hash": "CD755422985DA6C3404496614FA3FD10BECF9EB984421A6C0690AE3CA45F228E",
+      "runtime_hash": "F61D1D1C759BF03247D93403EA816CAC5EC4062140D701FAA49CBE613C3FF41D"
     },
     {
       "family": "tsundere-pot.iron-uppercut",
@@ -1043,571 +2184,6 @@
       "production_ready": true,
       "source_hash": "BD97F393C81AA6A47BEFF9B4863FC15AF1F1361BE30F4DFA7716CD141FBBAD1A",
       "runtime_hash": "65E2D9EAFC26CB478F5E3CC1D70E0047B8FA3C14EFD6133D4F324AE45DFBE651"
-    },
-    {
-      "family": "ninja-pot.shadow-execution",
-      "effect_keys": [
-        "shadow_execution"
-      ],
-      "kel": "moonlit",
-      "directory": "shadow-execution-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        120,
-        90,
-        95,
-        75,
-        135,
-        100,
-        145
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "actor_center",
-      "production_ready": true,
-      "source_hash": "BD97F393C81AA6A47BEFF9B4863FC15AF1F1361BE30F4DFA7716CD141FBBAD1A",
-      "runtime_hash": "B08E15782962C3DB259BE72F25C29D24F6409F5505B45DD5FB80CBFF9A491E74"
-    },
-    {
-      "family": "gumiho-pot.heart-moon-charm",
-      "effect_keys": [
-        "heart_moon_charm"
-      ],
-      "kel": "sunny",
-      "directory": "heart-moon-charm-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        120,
-        90,
-        95,
-        75,
-        135,
-        100,
-        145
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "stage_center",
-      "production_ready": true,
-      "source_hash": "1AED26BB094C3A48218CB47BA7D8142043747B173BE08D594765675B422C791F",
-      "runtime_hash": "71C17AA65BEE20647A5023AACD0A7E55349C80B6C82A624D43A696DB3EF87FD0"
-    },
-    {
-      "family": "gumiho-pot.nine-tail-eclipse",
-      "effect_keys": [
-        "nine_tail_eclipse"
-      ],
-      "kel": "moonlit",
-      "directory": "nine-tail-eclipse-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        120,
-        90,
-        95,
-        75,
-        135,
-        100,
-        145
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "stage_center",
-      "production_ready": true,
-      "source_hash": "1AED26BB094C3A48218CB47BA7D8142043747B173BE08D594765675B422C791F",
-      "runtime_hash": "FF37354C9B4624F5AFFB5096DBA4281D0BC18971358AF1423BE4A2D55899C22E"
-    },
-    {
-      "family": "magical-pot.prism-meteor",
-      "effect_keys": [
-        "prism_meteor"
-      ],
-      "kel": "sparkling",
-      "directory": "prism-meteor-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        120,
-        90,
-        95,
-        75,
-        135,
-        100,
-        145
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "stage_center",
-      "production_ready": true,
-      "source_hash": "1AED26BB094C3A48218CB47BA7D8142043747B173BE08D594765675B422C791F",
-      "runtime_hash": "DF04E3E5A3F8B01BDD599F8B860FFCF90B03206372FFAB2CDE8DB57444B7BBC2"
-    },
-    {
-      "family": "magical-pot.timefold-comet",
-      "effect_keys": [
-        "timefold_comet"
-      ],
-      "kel": "sparkling",
-      "directory": "timefold-comet-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        120,
-        90,
-        95,
-        75,
-        135,
-        100,
-        145
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "stage_center",
-      "production_ready": true,
-      "source_hash": "67BB94B8D92DB24F3C24B02BBAAD5C83010F5F40160B26990155CAAB3E2D4511",
-      "runtime_hash": "878E3697462ED71E8322D2EB34D226BA1E9F994D5EA403F457FB1A3F6A6F38BA"
-    },
-    {
-      "family": "student-pot.ink-formula",
-      "effect_keys": [
-        "ink_formula_burst"
-      ],
-      "kel": "mosaic",
-      "directory": "ink-formula-burst-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        120,
-        90,
-        95,
-        75,
-        135,
-        100,
-        145
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "stage_center",
-      "production_ready": true,
-      "source_hash": "67BB94B8D92DB24F3C24B02BBAAD5C83010F5F40160B26990155CAAB3E2D4511",
-      "runtime_hash": "BCFC8F55C9BDE2CD20415BCEFFA0036117831727D50C7E20CBF1A12A91B1B29D"
-    },
-    {
-      "family": "student-pot.seal-rewrite",
-      "effect_keys": [
-        "seal_rewrite"
-      ],
-      "kel": "mosaic",
-      "directory": "seal-rewrite-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        120,
-        90,
-        95,
-        75,
-        135,
-        100,
-        145
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "stage_center",
-      "production_ready": true,
-      "source_hash": "67BB94B8D92DB24F3C24B02BBAAD5C83010F5F40160B26990155CAAB3E2D4511",
-      "runtime_hash": "68DBF88CE53843CA21A3DD21E0BD6C82B3B8BDAB1312C4817F5B3A22D43C2296"
-    },
-    {
-      "family": "aloof-pot.absolute-zero",
-      "effect_keys": [
-        "absolute_zero_read"
-      ],
-      "kel": "rainy",
-      "directory": "absolute-zero-read-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        120,
-        90,
-        95,
-        75,
-        135,
-        100,
-        145
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "stage_center",
-      "production_ready": true,
-      "source_hash": "CD755422985DA6C3404496614FA3FD10BECF9EB984421A6C0690AE3CA45F228E",
-      "runtime_hash": "5132B921B0DEFDE8DB8BA03FBC464569D44E6756DF99D25CD749EA014B216E6A"
-    },
-    {
-      "family": "aloof-pot.steel-verdict",
-      "effect_keys": [
-        "steel_verdict"
-      ],
-      "kel": "mosaic",
-      "directory": "steel-verdict-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        120,
-        90,
-        95,
-        75,
-        135,
-        100,
-        145
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "stage_center",
-      "production_ready": true,
-      "source_hash": "CD755422985DA6C3404496614FA3FD10BECF9EB984421A6C0690AE3CA45F228E",
-      "runtime_hash": "406AF55EE6D4D2C67CDC02AB1BF51AE258C76C028E57078AB565841C6ECCBED6"
-    },
-    {
-      "family": "tsundere-pot.blazing-counter",
-      "effect_keys": [
-        "blazing_counter"
-      ],
-      "kel": "ember",
-      "directory": "blazing-counter-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        120,
-        90,
-        95,
-        75,
-        135,
-        100,
-        145
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "actor_center",
-      "production_ready": true,
-      "source_hash": "CD755422985DA6C3404496614FA3FD10BECF9EB984421A6C0690AE3CA45F228E",
-      "runtime_hash": "F61D1D1C759BF03247D93403EA816CAC5EC4062140D701FAA49CBE613C3FF41D"
-    },
-    {
-      "family": "guardian.phase-break",
-      "effect_keys": [
-        "boss_phase_break"
-      ],
-      "kel": "mosaic",
-      "directory": "boss-phase-break-v1",
-      "frame_count": 7,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        150,
-        100,
-        90,
-        80,
-        150,
-        120,
-        180
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "stage_center",
-      "production_ready": true,
-      "source_hash": "6FF48989F29B49B5B324D0446BA72ACBB7F97E0EEEA98D78C21A5AA55B689298",
-      "runtime_hash": "62102B5A77CCC6EFA5B50CC131875F998B0362DB4547B87DA4120E3AB59BA377"
-    },
-    {
-      "family": "guardian.root-lockdown",
-      "effect_keys": [
-        "root_lockdown"
-      ],
-      "kel": null,
-      "directory": "root-lockdown-v1",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        150,
-        110,
-        90,
-        90,
-        80,
-        100,
-        80,
-        80
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.72,
-        0.5
-      ],
-      "anchor": "party_all",
-      "production_ready": false,
-      "source_hash": "B5D5493599E3A22A47A83EA4A22A44FE02B8662C7A91237C80203E475372AD83",
-      "runtime_hash": "1BC00F75833477F4AB8302992007C9DAD839932E3E7AF05E4B75A6B0658806FE"
-    },
-    {
-      "family": "guardian.final-redaction",
-      "effect_keys": [
-        "final_redaction"
-      ],
-      "kel": null,
-      "directory": "final-redaction-v1",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        150,
-        110,
-        90,
-        90,
-        80,
-        100,
-        80,
-        80
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.72,
-        0.5
-      ],
-      "anchor": "party_all",
-      "production_ready": false,
-      "source_hash": "F7DF08B245079949480C9C4EE0111DB047F04451537819FB4FB8E1DECD669EF5",
-      "runtime_hash": "1F790DE05DC83C1113FBF7B148C6D57A9631FBC4551AE912E02CA2BA5499FB7C"
-    },
-    {
-      "family": "drifting-pressings.petal-gust",
-      "effect_keys": [
-        "petal_gust"
-      ],
-      "kel": "moonlit",
-      "directory": "petal-gust-v1",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        150,
-        110,
-        90,
-        90,
-        80,
-        100,
-        80,
-        80
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "tangle_center",
-      "production_ready": false,
-      "source_hash": "9D91C78727C883C15B076337927941CDD54AF97487C950DAE2DBEAF1C81A6AEE",
-      "runtime_hash": "6E2DC444B3E9EE8FD7A38501DEEFDA9F1C2CD02E57607EEAF6E37DB80EF0BC37"
-    },
-    {
-      "family": "shelf-snarl.shelf-sweep",
-      "effect_keys": [
-        "shelf_sweep"
-      ],
-      "kel": "mosaic",
-      "directory": "shelf-sweep-v1",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        150,
-        110,
-        90,
-        90,
-        80,
-        100,
-        80,
-        80
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "tangle_center",
-      "production_ready": false,
-      "source_hash": "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5",
-      "runtime_hash": "684740304D4426ACF1ED643F010339E750AC3BD6518C9A09E72177F740A1CE91"
-    },
-    {
-      "family": "shelf-snarl.catalogue-rain",
-      "effect_keys": [
-        "catalogue_rain"
-      ],
-      "kel": "moonlit",
-      "directory": "catalogue-rain-v1",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        150,
-        110,
-        90,
-        90,
-        80,
-        100,
-        80,
-        80
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "tangle_center",
-      "production_ready": false,
-      "source_hash": "20D5A75CCD32DEB0C7AB884B733122DD86C6B0BA44B28BD09DB313873C249E67",
-      "runtime_hash": "BB5A33EA0CB9A1464E3B28C493A8097C3E95680ABE60461B31A3FFA589D9D94C"
-    },
-    {
-      "family": "guardian.record-wave",
-      "effect_keys": [
-        "record_wave"
-      ],
-      "kel": "rainy",
-      "directory": "record-wave-v1",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        150,
-        110,
-        90,
-        90,
-        80,
-        100,
-        80,
-        80
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "party_all",
-      "production_ready": false,
-      "source_hash": "E57E2204E1FBC32F495706021ABE23B55357A603C6AB052613D6E45715FD17C3",
-      "runtime_hash": "8F347963BC3009DCA42F4A52C4B250FA84E629D3B7F939507CFE7AF59D27E5BE"
-    },
-    {
-      "family": "guardian.seal-crush",
-      "effect_keys": [
-        "seal_crush"
-      ],
-      "kel": "ember",
-      "directory": "seal-crush-v1",
-      "frame_count": 8,
-      "frame_size": [
-        576,
-        288
-      ],
-      "frame_durations_ms": [
-        150,
-        110,
-        90,
-        90,
-        80,
-        100,
-        80,
-        80
-      ],
-      "contact_frame": 4,
-      "pivot": [
-        0.5,
-        0.5
-      ],
-      "anchor": "party_all",
-      "production_ready": false,
-      "source_hash": "7090E74AD89D8A78298B677DC61D690A9D5922F17654A614D3B5D17A3C4E4AD2",
-      "runtime_hash": "10369D8EB698C71983D243DD726B88350C17A569A775A89C152B1EC697EC02F3"
     }
   ]
 }

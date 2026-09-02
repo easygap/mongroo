@@ -1752,17 +1752,13 @@ def test_all_twenty_four_tangle_intents_have_unique_visual_contracts():
     assert validate_tangle_catalog() == []
     assert len(intents) == len(TANGLE_INTENT_PRESENTATION) == 24
     assert len({intent["vfx_family"] for intent in intents}) == 24
+    # 스물넷 **전부** 자기 코드를 이펙트 키로 쓴다. 한때는 여섯만 그랬고
+    # 나머지 열여덟은 성장결별 공용 키로 떨어졌는데, 그 상태가 곧 설계서 9장이
+    # 금지한 `적 12종을 공용 연출로 끝내는 것`이었다.
     exact_intents = [
         intent for intent in intents if intent["effect_key"] == intent["code"]
     ]
-    assert {intent["code"] for intent in exact_intents} == {
-        "paper_flurry",
-        "ink_mist",
-        "petal_gust",
-        "petal_dart",
-        "shelf_sweep",
-        "catalogue_rain",
-    }
+    assert len(exact_intents) == 24
     assert {intent["target"] for intent in exact_intents} == {
         "front",
         "all",

@@ -447,24 +447,6 @@ TANGLE_INTENT_MECHANICS: dict[str, tuple[str, int]] = {
     "tape_whip": ("reverse_winding", 2),
 }
 
-_EFFECT_KEY_BY_KEL = {
-    "sunny": "care_vines",
-    "rainy": "mist_dash",
-    "ember": "ember_arc",
-    "moonlit": "insight_arc",
-    "sparkling": "prism_burst",
-    "mosaic": "echo_wave",
-}
-_EXACT_TANGLE_EFFECT_CODES = frozenset(
-    {
-        "paper_flurry",
-        "ink_mist",
-        "petal_gust",
-        "petal_dart",
-        "shelf_sweep",
-        "catalogue_rain",
-    }
-)
 _IMPACT_SHAKE_BY_POWER = {1: 2.2, 2: 3.0, 3: 3.8}
 
 for _tangle_code, _tangle in TANGLE_CATALOG.items():
@@ -480,9 +462,14 @@ for _tangle_code, _tangle in TANGLE_CATALOG.items():
                 "kel": _kel,
                 "vfx_family": _vfx_family,
                 "kel_fallback_family": kel_fallback_family(_kel),
-                "effect_key": (
-                    _code if _code in _EXACT_TANGLE_EFFECT_CODES else _EFFECT_KEY_BY_KEL[_kel]
-                ),
+                # 의도 코드가 곧 이펙트 키다.
+                #
+                # 예전에는 고유 연출이 있는 여섯 의도만 자기 코드를 쓰고, 나머지
+                # 열여덟은 성장결별 공용 키(`prism_burst` 같은 것)로 떨어졌다.
+                # 그 열여덟에도 고유 연출이 생겼으므로 예외를 둘 이유가 없다 —
+                # 설계서 9장이 금지한 `적 12종을 공용 연출로 끝내는 것`이 바로
+                # 그 상태였다.
+                "effect_key": _code,
                 "motion_profile": _motion_profile,
                 "archetype": _archetype,
                 "mechanic_code": _mechanic_code,

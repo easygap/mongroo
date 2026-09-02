@@ -93,6 +93,24 @@ flutter:
     - assets/adventure/effects/final-redaction-v1/
     - assets/adventure/effects/record-wave-v1/
     - assets/adventure/effects/seal-crush-v1/
+    - assets/adventure/effects/bell-spin-v1/
+    - assets/adventure/effects/box-roll-v1/
+    - assets/adventure/effects/deep-toll-v1/
+    - assets/adventure/effects/dust-flare-v1/
+    - assets/adventure/effects/dust-lash-v1/
+    - assets/adventure/effects/echo-ring-v1/
+    - assets/adventure/effects/gear-grind-v1/
+    - assets/adventure/effects/lens-glare-v1/
+    - assets/adventure/effects/page-storm-v1/
+    - assets/adventure/effects/paper-cut-v1/
+    - assets/adventure/effects/ring-spin-v1/
+    - assets/adventure/effects/seed-scatter-v1/
+    - assets/adventure/effects/shard-scatter-v1/
+    - assets/adventure/effects/sharp-note-v1/
+    - assets/adventure/effects/splash-wave-v1/
+    - assets/adventure/effects/spring-snap-v1/
+    - assets/adventure/effects/tape-whip-v1/
+    - assets/adventure/effects/water-pop-v1/
     - assets/adventure/skill-icons/baby-pot/
     - assets/adventure/skill-icons/gumiho-pot/
     - assets/adventure/skill-icons/ninja-pot/
