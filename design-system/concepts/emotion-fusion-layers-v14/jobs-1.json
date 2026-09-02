@@ -1,0 +1,32 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "fusion-sunny",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. IMPORTANT - this is a translucent SECOND layer that will be composited on top of another effect at about 25% opacity and slightly enlarged. Keep every shape BROAD, SIMPLE and OPEN, with large clear silhouettes and generous empty space; fine filigree, small sparkles and thin scratchy lines vanish completely at that opacity. It must read as a MATERIAL and a MOOD washing over the scene, never as a second attack of its own. Keep the saturation gentle - the runtime tints this layer again. Even the final dissipation frame must still show a clearly visible shape, never fade to nothing. The layer is a wide golden radiance with a heart-shaped halo opening through it. Frame 1 a warm glow gathers low and broad. Frames 2-4 it swells outward as a soft open wash with a single large heart-shaped ring rising through its middle. Frame 6 the wash reaches its widest and the heart halo sits fully open and bright. Frames 7-8 the halo softens and the wash sinks. Palette: warm gold and honey, soft rose, cream. No blue of any kind.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/emotion-fusion-layers-v14/_raw/fusion_sunny-sheet.png"
+  },
+  {
+   "id": "fusion-rainy",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. IMPORTANT - this is a translucent SECOND layer that will be composited on top of another effect at about 25% opacity and slightly enlarged. Keep every shape BROAD, SIMPLE and OPEN, with large clear silhouettes and generous empty space; fine filigree, small sparkles and thin scratchy lines vanish completely at that opacity. It must read as a MATERIAL and a MOOD washing over the scene, never as a second attack of its own. Keep the saturation gentle - the runtime tints this layer again. Even the final dissipation frame must still show a clearly visible shape, never fade to nothing. The layer is a broad sheet of water with a few large flat ice shards forming across it. Frame 1 a low water film spreads. Frames 2-4 it rises into a wide smooth sheet, and three or four big flat shards begin to crystallise on its surface. Frame 6 the sheet is at its widest with the shards fully formed and catching a pale rim. Frames 7-8 the shards break loose and the film flattens. Palette: deep navy and midnight indigo water, with the ice painted WHITE and pale violet - never blue-green, never icy cyan.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/emotion-fusion-layers-v14/_raw/fusion_rainy-sheet.png"
+  },
+  {
+   "id": "fusion-ember",
+   "prompt": "A 1536x1024 sprite sheet laid out as a strict 2-column by 4-row grid of eight equal cells, read left to right then top to bottom, showing one effect across eight animation frames: 1 anticipation, 2 release, 3 travel, 4 travel, 5 pre-contact, 6 contact peak, 7 reaction, 8 dissipation. Hand-painted storybook game VFX with dark confident outlines and restrained afterglow, matching the rendering, line weight and cell framing of the reference sheet exactly. The effect body only: no characters, no creatures, no scenery, no floor, no UI, no text, no numbers, no frame borders. Every cell sits on the same flat uniform cyan chroma background for keying. Critical: the effect itself must contain no cyan, aqua, turquoise or pale sky-blue anywhere, so it stays clearly separable from the cyan background when the background is keyed out. IMPORTANT - this is a translucent SECOND layer that will be composited on top of another effect at about 25% opacity and slightly enlarged. Keep every shape BROAD, SIMPLE and OPEN, with large clear silhouettes and generous empty space; fine filigree, small sparkles and thin scratchy lines vanish completely at that opacity. It must read as a MATERIAL and a MOOD washing over the scene, never as a second attack of its own. Keep the saturation gentle - the runtime tints this layer again. Even the final dissipation frame must still show a clearly visible shape, never fade to nothing. The layer is compressed flame with one broad shock ring punching out of it. Frame 1 heat gathers into a dense low bank. Frames 2-4 the bank swells and a single wide ring of force begins to expand out of its centre. Frame 6 the ring is at its widest and the flame behind it is at its brightest. Frames 7-8 the ring thins and the flame settles into embers. Palette: ember orange and deep crimson, soot black, warm gold.",
+   "references": [
+    "design-system/concepts/moss-archive-enemy-attacks-v9/shelf-sweep/sources/shelf_sweep-sheet-chroma.png"
+   ],
+   "size": "1536x1024",
+   "out": "design-system/concepts/emotion-fusion-layers-v14/_raw/fusion_ember-sheet.png"
+  }
+ ]
+}

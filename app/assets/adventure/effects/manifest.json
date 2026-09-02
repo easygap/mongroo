@@ -1361,6 +1361,366 @@
       "art_complete": false
     },
     {
+      "family": "fusion.ember",
+      "effect_keys": [
+        "fusion_ember"
+      ],
+      "kel": "ember",
+      "directory": "fusion-ember-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "89BCA4CBA640F031A86702D4FD5C0C879239445F88D2604B3F846521B0DC67BB",
+      "runtime_hash": "392D099B3592D3BA1F2138592BCC0146703545BE8858D16CF0B5E949B6DCF764",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.4171,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/fusion-ember-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/fusion-ember-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/emotion-fusion-layers-v14/jobs-1.json",
+        "prompt_sha256": "212F9DE39BF44A614F7CF25286D6EC2F50BA5F798100ED20B5B768BDC461722B",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
+    },
+    {
+      "family": "fusion.moonlit",
+      "effect_keys": [
+        "fusion_moonlit"
+      ],
+      "kel": "moonlit",
+      "directory": "fusion-moonlit-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "6024B652CAEC1D6E70E49C3CC8AE57984056FD6D10117AB85CE7F3D188D487E4",
+      "runtime_hash": "E752595BF0179106E4BBBCE9C00EBF0555F77722D4EBC8983986285813B0E874",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.4858,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/fusion-moonlit-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/fusion-moonlit-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/emotion-fusion-layers-v14/jobs-2.json",
+        "prompt_sha256": "A84F18763158DEF62D5573A67C7A38DB2983F3405F4E106BF333986E9D5EC9B6",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
+    },
+    {
+      "family": "fusion.mosaic",
+      "effect_keys": [
+        "fusion_mosaic"
+      ],
+      "kel": "mosaic",
+      "directory": "fusion-mosaic-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "6288177BAAAA6A9D9351E89339E0039D2D15002C3B4CD08F3C5741E7F9E7400F",
+      "runtime_hash": "62981EDDA6C35E8E1598C0831A1A66BAB5168F86EE37415B08CD0FF175499D12",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.4169,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/fusion-mosaic-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/fusion-mosaic-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/emotion-fusion-layers-v14/jobs-2.json",
+        "prompt_sha256": "BAEA0A935C817CB131D0B7C68A6FF93E8E6703DF41D6FA299C9C5D1199D67E5E",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
+    },
+    {
+      "family": "fusion.rainy",
+      "effect_keys": [
+        "fusion_rainy"
+      ],
+      "kel": "rainy",
+      "directory": "fusion-rainy-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "39FE77F5B3CC6FBB0EB1D40FD05A503EF666870C87AF195F6648C4A7888A1475",
+      "runtime_hash": "4A7D31FD6ED66B2452ED32BB48A356196A9A57A4E0F9E3F7CCE4D3E409A3E66D",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.3858,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/fusion-rainy-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/fusion-rainy-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/emotion-fusion-layers-v14/jobs-1.json",
+        "prompt_sha256": "BCEB68279DF74F4B485390A9D9C1483B4F97EEEF9AD1C95EE51F0710C3275ED2",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
+    },
+    {
+      "family": "fusion.sparkling",
+      "effect_keys": [
+        "fusion_sparkling"
+      ],
+      "kel": "sparkling",
+      "directory": "fusion-sparkling-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "DFE1BC82E7DDF4139945C9751F9850EB371D128E1696B19E9E2FA70189C256D9",
+      "runtime_hash": "2D26D70E81C5D5F1E2E90633191C5571994C11009972AD8A2236A3BBBE53C841",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.4616,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/fusion-sparkling-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/fusion-sparkling-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/emotion-fusion-layers-v14/jobs-2.json",
+        "prompt_sha256": "FABC6768B455BE342306569B04F064BEECA30FFA3B22DBB18B944EEE95BF2034",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
+    },
+    {
+      "family": "fusion.sunny",
+      "effect_keys": [
+        "fusion_sunny"
+      ],
+      "kel": "sunny",
+      "directory": "fusion-sunny-v1",
+      "frame_count": 8,
+      "frame_size": [
+        576,
+        288
+      ],
+      "frame_durations_ms": [
+        150,
+        110,
+        90,
+        90,
+        80,
+        100,
+        80,
+        80
+      ],
+      "contact_frame": 5,
+      "pivot": [
+        0.5,
+        0.5
+      ],
+      "anchor": "stage_center",
+      "production_ready": true,
+      "source_hash": "6E74AD6FDF0987D415FA54283A87C4E7C3A2F488970A7F495F44EB631DE88C68",
+      "runtime_hash": "6D199EA28526FBD47EAC1E3331D4BB627353F4D20A69FB11B0AF15C38008AF3A",
+      "gate": {
+        "decoded_mb": 5.06,
+        "key_share": 0.0,
+        "backdrop_contrast": 0.599,
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "checks": [
+          "frame_integrity",
+          "chroma_residue",
+          "backdrop_legibility",
+          "decoded_peak"
+        ],
+        "pending": [
+          "low_end_android_p95",
+          "ios_p95"
+        ]
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/fusion-sunny-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/fusion-sunny-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/emotion-fusion-layers-v14/jobs-1.json",
+        "prompt_sha256": "62E61456E63E5AE70B4E6826B24A5FDFF47F1129ADAE25240BBDEC740936A9AF",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
+    },
+    {
       "family": "gal-pot.patchwork-relay",
       "effect_keys": [
         "patchwork_relay"
@@ -5228,7 +5588,7 @@
   "gate_profile": {
     "runtime": "windows-desktop-profile",
     "harness": "design-system/benchmarks/effect-frame-time",
-    "effects": 90,
+    "effects": 96,
     "runs": [
       {
         "effects": 69,
@@ -5282,6 +5642,17 @@
         "raster_max_ms": 1.072,
         "build_p95_ms": 0.427,
         "total_p95_ms": 15.641,
+        "over_20ms": 0,
+        "over_33_4ms": 0
+      },
+      {
+        "effects": 96,
+        "sampled_frames": 4646,
+        "raster_p95_ms": 0.721,
+        "raster_p99_ms": 1.11,
+        "raster_max_ms": 2.358,
+        "build_p95_ms": 0.677,
+        "total_p95_ms": 16.601,
         "over_20ms": 0,
         "over_33_4ms": 0
       }

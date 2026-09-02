@@ -49,6 +49,13 @@ MEMBER_SKILL_ANCHORS = {
     "archive_lantern": "party_all",
     "archive_seal": "stage_center",
     "field_note_echo": "stage_center",
+    # T3 감정층은 무대 전체에 얹히는 덧칠이다.
+    "fusion_sunny": "stage_center",
+    "fusion_rainy": "stage_center",
+    "fusion_ember": "stage_center",
+    "fusion_moonlit": "stage_center",
+    "fusion_sparkling": "stage_center",
+    "fusion_mosaic": "stage_center",
 }
 
 
@@ -60,6 +67,7 @@ def _action_index() -> dict[str, dict[str, object]]:
         ELEMENT_KEL,
         FIELD_NOTE_SKILL,
         FORM_COMBAT_SKILLS,
+        FUSION_LAYER_PROFILES,
         SPECIES_SECONDARY_SKILLS,
         SPECIES_SKILLS,
     )
@@ -111,6 +119,17 @@ def _action_index() -> dict[str, dict[str, object]]:
             "kel": kel,
             "effect_key": skill["code"],
             "anchor": MEMBER_SKILL_ANCHORS[str(skill["code"])],
+        }
+
+    # T3 감정층. 고유기 연출을 **바꾸지 않고** 그 위에 겹치는 두 번째 레이어라,
+    # 대원 스킬과 같은 표에 넣되 자기 family를 따로 가진다.
+    for kel, profile in FUSION_LAYER_PROFILES.items():
+        code = f"fusion_{kel}"
+        index[code] = {
+            "family": profile["vfx_family"],
+            "kel": kel,
+            "effect_key": code,
+            "anchor": MEMBER_SKILL_ANCHORS[code],
         }
     return index
 

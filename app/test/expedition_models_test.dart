@@ -1041,6 +1041,31 @@ void main() {
     expect(expeditionCombatEffectForKey('echo_wave').directory, 'echo-wave');
   });
 
+  test('T3 감정층 여섯은 성장결 공용 연출과 다른 그림을 쓴다', () {
+    // 감정층은 고유기 연출 **위에** 26%로 겹치는 두 번째 레이어인데, 여섯 다
+    // `kel.*`를 가리키고 있었다. `kel.sunny`는 아기화분의 care-vines라, 햇살결
+    // 캐릭터가 T3를 쓰면 자기 연출 위에 남의 덩굴이 겹쳐 나왔다.
+    const forms = ['sunny', 'rainy', 'ember', 'moonlit', 'sparkling', 'mosaic'];
+    final directories = <String>{};
+    for (final form in forms) {
+      final fusion = resolveExpeditionCombatEffect(vfxFamily: 'fusion.$form');
+      final generic = resolveExpeditionCombatEffect(vfxFamily: 'kel.$form');
+      expect(fusion.family, 'fusion.$form');
+      expect(fusion.directory, 'fusion-$form-v1');
+      expect(fusion.frameCount, 8);
+      // 이름만 바꾸고 같은 그림을 가리키면 고친 것이 아니다.
+      expect(fusion.directory, isNot(generic.directory));
+      directories.add(fusion.directory);
+    }
+    expect(directories, hasLength(6));
+    // 공용 연출은 원래 자리에 그대로 있어야 한다. 아직 자기 연출이 없는
+    // 기본 공격 6종이 거기로 떨어진다.
+    expect(
+      resolveExpeditionCombatEffect(vfxFamily: 'kel.sunny').directory,
+      'care-vines-v2',
+    );
+  });
+
   test('앞열·전체·최저 체력 예고는 색 없이도 서로 다른 형태를 쓴다', () {
     final icons = {
       expeditionIntentTargetIcon('front'),
