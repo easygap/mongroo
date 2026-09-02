@@ -145,17 +145,40 @@ def _on_backdrop(
     )
 
 
-def _prompt_record(effect_key: str) -> dict[str, str] | None:
+def _prompt_record(
+    effect_keys: list[str], family: str
+) -> dict[str, str] | None:
     """`jobs*.json`에서 이 연출의 프롬프트와 참조를 찾아 해시로 만든다.
 
     job의 `id`는 대시, 이펙트 키는 밑줄이라 둘 다 맞춰 본다.
+
+    **키가 없는 연출도 있다.** 성장결 폴백은 서버가 키로 지목하지 않고
+    family로만 닿아서 `effect_keys`가 비어 있다. 그래서 family 이름으로도
+    찾는데, 이때는 job의 `out`이 `<키>-sheet.png`인 것만 본다. 같은 이름의
+    벨트 아이콘 job(`kel-mosaic`)이 있어서, 이름만 맞춰 보면 **연출 프롬프트
+    자리에 아이콘 프롬프트가 들어앉는다.** 시트를 굽는 job만 `-sheet`로
+    끝나므로 그 하나로 갈린다.
     """
 
-    wanted = {effect_key, effect_key.replace("_", "-")}
+    wanted = {key for key in effect_keys}
+    wanted |= {key.replace("_", "-") for key in effect_keys}
+    # family로만 닿는 것. 시트를 굽는 job에서만 찾는다.
+    tail = family.split(".", 1)[-1].replace("-", "_")
+    sheet_only = {tail, f"{family.split('.', 1)[0]}_{tail}"}
+
     for jobs_path in sorted(CONCEPT_ROOT.glob("*/jobs*.json")):
         payload = json.loads(jobs_path.read_text(encoding="utf-8"))
         for job in payload.get("jobs", []):
-            if str(job.get("id")) not in wanted:
+            out_stem = Path(str(job.get("out", ""))).stem
+            sheet_key = (
+                out_stem[: -len("-sheet")] if out_stem.endswith("-sheet") else None
+            )
+            names = {str(job.get("id"))}
+            if sheet_key is not None:
+                names.add(sheet_key)
+            if not (names & wanted) and not (
+                sheet_key is not None and sheet_key in sheet_only
+            ):
                 continue
             prompt = str(job.get("prompt", ""))
             references = [
@@ -247,10 +270,9 @@ def main() -> int:
         backdrop = BACKDROPS.get(_region_of(family) or "", DEFAULT_BACKDROP)
         _on_backdrop(frames, durations, backdrop, out_dir / "on-backdrop.webp")
 
-        # `kel.mosaic`처럼 자기 키 없이 다른 연출의 디렉터리를 같이 쓰는 항목이
-        # 있다. 그런 것은 되짚을 프롬프트도 없다.
+        # 성장결 폴백은 자기 키가 없다. family 이름으로 찾는다.
         keys = [str(key) for key in effect.get("effect_keys", [])]
-        record = _prompt_record(keys[0]) if keys else None
+        record = _prompt_record(keys, str(family))
         missing: list[str] = []
         if record is None:
             missing.append("prompt_hash")

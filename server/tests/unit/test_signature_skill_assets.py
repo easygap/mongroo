@@ -13,6 +13,7 @@ from app.content.expeditions.combat_identity import (
     FORM_COMBAT_SKILLS,
     FUSION_LAYER_PROFILES,
 )
+from app.content.expeditions.combat_motion import KEL_FALLBACK_FAMILIES
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -289,29 +290,61 @@ def test_every_effect_made_by_the_current_pipeline_is_art_complete():
     """
 
     manifest = json.loads((EFFECT_ROOT / "manifest.json").read_text(encoding="utf-8"))
-    jobs_ids: set[str] = set()
+
+    # `jobs*.json`에는 연출이 아닌 것도 있다 - 벨트 아이콘과 지역 장면이 같은
+    # 방식으로 만들어져 같은 자리에 프롬프트를 남긴다. **시트를 굽는 job만
+    # `<키>-sheet.png`로 내보낸다**는 것으로 가른다. 이름으로 가르면 안 된다 -
+    # 벨트 아이콘에 `kel-mosaic`이 있어서 `kel.mosaic` 연출과 이름이 겹친다.
+    sheet_ids: set[str] = set()
     for jobs_path in (REPOSITORY_ROOT / "design-system/concepts").glob("*/jobs*.json"):
         payload = json.loads(jobs_path.read_text(encoding="utf-8"))
         for job in payload.get("jobs", []):
-            jobs_ids.add(str(job["id"]).replace("-", "_"))
+            stem = Path(str(job.get("out", ""))).stem
+            if stem.endswith("-sheet"):
+                sheet_ids.add(stem[: -len("-sheet")])
+    assert len(sheet_ids) >= 39
 
-    # `jobs*.json`에는 연출이 아닌 것도 있다 - 벨트 아이콘 8종이 같은 방식으로
-    # 만들어져 같은 자리에 프롬프트를 남긴다. 연출 키와 겹치는 것만 센다.
-    effect_keys = {
-        str(key) for effect in manifest["effects"] for key in effect["effect_keys"]
-    }
-    from_pipeline = jobs_ids & effect_keys
-    assert len(from_pipeline) >= 39
+    def _made_here(effect: dict) -> bool:
+        keys = {str(key) for key in effect.get("effect_keys", [])}
+        # 성장결 폴백은 키가 없어서 family 이름으로만 닿는다.
+        tail = str(effect["family"]).split(".", 1)[-1].replace("-", "_")
+        return bool(keys & sheet_ids) or f"kel_{tail}" in sheet_ids
 
     covered = 0
     for effect in manifest["effects"]:
-        keys = {str(key) for key in effect.get("effect_keys", [])}
-        if not keys & from_pipeline:
+        if not _made_here(effect):
             continue
         covered += 1
         assert effect["art_complete"] is True, effect["family"]
     # 프롬프트가 있는 연출은 하나도 빠짐없이 묶음이 차 있어야 한다.
-    assert covered == len(from_pipeline)
+    assert covered == len(sheet_ids)
     assert covered == sum(
         1 for effect in manifest["effects"] if effect["art_complete"]
     )
+
+
+def test_no_kel_basic_attack_plays_the_unknown_effect_sheet():
+    """여섯 성장결 기본 공격은 폴백 시트를 그대로 쓰지 않는다.
+
+    기본 공격에 자기 family가 없어서 성장결 폴백으로 떨어지는 것까지는 4.2가
+    정한 설계다. 문제는 `kel.mosaic`이 `fallback.echo-wave`와 **같은 런타임
+    폴더**를 가리키고 있었다는 것이다 - 모아결 대원의 기본 공격이 `연출을 못
+    찾았을 때` 나오는 그림과 프레임까지 같았다.
+
+    여섯 중 다섯은 자기 그림을 갖고 있어서 화면만 봐서는 안 보인다. 하나만
+    새면 그 성장결로 키운 사람에게만 보이고, 그 사람은 그게 폴백인 줄 모른다.
+    """
+
+    manifest = json.loads((EFFECT_ROOT / "manifest.json").read_text(encoding="utf-8"))
+    by_family = {entry["family"]: entry for entry in manifest["effects"]}
+
+    fallback = by_family["fallback.echo-wave"]["directory"]
+    directories: dict[str, str] = {}
+    for kel, family in KEL_FALLBACK_FAMILIES.items():
+        assert family in by_family, family
+        directory = str(by_family[family]["directory"])
+        assert directory != fallback, f"{kel} 기본 공격이 폴백 시트를 그대로 쓴다"
+        directories[kel] = directory
+
+    # 여섯이 서로 같은 그림을 쓰지도 않는다.
+    assert len(set(directories.values())) == len(KEL_FALLBACK_FAMILIES), directories

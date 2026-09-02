@@ -886,6 +886,26 @@ void main() {
     expect(offsets['brace']!.dx.abs(), lessThan(offsets['dash']!.dx.abs()));
   });
 
+  test('모아결 기본 공격은 자기 그림을 재생한다', () {
+    // 서버가 모아결 대원의 기본 공격에 실어 보내는 값 그대로다. `기본 공격은
+    // 자기 family가 없다`가 4.2의 설계라 `emotion.mosaic-steel`은 manifest에
+    // 없고, 성장결 폴백으로 내려간다.
+    final basic = resolveExpeditionCombatEffect(
+      vfxFamily: 'emotion.mosaic-steel',
+      kelFallbackFamily: 'kel.mosaic',
+      legacyEffectKey: 'insight_arc',
+    );
+
+    // 여기가 한동안 `echo-wave`였다 - `연출을 못 찾았을 때` 나가는 그림이다.
+    expect(basic.directory, 'kel-mosaic-v1');
+    expect(
+      basic.directory,
+      isNot(expeditionCombatEffectsByFamily['fallback.echo-wave']!.directory),
+    );
+    // legacy 키까지 내려가지도 않는다. 내려가면 달빛결 그림이 나간다.
+    expect(basic.directory, isNot('insight-arc'));
+  });
+
   test('VFX resolver는 exact, 결, legacy, 공용 순서로 대체한다', () {
     expect(
       resolveExpeditionCombatEffect(
