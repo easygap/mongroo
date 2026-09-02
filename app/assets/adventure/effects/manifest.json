@@ -51,7 +51,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/absolute-zero-read-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/absolute-zero-read-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "aloof-pot.steel-verdict",
@@ -98,7 +107,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/steel-verdict-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/steel-verdict-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "archive-guide.archive-seal",
@@ -146,7 +164,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/archive-seal-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/archive-seal-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/guide-and-skillbook-effects-v13/jobs.json",
+        "prompt_sha256": "EDA1E8FF93CFCF6B3947CC212080459A82A13E9325ED66215322C0A66FD5C3D2",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "archive-guide.lantern",
@@ -194,7 +224,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/archive-lantern-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/archive-lantern-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/guide-and-skillbook-effects-v13/jobs-fix.json",
+        "prompt_sha256": "85A83A50B4513A408F43A19A11DC2EF55017F74C8DF5B10C0AB17B017F050330",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "baby-pot.care-vines",
@@ -244,7 +286,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/care-vines-v2/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/care-vines-v2/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "baby-pot.root-embrace",
@@ -291,7 +342,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/root-embrace-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/root-embrace-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "backwound-clockspring.gear-grind",
@@ -339,7 +399,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/gear-grind-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/gear-grind-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-starlight-seed-vault-v1.webp",
+        "jobs_file": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/jobs.json",
+        "prompt_sha256": "04AD9884DC05B9590D96EE43E749B6272035E71F2E8F0359A34FA0F3A89C5C70",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "backwound-clockspring.spring-snap",
@@ -387,7 +459,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/spring-snap-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/spring-snap-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-starlight-seed-vault-v1.webp",
+        "jobs_file": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/jobs.json",
+        "prompt_sha256": "8224C2015498FD0A7541E091EEED66419A9249B3930B2D04F753C7AFA38AFD52",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "bell-knot-swirl.bell-spin",
@@ -435,7 +519,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/bell-spin-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/bell-spin-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-echo-well-v1.webp",
+        "jobs_file": "design-system/concepts/echo-well-enemy-attacks-v10/jobs.json",
+        "prompt_sha256": "03180E15C4BD7B306B0E79A73E7E8C4B001C073D0E5A6399721EA435CA08D99A",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "bell-knot-swirl.deep-toll",
@@ -483,7 +579,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/deep-toll-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/deep-toll-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-echo-well-v1.webp",
+        "jobs_file": "design-system/concepts/echo-well-enemy-attacks-v10/jobs.json",
+        "prompt_sha256": "4BE597CD8044D2B95F2A31E36F8AF27461150F5A7CC7C51B015C3B581331DEFF",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "common.safe-guard",
@@ -531,7 +639,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/safe-guard/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/safe-guard/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "drifting-pressings.petal-dart",
@@ -578,7 +695,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/petal-dart-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/petal-dart-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "drifting-pressings.petal-gust",
@@ -626,7 +752,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/petal-gust-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/petal-gust-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "echo-keeper.half-echo",
@@ -674,7 +809,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/half-echo-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/half-echo-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-echo-well-v1.webp",
+        "jobs_file": "design-system/concepts/guardian-beast-attacks-v11/jobs-2.json",
+        "prompt_sha256": "912DCFD1B2E4E05A82195898EE9E7689B3F6A91647E96D10FD4DCFE8D2873BC6",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "echo-keeper.ripple-hug",
@@ -722,7 +869,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/ripple-hug-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/ripple-hug-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-echo-well-v1.webp",
+        "jobs_file": "design-system/concepts/guardian-beast-attacks-v11/jobs-1.json",
+        "prompt_sha256": "436E45F70741B11DD312D35590F37303C0F0F2015521D6BCD6A364755C4148E6",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "echo-keeper.well-lean",
@@ -770,7 +929,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/well-lean-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/well-lean-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-echo-well-v1.webp",
+        "jobs_file": "design-system/concepts/guardian-beast-attacks-v11/jobs-2.json",
+        "prompt_sha256": "45FD1121FACAB4AA1C0DB27F3B8E0FFA1B48AB166211F5337E61A66A580421C4",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "emotion.ember-rage-breaker",
@@ -818,7 +989,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/ember-rage-breaker-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/ember-rage-breaker-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/emotion-skill-effects-v12/jobs-1.json",
+        "prompt_sha256": "2F1144BDCAA5441394791950683EC4C551E69BB7C966FF580127B8B9C00A7741",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "emotion.moonlit-lonesome-tempest",
@@ -866,7 +1049,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/moonlit-lonesome-tempest-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/moonlit-lonesome-tempest-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/emotion-skill-effects-v12/jobs-2.json",
+        "prompt_sha256": "D75F2569390976B7DCDA10CBEAD713A22E4264735FC9F2494B0B1334684CB0AB",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "emotion.mosaic-steel-equilibrium",
@@ -914,7 +1109,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/mosaic-steel-equilibrium-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/mosaic-steel-equilibrium-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/emotion-skill-effects-v12/jobs-2.json",
+        "prompt_sha256": "0494C9DA852178C05734133A99F23519DEAF8F4EA1E8757F08470321CFF2D006",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "emotion.rainy-frozen-tide",
@@ -962,7 +1169,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/rainy-frozen-tide-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/rainy-frozen-tide-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/emotion-skill-effects-v12/jobs-1.json",
+        "prompt_sha256": "0A85360F928F9A6218C6F15FE74A4631DA38C3FE9EEB43DE7BA8741BFB51153E",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "emotion.sparkling-shock-wonder",
@@ -1010,7 +1229,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/sparkling-shock-wonder-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/sparkling-shock-wonder-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/emotion-skill-effects-v12/jobs-2.json",
+        "prompt_sha256": "B87C22E7EE196A9558F525AB16616494A80DFD135CAE217C1D484BDA25BC50F4",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "emotion.sunny-radiant-heart",
@@ -1058,7 +1289,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/sunny-radiant-heart-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/sunny-radiant-heart-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/emotion-skill-effects-v12/jobs-1.json",
+        "prompt_sha256": "7E20237103FA558B9DFC021A5C2496292BD3F0BEA47F9B20AD94D77BCA753B54",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "fallback.echo-wave",
@@ -1106,7 +1349,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/echo-wave/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/echo-wave/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "gal-pot.patchwork-relay",
@@ -1153,7 +1405,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/patchwork-relay-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/patchwork-relay-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "gal-pot.runway-reversal",
@@ -1200,7 +1461,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/runway-reversal-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/runway-reversal-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "guardian.enemy-wave",
@@ -1248,7 +1518,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/enemy-wave/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/enemy-wave/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "guardian.final-redaction",
@@ -1296,7 +1575,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/final-redaction-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/final-redaction-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "guardian.ledger-claw",
@@ -1346,7 +1634,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/ledger-claw-v2/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/ledger-claw-v2/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "guardian.phase-break",
@@ -1393,7 +1690,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/boss-phase-break-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/boss-phase-break-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "guardian.record-wave",
@@ -1441,7 +1747,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/record-wave-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/record-wave-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "guardian.root-lockdown",
@@ -1489,7 +1804,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/root-lockdown-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/root-lockdown-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "guardian.seal-crush",
@@ -1537,7 +1861,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/seal-crush-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/seal-crush-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "gumiho-pot.heart-moon-charm",
@@ -1584,7 +1917,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/heart-moon-charm-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/heart-moon-charm-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "gumiho-pot.nine-tail-eclipse",
@@ -1631,7 +1973,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/nine-tail-eclipse-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/nine-tail-eclipse-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "handsome-pot.command-blade",
@@ -1678,7 +2029,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/command-blade-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/command-blade-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "handsome-pot.command-crescendo",
@@ -1725,7 +2085,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/command-crescendo-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/command-crescendo-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "kel.ember",
@@ -1773,7 +2142,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/ember-arc/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/ember-arc/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "kel.moonlit",
@@ -1821,7 +2199,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/insight-arc/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/insight-arc/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "kel.mosaic",
@@ -1867,7 +2254,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/echo-wave/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/echo-wave/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "kel.rainy",
@@ -1915,7 +2311,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/mist-dash/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/mist-dash/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "kel.sparkling",
@@ -1963,7 +2368,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/prism-burst/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/prism-burst/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "kel.sunny",
@@ -2013,7 +2427,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/care-vines-v2/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/care-vines-v2/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "knotted-echo.echo-ring",
@@ -2061,7 +2484,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/echo-ring-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/echo-ring-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-echo-well-v1.webp",
+        "jobs_file": "design-system/concepts/echo-well-enemy-attacks-v10/jobs-fix.json",
+        "prompt_sha256": "A0F9EF921F1C4373099496191BB50E2577762492580BCAA3C24E9F95597BC0EF",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "knotted-echo.sharp-note",
@@ -2109,7 +2544,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/sharp-note-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/sharp-note-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-echo-well-v1.webp",
+        "jobs_file": "design-system/concepts/echo-well-enemy-attacks-v10/jobs-fix.json",
+        "prompt_sha256": "4379EF82443F235348AD77AFC1C726DA3A68F58989F4B8124BF2B5DFB54FB0AA",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "ledger-keeper.margin-murmur",
@@ -2157,7 +2604,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/margin-murmur-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/margin-murmur-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/guardian-beast-attacks-v11/jobs-1.json",
+        "prompt_sha256": "A45C8E1042A90904E82430261734C9900A12CB9BB9BFF7B214878964CA2FDC29",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "ledger-keeper.page-snow",
@@ -2205,7 +2664,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/page-snow-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/page-snow-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/guardian-beast-attacks-v11/jobs-1.json",
+        "prompt_sha256": "2F7B87BE2F93831E40B3CE20B64476FCB3DD2977D25A355394434CA09DC92D34",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "ledger-keeper.spine-lean",
@@ -2253,7 +2724,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/spine-lean-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/spine-lean-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/guardian-beast-attacks-v11/jobs-1.json",
+        "prompt_sha256": "BACB4740EC43AA14497308303B2FC7C5366404B7F51AC048EB970C5C6E97C8ED",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "maestro-pot.golden-downbeat",
@@ -2300,7 +2783,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/golden-downbeat-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/golden-downbeat-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "maestro-pot.silent-coda",
@@ -2347,7 +2839,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/silent-coda-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/silent-coda-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "magical-pot.prism-meteor",
@@ -2394,7 +2895,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/prism-meteor-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/prism-meteor-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "magical-pot.timefold-comet",
@@ -2441,7 +2951,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/timefold-comet-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/timefold-comet-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "marten-pot.den-guardian-roar",
@@ -2488,7 +3007,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/den-guardian-roar-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/den-guardian-roar-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "marten-pot.softpaw-rush",
@@ -2535,7 +3063,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/softpaw-rush-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/softpaw-rush-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "matted-observatory.lens-glare",
@@ -2583,7 +3120,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/lens-glare-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/lens-glare-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-heartwood-observatory-v1.webp",
+        "jobs_file": "design-system/concepts/heartwood-observatory-enemy-attacks-v10/jobs.json",
+        "prompt_sha256": "8667260EF43AF3EA5615A0F42DB8BCA3AD6D5AD5186541604C03BD25F46EA708",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "matted-observatory.tape-whip",
@@ -2631,7 +3180,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/tape-whip-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/tape-whip-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-heartwood-observatory-v1.webp",
+        "jobs_file": "design-system/concepts/heartwood-observatory-enemy-attacks-v10/jobs.json",
+        "prompt_sha256": "E6F49EBE395F3C7C63CB87CF3112DBE56DF7167A4E35DDEC54BBE4C7A65561AC",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "ninja-pot.shadow-execution",
@@ -2678,7 +3239,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/shadow-execution-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/shadow-execution-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "ninja-pot.venom-seam",
@@ -2725,7 +3295,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/venom-seam-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/venom-seam-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "nurse-pot.triage-bloom",
@@ -2772,7 +3351,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/triage-bloom-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/triage-bloom-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "nurse-pot.white-garden-oath",
@@ -2819,7 +3407,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/white-garden-oath-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/white-garden-oath-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "pretty-pot.heart-spotlight",
@@ -2866,7 +3463,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/heart-spotlight-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/heart-spotlight-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "pretty-pot.ribbon-encore",
@@ -2913,7 +3519,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/ribbon-encore-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/ribbon-encore-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "record-keeper.lamp-lean",
@@ -2961,7 +3576,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/lamp-lean-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/lamp-lean-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-heartwood-observatory-v1.webp",
+        "jobs_file": "design-system/concepts/guardian-beast-attacks-v11/jobs-3.json",
+        "prompt_sha256": "D348323E3BCB67F1E9218CDB79A22CFB972E611C0E5B370BDB8E3577CD5B254E",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "record-keeper.ring-wave",
@@ -3009,7 +3636,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/ring-wave-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/ring-wave-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-heartwood-observatory-v1.webp",
+        "jobs_file": "design-system/concepts/guardian-beast-attacks-v11/jobs-3.json",
+        "prompt_sha256": "EB34AC96CF76296B8FB47DA028B15FE01BEDA5B48FEB08D111B7EF8CAF565FB6",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "record-keeper.unfinished-line",
@@ -3057,7 +3696,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/unfinished-line-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/unfinished-line-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-heartwood-observatory-v1.webp",
+        "jobs_file": "design-system/concepts/guardian-beast-attacks-v11/jobs-3.json",
+        "prompt_sha256": "559E5F6F99D916865974FA7F4C2ABF2EA61B092EE38F989A782EEC3A0D0DF5CB",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "restorer-pot.golden-seam",
@@ -3104,7 +3755,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/golden-seam-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/golden-seam-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "restorer-pot.patina-parry",
@@ -3151,7 +3811,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/patina-parry-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/patina-parry-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "ring-shard-tangle.ring-spin",
@@ -3199,7 +3868,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/ring-spin-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/ring-spin-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-heartwood-observatory-v1.webp",
+        "jobs_file": "design-system/concepts/heartwood-observatory-enemy-attacks-v10/jobs.json",
+        "prompt_sha256": "3971A32A3B81885C0B02943CBA33E31B59AE703D3B03FD4F00C63772155DFAF4",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "ring-shard-tangle.shard-scatter",
@@ -3247,7 +3928,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/shard-scatter-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/shard-scatter-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-heartwood-observatory-v1.webp",
+        "jobs_file": "design-system/concepts/heartwood-observatory-enemy-attacks-v10/jobs.json",
+        "prompt_sha256": "0BBC64D62399A01324916ECF57C6BC50D33272AD96E21086A3CC982F0E3C99C3",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "rolling-seedbox.box-roll",
@@ -3295,7 +3988,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/box-roll-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/box-roll-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-starlight-seed-vault-v1.webp",
+        "jobs_file": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/jobs.json",
+        "prompt_sha256": "240CB5F7B610318F89016243C4B46FA82144B8F4DA9DF20633785DB497A4D58D",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "rolling-seedbox.seed-scatter",
@@ -3343,7 +4048,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/seed-scatter-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/seed-scatter-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-starlight-seed-vault-v1.webp",
+        "jobs_file": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/jobs.json",
+        "prompt_sha256": "A676BC522938605AB32A16F9BEE51E544A7425D53E4D33C6F716980ADAB77644",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "scattered-records.page-storm",
@@ -3391,7 +4108,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/page-storm-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/page-storm-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-heartwood-observatory-v1.webp",
+        "jobs_file": "design-system/concepts/heartwood-observatory-enemy-attacks-v10/jobs.json",
+        "prompt_sha256": "21232395678C7AE6F8DA009B37E5A25823F47ABA637E8ABB3D21B5EDF9FD0775",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "scattered-records.paper-cut",
@@ -3439,7 +4168,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/paper-cut-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/paper-cut-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-heartwood-observatory-v1.webp",
+        "jobs_file": "design-system/concepts/heartwood-observatory-enemy-attacks-v10/jobs.json",
+        "prompt_sha256": "613F1287FF535551AF7300891509402E826C58A736DB6C188B2D8BCF99DEAB2C",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "seed-keeper.shelf-tilt",
@@ -3487,7 +4228,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/shelf-tilt-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/shelf-tilt-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-starlight-seed-vault-v1.webp",
+        "jobs_file": "design-system/concepts/guardian-beast-attacks-v11/jobs-2.json",
+        "prompt_sha256": "ABA82948C9986BE223C05176C53F7D06914E736879E367A68CA575683B73E734",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "seed-keeper.sprout-sigh",
@@ -3535,7 +4288,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/sprout-sigh-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/sprout-sigh-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-starlight-seed-vault-v1.webp",
+        "jobs_file": "design-system/concepts/guardian-beast-attacks-v11/jobs-3.json",
+        "prompt_sha256": "E73B490B1BB45A0A194BDF8ACE02D4364441CCADFB32A72064A42D936340E619",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "seed-keeper.stardust-drift",
@@ -3583,7 +4348,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/stardust-drift-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/stardust-drift-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-starlight-seed-vault-v1.webp",
+        "jobs_file": "design-system/concepts/guardian-beast-attacks-v11/jobs-2.json",
+        "prompt_sha256": "5AEF599ECD5522F5470835A3C983E03F3D9E4B54B4EA55EF13125EB6BAE9E3EB",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "shelf-snarl.catalogue-rain",
@@ -3631,7 +4408,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/catalogue-rain-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/catalogue-rain-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "shelf-snarl.shelf-sweep",
@@ -3679,7 +4465,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/shelf-sweep-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/shelf-sweep-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "skillbook.field-note-echo",
@@ -3727,7 +4522,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/field-note-echo-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/field-note-echo-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "jobs_file": "design-system/concepts/guide-and-skillbook-effects-v13/jobs.json",
+        "prompt_sha256": "491796CD0D0EEBC3786CA4518CAA788E6C07B33C445ADD4C1573B1060B6EDBDE",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "snarled-stardust.dust-flare",
@@ -3775,7 +4582,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/dust-flare-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/dust-flare-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-starlight-seed-vault-v1.webp",
+        "jobs_file": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/jobs-fix.json",
+        "prompt_sha256": "0E63FAF49BC148D58BE49821F789FB85CDE108CF79F1E2762ADA592E3A14CCA6",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "snarled-stardust.dust-lash",
@@ -3823,7 +4642,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/dust-lash-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/dust-lash-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-starlight-seed-vault-v1.webp",
+        "jobs_file": "design-system/concepts/starlight-seed-vault-enemy-attacks-v10/jobs-fix.json",
+        "prompt_sha256": "140A1193C949BC6271BF6BD0E9DA4EC811ECB84E05532E24CDB72681C1C19764",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "splashing-droplets.splash-wave",
@@ -3871,7 +4702,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/splash-wave-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/splash-wave-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-echo-well-v1.webp",
+        "jobs_file": "design-system/concepts/echo-well-enemy-attacks-v10/jobs-fix.json",
+        "prompt_sha256": "7B96E3B72112A58822C260876DB0312D6FF79BF7816AB8EE5E88D092DFA5B44B",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "splashing-droplets.water-pop",
@@ -3919,7 +4762,19 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/water-pop-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/water-pop-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-echo-well-v1.webp",
+        "jobs_file": "design-system/concepts/echo-well-enemy-attacks-v10/jobs.json",
+        "prompt_sha256": "F75056AC36BE4716963B53B8FD64331CA583A91E4CE7A74DEF234D4C872B7777",
+        "reference_sha256": [
+          "648CFB872D691D915E3AB11B2A0D168E5C4CD2E852AA27BF4AD8D6DCEFA784A5"
+        ],
+        "missing": []
+      },
+      "art_complete": true
     },
     {
       "family": "student-pot.ink-formula",
@@ -3966,7 +4821,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/ink-formula-burst-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/ink-formula-burst-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "student-pot.seal-rewrite",
@@ -4013,7 +4877,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/seal-rewrite-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/seal-rewrite-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "tangled-ledger.ink-mist",
@@ -4060,7 +4933,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/ink-mist-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/ink-mist-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "tangled-ledger.paper-flurry",
@@ -4107,7 +4989,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/paper-flurry-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/paper-flurry-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "tsundere-pot.blazing-counter",
@@ -4154,7 +5045,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/blazing-counter-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/blazing-counter-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "tsundere-pot.iron-uppercut",
@@ -4201,7 +5101,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/iron-uppercut-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/iron-uppercut-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "zombie-pot.grave-gravity",
@@ -4248,7 +5157,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/grave-gravity-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/grave-gravity-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     },
     {
       "family": "zombie-pot.undying-chain",
@@ -4295,7 +5213,16 @@
           "low_end_android_p95",
           "ios_p95"
         ]
-      }
+      },
+      "delivery": {
+        "onion_025x": "design-system/deliveries/undying-chain-v1/onion-025x.webp",
+        "on_backdrop": "design-system/deliveries/undying-chain-v1/on-backdrop.webp",
+        "backdrop": "expedition-monster-den-battle-v1.webp",
+        "missing": [
+          "prompt_hash"
+        ]
+      },
+      "art_complete": false
     }
   ],
   "gate_profile": {
