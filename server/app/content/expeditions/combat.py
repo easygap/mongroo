@@ -98,6 +98,16 @@ SPECIES_SECONDARY_SKILLS = IDENTITY_SPECIES_SECONDARY_SKILLS
 FORM_COMBAT_SKILLS = IDENTITY_FORM_COMBAT_SKILLS
 FIELD_NOTE_SKILL = IDENTITY_FIELD_NOTE_SKILL
 
+#: `연출 family → 그 연출을 가진 스킬 코드`. 선택 슬롯(감정 스킬·기록서)이 쓴다.
+#:
+#: 기록서를 장착하면 코드는 그 책 것이 되지만 연출은 바탕 스킬 것을 그대로
+#: 쓴다. 그때 책 코드를 `effect_key`로 보내면 manifest에 없는 키가 나가고,
+#: 앱은 family로 그림은 맞게 찾아도 키를 타는 소리·타격 정지가 어긋난다.
+SELECTED_SLOT_EFFECT_KEYS = {
+    str(skill["vfx_family"]): str(skill["code"])
+    for skill in (*FORM_COMBAT_SKILLS.values(), FIELD_NOTE_SKILL)
+}
+
 PRISM_SHIFT_EFFECTS = frozenset({"prism_shift", "runway_reversal"})
 
 
@@ -347,13 +357,20 @@ def member_battle_kit(
             "emotion_vfx_secondary": emotion_palette["secondary"],
             "damage_type_label": DAMAGE_TYPE_LABELS[skill["damage_type"]],
             # 전용 연출이 있는 것은 자기 코드를, 없는 것만 원소별 공용 키를
-            # 보낸다. 감정 스킬 6종은 2026-09-02에 전용 시트가 생겨 넘어왔다 —
-            # 공용 키를 그대로 두면 앱이 새 연출을 만들어 두고도 성장결 공용
-            # 연출을 재생한다.
+            # 보낸다. 공용 키를 그대로 두면 앱이 새 연출을 만들어 두고도 성장결
+            # 공용 연출을 재생한다.
+            #
+            # 선택 슬롯은 코드로 못 가른다. 기록서를 장착하면 **코드만** 그 책
+            # 것으로 바뀌고 연출은 바탕 스킬(감정 스킬·현장 기록) 것을 그대로
+            # 물려받기 때문이다. 그래서 family로 되짚어 그 연출을 가진 스킬의
+            # 코드를 보낸다 — 그래야 manifest가 가리키는 연출과 키가 맞는다.
             "effect_key": (
                 str(skill["code"])
-                if source in ("signature", "emotion")
-                else ELEMENT_RUNTIME_EFFECTS[element]
+                if source == "signature"
+                else SELECTED_SLOT_EFFECT_KEYS.get(
+                    str(skill.get("vfx_family") or ""),
+                    ELEMENT_RUNTIME_EFFECTS[element],
+                )
             ),
             "kel_fallback_family": kel_fallback_family(skill_kel),
             "motion": combat_motion(

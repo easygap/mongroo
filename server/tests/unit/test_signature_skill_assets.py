@@ -2,12 +2,14 @@ import json
 from pathlib import Path
 
 from app.content.expeditions.combat import (
+    SKILL_BOOK_CATALOG,
     SPECIES_SECONDARY_SKILLS,
     SPECIES_SKILLS,
     member_battle_kit,
 )
 from app.content.expeditions.combat_identity import (
     EMOTION_DISCIPLINES,
+    FIELD_NOTE_SKILL,
     FORM_COMBAT_SKILLS,
 )
 
@@ -142,3 +144,74 @@ def test_emotion_skills_send_their_own_effect_key_to_the_app():
             assert entry["code"] == skill["code"], form
             assert entry["effect_key"] == skill["code"], form
             assert entry["vfx_family"] == skill["vfx_family"], form
+
+
+def test_only_the_basic_attack_falls_back_to_a_shared_effect():
+    """대원이 누를 수 있는 행동 중 공용 연출로 떨어지는 것은 기본 공격뿐이다.
+
+    설계서 9장이 금지한 `공용 연출로 끝내는 것`을 한 줄로 지키는 검사다. 이걸
+    안 걸어 두면 스킬이 늘 때마다 조용히 하나씩 공용 연출로 새고, 그건 실기에서
+    네트워크 로그를 뒤져야 보인다(실제로 그렇게 찾았다).
+
+    **기본 공격 6종은 일부러 뺀다.** 4.2가 그 자리를 `공격 glyph + 성장결`로
+    정해 뒀다 — 거기서는 성장결 연출이 나가는 것이 맞다. 안 만든 것과 못 만든
+    것을 같이 세지 않으려고 이름으로 적어 둔다.
+    """
+
+    manifest = json.loads((EFFECT_ROOT / "manifest.json").read_text(encoding="utf-8"))
+    by_family = {entry["family"]: entry for entry in manifest["effects"]}
+
+    # 성장결별 기본 공격. 설계상 성장결 공용 연출이 나가는 자리다.
+    by_design = {
+        str(discipline["basic_vfx_family"])
+        for discipline in EMOTION_DISCIPLINES.values()
+    }
+    assert len(by_design) == 6
+
+    families = {
+        str(skill["vfx_family"])
+        for skill in (
+            *SPECIES_SKILLS.values(),
+            *SPECIES_SECONDARY_SKILLS.values(),
+            *FORM_COMBAT_SKILLS.values(),
+            FIELD_NOTE_SKILL,
+        )
+    }
+    missing = sorted(families - set(by_family) - by_design)
+    assert missing == [], f"공용 연출로 떨어지는 행동이 남아 있습니다: {missing}"
+
+    for family in sorted(families - by_design):
+        entry = by_family[family]
+        assert entry["production_ready"] is True, family
+        assert entry["frame_count"] >= 7, family
+
+
+def test_a_skill_book_keeps_the_effect_key_of_the_art_that_plays():
+    """기록서를 장착해도 실제로 나가는 연출의 키가 간다.
+
+    선택 슬롯은 기록서를 끼우면 **코드만** 그 책 것으로 바뀌고 연출은 바탕
+    스킬 것을 그대로 물려받는다. 그래서 책 코드를 그대로 `effect_key`로 보내면
+    manifest에 없는 키가 나가고, 앱은 family로 그림은 맞게 찾아도 키를 타는
+    소리·타격 정지가 어긋난다.
+    """
+
+    manifest = json.loads((EFFECT_ROOT / "manifest.json").read_text(encoding="utf-8"))
+    keys_by_family = {
+        entry["family"]: entry["effect_keys"] for entry in manifest["effects"]
+    }
+
+    equipped = next(
+        code
+        for code, book in SKILL_BOOK_CATALOG.items()
+        if book.get("combat_effect") is True
+    )
+    profile = _profile("baby-pot", 30)
+    profile["snapshot"]["skill_loadout"] = {"selected_2": equipped}
+
+    selected = member_battle_kit(profile)["selected_skills"]
+    assert selected
+    for entry in selected:
+        family = str(entry["vfx_family"])
+        # 연출이 있는 자리면, 보내는 키가 그 연출이 주장하는 키여야 한다.
+        if family in keys_by_family:
+            assert entry["effect_key"] in keys_by_family[family], family
