@@ -871,7 +871,16 @@ class _ExpeditionSequentialCommandDockState
                       if (action.kelLabels.isNotEmpty)
                         MongrooTag(
                           label: matchupLabel(action.kelLabels.join(' · ')),
-                          icon: Icons.hub_outlined,
+                          // 여섯 성장결이 `Icons.hub_outlined` 하나를 나눠
+                          // 썼다. 색과 글자를 못 읽으면 구분이 안 됐다.
+                          //
+                          // 코드 없이 이름만 온 응답이면 예전 글리프로 돌아간다.
+                          // `leading`이 있으면 `icon`은 안 그려지므로, 여기서
+                          // null을 줘야 빈자리만 남지 않는다.
+                          leading: action.kels.isEmpty
+                              ? null
+                              : _KelMarks(kels: action.kels),
+                          icon: action.kels.isEmpty ? Icons.hub_outlined : null,
                         ),
                       if (action.fusionVariant != null)
                         const MongrooTag(
@@ -1895,12 +1904,11 @@ class _DockActionVisual extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (actionCode == 'attack' || actionCode == 'guard') {
-      return Icon(
-        actionCode == 'guard'
-            ? Icons.shield_outlined
-            : Icons.sports_martial_arts_rounded,
-        size: size * .68,
-        color: color,
+      // 예전에는 머티리얼 기본 글리프였다. 손그림 화면에 안드로이드 아이콘이
+      // 둘 섞여 있었다 - 설계서 4.2가 이 두 자리에도 전용 glyph를 요구한다.
+      return _DockImageIcon(
+        asset: 'assets/adventure/skill-icons/action/$actionCode-v1.webp',
+        size: size,
       );
     }
     if (_dockSkillIconAssets[action.code] case final asset?) {
@@ -1924,6 +1932,70 @@ class _DockActionVisual extends StatelessWidget {
       );
     }
     return _DockEffectThumbnail(effectKey: effectKey, size: size);
+  }
+}
+
+/// 아이콘 자리에 들어가는 그림 한 장. 벨트의 라운드 사각형 틀을 그대로 쓴다.
+class _DockImageIcon extends StatelessWidget {
+  const _DockImageIcon({required this.asset, required this.size});
+
+  final String asset;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => SizedBox.square(
+        dimension: size,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(size * .25),
+            border: Border.all(color: Colors.white.withAlpha(34)),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(size * .25 - 1),
+            child: Image.asset(
+              asset,
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.medium,
+              excludeFromSemantics: true,
+            ),
+          ),
+        ),
+      );
+}
+
+/// 성장결 마크. 태그 글자 앞에 붙는다.
+///
+/// 색이나 글자를 못 읽어도 갈리도록 성장결마다 다른 모양을 쓴다 - 해·물방울·
+/// 불꽃·초승달·별·육각 타일. 예고 아이콘에 이미 같은 계약이 걸려 있다.
+class _KelMarks extends StatelessWidget {
+  const _KelMarks({required this.kels});
+
+  final List<String> kels;
+
+  @override
+  Widget build(BuildContext context) {
+    // 둘까지만 보인다. 태그가 길어지면 글자가 밀려 말줄임이 된다.
+    final shown = kels.take(2).toList(growable: false);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final kel in shown)
+          Padding(
+            padding: EdgeInsets.only(right: kel == shown.last ? 0 : 2),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: Image.asset(
+                'assets/adventure/skill-icons/kel/$kel-v1.webp',
+                width: 14,
+                height: 14,
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.medium,
+                excludeFromSemantics: true,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 }
 

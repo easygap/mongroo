@@ -1,0 +1,32 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "kel-sunny",
+   "prompt": "A single 256x256 game UI icon in the exact hand-painted storybook style of the reference image: one object centred on a soft painted vignette background, warm brushwork, gentle inner glow, no hard UI chrome. No text, no numbers, no letters, no borders, no frame. The icon is displayed at roughly 40dp, so the silhouette must be BOLD, SIMPLE and instantly readable at small size - one clear shape, generous margins, no fine detail and no thin scratchy lines. Critical: the shape must stay recognisable in pure black silhouette, because it has to be told apart from the other icons without relying on colour. The object is a warm SUN DISC with bold straight rays radiating evenly all around it - a full circle with clear triangular rays, like a child's drawing of the sun made beautiful. Palette: warm gold, honey, soft rose glow.",
+   "references": [
+    "app/assets/adventure/skill-icons/emotion/sunny-radiant-heart-v1.webp"
+   ],
+   "size": "1024x1024",
+   "out": "design-system/concepts/battle-belt-icons-v15/_raw/kel-sunny.png"
+  },
+  {
+   "id": "kel-rainy",
+   "prompt": "A single 256x256 game UI icon in the exact hand-painted storybook style of the reference image: one object centred on a soft painted vignette background, warm brushwork, gentle inner glow, no hard UI chrome. No text, no numbers, no letters, no borders, no frame. The icon is displayed at roughly 40dp, so the silhouette must be BOLD, SIMPLE and instantly readable at small size - one clear shape, generous margins, no fine detail and no thin scratchy lines. Critical: the shape must stay recognisable in pure black silhouette, because it has to be told apart from the other icons without relying on colour. The object is a single large TEARDROP, wide and round at the bottom and pointed at the top, falling into one calm ripple ring beneath it. Palette: deep navy and indigo, cream highlight. No green.",
+   "references": [
+    "app/assets/adventure/skill-icons/emotion/sunny-radiant-heart-v1.webp"
+   ],
+   "size": "1024x1024",
+   "out": "design-system/concepts/battle-belt-icons-v15/_raw/kel-rainy.png"
+  },
+  {
+   "id": "kel-ember",
+   "prompt": "A single 256x256 game UI icon in the exact hand-painted storybook style of the reference image: one object centred on a soft painted vignette background, warm brushwork, gentle inner glow, no hard UI chrome. No text, no numbers, no letters, no borders, no frame. The icon is displayed at roughly 40dp, so the silhouette must be BOLD, SIMPLE and instantly readable at small size - one clear shape, generous margins, no fine detail and no thin scratchy lines. Critical: the shape must stay recognisable in pure black silhouette, because it has to be told apart from the other icons without relying on colour. The object is a single bold FLAME with one upward tongue and a small curl at its base - a plain, strong fire shape, not a bonfire and not sparks. Palette: ember orange, deep crimson, warm gold.",
+   "references": [
+    "app/assets/adventure/skill-icons/emotion/sunny-radiant-heart-v1.webp"
+   ],
+   "size": "1024x1024",
+   "out": "design-system/concepts/battle-belt-icons-v15/_raw/kel-ember.png"
+  }
+ ]
+}

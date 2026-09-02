@@ -65,6 +65,7 @@ class MongrooTag extends StatelessWidget {
     super.key,
     required this.label,
     this.icon,
+    this.leading,
     this.backgroundColor,
     this.foregroundColor,
     this.maxWidth,
@@ -72,6 +73,13 @@ class MongrooTag extends StatelessWidget {
 
   final String label;
   final IconData? icon;
+
+  /// 글자 앞에 그릴 것. 주면 `icon` 대신 이걸 쓴다.
+  ///
+  /// 성장결처럼 **글리프가 아니라 그린 마크**를 앞에 둬야 하는 자리가 있다.
+  /// 예전에는 여섯 성장결이 `Icons.hub_outlined` 하나를 나눠 써서, 색과 글자를
+  /// 못 읽으면 구분이 되지 않았다.
+  final Widget? leading;
   final Color? backgroundColor;
   final Color? foregroundColor;
   final double? maxWidth;
@@ -105,7 +113,8 @@ class MongrooTag extends StatelessWidget {
           : ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth:
-                    (resolvedMaxWidth - 16 - (icon == null ? 0 : 19)).clamp(
+                    (resolvedMaxWidth - 16 - (icon == null && leading == null ? 0 : 19))
+                    .clamp(
                   24,
                   double.infinity,
                 ),
@@ -123,7 +132,10 @@ class MongrooTag extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icon != null) ...[
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: 5),
+              ] else if (icon != null) ...[
                 Icon(icon, size: 14, color: foreground),
                 const SizedBox(width: 5),
               ],

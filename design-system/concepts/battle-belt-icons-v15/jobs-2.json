@@ -1,0 +1,32 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "kel-moonlit",
+   "prompt": "A single 256x256 game UI icon in the exact hand-painted storybook style of the reference image: one object centred on a soft painted vignette background, warm brushwork, gentle inner glow, no hard UI chrome. No text, no numbers, no letters, no borders, no frame. The icon is displayed at roughly 40dp, so the silhouette must be BOLD, SIMPLE and instantly readable at small size - one clear shape, generous margins, no fine detail and no thin scratchy lines. Critical: the shape must stay recognisable in pure black silhouette, because it has to be told apart from the other icons without relying on colour. The object is a thick CRESCENT MOON lying with its horns turned up, one small star tucked into the hollow of the curve. Palette: dusty lavender, deep indigo-violet, warm silver-lilac.",
+   "references": [
+    "app/assets/adventure/skill-icons/emotion/sunny-radiant-heart-v1.webp"
+   ],
+   "size": "1024x1024",
+   "out": "design-system/concepts/battle-belt-icons-v15/_raw/kel-moonlit.png"
+  },
+  {
+   "id": "kel-sparkling",
+   "prompt": "A single 256x256 game UI icon in the exact hand-painted storybook style of the reference image: one object centred on a soft painted vignette background, warm brushwork, gentle inner glow, no hard UI chrome. No text, no numbers, no letters, no borders, no frame. The icon is displayed at roughly 40dp, so the silhouette must be BOLD, SIMPLE and instantly readable at small size - one clear shape, generous margins, no fine detail and no thin scratchy lines. Critical: the shape must stay recognisable in pure black silhouette, because it has to be told apart from the other icons without relying on colour. The object is one bold FOUR-POINTED STAR SPARK with long horizontal and vertical points and a bright core, plus two much smaller sparks at its lower left. Palette: warm gold and violet, cream-white core.",
+   "references": [
+    "app/assets/adventure/skill-icons/emotion/sunny-radiant-heart-v1.webp"
+   ],
+   "size": "1024x1024",
+   "out": "design-system/concepts/battle-belt-icons-v15/_raw/kel-sparkling.png"
+  },
+  {
+   "id": "kel-mosaic",
+   "prompt": "A single 256x256 game UI icon in the exact hand-painted storybook style of the reference image: one object centred on a soft painted vignette background, warm brushwork, gentle inner glow, no hard UI chrome. No text, no numbers, no letters, no borders, no frame. The icon is displayed at roughly 40dp, so the silhouette must be BOLD, SIMPLE and instantly readable at small size - one clear shape, generous margins, no fine detail and no thin scratchy lines. Critical: the shape must stay recognisable in pure black silhouette, because it has to be told apart from the other icons without relying on colour. The object is a single HEXAGONAL TILE seen face-on, its surface split into a few flat facets with visible seams, sitting perfectly level and still. Palette: warm graphite and pewter, brass seams, soft bone.",
+   "references": [
+    "app/assets/adventure/skill-icons/emotion/sunny-radiant-heart-v1.webp"
+   ],
+   "size": "1024x1024",
+   "out": "design-system/concepts/battle-belt-icons-v15/_raw/kel-mosaic.png"
+  }
+ ]
+}

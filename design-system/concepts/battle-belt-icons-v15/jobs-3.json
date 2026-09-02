@@ -1,0 +1,23 @@
+{
+ "version": 1,
+ "jobs": [
+  {
+   "id": "action-attack",
+   "prompt": "A single 256x256 game UI icon in the exact hand-painted storybook style of the reference image: one object centred on a soft painted vignette background, warm brushwork, gentle inner glow, no hard UI chrome. No text, no numbers, no letters, no borders, no frame. The icon is displayed at roughly 40dp, so the silhouette must be BOLD, SIMPLE and instantly readable at small size - one clear shape, generous margins, no fine detail and no thin scratchy lines. Critical: the shape must stay recognisable in pure black silhouette, because it has to be told apart from the other icons without relying on colour. The object is one bold diagonal SLASH stroke sweeping from lower left to upper right, tapering at both ends, with a small leaf tip caught at its trailing edge - the plain mark of a basic attack in a garden. Palette: warm gold and soft green, cream highlight.",
+   "references": [
+    "app/assets/adventure/skill-icons/emotion/sunny-radiant-heart-v1.webp"
+   ],
+   "size": "1024x1024",
+   "out": "design-system/concepts/battle-belt-icons-v15/_raw/action-attack.png"
+  },
+  {
+   "id": "action-guard",
+   "prompt": "A single 256x256 game UI icon in the exact hand-painted storybook style of the reference image: one object centred on a soft painted vignette background, warm brushwork, gentle inner glow, no hard UI chrome. No text, no numbers, no letters, no borders, no frame. The icon is displayed at roughly 40dp, so the silhouette must be BOLD, SIMPLE and instantly readable at small size - one clear shape, generous margins, no fine detail and no thin scratchy lines. Critical: the shape must stay recognisable in pure black silhouette, because it has to be told apart from the other icons without relying on colour. The object is a rounded SHIELD seen face-on with a small heart resting at its centre - the mark of guarding a heart rather than a weapon. Palette: soft sage green and warm cream, gentle gold rim.",
+   "references": [
+    "app/assets/adventure/skill-icons/emotion/sunny-radiant-heart-v1.webp"
+   ],
+   "size": "1024x1024",
+   "out": "design-system/concepts/battle-belt-icons-v15/_raw/action-guard.png"
+  }
+ ]
+}

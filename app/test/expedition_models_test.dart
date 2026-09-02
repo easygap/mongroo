@@ -3033,6 +3033,33 @@ void main() {
     }
   });
 
+  testWidgets('벨트의 기본 공격·마음 지키기·성장결 마크를 번들에서 읽는다', (tester) async {
+    // 이 셋은 머티리얼 기본 글리프였다. 기본 공격과 마음 지키기는
+    // `Icons.sports_martial_arts_rounded`/`Icons.shield_outlined`였고, 여섯
+    // 성장결은 `Icons.hub_outlined` 하나를 나눠 써서 색과 글자를 못 읽으면
+    // 구분이 되지 않았다.
+    const assets = <String>[
+      'assets/adventure/skill-icons/action/attack-v1.webp',
+      'assets/adventure/skill-icons/action/guard-v1.webp',
+      'assets/adventure/skill-icons/kel/sunny-v1.webp',
+      'assets/adventure/skill-icons/kel/rainy-v1.webp',
+      'assets/adventure/skill-icons/kel/ember-v1.webp',
+      'assets/adventure/skill-icons/kel/moonlit-v1.webp',
+      'assets/adventure/skill-icons/kel/sparkling-v1.webp',
+      'assets/adventure/skill-icons/kel/mosaic-v1.webp',
+    ];
+    final bytes = <String, int>{};
+    for (final asset in assets) {
+      final data = await rootBundle.load(asset);
+      expect(data.lengthInBytes, greaterThan(4000), reason: asset);
+      expect(_webpCanvasSize(data), (width: 256, height: 256), reason: asset);
+      bytes[asset] = data.lengthInBytes;
+    }
+    // 같은 파일을 두 번 넣은 사고를 잡는다. 모양이 충분히 다른지는 눈으로
+    // 보는 것이고, concept README에 여덟을 나란히 붙여 뒀다.
+    expect(bytes.values.toSet(), hasLength(assets.length));
+  });
+
   testWidgets('16품종 × 2의 고유 스킬 signature를 앱 번들에서 읽는다', (tester) async {
     // 서버 스킬 코드와 같은 이름이어야 앱이 찾을 수 있다. 하나라도 빠지면
     // 그 캐릭터만 소리가 없어지는데, 눈으로는 안 보인다.

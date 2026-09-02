@@ -155,6 +155,8 @@ flutter:
     - assets/adventure/skill-icons/student-pot/
     - assets/adventure/skill-icons/archive-guide/
     - assets/adventure/skill-icons/emotion/
+    - assets/adventure/skill-icons/action/
+    - assets/adventure/skill-icons/kel/
     - assets/adventure/sfx/
     - assets/adventure/music/
     - assets/adventure/ambience/
