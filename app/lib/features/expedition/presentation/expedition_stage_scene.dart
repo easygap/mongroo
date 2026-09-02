@@ -68,13 +68,21 @@ class _ImmersiveStageScene extends ConsumerWidget {
     final resolution = expedition.lastResolution;
     final finished = event == null && expedition.run.objectiveSecured;
     final resting = node.type == 'camp';
+    // 5.4: 화면 말풍선은 28자 1줄이다. 예전에는 사건 원고가 곧 말풍선이라
+    // 33~58자가 그대로 나갔다. 원고는 `event.text`에 남아 길게 누르면 열린다.
     final bubbleText = event != null
-        ? event.text
+        ? event.bubble
         : resting
-            ? '따뜻한 불가에 앉아 숨을 골랐어요. 길빛과 결의가 조금 차올랐어요.'
+            ? '불가에 앉으니 길빛과 결의가 차올라요.'
             : resolution != null
-                ? '${resolution.outcome} 이제 기록을 안고 돌아갈 수 있어요.'
-                : '이 걸음의 일을 마쳤어요. 기록을 안고 돌아갈 수 있어요.';
+                // 결과 문장은 서버가 주므로 길이를 여기서 못 정한다. 뒤에
+                // 붙는 안내만 짧게 둔다(5.4의 `즉시 결과 18자 이하`).
+                ? '${resolution.outcome} 돌아갈 수 있어요.'
+                : '이 걸음의 일을 마쳤어요. 돌아갈 수 있어요.';
+    // 길게 누르면 열리는 원고. 사건일 때만 있다.
+    final bubbleDetail = event != null && event.text != event.bubble
+        ? event.text
+        : null;
 
     return LayoutBuilder(
       builder: (context, constraints) => ListView(
@@ -168,6 +176,7 @@ class _ImmersiveStageScene extends ConsumerWidget {
                                   title: event?.title ??
                                       (resting ? '잠깐의 쉼' : node.name),
                                   text: bubbleText,
+                                  detail: bubbleDetail,
                                 ),
                               ),
                           ],
@@ -503,19 +512,54 @@ class _StageWalkingField extends StatelessWidget {
   }
 }
 
-/// 장면 위 말풍선. 사건 본문은 90자 계약을 따르므로 한 덩이면 충분하다.
+/// 장면 위 말풍선. 5.4의 28자 1줄을 담고, 원고는 길게 누르면 열린다.
 class _SceneSpeechBubble extends StatelessWidget {
-  const _SceneSpeechBubble(
-      {super.key, required this.title, required this.text});
+  const _SceneSpeechBubble({
+    super.key,
+    required this.title,
+    required this.text,
+    this.detail,
+  });
 
   final String title;
   final String text;
 
+  /// 사건 원고 전문. 있으면 길게 눌러 열 수 있다.
+  final String? detail;
+
+  Future<void> _showDetail(BuildContext context) => showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (context) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 10),
+                Text(
+                  detail!,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) => Semantics(
         liveRegion: true,
-        label: '$title. $text',
-        child: DecoratedBox(
+        label: [
+          title,
+          text,
+          if (detail != null) '길게 눌러 자세히 보기',
+        ].join('. '),
+        child: GestureDetector(
+          onLongPress: detail == null ? null : () => _showDetail(context),
+          child: DecoratedBox(
           decoration: BoxDecoration(
             color: MongrooPalette.of(context).night.withAlpha(216),
             borderRadius: BorderRadius.circular(14),
@@ -548,6 +592,7 @@ class _SceneSpeechBubble extends StatelessWidget {
                 ),
               ],
             ),
+          ),
           ),
         ),
       );

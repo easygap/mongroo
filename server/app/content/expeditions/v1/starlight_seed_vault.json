@@ -436,6 +436,7 @@
     "awake_seed": {
       "title": "잠들지 못한 씨앗",
       "text": "혼자 깨어 있는 씨앗이 아주 작게 떨고 있어요. 어떻게 할까요?",
+      "bubble": "혼자 깨어 있는 씨앗이 작게 떨어요.",
       "tags": [
         "puzzle",
         "mystery"
@@ -468,6 +469,7 @@
     "backward_spring": {
       "title": "거꾸로 도는 태엽",
       "text": "벽시계가 되감기고 있어요. 이 방의 시간을 어떻게 다룰까요?",
+      "bubble": "벽시계가 거꾸로 되감기고 있어요.",
       "tags": [
         "puzzle",
         "mystery"
@@ -500,6 +502,7 @@
     "germination_clock": {
       "title": "발아 시계",
       "text": "방 한가운데의 큰 시계가 태엽을 감기 시작해요. 다 감기기 전에 멈출 자리를 찾아야 해요.",
+      "bubble": "방 한가운데 큰 시계가 태엽을 감기 시작해요.",
       "tags": [
         "guardian",
         "social"

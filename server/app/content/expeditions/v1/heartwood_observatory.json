@@ -436,6 +436,7 @@
     "scattered_pages": {
       "title": "겹친 낱장",
       "text": "관측 기록이 순서 없이 겹쳐 있어요. 어떻게 되돌릴까요?",
+      "bubble": "관측 기록이 순서 없이 겹쳐 있어요.",
       "tags": [
         "puzzle",
         "mystery"
@@ -468,6 +469,7 @@
     "crooked_ring": {
       "title": "어긋난 나이테",
       "text": "한 해의 나이테만 방향이 달라요. 그해를 어떻게 읽을까요?",
+      "bubble": "한 해의 나이테만 방향이 달라요.",
       "tags": [
         "puzzle",
         "mystery"
@@ -500,6 +502,7 @@
     "ring_watcher": {
       "title": "나이테 관측자",
       "text": "관측자가 눈을 떠요. 오래 본 사람만 아는 방식으로 길을 막고 있어요.",
+      "bubble": "관측자가 눈을 뜨고 길을 막아요.",
       "tags": [
         "guardian",
         "social"

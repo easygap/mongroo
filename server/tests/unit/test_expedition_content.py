@@ -441,3 +441,44 @@ def test_no_literal_particle_placeholders_in_source():
             if placeholder in text:
                 offenders.append(f"{path.relative_to(root)}: {placeholder}")
     assert not offenders, offenders
+
+
+def test_every_event_bubble_fits_one_line_and_keeps_the_full_script():
+    """사건 말풍선은 28자 1줄이고, 원고는 그대로 남는다.
+
+    5.4가 `사건 본문은 28자 이하 한 줄 말풍선 1개다`라고 못 박았는데 실제로는
+    사건 원고가 곧 말풍선이라 **12건이 33~58자로** 화면에 나가고 있었다.
+    규칙이 문서에만 있으면 다음 팩에서 또 길어진다.
+
+    원고를 잘라내는 것이 아니라 **자리를 나눈 것**이다. 짧은 `bubble`은 화면이,
+    긴 `text`는 길게 누르기 상세가 가진다. 그래서 둘 다 있는지 본다 — 짧게
+    만들면서 원고를 지워 버리면 정보가 사라진다.
+    """
+
+    from app.content.expeditions.validator import MAX_EVENT_BUBBLE
+
+    root = CONTENT_PATH.parent
+    seen = 0
+    for path in sorted(root.glob("*.json")):
+        content = json.loads(path.read_text(encoding="utf-8"))
+        for code, event in content["events"].items():
+            seen += 1
+            where = f"{path.name}:{code}"
+            bubble = event.get("bubble")
+            assert isinstance(bubble, str) and bubble.strip(), where
+            assert len(bubble) <= MAX_EVENT_BUBBLE, f"{where} {len(bubble)}자"
+            assert "\n" not in bubble, where
+            # 원고가 사라지지 않았는지. 이게 없으면 길게 누를 것이 없다.
+            assert isinstance(event.get("text"), str) and event["text"].strip(), where
+    assert seen == 12
+
+
+def test_the_event_payload_carries_both_the_bubble_and_the_script():
+    """서버가 짧은 쪽과 긴 쪽을 모두 내려보낸다.
+
+    말풍선만 보내면 길게 누르기 상세가 빈다. 원고만 보내면 예전으로 돌아간다.
+    """
+
+    content = _content()
+    for code, event in content["events"].items():
+        assert event["bubble"] != event["text"] or len(event["text"]) <= 28, code

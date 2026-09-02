@@ -1151,6 +1151,9 @@ async def run_payload(db: AsyncSession, run: ExpeditionRun) -> dict:
             "code": current_state.event_code,
             "node_code": current_state.node_code,
             "title": event["title"],
+            # 5.4: 화면 말풍선은 28자 1줄이고, 원고 전문은 길게 누르기 상세가
+            # 가진다. 옛 팩에는 `bubble`이 없으니 그때는 원고를 그대로 쓴다.
+            "bubble": event.get("bubble") or event["text"],
             "text": event["text"],
             "encounter": event.get("encounter"),
             "battle": (

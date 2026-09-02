@@ -34,6 +34,13 @@ ALLOWED_SCENE_KEYS = {
 }
 ALLOWED_COMBAT_EFFECT_KEYS = {"insight_arc", "care_vines", "safe_guard"}
 
+#: 개편 설계서 5.4 — 사건 말풍선은 한글 28자 1줄 이하.
+#:
+#: 원고를 짧게 만드는 것이 아니라 **자리를 나누는 것**이다. 화면 말풍선은
+#: `bubble`이 쓰고, 기존 원고는 `text`에 남아 길게 누르기 상세가 가진다.
+#: 이 값이 없으면 문서에만 있는 규칙이 되어 다음 팩에서 또 길어진다.
+MAX_EVENT_BUBBLE = 28
+
 # 개편 설계서 3.1 — 지역당 8스테이지, 전투 4 · 이벤트 2 · 쉼터 1 · 보스 1.
 STAGE_COUNT = 8
 ALLOWED_STAGE_KINDS = {"battle", "event", "camp", "boss"}
@@ -350,6 +357,20 @@ def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:
     if not isinstance(event, dict):
         errors.append(f"{prefix}: 객체가 필요합니다")
         return
+    # 5.4: 화면 말풍선은 28자 1줄이다. 원고는 `text`에 그대로 남고, 짧은 쪽만
+    # 화면이 쓴다. 여기서 막지 않으면 규칙이 문서에만 남는다 - 실제로 12건이
+    # 33~58자로 나가고 있었다.
+    bubble = event.get("bubble")
+    if not isinstance(bubble, str) or not bubble.strip():
+        errors.append(f"{prefix}.bubble: 28자 이하 말풍선 한 줄이 필요합니다")
+    elif len(bubble) > MAX_EVENT_BUBBLE:
+        errors.append(
+            f"{prefix}.bubble: {len(bubble)}자입니다. "
+            f"{MAX_EVENT_BUBBLE}자 이하여야 합니다"
+        )
+    elif chr(10) in bubble:
+        errors.append(f"{prefix}.bubble: 한 줄이어야 합니다")
+
     choices = event.get("choices")
     if not isinstance(choices, list) or len(choices) < 3:
         errors.append(f"{prefix}.choices: 능력치 선택 2개와 안전 선택이 필요합니다")

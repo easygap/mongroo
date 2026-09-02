@@ -231,6 +231,7 @@
     "wet_label_order": {
       "title": "번진 이름들",
       "text": "비에 젖은 표찰들이 바닥에 붙어 있어요. 흐릿한 글자를 어떤 방식으로 되살릴까요?",
+      "bubble": "비에 젖은 표찰들이 바닥에 붙어 있어요.",
       "tags": ["puzzle", "mystery"],
       "choices": [
         {"code": "trace_ink", "label": "번진 잉크의 결을 따라간다", "stat": "insight", "difficulty": 8, "resolve_cost": 1},
@@ -241,6 +242,7 @@
     "root_catalogue": {
       "title": "엉킨 뿌리 목록",
       "text": "목록 서랍을 뿌리들이 단단히 감싸고 있어요. 억지로 끊지 않고 길을 만들 수 있을까요?",
+      "bubble": "뿌리들이 목록 서랍을 단단히 감쌌어요.",
       "tags": ["care", "nature"],
       "choices": [
         {"code": "loosen_roots", "label": "상처 나지 않게 뿌리를 풀어 준다", "stat": "care", "difficulty": 8, "resolve_cost": 1},
@@ -251,6 +253,7 @@
     "ledger_keeper": {
       "title": "돌비늘 장부지기",
       "text": "뿌리 둥지가 갈라지며 장부지기가 길을 막아요. 앞발이 빛나기 전에 약점을 읽고 수호 장벽을 풀어야 해요.",
+      "bubble": "뿌리 둥지가 갈라지며 장부지기가 길을 막아요.",
       "tags": ["guardian", "social"],
       "encounter": {
         "kind": "guardian",

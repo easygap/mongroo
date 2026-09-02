@@ -295,12 +295,23 @@ def test_every_effect_made_by_the_current_pipeline_is_art_complete():
         for job in payload.get("jobs", []):
             jobs_ids.add(str(job["id"]).replace("-", "_"))
 
-    assert len(jobs_ids) >= 39
+    # `jobs*.json`에는 연출이 아닌 것도 있다 - 벨트 아이콘 8종이 같은 방식으로
+    # 만들어져 같은 자리에 프롬프트를 남긴다. 연출 키와 겹치는 것만 센다.
+    effect_keys = {
+        str(key) for effect in manifest["effects"] for key in effect["effect_keys"]
+    }
+    from_pipeline = jobs_ids & effect_keys
+    assert len(from_pipeline) >= 39
+
     covered = 0
     for effect in manifest["effects"]:
         keys = {str(key) for key in effect.get("effect_keys", [])}
-        if not keys & jobs_ids:
+        if not keys & from_pipeline:
             continue
         covered += 1
         assert effect["art_complete"] is True, effect["family"]
-    assert covered == len(jobs_ids)
+    # 프롬프트가 있는 연출은 하나도 빠짐없이 묶음이 차 있어야 한다.
+    assert covered == len(from_pipeline)
+    assert covered == sum(
+        1 for effect in manifest["effects"] if effect["art_complete"]
+    )

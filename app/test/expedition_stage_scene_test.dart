@@ -478,7 +478,9 @@ void main() {
 
     final controller = await _pump(tester, _finishedSnapshotJson());
 
-    expect(find.textContaining('기록을 안고 돌아갈 수 있어요'), findsOneWidget);
+    // 말풍선이 28자로 줄면서 `기록을 안고`가 빠졌다. 돌아갈 수 있다는 것은
+    // 그대로 말한다 - 그게 이 검사가 지키려던 것이다.
+    expect(find.textContaining('돌아갈 수 있어요'), findsOneWidget);
     expect(find.textContaining('이끼 열쇠'), findsOneWidget);
     final extract = find.byKey(const ValueKey('stage-scene-extract'));
     expect(extract, findsOneWidget);
@@ -497,7 +499,8 @@ void main() {
 
     await _pump(tester, _campSnapshotJson());
 
-    expect(find.textContaining('숨을 골랐어요'), findsOneWidget);
+    // 5.4의 28자 계약에 맞춰 줄인 문구다. 회복했다는 사실은 그대로 말한다.
+    expect(find.textContaining('길빛과 결의가 차올라요'), findsOneWidget);
     expect(find.byKey(const ValueKey('stage-scene-extract')), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());

@@ -524,6 +524,7 @@ class ExpeditionEvent {
   const ExpeditionEvent({
     required this.code,
     required this.title,
+    required this.bubble,
     required this.text,
     required this.spotlightMemberId,
     this.skillHint,
@@ -534,6 +535,14 @@ class ExpeditionEvent {
 
   final String code;
   final String title;
+
+  /// 화면 말풍선. 5.4가 정한 28자 1줄이다.
+  ///
+  /// 긴 원고는 [text]에 그대로 남아 길게 누르기 상세가 가진다. 예전에는
+  /// 원고가 곧 말풍선이라 33~58자가 그대로 화면에 나갔다.
+  final String bubble;
+
+  /// 사건 원고 전문. 길게 누르기 상세용.
   final String text;
   final int? spotlightMemberId;
 
@@ -550,6 +559,7 @@ class ExpeditionEvent {
       ExpeditionEvent(
         code: json['code'] as String? ?? '',
         title: json['title'] as String? ?? '',
+        bubble: json['bubble'] as String? ?? json['text'] as String? ?? '',
         text: json['text'] as String? ?? '',
         skillHint: json['skill_hint'] as String?,
         spotlightMemberId: json['spotlight_member_id'] is num
