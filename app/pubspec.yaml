@@ -42,6 +42,12 @@ flutter:
     - assets/rooms/
     - assets/adventure/
     - assets/adventure/overworld/
+    - assets/adventure/pixel/backdrops/
+    - assets/adventure/pixel/scenes/
+    - assets/adventure/pixel/banners/
+    - assets/adventure/pixel/tangles/
+    - assets/adventure/pixel/keepers/
+    - assets/adventure/pixel/actors/
     - assets/adventure/tangles/
     - assets/adventure/effects/care-vines/
     - assets/adventure/effects/care-vines-v2/

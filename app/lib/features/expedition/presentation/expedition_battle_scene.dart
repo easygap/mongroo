@@ -111,11 +111,12 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
                 top: 4,
                 left: 6,
                 right: 6,
-                child: MongrooPanel(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  radius: 14,
-                  color: scheme.surface.withAlpha(232),
-                  shadowOffset: const Offset(0, 2),
+                child: PixelPanel(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  fill: scheme.surface.withAlpha(236),
+                  border: MongrooPalette.of(context).night,
+                  highlight: Colors.white.withAlpha(110),
+                  shadow: MongrooPalette.of(context).night.withAlpha(80),
                   child: topBar,
                 ),
               ),
@@ -169,15 +170,16 @@ class _ImmersiveBattleStage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final battle = expedition.currentEvent!.battle!;
+    // 전장은 지역별 도트 배경 위에 선다. 둥근 카드 안의 뿌연 원화가 아니라
+    // 한 장의 도트 화면이라, 모서리도 도트 판처럼 작게만 깎는다.
     return MongrooPanel(
       key: const ValueKey('immersive-combat-stage'),
       padding: EdgeInsets.zero,
-      radius: 18,
-      borderColor: expeditionGuardianBattleScene.accent.withAlpha(105),
-      child: ExpeditionSceneBackdrop(
-        scene: expeditionGuardianBattleScene,
+      radius: 8,
+      borderColor: const Color(0xFF0E0B08),
+      child: PixelBattleBackdrop(
         regionCode: expedition.region.code,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(8),
         semanticLabel: '${node.sceneLabel} '
             '${battle.isTangle ? '엉킴' : '수호전'}. '
             '${battle.enemy.name} 장벽 ${battle.enemy.guard}/${battle.enemy.maxGuard}.',

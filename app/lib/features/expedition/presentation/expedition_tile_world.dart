@@ -87,6 +87,30 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
   /// 지금 떠 있는 말풍선. 닫아야 다시 걷는다.
   ({String title, String body})? _speech;
 
+  /// 틱의 현재 시각. 먼지와 와이프가 나이를 잴 때 쓴다.
+  Duration _now = Duration.zero;
+
+  /// 발밑에서 피어오르는 먼지. 걸음마다 하나씩 나고 0.4초면 사라진다.
+  final List<({Offset world, Duration born})> _puffs = [];
+
+  /// 전투로 들어가는 와이프가 시작된 시각. 서버 응답을 기다리는 동안 화면을
+  /// 도트 띠로 닫아 `멈췄나` 대신 `들어간다`로 읽히게 한다.
+  Duration? _wipeStart;
+
+  /// 필드에 서 있는 엉킴의 도트. 지역의 첫 엉킴이다.
+  ui.Image? _monster;
+
+  static const _wipeDuration = Duration(milliseconds: 460);
+  static const _puffDuration = Duration(milliseconds: 420);
+
+  /// 지역마다 필드에 서 있는 엉킴. 전투에 나오는 그 도트를 그대로 쓴다.
+  static const _fieldMonsters = <String, String>{
+    'moss_archive': 'tangled_ledger',
+    'echo_well': 'knotted_echo',
+    'starlight_seed_vault': 'snarled_stardust',
+    'heartwood_observatory': 'ring_shard_tangle',
+  };
+
   /// 그릴 자리. 칸 사이를 오가는 동안만 소수점이 된다.
   Offset get _position => Offset(
         _fromX + (_tileX - _fromX) * _progress + .5,
@@ -102,6 +126,16 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
     _placeAtSpawn();
     _ticker = createTicker(_tick)..start();
     unawaited(_loadAtlas());
+    unawaited(_loadMonster());
+  }
+
+  Future<void> _loadMonster() async {
+    final code = _fieldMonsters[widget.expedition.region.code] ?? 'tangled_ledger';
+    final image = await ExpeditionPixelImages.load(
+      expeditionPixelEnemyAsset(enemyKind: 'tangle', enemyCode: code),
+    );
+    if (!mounted || image == null) return;
+    setState(() => _monster = image);
   }
 
   Future<void> _loadWalker() async {
@@ -318,6 +352,16 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
     // 칸이 바뀔 때만 다시 그린다.
     final wasEmber = (_stride * 12).floor();
     if (!_reduceMotion) _stride = (_stride + seconds * 3) % 2;
+    _now = elapsed;
+
+    // 먼지는 제 수명이 다하면 지운다. 와이프는 도는 동안 매 프레임 그린다.
+    final hadPuffs = _puffs.isNotEmpty;
+    _puffs.removeWhere((puff) => elapsed - puff.born > _puffDuration);
+    if (_wipeStart != null ||
+        _puffs.isNotEmpty ||
+        (hadPuffs && _puffs.isEmpty)) {
+      setState(() {});
+    }
 
     if (_moving) {
       setState(() {
@@ -428,6 +472,10 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
     if (_facing != direction) setState(() => _facing = direction);
     if (_field.blocked(Offset(targetX + .5, targetY + .5))) return;
     setState(() {
+      // 떠나는 칸에 먼지 한 줌. 스타듀·포켓몬이 걸음마다 하는 그 작은 일이다.
+      if (!_reduceMotion) {
+        _puffs.add((world: Offset(_tileX + .5, _tileY + .9), born: _now));
+      }
       _fromX = _tileX;
       _fromY = _tileY;
       _tileX = targetX;
@@ -467,7 +515,8 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
   Future<void> _enterDestination() async {
     if (_movePending || !_canReachServer) return;
     _movePending = true;
-    _ticker.stop();
+    // 틱은 세우지 않는다. 와이프가 돌아야 하고, 걸음은 `_movePending`이 막는다.
+    if (!_reduceMotion) setState(() => _wipeStart = _now);
     try {
       final moved = await ref
           .read(expeditionControllerProvider.notifier)
@@ -475,7 +524,10 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
       if (moved && mounted) HapticFeedback.selectionClick();
     } finally {
       _movePending = false;
-      if (mounted) _pointerUp();
+      if (mounted) {
+        _wipeStart = null;
+        _pointerUp();
+      }
     }
   }
 
@@ -499,8 +551,20 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
     // 고대비를 켠 사람에게는 어둠을 걷는다. 분위기보다 길이 먼저다.
     final lighting = expeditionLightingFor(_field.regionCode)
         .lifted(MediaQuery.highContrastOf(context) ? .62 : 0);
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+    final wipe = _wipeStart == null
+        ? 0.0
+        : ((_now - _wipeStart!).inMilliseconds / _wipeDuration.inMilliseconds)
+            .clamp(0.0, 1.0);
+    final puffs = [
+      for (final puff in _puffs)
+        (
+          world: puff.world,
+          age: ((_now - puff.born).inMilliseconds /
+                  _puffDuration.inMilliseconds)
+              .clamp(0.0, 1.0),
+        ),
+    ];
+    return ClipRect(
       child: ColoredBox(
         color: _field.palette.voidColor,
         child: LayoutBuilder(
@@ -550,6 +614,7 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                           pulse: _stride,
                           lighting: lighting,
                           reduceMotion: reduceMotion,
+                          monster: _monster,
                         ),
                       ),
                     ),
@@ -591,6 +656,9 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                           pulse: _stride,
                           lighting: lighting,
                           reduceMotion: reduceMotion,
+                          monster: _monster,
+                          puffs: puffs,
+                          wipe: wipe,
                         ),
                       ),
                     ),
@@ -655,9 +723,11 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                     height: size.width < 370 ? 74 : 86,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: const Color(0xCC151A18),
-                        borderRadius: BorderRadius.circular(11),
-                        border: Border.all(color: Colors.white24),
+                        color: const Color(0xD9151A18),
+                        border: Border.all(
+                          color: const Color(0xFF0E0B08),
+                          width: 2,
+                        ),
                       ),
                       child: CustomPaint(
                         key: const ValueKey('tile-world-minimap'),
@@ -670,27 +740,35 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                       ),
                     ),
                   ),
+                  // 미니맵 바로 아래. 예전엔 오른쪽 아래였는데 그 자리는
+                  // `살펴보기` 단추가 서는 곳이라 둘이 겹쳤다.
                   Positioned(
-                    right: 10,
-                    bottom: 10,
+                    right: 8,
+                    top: (size.width < 370 ? 74 : 86) + 16,
                     child: Tooltip(
                       message: widget.destination.name,
                       child: Semantics(
                         button: true,
                         label: '${widget.destination.name} 접근성 바로가기',
-                        child: Material(
-                          color: const Color(0xDD193A34),
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            key: const ValueKey('tile-world-destination'),
-                            customBorder: const CircleBorder(),
-                            onTap: _movementEnabled ? _enterDestination : null,
-                            child: const SizedBox(
-                              width: 48,
-                              height: 48,
-                              child: Icon(
-                                Icons.flag_rounded,
-                                color: Color(0xFFFFE19A),
+                        child: PixelPanel(
+                          fill: const Color(0xE6193A34),
+                          border: const Color(0xFF0E0B08),
+                          highlight: Colors.white.withAlpha(70),
+                          shadow: Colors.black.withAlpha(120),
+                          padding: EdgeInsets.zero,
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: InkWell(
+                              key: const ValueKey('tile-world-destination'),
+                              onTap:
+                                  _movementEnabled ? _enterDestination : null,
+                              child: const SizedBox(
+                                width: 42,
+                                height: 42,
+                                child: Icon(
+                                  Icons.flag_rounded,
+                                  color: Color(0xFFFFE19A),
+                                ),
                               ),
                             ),
                           ),
@@ -766,27 +844,34 @@ class _InteractButton extends StatelessWidget {
     return Semantics(
       button: true,
       label: '$label $_action',
-      child: Material(
-        color: scheme.primary,
-        borderRadius: BorderRadius.circular(999),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(999),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.touch_app_rounded, size: 17, color: scheme.onPrimary),
-                const SizedBox(width: 6),
-                Text(
-                  '$label · $_action',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: scheme.onPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-              ],
+      child: PixelPanel(
+        fill: scheme.primary,
+        border: const Color(0xFF0E0B08),
+        highlight: Colors.white.withAlpha(120),
+        shadow: Colors.black.withAlpha(120),
+        padding: EdgeInsets.zero,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.touch_app_rounded, size: 17, color: scheme.onPrimary),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$label · $_action',
+                    style: ExpeditionPixelArt.text(
+                      13,
+                      color: scheme.onPrimary,
+                      shadow: Colors.transparent,
+                      shadowOffset: 0,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -810,40 +895,44 @@ class _SpeechBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final palette = MongrooPalette.of(context);
+    // 도트 RPG의 글상자. 흰 판에 두 칸 테두리, 제목은 도트 글꼴.
     return Semantics(
       liveRegion: true,
-      child: Material(
-        color: scheme.surface.withAlpha(244),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: scheme.primary,
-                          ),
+      child: PixelPanel(
+        fill: scheme.surface.withAlpha(246),
+        border: palette.night,
+        highlight: Colors.white.withAlpha(120),
+        shadow: palette.night.withAlpha(110),
+        padding: const EdgeInsets.fromLTRB(10, 6, 4, 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: ExpeditionPixelArt.text(
+                      14,
+                      color: scheme.primary,
+                      shadow: Colors.transparent,
+                      shadowOffset: 0,
                     ),
-                    const SizedBox(height: 3),
-                    Text(body, style: Theme.of(context).textTheme.bodyMedium),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(body, style: Theme.of(context).textTheme.bodyMedium),
+                ],
               ),
-              IconButton(
-                onPressed: onClose,
-                icon: const Icon(Icons.close_rounded),
-                tooltip: '닫기',
-                iconSize: 20,
-              ),
-            ],
-          ),
+            ),
+            IconButton(
+              onPressed: onClose,
+              icon: const Icon(Icons.close_rounded),
+              tooltip: '닫기',
+              iconSize: 20,
+            ),
+          ],
         ),
       ),
     );
@@ -3044,7 +3133,19 @@ class _TileWorldPainter extends CustomPainter {
     required this.pulse,
     required this.lighting,
     required this.reduceMotion,
+    this.monster,
+    this.puffs = const [],
+    this.wipe = 0,
   });
+
+  /// 필드에 선 엉킴의 도트. 아직 못 읽었으면 아틀라스의 옛 그림으로 떨어진다.
+  final ui.Image? monster;
+
+  /// 발밑 먼지. 월드 좌표와 0~1 나이.
+  final List<({Offset world, double age})> puffs;
+
+  /// 전투로 들어가는 와이프의 진행도. 0이면 없다.
+  final double wipe;
 
   static const double _atlasCell = 96;
   static const double _atlasGutter = 2;
@@ -3116,8 +3217,53 @@ class _TileWorldPainter extends CustomPainter {
         width: camera.tilePixels * .72,
       );
     }
-    if (foreground) _paintLighting(canvas, size);
+    if (foreground) {
+      _paintLighting(canvas, size);
+      _paintPuffs(canvas);
+      _paintWipe(canvas, size);
+    }
     canvas.restore();
+  }
+
+  /// 걸음마다 나는 먼지. 세 개의 네모가 위로 흩어지며 옅어진다.
+  void _paintPuffs(Canvas canvas) {
+    if (puffs.isEmpty) return;
+    final unit = math.max(2.0, (camera.tilePixels / 12).roundToDouble());
+    final flat = Paint()..isAntiAlias = false;
+    for (final puff in puffs) {
+      final foot = camera.project(puff.world);
+      final alpha = (1 - puff.age) * .55;
+      for (final (dx, lift) in const [(-1.6, 1.0), (0.0, 1.6), (1.6, 1.0)]) {
+        final x = ((foot.dx + dx * unit * (1 + puff.age)) / unit).round() * unit;
+        final y =
+            ((foot.dy - unit * lift * puff.age * 2.2) / unit).round() * unit;
+        canvas.drawRect(
+          Rect.fromLTWH(x, y, unit, unit),
+          flat..color = const Color(0xFFEFE4C8).withValues(alpha: alpha),
+        );
+      }
+    }
+  }
+
+  /// 전투로 들어가는 와이프. 양옆에서 도트 띠가 닫힌다 — 포켓몬의 그 장면이다.
+  void _paintWipe(Canvas canvas, Size size) {
+    if (wipe <= 0) return;
+    final band = math.max(4.0, (camera.tilePixels / 4).roundToDouble());
+    final rows = (size.height / band).ceil();
+    final flat = Paint()
+      ..isAntiAlias = false
+      ..color = const Color(0xFF0E0B08);
+    final eased = Curves.easeInQuad.transform(wipe);
+    for (var row = 0; row < rows; row++) {
+      // 줄마다 조금씩 어긋나게 닫히면 커튼이 아니라 톱니처럼 보인다.
+      final stagger = (row % 3) * .08;
+      final reach = ((eased - stagger) / (1 - .16)).clamp(0.0, 1.0);
+      final half = (size.width / 2 * reach / band).round() * band;
+      if (half <= 0) continue;
+      final y = row * band;
+      canvas.drawRect(Rect.fromLTWH(0, y, half, band), flat);
+      canvas.drawRect(Rect.fromLTWH(size.width - half, y, half, band), flat);
+    }
   }
 
   void _paintVisibleGround(Canvas canvas) {
@@ -3385,6 +3531,32 @@ class _TileWorldPainter extends CustomPainter {
           ..color = Colors.black.withAlpha(82)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
       );
+    }
+    // 엉킴은 전투에 나오는 그 도트로 선다. 필드의 적과 전투의 적이 같은
+    // 얼굴이어야 `저 녀석과 붙는다`가 성립한다. 숨쉬기는 한 칸씩만.
+    final sprite = monster;
+    if (object.kind == _TileObjectKind.monster && sprite != null) {
+      final unitPx = math.max(1.0, (unit / 12).roundToDouble());
+      final targetHeight = unit * 1.55;
+      final scale = targetHeight / sprite.height;
+      final width = (sprite.width * scale / unitPx).round() * unitPx;
+      final height = (sprite.height * scale / unitPx).round() * unitPx;
+      final breath =
+          reduceMotion ? 0.0 : ((pulse * 2).floor() % 2 == 0 ? 0.0 : unitPx);
+      canvas.drawImageRect(
+        sprite,
+        Rect.fromLTWH(0, 0, sprite.width.toDouble(), sprite.height.toDouble()),
+        Rect.fromLTWH(
+          (foot.dx - width / 2).roundToDouble(),
+          (foot.dy - height + breath).roundToDouble(),
+          width,
+          height,
+        ),
+        Paint()
+          ..isAntiAlias = false
+          ..filterQuality = FilterQuality.none,
+      );
+      return;
     }
     final image = atlas;
     if (image != null) {
@@ -3715,6 +3887,10 @@ class _TileWorldPainter extends CustomPainter {
       oldDelegate.foreground != foreground ||
       oldDelegate.pulse != pulse ||
       oldDelegate.atlas != atlas ||
+      oldDelegate.monster != monster ||
+      oldDelegate.wipe != wipe ||
+      oldDelegate.puffs.length != puffs.length ||
+      (puffs.isNotEmpty && oldDelegate.puffs != puffs) ||
       oldDelegate.field != field;
 }
 

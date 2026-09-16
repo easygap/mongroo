@@ -2,154 +2,161 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// 배경 원화 위에 전투원의 접지면과 시선 유도광만 더한다.
-/// 정적인 한 장으로 유지해 스킬 애니메이션 중에는 다시 그리지 않는다.
+/// 배경 원화 위에 전투원의 접지면만 더한다.
+///
+/// 도트 무대라 번짐이 없다. 발밑 그림자는 두 톤의 납작한 타원이고, 그 타원도
+/// 도트 격자([unit])에 물린다. 정적인 한 장으로 유지해 스킬 애니메이션 중에는
+/// 다시 그리지 않는다.
 class ExpeditionBattleGroundPainter extends CustomPainter {
-  const ExpeditionBattleGroundPainter();
+  const ExpeditionBattleGroundPainter({
+    this.unit = 3,
+    this.enemyFoot = const Offset(.70, .50),
+    this.enemyWidth = 150,
+    this.partyFoot = const Offset(.30, .88),
+    this.partyWidth = 96,
+  });
+
+  /// 도트 한 칸의 논리 픽셀 수.
+  final double unit;
+
+  /// 무대 폭·높이에 대한 비율 좌표.
+  final Offset enemyFoot;
+  final double enemyWidth;
+  final Offset partyFoot;
+  final double partyWidth;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final floor = Offset(size.width * .52, size.height * .82);
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          stops: [.38, 1],
-          colors: [Colors.transparent, Color(0xA8121725)],
-        ).createShader(Offset.zero & size),
+    _shadow(
+      canvas,
+      Offset(size.width * enemyFoot.dx, size.height * enemyFoot.dy),
+      enemyWidth,
     );
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: floor,
-        width: size.width * .92,
-        height: size.height * .30,
-      ),
-      Paint()
-        ..color = const Color(0x5C07121D)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+    _shadow(
+      canvas,
+      Offset(size.width * partyFoot.dx, size.height * partyFoot.dy),
+      partyWidth,
     );
-    for (var ring = 0; ring < 3; ring++) {
-      canvas.drawArc(
-        Rect.fromCenter(
-          center: floor,
-          width: size.width * (.52 + ring * .14),
-          height: size.height * (.12 + ring * .035),
-        ),
-        math.pi * .08,
-        math.pi * .84,
-        false,
-        Paint()
-          ..color = const Color(0xFF8CE8DF).withAlpha(34 - ring * 7)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.4,
-      );
-    }
-    const motes = <Offset>[
-      Offset(.09, .43),
-      Offset(.18, .27),
-      Offset(.38, .34),
-      Offset(.61, .22),
-      Offset(.82, .32),
-      Offset(.91, .48),
-    ];
-    for (var index = 0; index < motes.length; index++) {
-      final point = Offset(
-        size.width * motes[index].dx,
-        size.height * motes[index].dy,
-      );
-      canvas.drawCircle(
-        point,
-        index.isEven ? 1.8 : 1.2,
-        Paint()
-          ..color = const Color(0xFFB8F3E9).withAlpha(90)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+  }
+
+  void _shadow(Canvas canvas, Offset foot, double width) {
+    final flat = Paint()..isAntiAlias = false;
+    final height = math.max(unit * 3, width * .22);
+    // 타원을 격자에 맞춘 가로 띠들로 그린다 — 안티앨리어싱 없는 타원.
+    final rows = (height / unit).round();
+    for (var row = 0; row < rows; row++) {
+      final t = (row + .5) / rows * 2 - 1;
+      final halfWidth = width / 2 * math.sqrt(math.max(0, 1 - t * t));
+      final left = ((foot.dx - halfWidth) / unit).round() * unit;
+      final right = ((foot.dx + halfWidth) / unit).round() * unit;
+      final y = ((foot.dy - height / 2) / unit).round() * unit + row * unit;
+      final edge = halfWidth < width * .32;
+      canvas.drawRect(
+        Rect.fromLTRB(left, y, right, y + unit),
+        flat..color = Color.fromRGBO(8, 6, 4, edge ? .22 : .34),
       );
     }
   }
 
   @override
   bool shouldRepaint(covariant ExpeditionBattleGroundPainter oldDelegate) =>
-      false;
+      oldDelegate.unit != unit ||
+      oldDelegate.enemyFoot != enemyFoot ||
+      oldDelegate.enemyWidth != enemyWidth ||
+      oldDelegate.partyFoot != partyFoot ||
+      oldDelegate.partyWidth != partyWidth;
 }
 
 /// 공격 전에만 보이는 범위 표식이다. 실제 투사체와 충돌 연출은 검수한
 /// 래스터 시퀀스가 담당하며 이 painter는 입력 예고 UI만 그린다.
+///
+/// 형태는 색을 못 봐도 갈리게 셋이다 — 앞열은 겹화살표, 전체는 동심 고리,
+/// 최저 체력은 조준점. 도트 무대라 선도 칸 단위로 끊어 그린다.
 class ExpeditionGuardianIntentPainter extends CustomPainter {
   const ExpeditionGuardianIntentPainter({
     required this.phase,
     required this.reduceMotion,
     this.target = 'front',
+    this.unit = 3,
+    this.anchor = const Offset(.70, .34),
   });
 
   final double phase;
   final bool reduceMotion;
   final String target;
+  final double unit;
+
+  /// 표식의 중심. 무대 비율 좌표.
+  final Offset anchor;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width * .75, size.height * .50);
     final wave = reduceMotion ? .55 : (math.sin(phase * math.pi * 2) + 1) / 2;
-    final color = const Color(0xFF8CE8DF);
-    final radius = 34 + wave * 11;
-    final stroke = Paint()
-      ..color = color.withAlpha((100 + wave * 80).round())
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.4
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
+    final center = Offset(
+      (size.width * anchor.dx / unit).round() * unit,
+      (size.height * anchor.dy / unit).round() * unit,
+    );
+    final color = Color.fromRGBO(140, 232, 223, .55 + wave * .45);
+    final flat = Paint()
+      ..isAntiAlias = false
+      ..color = color;
+    final step = unit;
+    final reach = (unit * (9 + wave * 2)).roundToDouble();
+
+    void dot(double x, double y) => canvas.drawRect(
+          Rect.fromLTWH(
+            (x / unit).round() * unit,
+            (y / unit).round() * unit,
+            unit,
+            unit,
+          ),
+          flat,
+        );
+
     switch (target) {
       case 'all':
+        // 세 겹의 납작한 고리.
         for (var ring = 0; ring < 3; ring++) {
-          canvas.drawOval(
-            Rect.fromCenter(
-              center: center,
-              width: radius * (1.25 + ring * .42),
-              height: radius * (.58 + ring * .25),
-            ),
-            stroke
-              ..color = color.withAlpha((145 - ring * 30 + wave * 35).round()),
-          );
+          final rx = reach * (.7 + ring * .45);
+          final ry = rx * .45;
+          final points = (rx / step * 2).round().clamp(12, 64);
+          for (var index = 0; index < points; index++) {
+            final angle = index / points * math.pi * 2;
+            dot(center.dx + math.cos(angle) * rx, center.dy + math.sin(angle) * ry);
+          }
         }
-        break;
       case 'lowest':
-        canvas.drawCircle(center, radius * .72, stroke);
-        final gap = radius * .34;
-        final reach = radius * .96;
-        canvas
-          ..drawLine(center - Offset(reach, 0), center - Offset(gap, 0), stroke)
-          ..drawLine(center + Offset(gap, 0), center + Offset(reach, 0), stroke)
-          ..drawLine(center - Offset(0, reach), center - Offset(0, gap), stroke)
-          ..drawLine(
-              center + Offset(0, gap), center + Offset(0, reach), stroke);
-        break;
-      default:
-        for (final offset in [0.0, radius * .42]) {
-          final chevron = Path()
-            ..moveTo(
-                center.dx + radius * .48 + offset, center.dy - radius * .52)
-            ..lineTo(center.dx - radius * .34 + offset, center.dy)
-            ..lineTo(
-                center.dx + radius * .48 + offset, center.dy + radius * .52);
-          canvas.drawPath(chevron, stroke);
+        // 조준점: 작은 고리와 네 방향의 짧은 선.
+        final r = reach * .6;
+        final points = (r / step * 2).round().clamp(10, 40);
+        for (var index = 0; index < points; index++) {
+          final angle = index / points * math.pi * 2;
+          dot(center.dx + math.cos(angle) * r, center.dy + math.sin(angle) * r);
         }
-        break;
+        for (var k = 2; k <= 4; k++) {
+          dot(center.dx + k * step + r * .6, center.dy);
+          dot(center.dx - k * step - r * .6, center.dy);
+          dot(center.dx, center.dy + k * step + r * .6);
+          dot(center.dx, center.dy - k * step - r * .6);
+        }
+      default:
+        // 앞열: 왼쪽을 가리키는 겹화살표 둘.
+        for (final shift in [0.0, step * 5]) {
+          for (var k = 0; k <= 5; k++) {
+            dot(center.dx + shift + k * step - step * 2, center.dy - k * step);
+            dot(center.dx + shift + k * step - step * 2, center.dy + k * step);
+          }
+        }
     }
-    canvas.drawCircle(
-      center,
-      6.2 + wave * 2.8,
-      Paint()
-        ..color = color.withAlpha((95 + wave * 80).round())
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
-    );
   }
 
   @override
   bool shouldRepaint(covariant ExpeditionGuardianIntentPainter oldDelegate) =>
       oldDelegate.phase != phase ||
       oldDelegate.reduceMotion != reduceMotion ||
-      oldDelegate.target != target;
+      oldDelegate.target != target ||
+      oldDelegate.unit != unit ||
+      oldDelegate.anchor != anchor;
 }
 
 /// 색을 보지 않아도 앞열·전체·최저 체력 예고를 구분하는 공용 형태 언어다.

@@ -381,7 +381,8 @@ class _CurrentLocationScene extends ConsumerWidget {
           LayoutBuilder(
             builder: (context, constraints) => AspectRatio(
               aspectRatio: constraints.maxWidth < 600 ? 4 / 3 : 16 / 9,
-              child: ExpeditionSceneBackdrop(
+              child: _StageFrame(
+                pixel: guardianBattle,
                 scene: scene,
                 regionCode: expedition.region.code,
                 sceneKey: node.sceneKey,
@@ -511,6 +512,53 @@ class _CurrentLocationScene extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// 현장 카드의 틀. 수호전이 열리면 뿌연 장면 원화 대신 지역 도트 전장을 쓴다.
+///
+/// 장면 원화는 걷고 고르는 화면의 것이다. 전투까지 같은 그림 위에 얹으면
+/// 도트 캐릭터와 적이 붓 그림 위에 오려 붙은 것처럼 보인다.
+class _StageFrame extends StatelessWidget {
+  const _StageFrame({
+    required this.pixel,
+    required this.scene,
+    required this.regionCode,
+    required this.sceneKey,
+    required this.preloadScenes,
+    required this.preloadDelay,
+    required this.borderRadius,
+    required this.semanticLabel,
+    required this.child,
+  });
+
+  final bool pixel;
+  final ExpeditionSceneTheme scene;
+  final String regionCode;
+  final String sceneKey;
+  final List<ExpeditionSceneTheme> preloadScenes;
+  final Duration preloadDelay;
+  final BorderRadius borderRadius;
+  final String semanticLabel;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => pixel
+      ? PixelBattleBackdrop(
+          regionCode: regionCode,
+          borderRadius: borderRadius,
+          semanticLabel: semanticLabel,
+          child: child,
+        )
+      : ExpeditionSceneBackdrop(
+          scene: scene,
+          regionCode: regionCode,
+          sceneKey: sceneKey,
+          preloadScenes: preloadScenes,
+          preloadDelay: preloadDelay,
+          borderRadius: borderRadius,
+          semanticLabel: semanticLabel,
+          child: child,
+        );
 }
 
 class _SceneHudTag extends StatelessWidget {

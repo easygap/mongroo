@@ -297,3 +297,64 @@
 다음 재검토 예정일은 2026-11-10이다. 재검토일까지도 이 문서보다
 `expedition_stage_redesign.md`의 화면 계약, `character_skill_growth_design.md`의 수치 계약,
 `EXPEDITION_ASSET_PRODUCTION.md`의 제작 gate가 구현의 직접 원본이다.
+
+## 9. 2026-09-16 재검토 — 화풍을 도트 하나로
+
+### 9.1 무엇이 문제였나
+
+8월 조사는 **구조**(한 전장, 6아이콘 벨트, 적 예고, 접촉 인과)를 잡았고 그것은 그대로
+유효하다. 실기로 보니 문제는 구조가 아니라 **화풍**이었다. 던전 걷기만 24도트 타일과
+걷기 시트였고, 허브 배너·장면 원화·전투 무대·캐릭터·엉킴·수호짐승은 전부 흐린 붓 그림
+일러스트였다. 한 화면 안에 도트 캐릭터가 붓 그림 위에 오려 붙어 서고, 유리 카드와
+번진 그림자가 그 위를 덮었다. 사용자가 "AI가 그린 것 같다"고 느낀 지점이 정확히 여기다
+— 매끈한 그라디언트, 광채 번짐, 흐린 가장자리, 어디서나 같은 둥근 카드.
+
+### 9.2 2026년 9월에 확인한 것
+
+| 확인한 신호 | 공개 근거 | 몽그루 해석 |
+|---|---|---|
+| 2026년의 도트는 복고 흉내가 아니라 하나의 매체로 다뤄진다. 평평하게 칠한 스프라이트 위에 노멀맵·실시간 조명·시차(parallax)를 얹되 도트 자체는 뭉개지 않는 것이 요즘 파이프라인이다. | [Relish Games — Pixel Art Pipelines 2026](https://relishgames.com/journal/pixel-art-pipelines-best-tools-for-2026/), [Indienomicon — Why Indie Studios Are Returning to Pixel Art RPGs in 2026](https://indienomicon.com/news-industry-trends/why-indie-studios-are-returning-to-pixel-art-rpgs-in-2026/) | 도트는 평평하게, 빛은 위에 따로. 걷기 화면의 조명 겹을 전투 무대에도 같은 문법으로 쓴다. 도트를 흐리는 광채·블러는 어디에도 두지 않는다. |
+| Fields of Mistria가 2026-08-05 정식 출시(1.0)했다. 도트 스프라이트에 애니메이션풍 초상을 섞는 방식이 검증됐고, 전투와 던전이 농장 루프 옆에 자연스럽게 붙는다. | [Game Informer — Fields of Mistria hits 1.0 in August](https://gameinformer.com/sgf-2026/2026/06/06/fields-of-mistria-a-magical-stardew-valley-inspired-indie-hits-10-in-august), [Pixelkin — 1.0 on Aug 5](https://pixelkin.org/2026/06/12/after-two-years-in-early-access-rpg-farm-sim-fields-of-mistria-1-0-will-release-aug-5/) | 일기 화면의 성장 원화(붓 그림)는 초상 역할로 남기고, 걷고 싸우는 세계는 도트 하나로 통일한다. 두 화풍의 경계는 `화면`이 아니라 `역할`이다. |
+| Stardew Valley는 10주년(2026-02-26)에 1.7을 예고했고, 제작자는 지도 편집기를 만들더라도 AI 없이 만들겠다고 못 박았다. 도트 커뮤니티에서 손맛의 부재는 곧 신뢰의 부재다. | [PC Gamer — Stardew Valley 1.7 guide](https://www.pcgamer.com/games/life-sim/stardew-valley-1-7-guide/), [Screen Rant — 1.7 interview](https://screenrant.com/stardew-valley-1-7-update-content-concernedape-interview/) | 생성기 출력물을 그대로 쓰지 않는다. 격자 되돌리기·팔레트 양자화·방향 교정·정수 배율 렌더링을 거쳐 손으로 찍은 도트의 규칙(같은 칸 크기, 적은 색, 단단한 경계)을 강제한다. |
+| Sea of Stars: Sunset Edition 같은 2026년 도트 RPG는 스프라이트 애니메이션과 접촉 순간의 파티클을 함께 써서 턴제 타격을 `보이게` 만든다. | [Screen Rant — modern turn-based RPGs with pixel art](https://screenrant.com/turn-based-rpgs-best-modern-pixel-art/), [Demagaga — indie pixel art RPGs 2026](https://www.demagaga.com/2026/02/26/best-indie-pixel-art-rpgs/) | 적은 원화 한 장이되 상태는 움직임이다 — 준비는 움츠림, 공격은 내지름, 피격은 흰 번쩍임과 밀림, 풀려남은 화소 조각 흩어짐. 이펙트도 같은 굵기의 도트로 디코드한다. |
+| 포켓몬은 2026년 Pokopia(3월)와 XD 복각을 냈고 10세대(Winds/Waves)는 2027년이다. 대치 전투의 문법(오른쪽 위 상대, 왼쪽 아래 우리, 상대 HP 상자는 왼쪽 위, 흰 글상자 명령)은 30년째 그대로다. | [Nintendo Life — upcoming Pokémon games](https://www.nintendolife.com/guides/upcoming-pokemon-games-release-dates-all-announced-pokemon-titles), [Pokémon Day 2026 Presents](https://www.pokemon.com/us/news/news-and-updates-from-the-pokemon-day-2026-pokemon-presents) | 무대 배치를 그 문법으로 고정한다. 적 HUD는 왼쪽 위 3분의 2 폭까지만, 적은 오른쪽 위, 행동 대원은 왼쪽 아래 맨 앞, 명령 독은 두 칸 테두리의 흰 판이다. |
+| 모바일 코지 게임 UI는 큰 터치 영역, 단순한 위계, 글보다 아이콘, 흐리지 않은 HUD를 요구한다. | [SDLC — intuitive UI in cozy games](https://sdlccorp.com/post/the-art-of-designing-intuitive-user-interfaces-in-cozy-games/), [Pixune — mobile game UI 2026](https://pixune.com/blog/best-examples-mobile-game-ui-design/) | 48dp·색 외 형태 표시·길게 누르기 상세는 유지하고, 표면만 도트 판으로 바꾼다. 유리·번짐·둥근 칩은 전투·던전 화면에서 뺀다. |
+
+### 9.3 이번에 정한 화풍 규칙
+
+1. **화소는 정수 배율 하나.** 배경이 무대를 덮는 배율(폰 2, 넓은 화면 2~3)을
+   `PixelStageScale`로 알리고 캐릭터·적·HUD·이펙트가 같은 값을 쓴다.
+2. **보간하지 않는다.** `FilterQuality.none`과 `isAntiAlias = false`. 움직임도 칸 단위로
+   반올림한다 — 숨쉬기는 한 칸, 흔들림도 칸에 물린다.
+3. **색은 적게, 경계는 단단하게.** 배경 40색, 스프라이트 24색, 디더 없음.
+4. **UI는 두 칸 테두리와 한 칸 그림자.** 귀퉁이 한 칸을 잘라 낸 판(`PixelPanel`),
+   네모 칸 게이지(`PixelBar`), 도트 글꼴은 숫자와 한두 마디 라벨에만.
+5. **빛은 위에, 도트는 아래.** 걷기 화면의 조명 겹(`ExpeditionLighting`)은 유지한다.
+   광채·블러·유리 효과는 어디에도 두지 않는다.
+6. **작은 손맛을 빼놓지 않는다.** 걸음마다 발밑 먼지, 전투로 들어갈 때 양옆에서 닫히는
+   도트 띠, 필드에 서서 숨쉬는 엉킴, 맞는 순간의 흰 번쩍임과 밀림, 풀려날 때 흩어지는
+   화소 조각.
+
+### 9.4 이번에 바뀐 것과 남은 것
+
+바뀐 것:
+
+- 전투 배경 8, 장면 원화 21, 허브 배너 1, 엉킴 12, 수호짐승 4, 아군 17을 도트로 새로
+  만들어 `app/assets/adventure/pixel/`에 실었다(제작 기록:
+  `design-system/concepts/pixel-battle-v1/README.md`).
+- 전투 무대(`expedition_combat_overlay.dart`)·HUD·명령 독·상단 바·이펙트 레이어를 도트
+  문법으로 다시 그렸다. 합동 수호전과 수호전 현장도 같은 무대를 쓴다.
+- 장면 배경 위젯이 도트 장면을 우선하고 없을 때만 옛 원화로 떨어지므로 준비·사건·깊은
+  조사·체험 화면이 호출부 수정 없이 함께 바뀌었다.
+- 걷기 화면은 필드가 화면의 주인공이 되도록 글 상자 셋을 필드 안 도트 글상자 하나와
+  발치 두 줄로 줄였다.
+
+남은 것:
+
+- 깊은 조사(탐사) 모드의 지형 지도(`expedition-*-terrain-*.webp`)는 아직 붓 그림이다.
+  랜드마크 좌표가 보행 마스크와 묶여 있어 지도를 새로 그리면 마스크도 함께 다시 잡아야
+  한다.
+- 옛 붓 그림 장면·엉킴·수호짐승 원화는 번들에 남아 있다(도트가 없을 때의 폴백이자
+  타일 아틀라스의 몬스터 원본). 폴백이 한 번도 안 타는 것을 실기로 확인한 뒤 걷어낸다.
+- 걷기 타일 아틀라스 자체는 붓 그림을 24도트로 눌러 만든 것이라 새 도트 자산보다 색이
+  탁하다. 지역별 도트 타일을 새로 구우면 걷기와 전투의 색이 완전히 맞는다.

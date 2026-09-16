@@ -1,0 +1,950 @@
+{
+  "version": 1,
+  "assets": {
+    "assets/adventure/pixel/backdrops/echo_well-landscape.png": {
+      "asset": "assets/adventure/pixel/backdrops/echo_well-landscape.png",
+      "kind": "backdrops",
+      "width": 384,
+      "height": 256,
+      "sha256": "7c433051a6f882bdbe65bfadf1bce02cc7103cea7ccff5a574baa30b6f16ce86",
+      "source": "design-system/concepts/pixel-battle-v1/sources/backdrops/echo_well-landscape.png",
+      "source_sha256": "dc868746df89a0b67da0447a058492cd52fc0e6264a087dd4c50efd3303d52c6",
+      "factor": 4,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/backdrops/echo_well-portrait.png": {
+      "asset": "assets/adventure/pixel/backdrops/echo_well-portrait.png",
+      "kind": "backdrops",
+      "width": 256,
+      "height": 384,
+      "sha256": "8993a0bfbdc6daf3d749ab80ec9f21e3a35c57c8440ed6ecfb13519f9855d412",
+      "source": "design-system/concepts/pixel-battle-v1/sources/backdrops/echo_well-portrait.png",
+      "source_sha256": "30f5905bbe27c131962498e0240f1524f3d9b1705aabfc61f40618911e8545c0",
+      "factor": 4,
+      "source_size": [
+        1024,
+        1536
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/backdrops/heartwood_observatory-landscape.png": {
+      "asset": "assets/adventure/pixel/backdrops/heartwood_observatory-landscape.png",
+      "kind": "backdrops",
+      "width": 384,
+      "height": 256,
+      "sha256": "79f65fa728c04c04ea38607992c69d4629418af5de0cfa03d41c6636edf05f84",
+      "source": "design-system/concepts/pixel-battle-v1/sources/backdrops/heartwood_observatory-landscape.png",
+      "source_sha256": "26c4fbd0ddebba01a1aeea880227b3cf6fff61a0d7ca50b4aeabd3745f8c1478",
+      "factor": 4,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/backdrops/heartwood_observatory-portrait.png": {
+      "asset": "assets/adventure/pixel/backdrops/heartwood_observatory-portrait.png",
+      "kind": "backdrops",
+      "width": 256,
+      "height": 384,
+      "sha256": "d6d486aca0330aae8111821c5d0151ff3a90824ca62908f931161f163284ab23",
+      "source": "design-system/concepts/pixel-battle-v1/sources/backdrops/heartwood_observatory-portrait.png",
+      "source_sha256": "c8284a44f22c6bb3bd655c2394d8307e272f359cfe0c751d3551a4efe833ab6b",
+      "factor": 4,
+      "source_size": [
+        1024,
+        1536
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/backdrops/moss_archive-landscape.png": {
+      "asset": "assets/adventure/pixel/backdrops/moss_archive-landscape.png",
+      "kind": "backdrops",
+      "width": 384,
+      "height": 256,
+      "sha256": "ccb24c98c1e802c6b7204510707b76c50eede594272f95e04aa8c0144f6a0108",
+      "source": "design-system/concepts/pixel-battle-v1/sources/backdrops/moss_archive-landscape.png",
+      "source_sha256": "9a4613f3e9f971c7e308f89b93639db4bdd3b479b3f1fb9ef4bb8bde94956c28",
+      "factor": 4,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/backdrops/moss_archive-portrait.png": {
+      "asset": "assets/adventure/pixel/backdrops/moss_archive-portrait.png",
+      "kind": "backdrops",
+      "width": 256,
+      "height": 384,
+      "sha256": "cd74f1d63295944ba59642fd549e159e17b78bc8591f9490dc2712f702e25a5d",
+      "source": "design-system/concepts/pixel-battle-v1/sources/backdrops/moss_archive-portrait.png",
+      "source_sha256": "f5c59e254204516f9cabd06c1eaa9f1c7bce4de2deba56fdb7f7aa2f54688632",
+      "factor": 4,
+      "source_size": [
+        1024,
+        1536
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/backdrops/starlight_seed_vault-landscape.png": {
+      "asset": "assets/adventure/pixel/backdrops/starlight_seed_vault-landscape.png",
+      "kind": "backdrops",
+      "width": 384,
+      "height": 256,
+      "sha256": "9f4b2072a3db13c9de8f20b821d0126eada94730261a77141f52c9e3e1a738f6",
+      "source": "design-system/concepts/pixel-battle-v1/sources/backdrops/starlight_seed_vault-landscape.png",
+      "source_sha256": "0f9280ad98f9fa749d29f32dddb8f9dc70f05b3a99cd99565b25e4d7b6fc41cd",
+      "factor": 4,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/backdrops/starlight_seed_vault-portrait.png": {
+      "asset": "assets/adventure/pixel/backdrops/starlight_seed_vault-portrait.png",
+      "kind": "backdrops",
+      "width": 256,
+      "height": 384,
+      "sha256": "2e9d264082d166b89cbbb61156911ee238880809b9cec608d614b9a24ea34f91",
+      "source": "design-system/concepts/pixel-battle-v1/sources/backdrops/starlight_seed_vault-portrait.png",
+      "source_sha256": "a70adf3c483d4b48c36d7caf1b662abddf59b5beffbff2cbe8259e0df78e9dae",
+      "factor": 4,
+      "source_size": [
+        1024,
+        1536
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/echo_well__dungeon_gate.png": {
+      "asset": "assets/adventure/pixel/scenes/echo_well__dungeon_gate.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "d60951916ad9196e2dcbae37f741c56f75bc572e9dbd9ae7f47c5a5c42ad2313",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/echo_well__dungeon_gate.png",
+      "source_sha256": "5e30bc49890ba5c0b61c50e0e27443f275974f207a2c08bfcf73bf235fded0cd",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/echo_well__echo_well.png": {
+      "asset": "assets/adventure/pixel/scenes/echo_well__echo_well.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "347b654c0fe20765dc658e6c638766854faf447d0cdcfa5ef7714747ccb7be4a",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/echo_well__echo_well.png",
+      "source_sha256": "ad467fa78b58bf52b1a37c91448a2e1f76700153dce6faf41c2d0b39829e051b",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/echo_well__flooded_cave.png": {
+      "asset": "assets/adventure/pixel/scenes/echo_well__flooded_cave.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "c374a9456acd1d3d9bac003a262b835b7b10ba0c95947f3117e2fd7050058d81",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/echo_well__flooded_cave.png",
+      "source_sha256": "18a9d38e6ac0d96f07080f446e44d6e64d6376f499f82cfce858ce4788eec206",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/echo_well__monster_den.png": {
+      "asset": "assets/adventure/pixel/scenes/echo_well__monster_den.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "68e5f9e87be3342ebb90f3f1af36d83abb07747512d983e777b00f5d347f7f82",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/echo_well__monster_den.png",
+      "source_sha256": "e2f10cdbe3673d6a7d06b99c4c0684dd4c375a53dd8a21bafbaa28bebd24d476",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/echo_well__root_tunnel.png": {
+      "asset": "assets/adventure/pixel/scenes/echo_well__root_tunnel.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "9027f0901b593f486fdf16d18cce4b5e11092a6d0aac8e7782158bbe5ac16596",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/echo_well__root_tunnel.png",
+      "source_sha256": "c05ef9df4d2205e2b1325a2350e52add4149cf4d1115f3c742f3e302bfa4e2ed",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/echo_well__treasure_vault.png": {
+      "asset": "assets/adventure/pixel/scenes/echo_well__treasure_vault.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "e183c10bd31e1c4aed7d52080c711ee4ccfa528b01872879e506180f00167d9e",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/echo_well__treasure_vault.png",
+      "source_sha256": "9e10c769ce39f1dadad3e61760270442102838a93c1ec7afcfd371c1018aab56",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/heartwood_observatory__dungeon_gate.png": {
+      "asset": "assets/adventure/pixel/scenes/heartwood_observatory__dungeon_gate.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "6066a2317dba83eef4153ceba027b58212145a83e574aa142c73754f6667c64e",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/heartwood_observatory__dungeon_gate.png",
+      "source_sha256": "12d6c536e03e22fc1b1658b8182760af3f0abae9c8accb5c4989df2cfecffdbe",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/heartwood_observatory__monster_den.png": {
+      "asset": "assets/adventure/pixel/scenes/heartwood_observatory__monster_den.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "dde62ded6f4f197f2095744c817ed4c75e87af8304da38e3427120e9dcecdd5f",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/heartwood_observatory__monster_den.png",
+      "source_sha256": "a087993e487696ea94b4d1b2d03ec6d96645b49908a903eabe0cb3b0f813b9e7",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/heartwood_observatory__moon_tower.png": {
+      "asset": "assets/adventure/pixel/scenes/heartwood_observatory__moon_tower.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "be7d81984338b6004e2453b4efc80690f4129862b55075d9650b733974c34a25",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/heartwood_observatory__moon_tower.png",
+      "source_sha256": "3a88d35e96a55d513c3c92a666c8f4a02639e1b9d422e813eb6078fbbeac0004",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/heartwood_observatory__root_tunnel.png": {
+      "asset": "assets/adventure/pixel/scenes/heartwood_observatory__root_tunnel.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "6f8ff7ac0b4359769c6e3f7742d390af3573a3e5907d05d62a1fc3039db856fd",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/heartwood_observatory__root_tunnel.png",
+      "source_sha256": "124b97af0c527b39e7e10043e65897c938b444691ae2d5c2b26ab239cd3ce9b5",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/moss_archive__dungeon_gate.png": {
+      "asset": "assets/adventure/pixel/scenes/moss_archive__dungeon_gate.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "2d17833a29636dca91dfcf742b9ea97e915e5556142cf0b0437ca2ce2bd07046",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/moss_archive__dungeon_gate.png",
+      "source_sha256": "5ce700c65683b7b9cd04b9705717f97a52abdf40fbb7b02bc92046b947bd3ade",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/moss_archive__echo_well.png": {
+      "asset": "assets/adventure/pixel/scenes/moss_archive__echo_well.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "a5cb80357ac32011979168cd0f1c618be8d7c45189e554464204a589b3f7d0d7",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/moss_archive__echo_well.png",
+      "source_sha256": "8a64e339b45444679765a8ad92dab4761e423cd805e1a76046c49273b86a5d04",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/moss_archive__flooded_cave.png": {
+      "asset": "assets/adventure/pixel/scenes/moss_archive__flooded_cave.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "5935ae069fff8e3eb074b35604cc24ee29a11396b9325226cbed4671cadff9bc",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/moss_archive__flooded_cave.png",
+      "source_sha256": "aeaa6bf6a329d35f6f5361bded20f19bc237ee6af171b45b756632b6490f87f1",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/moss_archive__monster_den.png": {
+      "asset": "assets/adventure/pixel/scenes/moss_archive__monster_den.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "8e9e2a756762d93d37671f1187d0298931b6104069cb6dde3977f13191a1af35",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/moss_archive__monster_den.png",
+      "source_sha256": "8564bf39befa3df675d9eb7d49cfd96df0602acf8d5aad91ee78731464cffa2e",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/moss_archive__moon_tower.png": {
+      "asset": "assets/adventure/pixel/scenes/moss_archive__moon_tower.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "7ce24b462554f3847d7d4b8b7d7f6a8c4a9782bafcb332c2db7c63d8fa519dd4",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/moss_archive__moon_tower.png",
+      "source_sha256": "86da84def2b09b63c1576157a6d60ca6db44f6b496fa96f2a21d21fe34e44fa2",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/moss_archive__root_tunnel.png": {
+      "asset": "assets/adventure/pixel/scenes/moss_archive__root_tunnel.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "1cd3419c8e0edbf5e0dc37df5e300a34d7949f81134b9d596f73e519e795288b",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/moss_archive__root_tunnel.png",
+      "source_sha256": "7e21086ffd2762c8d1ec01e8d0a7a113690c6065d4ec9cc7c17931195a870c13",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/moss_archive__treasure_vault.png": {
+      "asset": "assets/adventure/pixel/scenes/moss_archive__treasure_vault.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "e10e9f82cd76ff5721769c5d6b3c1176d4e3c64b1d0f8ad07c1c613bab40577d",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/moss_archive__treasure_vault.png",
+      "source_sha256": "cfc982cfe1f08ccd40ba2e74732b8b26177ffd188f4884954b22a978bf2ada34",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/starlight_seed_vault__dungeon_gate.png": {
+      "asset": "assets/adventure/pixel/scenes/starlight_seed_vault__dungeon_gate.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "071b6d55382047f04647708d142c1228626ad411af0a159e1d9439a1053c74a7",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/starlight_seed_vault__dungeon_gate.png",
+      "source_sha256": "4a68d84851307e83a48a476e51f4e529daa926d4d36f4c53184428a620639fad",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/starlight_seed_vault__monster_den.png": {
+      "asset": "assets/adventure/pixel/scenes/starlight_seed_vault__monster_den.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "4f3f08496f97f6e3105bc10274912ac9e5ecd8fb32e107e8fda812843d3a26d5",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/starlight_seed_vault__monster_den.png",
+      "source_sha256": "aa2bf1de202473cb46d7b2fee7312c5ba32c21cd664041e4b585ede99e0f9ee6",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/starlight_seed_vault__root_tunnel.png": {
+      "asset": "assets/adventure/pixel/scenes/starlight_seed_vault__root_tunnel.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "9b2e1e8d8475cc2908e5230633b4cfcfaf621edd3b80e0f959bc77b92deca420",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/starlight_seed_vault__root_tunnel.png",
+      "source_sha256": "b9462b01ad4eb9b3cb81155544ea0e30b55ee6ba6a6cbc8e18d5d4a429e68775",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/scenes/starlight_seed_vault__treasure_vault.png": {
+      "asset": "assets/adventure/pixel/scenes/starlight_seed_vault__treasure_vault.png",
+      "kind": "scenes",
+      "width": 512,
+      "height": 341,
+      "sha256": "5f71885fab44e58d3252ec798a8a7dbb3ef5bfc0e1c3fa4df25b4793503292c0",
+      "source": "design-system/concepts/pixel-battle-v1/sources/scenes/starlight_seed_vault__treasure_vault.png",
+      "source_sha256": "85ad17082265d65736f859a47f77dea9561b79560f55102b70536ed3009a9aeb",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/banners/patrol-garden-path.png": {
+      "asset": "assets/adventure/pixel/banners/patrol-garden-path.png",
+      "kind": "banners",
+      "width": 512,
+      "height": 341,
+      "sha256": "6fab4a6c7c8e303643ed908dee9e442c057b80f3fec1d9528800e078479dc54c",
+      "source": "design-system/concepts/pixel-battle-v1/sources/banners/patrol-garden-path.png",
+      "source_sha256": "59d620880534abbfe5aa22195ff5cbc85cbb58c23082c34134a9d9233b7f5a60",
+      "factor": 3,
+      "source_size": [
+        1536,
+        1024
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/tangles/backwound_clockspring.png": {
+      "asset": "assets/adventure/pixel/tangles/backwound_clockspring.png",
+      "kind": "tangles",
+      "width": 41,
+      "height": 74,
+      "sha256": "9fe2517684a687f927a3c147638a4cc0674790d9c54d16c3b786bcd5b5970ae5",
+      "source": "design-system/concepts/pixel-battle-v1/sources/tangles/backwound_clockspring.png",
+      "source_sha256": "5de6240ccce5c1bd1f061e738a9d285ae1e31c69a165793fd1dbafb84f2057d2",
+      "factor": 16,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/tangles/bell_knot_swirl.png": {
+      "asset": "assets/adventure/pixel/tangles/bell_knot_swirl.png",
+      "kind": "tangles",
+      "width": 73,
+      "height": 76,
+      "sha256": "c16fb71b61bb72a3a259446cf2579663e205d9d1d794751ce62afc2262d4634d",
+      "source": "design-system/concepts/pixel-battle-v1/sources/tangles/bell_knot_swirl.png",
+      "source_sha256": "4b52e9f2812f01857ac4fd90211c3cd70d45618d2d8fd505fcbffe50b60a4478",
+      "factor": 16,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/tangles/drifting_pressings.png": {
+      "asset": "assets/adventure/pixel/tangles/drifting_pressings.png",
+      "kind": "tangles",
+      "width": 67,
+      "height": 59,
+      "sha256": "947c51993f5fa2f54631b39f788c05a672151fae7358e8f48c04e6bd8e8fe515",
+      "source": "design-system/concepts/pixel-battle-v1/sources/tangles/drifting_pressings.png",
+      "source_sha256": "a56488ad8d2d0855b1aa37875cf2783037602b3db055ded7b6feace5dc8b7969",
+      "factor": 16,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/tangles/knotted_echo.png": {
+      "asset": "assets/adventure/pixel/tangles/knotted_echo.png",
+      "kind": "tangles",
+      "width": 57,
+      "height": 58,
+      "sha256": "a1506be5031dbc59a0e1ddc875f60c2df20ab46c22420553d20faed0f12452f8",
+      "source": "design-system/concepts/pixel-battle-v1/sources/tangles/knotted_echo.png",
+      "source_sha256": "855b0c1879c02a1de63844b1e3ce09292bc2b413fa40ceb76e7904e6a77c76b7",
+      "factor": 17,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/tangles/matted_observatory.png": {
+      "asset": "assets/adventure/pixel/tangles/matted_observatory.png",
+      "kind": "tangles",
+      "width": 76,
+      "height": 74,
+      "sha256": "494a80d32c6c4df640c4843f7b1e10c835d45be51e9bdd4df2e7adbbbb8ffc4a",
+      "source": "design-system/concepts/pixel-battle-v1/sources/tangles/matted_observatory.png",
+      "source_sha256": "6652b7bfad635cddf3f5296787838752b7ae061a618939ca041cbce65ce36a90",
+      "factor": 14,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/tangles/ring_shard_tangle.png": {
+      "asset": "assets/adventure/pixel/tangles/ring_shard_tangle.png",
+      "kind": "tangles",
+      "width": 59,
+      "height": 58,
+      "sha256": "d109043082b3c4142f42240d995f0dee4a7a085ac5a272ba1f3e05c635cf7dd3",
+      "source": "design-system/concepts/pixel-battle-v1/sources/tangles/ring_shard_tangle.png",
+      "source_sha256": "a146737e6ce717f0835b389ff2b8e2e8a31943496648bd43f8b8eb3f6c5512b5",
+      "factor": 19,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/tangles/rolling_seedbox.png": {
+      "asset": "assets/adventure/pixel/tangles/rolling_seedbox.png",
+      "kind": "tangles",
+      "width": 63,
+      "height": 58,
+      "sha256": "b903ad314a251745775eca3ff8a8a4d181cd4738ca55b637d41cd406cfa0b342",
+      "source": "design-system/concepts/pixel-battle-v1/sources/tangles/rolling_seedbox.png",
+      "source_sha256": "e59777e21a25d1cc6f082bacd5c8132d0b02f239710ec492732d44386e68225d",
+      "factor": 18,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/tangles/scattered_records.png": {
+      "asset": "assets/adventure/pixel/tangles/scattered_records.png",
+      "kind": "tangles",
+      "width": 59,
+      "height": 57,
+      "sha256": "9ff54a9c30ec6b980e09d6fba5dddd2d29a5bf540e0e825c704a2750bf8ae1ec",
+      "source": "design-system/concepts/pixel-battle-v1/sources/tangles/scattered_records.png",
+      "source_sha256": "ab7d79b5d1643f78c9d1be2338a053dd2c1d4462e1b341c94d47135678c740d5",
+      "factor": 17,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/tangles/shelf_snarl.png": {
+      "asset": "assets/adventure/pixel/tangles/shelf_snarl.png",
+      "kind": "tangles",
+      "width": 68,
+      "height": 72,
+      "sha256": "d5dcf0cd4e68c0671ee9173d433a85d98d5aa3aeef61e24706bfab70a20d9ed9",
+      "source": "design-system/concepts/pixel-battle-v1/sources/tangles/shelf_snarl.png",
+      "source_sha256": "e94c3c857005089083de9184e1ddca59421972c03dc1fed2b83cb720a98eec04",
+      "factor": 16,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/tangles/snarled_stardust.png": {
+      "asset": "assets/adventure/pixel/tangles/snarled_stardust.png",
+      "kind": "tangles",
+      "width": 63,
+      "height": 59,
+      "sha256": "4622e44373a5b8fa51babe16ae9cefe663c5246456fb2ad9c02c1eb0a18b0bfc",
+      "source": "design-system/concepts/pixel-battle-v1/sources/tangles/snarled_stardust.png",
+      "source_sha256": "37c66d409cebc61439acfc1eed46cda06db5d8ab3e6b52ec4c170b88160c775c",
+      "factor": 16,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/tangles/splashing_droplets.png": {
+      "asset": "assets/adventure/pixel/tangles/splashing_droplets.png",
+      "kind": "tangles",
+      "width": 67,
+      "height": 57,
+      "sha256": "48453b5be7876eaf84ddc91207989a43ba2619571699d31a5bedf2910840bb07",
+      "source": "design-system/concepts/pixel-battle-v1/sources/tangles/splashing_droplets.png",
+      "source_sha256": "3d1bcb5a0729e62dc41c6a0eaefc7e2702b1e37d775d2bd8700e83be9898ce4a",
+      "factor": 16,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/tangles/tangled_ledger.png": {
+      "asset": "assets/adventure/pixel/tangles/tangled_ledger.png",
+      "kind": "tangles",
+      "width": 62,
+      "height": 59,
+      "sha256": "14bf086b132c3b63806442e4256b20a45b228532ce16b7f14e6fa2d63c015b75",
+      "source": "design-system/concepts/pixel-battle-v1/sources/tangles/tangled_ledger.png",
+      "source_sha256": "e0e3523b81a18500d3495ef9e7ba83f997fbab4021a25a9b65d8655665b6cb6f",
+      "factor": 18,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/keepers/echo_keeper.png": {
+      "asset": "assets/adventure/pixel/keepers/echo_keeper.png",
+      "kind": "keepers",
+      "width": 105,
+      "height": 75,
+      "sha256": "40bb26d1b41a5ab65a175ed50ff8ce7ca2e09cdacd2a016d5bd74c78c17df701",
+      "source": "design-system/concepts/pixel-battle-v1/sources/keepers/echo_keeper.png",
+      "source_sha256": "7dcc38f25686335da90106653fe37b4e8291e065ca362989428188c7262d25a7",
+      "factor": 11,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/keepers/ledger_keeper.png": {
+      "asset": "assets/adventure/pixel/keepers/ledger_keeper.png",
+      "kind": "keepers",
+      "width": 103,
+      "height": 77,
+      "sha256": "770301541c35009ae1d180e7b6955cd3851fcc3e6494e75f1c20cc6481c702d0",
+      "source": "design-system/concepts/pixel-battle-v1/sources/keepers/ledger_keeper.png",
+      "source_sha256": "1a26695a1a587cb9031f3f58495d967b8964356282d5faec2ad2fac10d4eee45",
+      "factor": 12,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/keepers/record_keeper.png": {
+      "asset": "assets/adventure/pixel/keepers/record_keeper.png",
+      "kind": "keepers",
+      "width": 55,
+      "height": 76,
+      "sha256": "08638f806de3541e4e85a96e0bc4f7c1f5aa42af069e07e9223d78632ddd0089",
+      "source": "design-system/concepts/pixel-battle-v1/sources/keepers/record_keeper.png",
+      "source_sha256": "e0489d215b411672d504d6f622f5a3881ddf7dbb474bbf6bbb8e9c6373976f96",
+      "factor": 16,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/keepers/seed_keeper.png": {
+      "asset": "assets/adventure/pixel/keepers/seed_keeper.png",
+      "kind": "keepers",
+      "width": 75,
+      "height": 77,
+      "sha256": "210a19c54b9878c4e712784611c050caf26e29b486f48415e3161ad98e721870",
+      "source": "design-system/concepts/pixel-battle-v1/sources/keepers/seed_keeper.png",
+      "source_sha256": "c1194fd1790a094f58f69dabe285c1273b68690a6c011150dbde04fd39b7c438",
+      "factor": 15,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/actors/aloof-pot.png": {
+      "asset": "assets/adventure/pixel/actors/aloof-pot.png",
+      "kind": "actors",
+      "width": 25,
+      "height": 59,
+      "sha256": "558129c42a81f337562d8c4a2f616380d7df87f7a1d2b650c56ea365befa7dd5",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/aloof-pot.png",
+      "source_sha256": "f10d72ea9efee8cd9478b899c30aa33b1117fc300ec7a9af59c297f17b2d36f0",
+      "factor": 21,
+      "source_size": [
+        1106,
+        1422
+      ],
+      "flipped": true
+    },
+    "assets/adventure/pixel/actors/baby-pot.png": {
+      "asset": "assets/adventure/pixel/actors/baby-pot.png",
+      "kind": "actors",
+      "width": 31,
+      "height": 60,
+      "sha256": "0d44fff3bd0caeaf74fd6a8f8efc2bdbd70c52c91a14ae860ea3819b541648f0",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/baby-pot.png",
+      "source_sha256": "7049928ddfdc36505d25dfa9004d418f714168b12fb5b00f88c42abfa52dd9c9",
+      "factor": 21,
+      "source_size": [
+        1110,
+        1417
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/actors/cactus.png": {
+      "asset": "assets/adventure/pixel/actors/cactus.png",
+      "kind": "actors",
+      "width": 36,
+      "height": 58,
+      "sha256": "da43707b2eb25db79506b9705ac20dbe09d364322e8bcb591595ff9be1cfcff6",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/cactus.png",
+      "source_sha256": "fb1a966a798f9aea2738ac3f7e8f62844a05d5cb0734af221d7ef5c7f2c4a530",
+      "factor": 19,
+      "source_size": [
+        1106,
+        1422
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/actors/gal-pot.png": {
+      "asset": "assets/adventure/pixel/actors/gal-pot.png",
+      "kind": "actors",
+      "width": 26,
+      "height": 60,
+      "sha256": "bdbaa785e7d947cc2707360f6c689cf27714d4d96b8f84f04e68b64a869b6b95",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/gal-pot.png",
+      "source_sha256": "7ca4ec157242449deb8310a0f2ab2bba69abe840fa7a7cb4d49c9f64ec98b162",
+      "factor": 20,
+      "source_size": [
+        1106,
+        1422
+      ],
+      "flipped": true
+    },
+    "assets/adventure/pixel/actors/gumiho-pot.png": {
+      "asset": "assets/adventure/pixel/actors/gumiho-pot.png",
+      "kind": "actors",
+      "width": 41,
+      "height": 60,
+      "sha256": "ac9b01b2e5e18abc994d98c03a3a17da5b6dd3950cf92cf96c6a2320755ec5d6",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/gumiho-pot.png",
+      "source_sha256": "8042af63747dbfe34ff1b75cc1a37ac00986af4828247f9684fc76b6a6c93c40",
+      "factor": 21,
+      "source_size": [
+        1111,
+        1415
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/actors/handsome-pot.png": {
+      "asset": "assets/adventure/pixel/actors/handsome-pot.png",
+      "kind": "actors",
+      "width": 28,
+      "height": 60,
+      "sha256": "ebc1b36b0e0581236d9f9a7625646221b32dfd01cbcc659ddf480cf5a64ad44c",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/handsome-pot.png",
+      "source_sha256": "81e57a724d06dff939f6a5dd73d51293d4d1254c01aa211bcc820184033319d2",
+      "factor": 21,
+      "source_size": [
+        1106,
+        1422
+      ],
+      "flipped": true
+    },
+    "assets/adventure/pixel/actors/maestro-pot.png": {
+      "asset": "assets/adventure/pixel/actors/maestro-pot.png",
+      "kind": "actors",
+      "width": 38,
+      "height": 59,
+      "sha256": "35f57fffb52c4cd88cca59ceb1464f872ce4ab104914dd6973cd3ad19e4da31a",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/maestro-pot.png",
+      "source_sha256": "6ade6fefee15bfda8bc454a0a0e603172689a56852cae2e128292d311c028f53",
+      "factor": 21,
+      "source_size": [
+        1106,
+        1422
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/actors/magical-pot.png": {
+      "asset": "assets/adventure/pixel/actors/magical-pot.png",
+      "kind": "actors",
+      "width": 37,
+      "height": 58,
+      "sha256": "29b36fe96fbf2e969795868d812daa01d8d2ebc8a6f53253e8e8f743a34dd3e0",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/magical-pot.png",
+      "source_sha256": "2329a82fc6206a3b4f4c54fa252d298e2f56035d2e0e152cd05c77357e82c940",
+      "factor": 22,
+      "source_size": [
+        1106,
+        1422
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/actors/marten-pot.png": {
+      "asset": "assets/adventure/pixel/actors/marten-pot.png",
+      "kind": "actors",
+      "width": 56,
+      "height": 60,
+      "sha256": "0bd183b3b13df63383e9108f2dff8ede372fb3a4fc9b4c842744a5747e32a106",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/marten-pot.png",
+      "source_sha256": "fea642f9db16160a276ddcceedb2f1fe502dabb77df39212368ac042501d43aa",
+      "factor": 18,
+      "source_size": [
+        1254,
+        1254
+      ],
+      "flipped": true
+    },
+    "assets/adventure/pixel/actors/ninja-pot.png": {
+      "asset": "assets/adventure/pixel/actors/ninja-pot.png",
+      "kind": "actors",
+      "width": 52,
+      "height": 60,
+      "sha256": "78413c8f0f35af8810d2a033c37419f2c9cf90772d418c3486180ff20100efb2",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/ninja-pot.png",
+      "source_sha256": "fd871dbb999cbcfcab8dc26d9dea256b7e21c483443956fbf0fd3db269996f75",
+      "factor": 19,
+      "source_size": [
+        1106,
+        1422
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/actors/nurse-pot.png": {
+      "asset": "assets/adventure/pixel/actors/nurse-pot.png",
+      "kind": "actors",
+      "width": 30,
+      "height": 59,
+      "sha256": "8c419d8c96a3f4f0b70615dfa4d027ee7cb5d079d17b9db17aa95f3d799c78ff",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/nurse-pot.png",
+      "source_sha256": "7e5ee43e73f768b8de13014509c3c998b5574e3526c4e43f8659b3a4040ba504",
+      "factor": 21,
+      "source_size": [
+        1106,
+        1422
+      ],
+      "flipped": true
+    },
+    "assets/adventure/pixel/actors/pretty-pot.png": {
+      "asset": "assets/adventure/pixel/actors/pretty-pot.png",
+      "kind": "actors",
+      "width": 31,
+      "height": 59,
+      "sha256": "5a6ee8fae97077fa73de16f7ab4cb65152e7df7ddb9cef3b37b7de62b8e47950",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/pretty-pot.png",
+      "source_sha256": "f16dfc8e3a2b7897e37ecf3a039ec26658ecc9e2b72c6d62dd8e08a6e5a17f6b",
+      "factor": 23,
+      "source_size": [
+        1106,
+        1422
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/actors/restorer-pot.png": {
+      "asset": "assets/adventure/pixel/actors/restorer-pot.png",
+      "kind": "actors",
+      "width": 27,
+      "height": 58,
+      "sha256": "ffdf6c28c2254a40a89a8dc21955ada9c0d0b91b6918ba6a4b6a241955517773",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/restorer-pot.png",
+      "source_sha256": "e5b5f109d8f7af3d264335bc5f99b024fdf226d567fe427f43d19192d0dfc26c",
+      "factor": 22,
+      "source_size": [
+        1106,
+        1422
+      ],
+      "flipped": true
+    },
+    "assets/adventure/pixel/actors/student-pot.png": {
+      "asset": "assets/adventure/pixel/actors/student-pot.png",
+      "kind": "actors",
+      "width": 24,
+      "height": 58,
+      "sha256": "15dce76aeb1957b6c955c05d703fc7c027cae6971ef7586a1c99931d685e0ff1",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/student-pot.png",
+      "source_sha256": "051e4092f33607508339f70d6f4cf9c739f4fc0316e3728538083b56b2e05bf0",
+      "factor": 22,
+      "source_size": [
+        1106,
+        1422
+      ],
+      "flipped": true
+    },
+    "assets/adventure/pixel/actors/sunflower.png": {
+      "asset": "assets/adventure/pixel/actors/sunflower.png",
+      "kind": "actors",
+      "width": 36,
+      "height": 59,
+      "sha256": "8f8aff24e246a1bbceee405596093a694db1747045d6091f7c9e52b3e03be06e",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/sunflower.png",
+      "source_sha256": "6d2b6c858bc54b94d7d137879a3b67171a46bf33389460d07ca9ecb8fc39338f",
+      "factor": 19,
+      "source_size": [
+        1106,
+        1422
+      ],
+      "flipped": false
+    },
+    "assets/adventure/pixel/actors/tsundere-pot.png": {
+      "asset": "assets/adventure/pixel/actors/tsundere-pot.png",
+      "kind": "actors",
+      "width": 23,
+      "height": 59,
+      "sha256": "1896e1a3168150f248b66ef9cf4680de63d7c2d4583e0135ed20ee146b1e3314",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/tsundere-pot.png",
+      "source_sha256": "f555886f2f6ebf6d462abe0d4979b264517e3b6d86cce7419b9cf09579983e72",
+      "factor": 22,
+      "source_size": [
+        1112,
+        1415
+      ],
+      "flipped": true
+    },
+    "assets/adventure/pixel/actors/zombie-pot.png": {
+      "asset": "assets/adventure/pixel/actors/zombie-pot.png",
+      "kind": "actors",
+      "width": 35,
+      "height": 60,
+      "sha256": "ea322f53440afb7dfe17cadbba26db57885cd80288043919b781807fc8dd2f07",
+      "source": "design-system/concepts/pixel-battle-v1/sources/actors/zombie-pot.png",
+      "source_sha256": "4b2fb9dce26d83d3ff12836dd9a9a9a3814bba1883c785ae2c991e27ad019752",
+      "factor": 21,
+      "source_size": [
+        1106,
+        1422
+      ],
+      "flipped": true
+    }
+  }
+}

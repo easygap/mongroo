@@ -9,6 +9,9 @@ import '../../../core/config/app_formats.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
 import '../../expedition/presentation/expedition_battle_dock.dart';
+import '../../expedition/presentation/expedition_pixel_art.dart';
+import '../../expedition/presentation/expedition_pixel_assets.g.dart';
+import '../../expedition/presentation/expedition_pixel_sprites.dart';
 import '../../home/presentation/plant_view.dart';
 import '../domain/adventure_models.dart';
 import 'adventure_controller.dart';
@@ -324,6 +327,84 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
   }
 }
 
+/// 허브 배너 그림. 도트 배너가 번들에 있으면 그것을, 없으면 붓 그림 원화를 쓴다.
+///
+/// 탐험 화면들이 도트로 바뀌었는데 입구만 뿌연 그림이면 다른 앱의 광고처럼
+/// 보인다. 같은 규칙(도트 우선, 없으면 원화)이라 배너가 늦게 와도 빈칸이 없다.
+class _PatrolBanner extends StatelessWidget {
+  const _PatrolBanner();
+
+  static const _pixel = 'assets/adventure/pixel/banners/patrol-garden-path.png';
+
+  @override
+  Widget build(BuildContext context) {
+    final native = expeditionPixelAssetSizes[_pixel];
+    if (native != null) {
+      return PixelCoverImage(
+        asset: _pixel,
+        native: native,
+        alignment: Alignment.center,
+        minScale: 1,
+      );
+    }
+    return Image.asset(
+      'assets/adventure/patrol-garden-path.webp',
+      fit: BoxFit.cover,
+      semanticLabel: '새벽빛이 비치는 온실 바깥의 조용한 정원 순찰길',
+    );
+  }
+}
+
+/// 배너 위에 선 캐릭터. 도트 배너 위에는 도트로 선다.
+///
+/// 붓 그림 성장 원화를 도트 배경에 얹으면 오려 붙인 스티커처럼 보인다. 전투에
+/// 나오는 그 도트를 두 배로 세우고, 도트가 없는 품종만 성장 원화로 떨어진다.
+class _HeroCharacter extends StatelessWidget {
+  const _HeroCharacter({
+    required this.character,
+    required this.width,
+    required this.height,
+  });
+
+  final AdventureCharacter character;
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = expeditionPixelActorAsset(character.speciesCode);
+    if (asset == null) {
+      return PlantView(
+        stage: character.stage,
+        form: character.form,
+        speciesCode: character.speciesCode,
+        speciesName: character.speciesName,
+        outfitKey: character.outfit?.layerKey,
+        width: width,
+        height: height,
+      );
+    }
+    final native = expeditionPixelSpriteSize(asset, fallback: const Size(28, 58));
+    // 두 배가 안 들어가면 한 배. 소수 배율은 도트를 뭉갠다.
+    final scale = native.height * 2 <= height - 12 ? 2.0 : 1.0;
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Image.asset(
+          asset,
+          width: native.width * scale,
+          height: native.height * scale,
+          fit: BoxFit.fill,
+          filterQuality: FilterQuality.none,
+          isAntiAlias: false,
+          excludeFromSemantics: true,
+        ),
+      ),
+    );
+  }
+}
+
 class _AdventureHero extends StatelessWidget {
   const _AdventureHero({required this.data});
 
@@ -352,11 +433,7 @@ class _AdventureHero extends StatelessWidget {
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.asset(
-                        'assets/adventure/patrol-garden-path.webp',
-                        fit: BoxFit.cover,
-                        semanticLabel: '새벽빛이 비치는 온실 바깥의 조용한 정원 순찰길',
-                      ),
+                      const _PatrolBanner(),
                       DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -414,11 +491,7 @@ class _AdventureHero extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.asset(
-                'assets/adventure/patrol-garden-path.webp',
-                fit: BoxFit.cover,
-                semanticLabel: '새벽빛이 비치는 온실 바깥의 조용한 정원 순찰길',
-              ),
+              const _PatrolBanner(),
               DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -474,12 +547,8 @@ class _AdventureHero extends StatelessWidget {
                   bottom: -4,
                   width: compact ? 118 : 142,
                   height: compact ? 172 : 190,
-                  child: PlantView(
-                    stage: character.stage,
-                    form: character.form,
-                    speciesCode: character.speciesCode,
-                    speciesName: character.speciesName,
-                    outfitKey: character.outfit?.layerKey,
+                  child: _HeroCharacter(
+                    character: character,
                     width: compact ? 118 : 142,
                     height: compact ? 172 : 190,
                   ),

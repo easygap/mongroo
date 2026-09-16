@@ -2292,14 +2292,13 @@ void main() {
     );
     await tester.pump();
 
+    // 수호전은 뿌연 장면 원화가 아니라 지역 도트 전장 위에서 열린다.
     expect(
       find.byWidgetPredicate(
         (widget) =>
             widget is Image &&
-            {
-              expeditionMonsterDenBattleAsset,
-              expeditionMobileAssetPath(expeditionMonsterDenBattleAsset),
-            }.contains(_assetNameOf(widget.image)),
+            (_assetNameOf(widget.image) ?? '')
+                .startsWith('assets/adventure/pixel/backdrops/'),
       ),
       findsOneWidget,
     );

@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui' show BlendMode, ImageFilter;
 
 import 'package:flutter/material.dart';
 
@@ -152,12 +151,17 @@ class _EffectSequence extends StatelessWidget {
             1 - ExpeditionCombatTimeline.segment(progress, end, end + .08),
           );
     final asset = effect.asset(frame);
+    // 도트 무대 위의 이펙트도 도트다. 원화를 1/4로 디코드한 뒤 보간 없이
+    // 키우면 붓 그림이던 연출이 무대와 같은 굵기의 도트로 읽힌다. 흐린 광채
+    // 겹은 걷어 냈다 — 번짐이 곧 도트를 뭉개는 것이었다.
     final image = Image.asset(
       asset,
       key: ValueKey('combat-effect-${effect.family}-frame-$frame'),
+      cacheWidth: math.max(96, effect.frameWidth ~/ 4),
       fit: BoxFit.contain,
       alignment: Alignment.center,
-      filterQuality: FilterQuality.medium,
+      filterQuality: FilterQuality.none,
+      isAntiAlias: false,
       gaplessPlayback: true,
       excludeFromSemantics: true,
     );
@@ -166,49 +170,30 @@ class _EffectSequence extends StatelessWidget {
       scale: scale * (1 + (safeIntensity - 1) * .08),
       child: Opacity(
         opacity: (edgeOpacity * opacityScale).clamp(0.0, 1.0),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (!reduceMotion)
-              Opacity(
-                opacity: (.14 + (safeIntensity - .8) * .10).clamp(.12, .18),
-                child: ImageFiltered(
-                  imageFilter: ImageFilter.blur(
-                    sigmaX: 1.8 + safeIntensity * .4,
-                    sigmaY: 1.8 + safeIntensity * .4,
+        child: tint == null || reduceMotion
+            ? image
+            : Stack(
+                fit: StackFit.expand,
+                children: [
+                  image,
+                  // 성장결 색은 흐림 없이 얇게 한 겹만 얹는다.
+                  Opacity(
+                    opacity: .12,
+                    child: Image.asset(
+                      asset,
+                      cacheWidth: math.max(96, effect.frameWidth ~/ 4),
+                      fit: BoxFit.contain,
+                      alignment: Alignment.center,
+                      color: tint,
+                      colorBlendMode: BlendMode.srcIn,
+                      filterQuality: FilterQuality.none,
+                      isAntiAlias: false,
+                      gaplessPlayback: true,
+                      excludeFromSemantics: true,
+                    ),
                   ),
-                  child: Image.asset(
-                    asset,
-                    fit: BoxFit.contain,
-                    alignment: Alignment.center,
-                    color: tint ?? _effectBlendColor(effect),
-                    colorBlendMode: BlendMode.srcIn,
-                    filterQuality: FilterQuality.low,
-                    gaplessPlayback: true,
-                    excludeFromSemantics: true,
-                  ),
-                ),
+                ],
               ),
-            if (!reduceMotion && secondaryTint != null && safeIntensity > 1.05)
-              Opacity(
-                opacity: .055,
-                child: Transform.scale(
-                  scale: 1.025,
-                  child: Image.asset(
-                    asset,
-                    fit: BoxFit.contain,
-                    alignment: Alignment.center,
-                    color: secondaryTint,
-                    colorBlendMode: BlendMode.srcIn,
-                    filterQuality: FilterQuality.low,
-                    gaplessPlayback: true,
-                    excludeFromSemantics: true,
-                  ),
-                ),
-              ),
-            image,
-          ],
-        ),
       ),
     );
   }
@@ -221,14 +206,3 @@ Color? _combatHexColor(String? value) {
   final parsed = int.tryParse(hex, radix: 16);
   return parsed == null ? null : Color(0xFF000000 | parsed);
 }
-
-Color _effectBlendColor(ExpeditionCombatEffectSpec effect) =>
-    switch (effect.kel) {
-      'sunny' => const Color(0xFFFFD99B),
-      'rainy' => const Color(0xFF91DFF2),
-      'ember' => const Color(0xFFFF9A6E),
-      'moonlit' => const Color(0xFF9EDFE8),
-      'sparkling' => const Color(0xFFCAB5FF),
-      'mosaic' => const Color(0xFFB7D4CB),
-      _ => const Color(0xFFC8EFE5),
-    };

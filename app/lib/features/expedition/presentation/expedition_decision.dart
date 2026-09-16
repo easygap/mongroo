@@ -391,13 +391,7 @@ class _DestinationScenePreview extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image(
-              image: expeditionSceneImageProvider(context, scene.assetPath),
-              fit: BoxFit.cover,
-              filterQuality: FilterQuality.medium,
-              gaplessPlayback: true,
-              excludeFromSemantics: true,
-            ),
+            ExpeditionSceneImage(scene: scene),
             DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(

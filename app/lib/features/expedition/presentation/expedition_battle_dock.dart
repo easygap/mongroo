@@ -16,6 +16,8 @@ import 'expedition_combat_audio.dart';
 import 'expedition_combat_effects.dart';
 import 'expedition_combat_sprites.dart';
 import 'expedition_controller.dart';
+import 'expedition_pixel_art.dart';
+import 'expedition_pixel_sprites.dart';
 import 'expedition_settings.dart';
 
 // 소리·배속 설정은 전투 밖에서도 바꿀 수 있어야 해 별도 파일로 옮겼다.
@@ -1021,7 +1023,6 @@ class _ExpeditionSequentialCommandDockState
   Widget build(BuildContext context) {
     final battle = _battle;
     final actor = _actor;
-    final scheme = Theme.of(context).colorScheme;
     final targeted = _targetedMemberIds();
     final locked = _locked;
     // 한 차례가 풀리는 동안 뜨는 문장이다. 상대가 엉킴인지 수호짐승인지와
@@ -1037,20 +1038,27 @@ class _ExpeditionSequentialCommandDockState
             key: const ValueKey('seq-dock-prompt'),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                ?.copyWith(fontWeight: FontWeight.w800),
+            // 한두 마디짜리 게임 라벨이라 도트 글꼴을 쓴다(MASTER.md의 허용
+            // 범위). `뽀또는 무엇을 할까요?`는 포켓몬의 그 줄이다.
+            style: ExpeditionPixelArt.text(
+              15,
+              color: MongrooPalette.of(context).ink,
+              shadow: Colors.transparent,
+              shadowOffset: 0,
+            ),
           ),
         );
 
-    return MongrooPanel(
+    // 독은 도트 무대 아래에 붙는 도트 판이다 — 둥근 카드와 번진 그림자 대신
+    // 두 칸 테두리와 한 칸 그림자. 포켓몬의 흰 글상자가 이 자리다.
+    final palette = MongrooPalette.of(context);
+    return PixelPanel(
       key: const ValueKey('seq-command-dock'),
-      padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
-      radius: 16,
-      color: scheme.surface.withAlpha(238),
-      borderColor: scheme.error.withAlpha(85),
-      shadowOffset: const Offset(0, -3),
+      padding: const EdgeInsets.fromLTRB(6, 5, 6, 6),
+      fill: palette.paper.withAlpha(246),
+      border: palette.night,
+      highlight: Colors.white.withAlpha(120),
+      shadow: palette.night.withAlpha(90),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1270,44 +1278,50 @@ class _IntentLine extends StatelessWidget {
               '위력 ${next.power}. '}'
           '약점 $weakLabel${resistLabel == null ? '' : ', 내성 $resistLabel'}. '
           '눌러서 발견 정보 보기',
-      child: Material(
-        color: scheme.errorContainer.withAlpha(74),
-        borderRadius: BorderRadius.circular(10),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          key: const ValueKey('seq-dock-intent'),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final head = textScale >= 1.5
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          intentSummaryFor(false),
-                          const SizedBox(height: 5),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: matchupTag,
-                          ),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          Expanded(
-                            child: intentSummaryFor(constraints.maxWidth < 420),
-                          ),
-                          const SizedBox(width: 6),
-                          matchupTag,
-                        ],
-                      );
-                if (nextLine == null) return head;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [head, const SizedBox(height: 5), nextLine],
-                );
-              },
+      child: PixelPanel(
+        fill: scheme.errorContainer.withAlpha(150),
+        border: scheme.error.withAlpha(190),
+        highlight: Colors.white.withAlpha(90),
+        shadow: scheme.error.withAlpha(50),
+        padding: EdgeInsets.zero,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            key: const ValueKey('seq-dock-intent'),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final head = textScale >= 1.5
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            intentSummaryFor(false),
+                            const SizedBox(height: 5),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: matchupTag,
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child:
+                                  intentSummaryFor(constraints.maxWidth < 420),
+                            ),
+                            const SizedBox(width: 6),
+                            matchupTag,
+                          ],
+                        );
+                  if (nextLine == null) return head;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [head, const SizedBox(height: 5), nextLine],
+                  );
+                },
+              ),
             ),
           ),
         ),
@@ -1427,21 +1441,21 @@ class _FocusBeads extends StatelessWidget {
         children: [
           Icon(Icons.bolt_rounded, size: 17, color: palette.butter),
           const SizedBox(width: 4),
+          // 집중력은 네모 칸이다. 동그란 구슬은 도트 판 위에서 혼자 부드럽다.
           for (var index = 0; index < maxFocus; index++)
             Padding(
               padding: const EdgeInsets.only(right: 3),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 220),
-                width: 13,
-                height: 13,
+                width: 12,
+                height: 12,
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
                   color: index < focus
                       ? palette.butter
                       : scheme.outlineVariant.withAlpha(90),
                   border: Border.all(
-                    color:
-                        index < focus ? palette.butter : scheme.outlineVariant,
+                    color: palette.night.withAlpha(index < focus ? 200 : 110),
+                    width: 2,
                   ),
                 ),
               ),
@@ -1450,9 +1464,12 @@ class _FocusBeads extends StatelessWidget {
           Text(
             '$focus/$maxFocus',
             textScaler: TextScaler.noScaling,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+            style: ExpeditionPixelArt.text(
+              12,
+              color: palette.ink,
+              shadow: Colors.transparent,
+              shadowOffset: 0,
+            ),
           ),
         ],
       ),
@@ -1570,24 +1587,22 @@ class _DockMemberChip extends StatelessWidget {
             : acted
                 ? .72
                 : 1,
-        child: Material(
-          color: isActor ? scheme.primaryContainer : scheme.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: BorderSide(
-              color: targeted
-                  ? scheme.error
-                  : isActor
-                      ? scheme.primary
-                      : scheme.outlineVariant,
-              width: isActor || targeted ? 1.5 : 1,
-            ),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
+        child: PixelPanel(
+          fill: isActor ? scheme.primaryContainer : scheme.surface,
+          border: targeted
+              ? scheme.error
+              : isActor
+                  ? scheme.primary
+                  : MongrooPalette.of(context).night.withAlpha(150),
+          highlight: Colors.white.withAlpha(110),
+          shadow: MongrooPalette.of(context).night.withAlpha(70),
+          padding: EdgeInsets.zero,
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
             onTap: awaiting ? onTap : null,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(6, 5, 6, 6),
+              padding: const EdgeInsets.fromLTRB(4, 3, 4, 4),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
@@ -1595,19 +1610,7 @@ class _DockMemberChip extends StatelessWidget {
                   Row(
                     children: [
                       if (plant case final plant?)
-                        SizedBox(
-                          width: 26,
-                          child: PlantView(
-                            stage: plant.stage,
-                            form: PlantGrowthForm.fromCode(plant.form),
-                            speciesCode: plant.speciesCode,
-                            speciesName: plant.speciesName,
-                            spritePose: PlantSpritePose.idle,
-                            outfitKey: plant.outfitKey,
-                            width: 26,
-                            height: 38,
-                          ),
-                        ),
+                        _DockPortrait(plant: plant),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -1685,6 +1688,57 @@ class _DockMemberChip extends StatelessWidget {
               ),
             ),
           ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 대원 칩의 얼굴. 전투 도트를 절반 크기(정수 축소)로 그린다.
+///
+/// 무대에 선 그 도트가 칩에도 있어야 `이 칩이 저 캐릭터`라는 연결이 선다.
+/// 도트가 없는 안내자는 예전처럼 성장 원화로 떨어진다.
+class _DockPortrait extends StatelessWidget {
+  const _DockPortrait({required this.plant});
+
+  final ExpeditionMember plant;
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = expeditionPixelActorAsset(plant.speciesCode);
+    if (asset == null) {
+      return SizedBox(
+        width: 26,
+        child: PlantView(
+          stage: plant.stage,
+          form: PlantGrowthForm.fromCode(plant.form),
+          speciesCode: plant.speciesCode,
+          speciesName: plant.speciesName,
+          spritePose: PlantSpritePose.idle,
+          outfitKey: plant.outfitKey,
+          width: 26,
+          height: 38,
+        ),
+      );
+    }
+    final native =
+        expeditionPixelSpriteSize(asset, fallback: const Size(28, 58));
+    final width = (native.width / 2).floorToDouble();
+    final height = (native.height / 2).floorToDouble();
+    return SizedBox(
+      width: width < 26 ? 26 : width,
+      height: 32,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Image.asset(
+          asset,
+          width: width,
+          height: height,
+          fit: BoxFit.fill,
+          filterQuality: FilterQuality.none,
+          isAntiAlias: false,
+          excludeFromSemantics: true,
         ),
       ),
     );
@@ -1767,26 +1821,21 @@ class _DockActionCardState extends State<_DockActionCard> {
           scale: widget.enabled && _pressed ? .96 : 1,
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOutCubic,
-          child: Material(
-            color: widget.lockReason != null
+          child: PixelPanel(
+            fill: widget.lockReason != null
                 ? scheme.surfaceContainerHighest.withAlpha(210)
                 : scheme.surface.withAlpha(238),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: widget.weakness && widget.lockReason == null
-                    ? scheme.error
-                    : widget.resistance && widget.lockReason == null
-                        ? scheme.outline
-                        : scheme.outlineVariant,
-                width: (widget.weakness || widget.resistance) &&
-                        widget.lockReason == null
-                    ? 1.8
-                    : 1,
-              ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
+            border: widget.weakness && widget.lockReason == null
+                ? scheme.error
+                : widget.resistance && widget.lockReason == null
+                    ? scheme.outline
+                    : MongrooPalette.of(context).night.withAlpha(160),
+            highlight: Colors.white.withAlpha(110),
+            shadow: MongrooPalette.of(context).night.withAlpha(80),
+            padding: EdgeInsets.zero,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
               onTap: widget.enabled ? widget.onPressed : null,
               onHighlightChanged: widget.enabled
                   ? (value) => setState(() => _pressed = value)
@@ -1879,6 +1928,7 @@ class _DockActionCardState extends State<_DockActionCard> {
                 ),
               ),
             ),
+            ),
           ),
         ),
       ),
@@ -1912,24 +1962,7 @@ class _DockActionVisual extends StatelessWidget {
       );
     }
     if (_dockSkillIconAssets[action.code] case final asset?) {
-      return SizedBox.square(
-        dimension: size,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(size * .25),
-            border: Border.all(color: Colors.white.withAlpha(34)),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(size * .25 - 1),
-            child: Image.asset(
-              asset,
-              fit: BoxFit.cover,
-              filterQuality: FilterQuality.medium,
-              excludeFromSemantics: true,
-            ),
-          ),
-        ),
-      );
+      return _DockImageIcon(asset: asset, size: size);
     }
     return _DockEffectThumbnail(effectKey: effectKey, size: size);
   }
@@ -1968,15 +2001,21 @@ class _DockImageIcon extends StatelessWidget {
         dimension: size,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(size * .25),
-            border: Border.all(color: Colors.white.withAlpha(34)),
+            border: Border.all(
+              color: MongrooPalette.of(context).night.withAlpha(150),
+              width: 2,
+            ),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(size * .25 - 1),
+          // 아이콘 원화는 붓 그림이다. 절반 해상도로 디코드해 보간 없이 두 배로
+          // 키우면 무대와 같은 굵기의 도트 아이콘이 된다.
+          child: Padding(
+            padding: const EdgeInsets.all(2),
             child: Image.asset(
               asset,
-              fit: BoxFit.cover,
-              filterQuality: FilterQuality.medium,
+              cacheWidth: (size / 2).round(),
+              fit: BoxFit.fill,
+              filterQuality: FilterQuality.none,
+              isAntiAlias: false,
               excludeFromSemantics: true,
             ),
           ),
@@ -2038,10 +2077,7 @@ class _DockActionBadge extends StatelessWidget {
   Widget build(BuildContext context) => DecoratedBox(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface.withAlpha(235),
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: [
-            BoxShadow(color: color.withAlpha(70), blurRadius: 3),
-          ],
+          border: Border.all(color: color.withAlpha(180)),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
@@ -2074,20 +2110,25 @@ class _DockEffectThumbnail extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox.square(
         dimension: size,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(size * .28),
-          child: ColoredBox(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
             color: expeditionCombatEffectColor(effectKey).withAlpha(24),
-            child: Image.asset(
-              expeditionCombatEffectAsset(effectKey, 6),
-              fit: BoxFit.cover,
-              alignment: effectKey == 'safe_guard'
-                  ? Alignment.centerLeft
-                  : Alignment.centerRight,
-              filterQuality: FilterQuality.medium,
-              gaplessPlayback: true,
-              excludeFromSemantics: true,
+            border: Border.all(
+              color: MongrooPalette.of(context).night.withAlpha(150),
+              width: 2,
             ),
+          ),
+          child: Image.asset(
+            expeditionCombatEffectAsset(effectKey, 6),
+            cacheWidth: (size / 2).round(),
+            fit: BoxFit.cover,
+            alignment: effectKey == 'safe_guard'
+                ? Alignment.centerLeft
+                : Alignment.centerRight,
+            filterQuality: FilterQuality.none,
+            isAntiAlias: false,
+            gaplessPlayback: true,
+            excludeFromSemantics: true,
           ),
         ),
       );

@@ -388,11 +388,11 @@ class _StageStoryRevealCardState extends State<_StageStoryRevealCard> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Image.asset(
-                  scene.assetPath,
-                  fit: BoxFit.cover,
-                  filterQuality: FilterQuality.medium,
-                  excludeFromSemantics: true,
+                ExpeditionSceneImage(
+                  scene: scene,
+                  regionCode: widget.regionCode,
+                  sceneKey: widget.story.sceneKey,
+                  decodeForScreen: false,
                 ),
                 DecoratedBox(
                   decoration: BoxDecoration(

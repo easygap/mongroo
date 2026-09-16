@@ -8,6 +8,7 @@ import '../domain/expedition_models.dart';
 import '../domain/joint_guard_models.dart';
 import 'expedition_battle_dock.dart';
 import 'expedition_combat_overlay.dart';
+import 'expedition_pixel_backdrop.dart';
 import 'expedition_scene.dart';
 import 'joint_guard_controller.dart';
 

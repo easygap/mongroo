@@ -68,14 +68,18 @@ class _JointGuardBattleView extends ConsumerWidget {
                 padding: EdgeInsets.symmetric(horizontal: narrow ? 6 : 10),
                 child: MongrooPanel(
                   padding: EdgeInsets.zero,
-                  radius: 18,
+                  radius: 8,
+                  borderColor: const Color(0xFF0E0B08),
                   // 무대는 자기 자리를 `Positioned`로 잡는다. 배경이 Stack을
                   // 열어 주지 않으면 부모 종류가 안 맞아 화면 전체가 무너진다.
-                  // 지역 보정색은 넘기지 않는다. 이 배경은 그 꿈 전용으로
-                  // 그린 원화라, 지역 색을 한 번 더 얹으면 두 번 물든다.
-                  child: ExpeditionSceneBackdrop(
-                    scene: dreamSceneFor(state.beast.code),
-                    borderRadius: BorderRadius.circular(18),
+                  // 꿈은 짐승의 지역 도트 배경 위에 그 꿈의 색을 한 겹 얹어
+                  // 만든다 — 깊은 꿈일수록 색이 진해진다.
+                  child: PixelBattleBackdrop(
+                    regionCode: state.beast.regionCode,
+                    tint: (_dreamAccents[state.beast.code] ??
+                            expeditionGuardianBattleScene.accent)
+                        .withAlpha(28 + state.layer.index * 18),
+                    borderRadius: BorderRadius.circular(8),
                     semanticLabel: '${state.beast.name}의 꿈. '
                         '${state.layer.name}. '
                         '장벽 ${state.battle.enemy.guard}/'
@@ -84,6 +88,7 @@ class _JointGuardBattleView extends ConsumerWidget {
                       encounter: null,
                       battle: state.battle,
                       regionCode: state.beast.regionCode,
+                      guardianCode: state.beast.code,
                       actor: actor,
                       party: members,
                       cue: ui.actionCue,

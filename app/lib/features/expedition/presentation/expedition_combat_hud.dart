@@ -3,6 +3,19 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import 'expedition_combat_effects.dart';
 import 'expedition_combat_timeline.dart';
+import 'expedition_pixel_art.dart';
+
+/// 전투 HUD의 공통 색. 무대가 도트이므로 HUD도 도트 판이다 — 유리·그림자
+/// 번짐·둥근 모서리를 쓰지 않는다.
+abstract final class ExpeditionCombatHudColors {
+  static const panel = Color(0xF21B1612);
+  static const border = Color(0xFF0C0907);
+  static const guardBar = Color(0xFFE2C46A);
+  static const enemyName = Color(0xFFFFF1D2);
+  static const warning = Color(0xFFFFB68A);
+  static const heal = Color(0xFF9FE7D2);
+  static const hurt = Color(0xFFFF8D78);
+}
 
 /// 서버가 확정한 수호 장벽 수치를 전투 진행률에 맞춰 표시한다.
 class ExpeditionEnemyGuardHud extends StatelessWidget {
@@ -13,6 +26,7 @@ class ExpeditionEnemyGuardHud extends StatelessWidget {
     required this.before,
     required this.after,
     required this.progress,
+    this.elite = false,
   });
 
   final String enemyName;
@@ -20,6 +34,7 @@ class ExpeditionEnemyGuardHud extends StatelessWidget {
   final int before;
   final int after;
   final double progress;
+  final bool elite;
 
   @override
   Widget build(BuildContext context) {
@@ -28,80 +43,45 @@ class ExpeditionEnemyGuardHud extends StatelessWidget {
       after: after,
       progress: progress,
     );
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: MongrooPalette.of(context).night.withAlpha(222),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD3B36A).withAlpha(120)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(80),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+    return PixelPanel(
+      padding: const EdgeInsets.fromLTRB(6, 4, 6, 5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  elite ? '$enemyName ★' : enemyName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textScaler: TextScaler.noScaling,
+                  style: ExpeditionPixelArt.text(
+                    13,
+                    color: ExpeditionCombatHudColors.enemyName,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '${guard.round()}/$maxGuard',
+                textScaler: TextScaler.noScaling,
+                style: ExpeditionPixelArt.text(
+                  11,
+                  color: AppTheme.onNightMuted,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          PixelBar(
+            value: maxGuard <= 0 ? 0 : (guard / maxGuard).clamp(0, 1),
+            color: ExpeditionCombatHudColors.guardBar,
+            lowColor: ExpeditionCombatHudColors.guardBar,
+            height: 8,
           ),
         ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 8, 10, 9),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.shield_outlined,
-                  size: 15,
-                  color: Color(0xFFDCC77A),
-                ),
-                const SizedBox(width: 5),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '수호 장벽',
-                        textScaler: TextScaler.noScaling,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: const Color(0xFFDCC77A),
-                              fontWeight: FontWeight.w800,
-                            ),
-                      ),
-                      Text(
-                        enemyName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textScaler: TextScaler.noScaling,
-                        style:
-                            Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: AppTheme.onNight,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  '${guard.round()}/$maxGuard',
-                  textScaler: TextScaler.noScaling,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppTheme.onNightMuted,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: maxGuard <= 0 ? 0 : (guard / maxGuard).clamp(0, 1),
-                minHeight: 6,
-                color: const Color(0xFFDCC77A),
-                backgroundColor: Colors.white.withAlpha(34),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -119,36 +99,30 @@ class ExpeditionTelegraphChip extends StatelessWidget {
   final String text;
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: MongrooPalette.of(context).night.withAlpha(225),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFFB68A).withAlpha(105)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.warning_amber_rounded,
-                size: 18,
-                color: Color(0xFFFFB68A),
+  Widget build(BuildContext context) => PixelPanel(
+        padding: const EdgeInsets.fromLTRB(6, 3, 6, 4),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.warning_amber_rounded,
+              size: 15,
+              color: ExpeditionCombatHudColors.warning,
+            ),
+            const SizedBox(width: 5),
+            Expanded(
+              child: Text(
+                '$attackName 예고 · $text',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textScaler: TextScaler.noScaling,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppTheme.onNight,
+                      height: 1.3,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  '$attackName 예고 · $text',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textScaler: TextScaler.noScaling,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppTheme.onNight,
-                        height: 1.3,
-                      ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
 }
@@ -166,37 +140,14 @@ class ExpeditionActorBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 220),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: MongrooPalette.of(context).night.withAlpha(220),
-            borderRadius: BorderRadius.circular(11),
-            border: Border.all(color: Colors.white.withAlpha(48)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.auto_awesome_rounded,
-                  size: 16,
-                  color: Color(0xFFFFE4A0),
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    '$actorName · $actionName',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textScaler: TextScaler.noScaling,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppTheme.onNight,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                ),
-              ],
-            ),
+        child: PixelPanel(
+          padding: const EdgeInsets.fromLTRB(6, 3, 6, 3),
+          child: Text(
+            '$actorName · $actionName',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textScaler: TextScaler.noScaling,
+            style: ExpeditionPixelArt.text(12),
           ),
         ),
       );
@@ -215,43 +166,33 @@ class ExpeditionAttackCallout extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Opacity(
         opacity: ExpeditionCombatTimeline.floatingOpacity(progress, .55, .83),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: const Color(0xFF4B1F28).withAlpha(228),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFFF7968).withAlpha(60),
-                blurRadius: 14,
+        child: PixelPanel(
+          fill: const Color(0xF2431C22),
+          padding: const EdgeInsets.fromLTRB(8, 3, 8, 3),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                size: 15,
+                color: ExpeditionCombatHudColors.warning,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                attackName,
+                textScaler: TextScaler.noScaling,
+                style: ExpeditionPixelArt.text(
+                  13,
+                  color: const Color(0xFFFFE1D8),
+                ),
               ),
             ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.warning_amber_rounded,
-                  size: 17,
-                  color: Color(0xFFFFB29F),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  attackName,
-                  textScaler: TextScaler.noScaling,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: const Color(0xFFFFE1D8),
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-              ],
-            ),
           ),
         ),
       );
 }
 
+/// 뜨는 피해 숫자. 도트 글꼴에 한 칸 그림자 — 흐린 글로우는 쓰지 않는다.
 class ExpeditionDamageNumber extends StatelessWidget {
   const ExpeditionDamageNumber({
     super.key,
@@ -275,23 +216,18 @@ class ExpeditionDamageNumber extends StatelessWidget {
             Text(
               label,
               textScaler: TextScaler.noScaling,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              style: ExpeditionPixelArt.text(
+                26,
                 color: color,
-                fontWeight: FontWeight.w900,
-                fontFeatures: const [FontFeature.tabularFigures()],
-                shadows: const [
-                  Shadow(color: Colors.black, blurRadius: 7),
-                  Shadow(color: Colors.black, offset: Offset(0, 2)),
-                ],
+                shadowOffset: 3,
               ),
             ),
             Text(
               caption,
               textScaler: TextScaler.noScaling,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              style: ExpeditionPixelArt.text(
+                11,
                 color: AppTheme.onNight,
-                fontWeight: FontWeight.w700,
-                shadows: const [Shadow(color: Colors.black, blurRadius: 5)],
               ),
             ),
           ],
@@ -318,34 +254,18 @@ class ExpeditionOutcomeBadge extends StatelessWidget {
     );
     return Opacity(
       opacity: entry,
-      child: Transform.scale(
-        scale: .92 + entry * .08,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: MongrooPalette.of(context).night.withAlpha(235),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(80),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-              BoxShadow(
-                color: expeditionCombatEffectColor(effectKey).withAlpha(65),
-                blurRadius: 16,
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-            child: Text(
-              label,
-              textScaler: TextScaler.noScaling,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppTheme.onNight,
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
+      child: Transform.translate(
+        offset: Offset(0, (1 - entry) * 6),
+        child: PixelPanel(
+          highlight: expeditionCombatEffectColor(effectKey).withAlpha(120),
+          padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
+          child: Text(
+            label,
+            textScaler: TextScaler.noScaling,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppTheme.onNight,
+                  fontWeight: FontWeight.w800,
+                ),
           ),
         ),
       ),

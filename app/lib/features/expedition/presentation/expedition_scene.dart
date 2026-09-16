@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../domain/expedition_models.dart';
+import 'expedition_pixel_art.dart';
+import 'expedition_pixel_assets.g.dart';
+import 'expedition_pixel_backdrop.dart';
 
 const expeditionDungeonGateAsset =
     'assets/adventure/expedition-dungeon-gate-v3.webp';
@@ -370,6 +373,110 @@ const expeditionGuardianBattleScene = ExpeditionSceneTheme(
   accent: Color(0xFFE67B68),
 );
 
+/// 장면 테마에서 `(지역, 장면 키)`를 되찾는다.
+///
+/// 테마만 넘기는 호출부(준비·체험·요약)가 있어서다. 지역 전용 원화면 그 지역을,
+/// 공용 원화면 지역 없이 장면 키만 돌려준다. 수호전 무대처럼 표에 없는
+/// 테마는 `null`이다.
+({String? regionCode, String sceneKey})? expeditionSceneKeyOf(
+  ExpeditionSceneTheme scene,
+) {
+  for (final entry in expeditionRegionSceneAssets.entries) {
+    if (entry.value == scene.assetPath) {
+      final parts = entry.key.split('/');
+      return (regionCode: parts.first, sceneKey: parts.last);
+    }
+  }
+  for (final entry in _sceneThemes.entries) {
+    if (entry.value.assetPath == scene.assetPath) {
+      return (regionCode: null, sceneKey: entry.key);
+    }
+  }
+  return null;
+}
+
+/// 이 지역·장면의 도트 원화. 지역 전용이 있으면 그것, 없으면 공용(기억서고),
+/// 둘 다 없으면 `null`이라 호출부가 붓 그림 원화로 떨어진다.
+///
+/// 붓 그림 원화를 지우지 않고 이 함수 하나로 갈아탄다. 도트가 들어온 장면부터
+/// 바뀌고, 아직 없는 장면은 예전 그림이 그대로 서서 빈 자리가 생기지 않는다.
+String? expeditionPixelSceneAsset(String? regionCode, String? sceneKey) {
+  if (sceneKey == null) return null;
+  final region = ExpeditionPixelBackdrops.regions.contains(regionCode)
+      ? regionCode!
+      : 'moss_archive';
+  for (final candidate in [
+    'assets/adventure/pixel/scenes/${region}__$sceneKey.png',
+    'assets/adventure/pixel/scenes/moss_archive__$sceneKey.png',
+  ]) {
+    if (expeditionPixelAssetSizes.containsKey(candidate)) return candidate;
+  }
+  return null;
+}
+
+/// 테마로 도트 장면을 찾는다. 지역을 알면 그것을, 모르면 테마에서 되찾는다.
+String? expeditionPixelSceneAssetFor(
+  ExpeditionSceneTheme scene, {
+  String? regionCode,
+  String? sceneKey,
+}) {
+  final resolved = expeditionSceneKeyOf(scene);
+  return expeditionPixelSceneAsset(
+    regionCode ?? resolved?.regionCode,
+    sceneKey ?? resolved?.sceneKey,
+  );
+}
+
+/// 장면 그림 한 장. 도트가 있으면 정수 배율로, 없으면 붓 그림 원화를 덮는다.
+///
+/// 썸네일·요약 카드처럼 배경 위젯 전체가 필요 없는 자리가 쓴다.
+class ExpeditionSceneImage extends StatelessWidget {
+  const ExpeditionSceneImage({
+    super.key,
+    required this.scene,
+    this.regionCode,
+    this.sceneKey,
+    this.alignment = Alignment.center,
+    this.decodeForScreen = true,
+  });
+
+  final ExpeditionSceneTheme scene;
+  final String? regionCode;
+  final String? sceneKey;
+  final Alignment alignment;
+
+  /// 붓 그림일 때 화면 폭에 맞춰 디코드할지. 작은 썸네일은 끈다.
+  final bool decodeForScreen;
+
+  @override
+  Widget build(BuildContext context) {
+    final pixel = expeditionPixelSceneAssetFor(
+      scene,
+      regionCode: regionCode,
+      sceneKey: sceneKey,
+    );
+    if (pixel != null) {
+      return PixelCoverImage(
+        asset: pixel,
+        imageKey: ValueKey(pixel),
+        native: expeditionPixelAssetSizes[pixel]!,
+        alignment: alignment,
+        minScale: 1,
+      );
+    }
+    return Image(
+      image: decodeForScreen
+          ? expeditionSceneImageProvider(context, scene.assetPath)
+          : AssetImage(scene.assetPath),
+      fit: BoxFit.cover,
+      alignment: alignment,
+      filterQuality: FilterQuality.medium,
+      gaplessPlayback: true,
+      excludeFromSemantics: true,
+    );
+  }
+}
+
 class ExpeditionSceneBackdrop extends StatefulWidget {
   const ExpeditionSceneBackdrop({
     super.key,
@@ -437,37 +544,48 @@ class _ExpeditionSceneBackdropState extends State<ExpeditionSceneBackdrop>
     _precacheVisibleScenes();
   }
 
+  /// 이 배경이 실제로 그릴 도트 장면. 없으면 붓 그림 원화다.
+  String? get _pixelAsset => expeditionPixelSceneAssetFor(
+        widget.scene,
+        regionCode: widget.regionCode,
+        sceneKey: widget.sceneKey,
+      );
+
+  ImageProvider<Object> _providerFor(ExpeditionSceneTheme scene) {
+    final pixel = expeditionPixelSceneAssetFor(
+      scene,
+      regionCode: widget.regionCode,
+    );
+    if (pixel != null) return AssetImage(pixel);
+    return expeditionSceneImageProvider(context, scene.assetPath);
+  }
+
   void _precacheVisibleScenes() {
     final cacheWidth = expeditionSceneDecodeWidth(context);
-    final currentSignature = '${widget.scene.assetPath}@$cacheWidth';
+    final currentAsset = _pixelAsset ?? widget.scene.assetPath;
+    final currentSignature = '$currentAsset@$cacheWidth';
     if (_currentPrecacheSignature != currentSignature) {
       _currentPrecacheSignature = currentSignature;
-      precacheImage(
-        expeditionSceneImageProvider(context, widget.scene.assetPath),
-        context,
-      ).ignore();
+      precacheImage(_providerFor(widget.scene), context).ignore();
     }
 
-    final nextAssets = widget.preloadScenes
-        .map((scene) => scene.assetPath)
-        .where((asset) => asset != widget.scene.assetPath)
-        .toSet()
-        .take(2)
-        .toList(growable: false);
-    final nextSignature = '${nextAssets.join('|')}@$cacheWidth';
+    final nextScenes = <String, ExpeditionSceneTheme>{
+      for (final scene in widget.preloadScenes)
+        if (scene.assetPath != widget.scene.assetPath)
+          scene.assetPath: scene,
+    }.values.take(2).toList(growable: false);
+    final nextSignature =
+        '${nextScenes.map((scene) => scene.assetPath).join('|')}@$cacheWidth';
     if (_nextPrecacheSignature == nextSignature) return;
     _nextPrecacheSignature = nextSignature;
     _nextPrecacheTimer?.cancel();
-    if (nextAssets.isEmpty) return;
+    if (nextScenes.isEmpty) return;
 
     void preloadNextScenes() {
       if (!mounted || _nextPrecacheSignature != nextSignature) return;
       // 전체 지역을 올리지 않고 실제로 열린 다음 길만 준비한다.
-      for (final asset in nextAssets) {
-        precacheImage(
-          expeditionSceneImageProvider(context, asset),
-          context,
-        ).ignore();
+      for (final scene in nextScenes) {
+        precacheImage(_providerFor(scene), context).ignore();
       }
     }
 
@@ -490,6 +608,7 @@ class _ExpeditionSceneBackdropState extends State<ExpeditionSceneBackdrop>
   Widget build(BuildContext context) {
     final palette = MongrooPalette.of(context);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final pixelAsset = _pixelAsset;
     return Semantics(
       container: true,
       image: true,
@@ -500,6 +619,22 @@ class _ExpeditionSceneBackdropState extends State<ExpeditionSceneBackdrop>
           child: Stack(
             fit: StackFit.passthrough,
             children: [
+              // 도트 장면은 흔들지도 확대하지도 않는다. 소수점으로 밀리는
+              // 순간 도트가 뭉개진다. 지역 보정도 얹지 않는다 — 이미 그
+              // 지역 색으로 그린 그림이다.
+              if (pixelAsset != null)
+                Positioned.fill(
+                  child: PixelCoverImage(
+                    asset: pixelAsset,
+                    imageKey: ValueKey(pixelAsset),
+                    native: expeditionPixelAssetSizes[pixelAsset]!,
+                    // 가운데보다 조금 아래. 아래 맞춤이면 문·우물 같은 장면이
+                    // 잘리고 바닥만 남고, 정가운데면 배우가 설 바닥이 얇다.
+                    alignment: const Alignment(0, .4),
+                    minScale: 1,
+                  ),
+                )
+              else
               Positioned.fill(
                 child: AnimatedBuilder(
                   animation: _ambient,
@@ -555,11 +690,12 @@ class _ExpeditionSceneBackdropState extends State<ExpeditionSceneBackdrop>
               ),
               // 지역 색 보정. 원화 위, 가독성 그라디언트 아래에 둔다 — 글자
               // 대비를 만드는 층을 건드리면 안 되기 때문이다.
-              if (expeditionRegionGrade(
-                    widget.regionCode,
-                    sceneKey: widget.sceneKey,
-                  ).a >
-                  0)
+              if (pixelAsset == null &&
+                  expeditionRegionGrade(
+                        widget.regionCode,
+                        sceneKey: widget.sceneKey,
+                      ).a >
+                      0)
                 Positioned.fill(
                   child: IgnorePointer(
                     child: ColoredBox(
@@ -588,19 +724,21 @@ class _ExpeditionSceneBackdropState extends State<ExpeditionSceneBackdrop>
                   ),
                 ),
               ),
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: AnimatedBuilder(
-                    animation: _ambient,
-                    builder: (context, _) => CustomPaint(
-                      painter: _ExpeditionMotePainter(
-                        phase: _ambient.value,
-                        color: widget.scene.accent,
+              // 흐린 빛 티끌은 붓 그림에만. 도트 위에서는 번진 점이 곧 흠이다.
+              if (pixelAsset == null)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: AnimatedBuilder(
+                      animation: _ambient,
+                      builder: (context, _) => CustomPaint(
+                        painter: _ExpeditionMotePainter(
+                          phase: _ambient.value,
+                          color: widget.scene.accent,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
               widget.child,
               Positioned.fill(
                 child: IgnorePointer(

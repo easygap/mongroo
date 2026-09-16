@@ -46,6 +46,13 @@ README 전투 설명은 출시 후보 Flutter Web 빌드를 360x732 모바일 �
 실행해 촬영한 20~22·24번만 사용한다. 2026-08-11 QA 전용 데이터로 같은 수호전을
 직접 조작했으며, 정지 화면과 GIF에 콘셉트 HUD나 사후 합성 프레임을 섞지 않았다.
 
+2026-09-16에 탐험·던전·전투를 도트 화풍으로 바꾸면서 `readme-current/`의
+`adventure-hub.webp`·`dungeon-walk.gif`와 `mobile/20-integrated-battle.webp`를
+같은 규격(390 DPR2 → 480px, 520x1126 DPR1 스크린캐스트 10fps, 360x732 DPR2)으로
+다시 찍었다. 21·22·24번은 옛 붓 그림 무대의 기록이라 README에서는 더 쓰지 않는다.
+촬영 절차는 `tools/demo_up.py`(SQLite 데모 스택과 QA 계정) → `tools/capture.mjs`
+(Playwright) → `tools/make_media.py`(WebP·GIF 굽기)다.
+
 2026-08-24 이전에 찍은 던전 캡처(`web/10~13`, 옛 `readme-current/expedition-*`)는
 출시 빌드에서 감춘 계측 표시가 화면에 남아 있어 모두 삭제했다. 던전을 다시
 찍을 때는 계측 표시가 없는지 확인한다.

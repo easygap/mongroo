@@ -584,8 +584,10 @@ void main() {
     expect(find.byKey(const ValueKey('stage-field-map')), findsOneWidget);
     final mapSize =
         tester.getSize(find.byKey(const ValueKey('expedition-walk-surface')));
-    expect(mapSize.width, closeTo(296, .01));
-    expect(mapSize.width / mapSize.height, closeTo(1.45, .01));
+    // 필드는 판 테두리 안에서 폭을 다 쓰고, 글 상자 셋에 눌리지 않고
+    // 화면 높이의 대부분을 받는다.
+    expect(mapSize.width, greaterThanOrEqualTo(270));
+    expect(mapSize.height, greaterThanOrEqualTo(300));
     expect(tester.takeException(), isNull);
   });
 

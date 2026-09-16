@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/text/korean_particles.dart';
-import '../../home/domain/plant.dart';
-import '../../home/presentation/plant_view.dart';
 import '../domain/expedition_models.dart';
 import 'expedition_action_cue.dart';
 import 'expedition_combat_audio.dart';
@@ -15,19 +13,25 @@ import 'expedition_combat_effects.dart';
 import 'expedition_combat_hud.dart';
 import 'expedition_combat_sprites.dart';
 import 'expedition_combat_timeline.dart';
+import 'expedition_pixel_art.dart';
+import 'expedition_pixel_sprites.dart';
 import 'expedition_scene.dart';
 
-/// 탐험 결과를 짧은 전투 연출로 보여 주는 무대다.
+/// 탐험 결과를 짧은 전투 연출로 보여 주는 도트 무대다.
 ///
 /// 서버가 계산한 [ExpeditionActionCue]를 재생할 뿐 판정을 다시 계산하지 않는다.
-/// 배경, 캐릭터, 수호자, 이펙트, HUD는 서로 다른 갱신·리페인트 경계를 사용해
+/// 배경, 캐릭터, 적, 이펙트, HUD는 서로 다른 갱신·리페인트 경계를 사용해
 /// 한 애니메이션이 정적인 레이어까지 다시 그리지 않도록 구성한다.
+///
+/// 무대의 문법은 포켓몬식 대치다 — 적은 오른쪽 위 제 자리에, 우리 편은 왼쪽
+/// 아래에 서고, 행동 대원이 앞에 나온다. 모든 그림은 같은 정수 배율의 도트다.
 class ExpeditionEncounterStage extends StatefulWidget {
   const ExpeditionEncounterStage({
     super.key,
     required this.encounter,
     this.battle,
     this.regionCode,
+    this.guardianCode,
     required this.actor,
     this.party = const [],
     required this.cue,
@@ -43,6 +47,10 @@ class ExpeditionEncounterStage extends StatefulWidget {
   final ExpeditionEncounter? encounter;
   final ExpeditionBattle? battle;
   final String? regionCode;
+
+  /// 수호짐승 코드(`ledger_keeper` 등). 합동 수호전이 넘긴다. 없으면 지역의
+  /// 수호짐승으로 떨어진다.
+  final String? guardianCode;
   final ExpeditionMember? actor;
   final List<ExpeditionMember> party;
   final ExpeditionActionCue? cue;
@@ -78,6 +86,49 @@ class ExpeditionEncounterStage extends StatefulWidget {
   @override
   State<ExpeditionEncounterStage> createState() =>
       _ExpeditionEncounterStageState();
+}
+
+/// 무대 위 배우들의 자리. 무대 크기 비율로 두고 배율은 따로 곱한다.
+///
+/// 배치는 포켓몬·최근 도트 RPG의 대치 문법을 따른다 — 적은 오른쪽 위 제
+/// 자리에, 우리 편은 왼쪽 아래에 서고 행동 대원이 맨 앞이다. 하단 명령 독이
+/// 덮는 만큼([ExpeditionEncounterStage.bottomHudInset])은 무대에서 뺀다.
+class _StageLayout {
+  _StageLayout({
+    required Size size,
+    required double topInset,
+    required double bottomInset,
+    required this.unit,
+  })  : usableTop = 56 + topInset,
+        usableBottom = math.max(220, size.height - bottomInset),
+        width = size.width {
+    final usable = usableBottom - usableTop;
+    enemyFoot = Offset(
+      _snapValue(width * .70),
+      _snapValue(usableTop + usable * .52),
+    );
+    actorFoot = Offset(
+      _snapValue(width * .30),
+      _snapValue(usableBottom - unit * 3),
+    );
+    backlineFeet = [
+      Offset(_snapValue(width * .12), _snapValue(actorFoot.dy - unit * 12)),
+      Offset(_snapValue(width * .03), _snapValue(actorFoot.dy - unit * 24)),
+    ];
+  }
+
+  final double unit;
+  final double width;
+  final double usableTop;
+  final double usableBottom;
+  late final Offset enemyFoot;
+  late final Offset actorFoot;
+  late final List<Offset> backlineFeet;
+
+  double _snapValue(double value) => (value / unit).round() * unit;
+
+  Offset snap(Offset offset) =>
+      Offset(_snapValue(offset.dx), _snapValue(offset.dy));
 }
 
 class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
@@ -186,7 +237,8 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   void didUpdateWidget(covariant ExpeditionEncounterStage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.battle?.enemyKind != widget.battle?.enemyKind ||
-        oldWidget.battle?.wave?.code != widget.battle?.wave?.code) {
+        oldWidget.battle?.wave?.code != widget.battle?.wave?.code ||
+        oldWidget.guardianCode != widget.guardianCode) {
       _precacheEnemyImages();
     }
     _precacheRelevantEffects();
@@ -255,38 +307,19 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     );
   }
 
-  int _guardianCacheWidth(BuildContext context) {
-    final media = MediaQuery.of(context);
-    return (media.size.width * .55 * media.devicePixelRatio * 1.15)
-        .round()
-        .clamp(256, 1024);
-  }
+  String get _enemyAsset => expeditionPixelEnemyAsset(
+        enemyKind: widget.battle?.enemyKind ?? 'guardian',
+        enemyCode: widget.battle?.wave?.code ?? '',
+        guardianCode: widget.guardianCode,
+        regionCode: widget.regionCode ?? widget.battle?.regionCode,
+      );
 
   void _precacheEnemyImages() {
-    final cacheWidth = _guardianCacheWidth(context);
-    final battle = widget.battle;
-    final tangleCode = battle?.wave?.code ?? '';
-    final isTangle = battle?.enemyKind == 'tangle';
-    final assets = isTangle
-        ? <String>{
-            for (final state in expeditionTangleStates)
-              expeditionTangleAssetPath(tangleCode, state),
-          }
-        : expeditionCombatAssets;
-    final mobileWidth =
-        isTangle ? expeditionMobileTangleWidth : expeditionMobileGuardianWidth;
-    final signature = '$cacheWidth:$mobileWidth:${assets.join('|')}';
-    if (_precacheSignature == signature) return;
-    _precacheSignature = signature;
-    for (final asset in assets) {
-      final provider = expeditionRuntimeImageProvider(
-        assetPath: asset,
-        cacheWidth: cacheWidth,
-        mobileAssetWidth: mobileWidth,
-      );
-      // 디코드는 첫 공격보다 먼저 시작하되 화면 진입은 기다리지 않는다.
-      precacheImage(provider, context).ignore();
-    }
+    final asset = _enemyAsset;
+    if (_precacheSignature == asset) return;
+    _precacheSignature = asset;
+    // 디코드는 첫 공격보다 먼저 시작하되 화면 진입은 기다리지 않는다.
+    precacheImage(AssetImage(asset), context).ignore();
   }
 
   void _precacheRelevantEffects() {
@@ -514,18 +547,6 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
         encounter?.kind == 'guardian' ||
         cue?.isGuardianExchange == true;
     final actorStage = cue?.stage ?? widget.actor?.stage ?? 2;
-    final actorScale = switch (actorStage) {
-      <= 2 => 2.08,
-      3 => 1.58,
-      4 => 1.3,
-      _ => 1.16,
-    };
-    final actorBottom = switch (actorStage) {
-      <= 2 => 5.0,
-      3 => 0.0,
-      4 => -7.0,
-      _ => -15.0,
-    };
     final enemyName =
         combat?.enemyName ?? battle?.enemy.name ?? encounter?.enemyName;
     final maxGuard = combat?.enemyMaxGuard ??
@@ -551,6 +572,12 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                             '${combat!.enemyName} 수호 장벽에 ${combat.guardDamage} 피해. '
                             '${cue.playsEnemyAttack ? combat.counterDamage > 0 ? '${combat.damageTarget} ${combat.counterDamage} 피해.' : '반격 방어.' : ''}'
                         : '${koreanSubject(cue.actorName)} ${cue.title} 스킬을 사용했어요.';
+    final enemyAsset = _enemyAsset;
+    final enemyNative = expeditionPixelSpriteSize(enemyAsset);
+    final enemyKind = battle?.enemyKind ??
+        (encounter?.kind == 'guardian' || cue?.isGuardianExchange == true
+            ? 'guardian'
+            : 'tangle');
 
     return Positioned.fill(
       child: Semantics(
@@ -560,69 +587,84 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
           child: LayoutBuilder(
             builder: (context, constraints) {
               final size = constraints.biggest;
-              final usableHeight =
-                  math.max(220.0, size.height - widget.bottomHudInset);
-              final actorWidth = math.min(152.0, size.width * .40);
-              final actorHeight = usableHeight * .82;
+              final unit = PixelStageScale.of(context).toDouble();
+              final layout = _StageLayout(
+                size: size,
+                topInset: widget.topHudInset,
+                bottomInset: widget.bottomHudInset,
+                unit: unit,
+              );
+              // 어린 대원은 한 배율 작게. 화분 시절의 캐릭터가 성체와 같은
+              // 키로 서면 성장이 화면에서 사라진다.
+              final actorUnit = actorStage <= 2 ? math.max(2.0, unit - 1) : unit;
+              final enemyBox = Size(
+                enemyNative.width * unit,
+                enemyNative.height * unit,
+              );
               return Stack(
                 clipBehavior: Clip.hardEdge,
                 children: [
                   if (guardianActive)
-                    const Positioned.fill(
+                    Positioned.fill(
                       child: RepaintBoundary(
                         child: CustomPaint(
-                          key: ValueKey('expedition-combat-ground'),
-                          painter: ExpeditionBattleGroundPainter(),
+                          key: const ValueKey('expedition-combat-ground'),
+                          painter: ExpeditionBattleGroundPainter(
+                            unit: unit,
+                            enemyFoot: Offset(
+                              layout.enemyFoot.dx / size.width,
+                              layout.enemyFoot.dy / size.height,
+                            ),
+                            enemyWidth: enemyBox.width * .78,
+                            partyFoot: Offset(
+                              layout.actorFoot.dx / size.width,
+                              layout.actorFoot.dy / size.height,
+                            ),
+                            partyWidth: unit * 22,
+                          ),
                         ),
                       ),
                     ),
                   if (guardianActive && widget.party.length > 1)
-                    Positioned(
-                      left: 0,
-                      bottom: 1 + widget.bottomHudInset,
-                      width: size.width * .39,
-                      height: usableHeight * .52,
+                    Positioned.fill(
                       child: _CombatPartyFormation(
                         party: widget.party,
                         battle: battle,
                         activeMemberId: cue?.actorId ?? widget.actor?.id,
+                        layout: layout,
+                        ambient: _ambientController,
+                        reduceMotion: reduceMotion,
                       ),
                     ),
                   if (guardianActive)
                     Positioned(
-                      right: -size.width * .035,
-                      // 아군과 같은 [usableHeight]를 쓴다. 전체 높이로 잡으면
-                      // 아래 지휘 독이 덮는 만큼 적이 잘려서, 얼굴이 있는
-                      // 아래쪽이 화면 밖으로 밀린다.
-                      top: usableHeight * .035,
-                      width: size.width * .62,
-                      height: usableHeight * .84,
-                      child: _AnimatedGuardian(
+                      left: layout.enemyFoot.dx - enemyBox.width / 2,
+                      top: layout.enemyFoot.dy - enemyBox.height,
+                      width: enemyBox.width,
+                      height: enemyBox.height,
+                      child: _PixelEnemy(
                         action: _actionController,
                         ambient: _ambientController,
                         cue: cue,
                         combat: combat,
                         reduceMotion: reduceMotion,
-                        imageCacheWidth: _guardianCacheWidth(context),
-                        enemyKind: battle?.enemyKind ?? 'guardian',
-                        enemyCode: battle?.wave?.code ?? '',
+                        enemyKind: enemyKind,
+                        asset: enemyAsset,
+                        unit: unit,
+                        box: enemyBox,
                       ),
                     ),
                   if ((cue != null && !cue.isBossPhase) ||
                       (cue == null && widget.actor != null))
-                    Positioned(
-                      left: size.width * .035,
-                      bottom: actorBottom + widget.bottomHudInset,
-                      width: actorWidth,
-                      height: actorHeight,
-                      child: _AnimatedCombatActor(
+                    Positioned.fill(
+                      child: _PixelActor(
                         action: _actionController,
+                        ambient: _ambientController,
                         cue: cue,
                         actor: widget.actor,
                         stage: actorStage,
-                        scale: actorScale,
-                        width: actorWidth,
-                        height: actorHeight,
+                        unit: actorUnit,
+                        foot: layout.actorFoot,
                         reduceMotion: reduceMotion,
                       ),
                     ),
@@ -632,6 +674,12 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                         ambient: _ambientController,
                         reduceMotion: reduceMotion,
                         target: battle?.enemy.intent.target ?? 'front',
+                        unit: unit,
+                        anchor: Offset(
+                          layout.enemyFoot.dx / size.width,
+                          (layout.enemyFoot.dy - enemyBox.height * .45) /
+                              size.height,
+                        ),
                       ),
                     ),
                   if (cue != null)
@@ -644,15 +692,17 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                     ),
                   // 적의 이름·장벽과 다음 공격 예고는 한 덩어리로 위에 붙인다.
                   //
-                  // 예고를 무대 바닥(`bottom: 10 + inset`)에 두면 아군의 화분과
-                  // 적의 얼굴을 가로질러 덮는다. 둘 다 아래쪽에 서 있어서
-                  // 피할 자리가 없다. 같은 적을 설명하는 두 조각이니 위에서
-                  // 붙여 두면 서로 겹치지도, 배우를 가리지도 않는다.
+                  // 예고를 무대 바닥에 두면 아군과 적의 얼굴을 가로질러 덮는다.
+                  // 둘 다 아래쪽에 서 있어서 피할 자리가 없다. 같은 적을
+                  // 설명하는 두 조각이니 위에서 붙여 두면 서로 겹치지도,
+                  // 배우를 가리지도 않는다.
+                  // 폭은 왼쪽 3분의 2까지만. 적은 오른쪽 위에 서 있으니 판이
+                  // 화면을 가로지르면 적의 머리를 덮는다.
                   if (enemyName != null || (cue == null && hasTelegraph))
                     Positioned(
-                      top: 47 + widget.topHudInset,
+                      top: 60 + widget.topHudInset,
                       left: 10,
-                      right: 10,
+                      width: math.min(250.0, size.width * .64),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
@@ -668,10 +718,11 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                                     combat?.enemyGuardBefore ?? currentGuard,
                                 after: combat?.enemyGuardAfter ?? currentGuard,
                                 animate: cue != null,
+                                elite: battle?.enemy.elite ?? false,
                               ),
                             ),
                           if (cue == null && hasTelegraph) ...[
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
                             ExpeditionTelegraphChip(
                               attackName: battle?.enemy.intent.name ??
                                   encounter?.attackName ??
@@ -688,6 +739,8 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                         action: _actionController,
                         cue: cue,
                         combat: combat,
+                        layout: layout,
+                        enemyBox: enemyBox,
                       ),
                     ),
                 ],
@@ -700,17 +753,22 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   }
 }
 
-/// 수호자만 ambient/action 틱을 구독해 나머지 무대의 재빌드를 막는다.
-class _AnimatedGuardian extends StatelessWidget {
-  const _AnimatedGuardian({
+/// 적 하나. ambient/action 틱을 구독해 나머지 무대의 재빌드를 막는다.
+///
+/// 상태마다 다른 원화를 쓰던 것을 **한 장의 도트와 움직임**으로 바꿨다. 준비는
+/// 뒤로 움츠림, 공격은 앞으로 내지름, 맞으면 하얗게 번쩍이며 밀리고, 풀리면
+/// 화소 조각으로 흩어진다. 도트 게임의 적은 원래 그렇게 움직인다.
+class _PixelEnemy extends StatelessWidget {
+  const _PixelEnemy({
     required this.action,
     required this.ambient,
     required this.cue,
     required this.combat,
     required this.reduceMotion,
-    required this.imageCacheWidth,
-    this.enemyKind = 'guardian',
-    this.enemyCode = '',
+    required this.enemyKind,
+    required this.asset,
+    required this.unit,
+    required this.box,
   });
 
   final Animation<double> action;
@@ -718,11 +776,12 @@ class _AnimatedGuardian extends StatelessWidget {
   final ExpeditionActionCue? cue;
   final ExpeditionCombatFeedback? combat;
   final bool reduceMotion;
-  final int imageCacheWidth;
-
-  /// 'tangle'이면 현재 웨이브 코드에 대응하는 전용 상태 원화를 그린다.
   final String enemyKind;
-  final String enemyCode;
+  final String asset;
+  final double unit;
+
+  /// 이 적이 차지하는 상자. 흩어지는 조각의 출발점을 여기서 잡는다.
+  final Size box;
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
@@ -789,7 +848,7 @@ class _AnimatedGuardian extends StatelessWidget {
                     partyContact + .22,
                   )
                 : 0.0;
-            final guardianFlash = cue?.dealsGuardianDamage == true
+            final flash = cue?.dealsGuardianDamage == true
                 ? math.sin(
                     ExpeditionCombatTimeline.segment(
                           progress,
@@ -799,9 +858,22 @@ class _AnimatedGuardian extends StatelessWidget {
                         math.pi,
                   )
                 : 0.0;
-            final idle =
-                reduceMotion ? 0.0 : math.sin(ambient.value * math.pi * 2);
-            final attack = cue?.playsEnemyAttack == true &&
+            // 숨쉬기: 도트 한 칸을 3.6초에 한 번 오르내린다. 소수 픽셀로
+            // 흔들면 도트가 뭉개지므로 정수 칸으로만 움직인다.
+            final breath = reduceMotion
+                ? 0.0
+                : (math.sin(ambient.value * math.pi * 2) > 0 ? 1.0 : 0.0);
+            final windUp = cue?.playsEnemyAttack == true
+                ? math.sin(
+                    ExpeditionCombatTimeline.segment(
+                          progress,
+                          enemyContact - .22,
+                          enemyContact - .08,
+                        ) *
+                        math.pi,
+                  )
+                : 0.0;
+            final lunge = cue?.playsEnemyAttack == true &&
                     combat?.counterResult != 'calmed'
                 ? math.sin(
                     ExpeditionCombatTimeline.segment(
@@ -820,138 +892,54 @@ class _AnimatedGuardian extends StatelessWidget {
                             progress, cue)
                         : Offset.zero
                 : Offset.zero;
-            final offset = Offset(
-                  -attack * 20 +
-                      math.sin(guardianHit * math.pi * 7) *
-                          math.sin(guardianHit * math.pi) *
-                          7,
-                  idle * 2.4 + attack * 6,
+            final knockback =
+                math.sin(guardianHit * math.pi * 7) * math.sin(guardianHit * math.pi);
+            final rawOffset = Offset(
+                  windUp * unit * 3 - lunge * unit * 8 + knockback * unit * 2.5,
+                  breath * unit + lunge * unit * 2,
                 ) +
                 shake;
-
-            if (enemyKind == 'tangle') {
-              // 상태별 알파 원화를 한 장만 유지한다. 반투명 레이어를 매 프레임
-              // 겹치지 않아 작은 기기에서도 saveLayer 비용과 메모리 피크를 막는다.
-              final state = defeatedBlend > .001
-                  ? 'release'
-                  : hitBlend > .001
-                      ? 'hit'
-                      : attackBlend > .001
-                          ? 'attack'
-                          : 'idle';
-              return Transform.translate(
-                offset: offset,
-                child: Transform.scale(
-                  scale: 1 + idle * .01 + attack * .045,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Align(
-                        alignment: const Alignment(0, .83),
-                        child: FractionallySizedBox(
-                          widthFactor: .58,
-                          child: Container(
-                            height: 16,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(999),
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.black.withAlpha(90),
-                                  Colors.transparent,
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      _GuardianImage(
-                        key: ValueKey('tangle-body-$state'),
-                        asset: expeditionTangleAssetPath(enemyCode, state),
-                        cacheWidth: imageCacheWidth,
-                        mobileAssetWidth: expeditionMobileTangleWidth,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
+            final offset = Offset(
+              (rawOffset.dx / unit).round() * unit,
+              (rawOffset.dy / unit).round() * unit,
+            );
+            final state = defeatedBlend > .001
+                ? (enemyKind == 'tangle' ? 'release' : 'defeated')
+                : hitBlend > .001
+                    ? 'hit'
+                    : attackBlend > .001
+                        ? 'attack'
+                        : 'idle';
+            final keyPrefix =
+                enemyKind == 'tangle' ? 'tangle-body' : 'ledger-keeper';
+            final squashX = 1 + lunge * .08 - hitBlend * .06 - windUp * .05;
+            final squashY = 1 - lunge * .06 + hitBlend * .08 + windUp * .05;
             return Transform.translate(
               offset: offset,
               child: Transform.scale(
-                scale: 1 + idle * .01 + attack * .045,
+                scaleX: squashX,
+                scaleY: squashY * (1 - defeatedBlend * .35),
+                alignment: Alignment.bottomCenter,
                 child: Stack(
+                  clipBehavior: Clip.none,
                   fit: StackFit.expand,
                   children: [
-                    Align(
-                      alignment: const Alignment(0, .83),
-                      child: FractionallySizedBox(
-                        widthFactor: .68,
-                        child: Container(
-                          height: 18,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            gradient: RadialGradient(
-                              colors: [
-                                Colors.black.withAlpha(105),
-                                Colors.transparent,
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                     Opacity(
-                      opacity: (1 -
-                              math.max(
-                                defeatedBlend,
-                                math.max(hitBlend, attackBlend),
-                              ))
-                          .clamp(0.0, 1.0)
-                          .toDouble(),
-                      child: _GuardianImage(
-                        key: const ValueKey('ledger-keeper-idle'),
-                        asset: expeditionLedgerKeeperIdleAsset,
-                        cacheWidth: imageCacheWidth,
+                      opacity: (1 - defeatedBlend).clamp(0.0, 1.0),
+                      child: _PixelEnemyImage(
+                        key: ValueKey('$keyPrefix-$state'),
+                        asset: asset,
+                        flash: reduceMotion ? 0 : flash * .85,
                       ),
                     ),
-                    if (hitBlend > .001)
-                      Opacity(
-                        opacity: hitBlend,
-                        child: _GuardianImage(
-                          key: const ValueKey('ledger-keeper-hit'),
-                          asset: expeditionLedgerKeeperHitAsset,
-                          cacheWidth: imageCacheWidth,
-                        ),
-                      ),
-                    if (attackBlend > .001)
-                      Opacity(
-                        opacity: attackBlend,
-                        child: _GuardianImage(
-                          key: const ValueKey('ledger-keeper-attack'),
-                          asset: expeditionLedgerKeeperAttackAsset,
-                          cacheWidth: imageCacheWidth,
-                        ),
-                      ),
-                    if (defeatedBlend > .001)
-                      Opacity(
-                        opacity: defeatedBlend,
-                        child: _GuardianImage(
-                          key: const ValueKey('ledger-keeper-defeated'),
-                          asset: expeditionLedgerKeeperDefeatedAsset,
-                          cacheWidth: imageCacheWidth,
-                        ),
-                      ),
-                    if (!reduceMotion && guardianFlash > .02)
-                      Opacity(
-                        opacity: guardianFlash * .72,
-                        child: ColorFiltered(
-                          colorFilter: const ColorFilter.mode(
-                            Colors.white,
-                            BlendMode.srcATop,
-                          ),
-                          child: _GuardianImage(
-                            asset: expeditionLedgerKeeperHitAsset,
-                            cacheWidth: imageCacheWidth,
+                    if (defeatedBlend > 0)
+                      Positioned.fill(
+                        child: CustomPaint(
+                          painter: PixelScatterPainter(
+                            progress: defeatedBlend,
+                            origin: Offset(box.width / 2, box.height * .55),
+                            color: const Color(0xFFF3E6C8),
+                            unit: unit,
                           ),
                         ),
                       ),
@@ -964,141 +952,282 @@ class _AnimatedGuardian extends StatelessWidget {
       );
 }
 
-class _GuardianImage extends StatelessWidget {
-  const _GuardianImage({
-    super.key,
-    required this.asset,
-    required this.cacheWidth,
-    this.mobileAssetWidth = expeditionMobileGuardianWidth,
-  });
+class _PixelEnemyImage extends StatelessWidget {
+  const _PixelEnemyImage({super.key, required this.asset, required this.flash});
 
   final String asset;
-  final int cacheWidth;
-  final int mobileAssetWidth;
-
-  @override
-  Widget build(BuildContext context) => Image(
-        image: expeditionRuntimeImageProvider(
-          assetPath: asset,
-          cacheWidth: cacheWidth,
-          mobileAssetWidth: mobileAssetWidth,
-        ),
-        fit: BoxFit.contain,
-        alignment: Alignment.bottomCenter,
-        filterQuality: FilterQuality.medium,
-        gaplessPlayback: true,
-        excludeFromSemantics: true,
-      );
-}
-
-/// 캐릭터 원화는 child 슬롯에 고정하고 위치 변환만 매 프레임 갱신한다.
-class _AnimatedCombatActor extends StatelessWidget {
-  const _AnimatedCombatActor({
-    required this.action,
-    required this.cue,
-    required this.actor,
-    required this.stage,
-    required this.scale,
-    required this.width,
-    required this.height,
-    required this.reduceMotion,
-  });
-
-  final Animation<double> action;
-  final ExpeditionActionCue? cue;
-  final ExpeditionMember? actor;
-  final int stage;
-  final double scale;
-  final double width;
-  final double height;
-  final bool reduceMotion;
+  final double flash;
 
   @override
   Widget build(BuildContext context) {
-    final pose = cue == null
-        ? PlantSpritePose.idle
-        : cue!.playsEnemyAttack && !cue!.playsPartyAttack
-            ? PlantSpritePose.diary
-            : cue!.effectKey == 'safe_guard'
-                ? PlantSpritePose.diary
-                : PlantSpritePose.grow;
-    final artwork = RepaintBoundary(
-      key: const ValueKey('expedition-combat-actor-artwork'),
-      child: PlantView(
-        stage: stage,
-        form: PlantGrowthForm.fromCode(cue?.form ?? actor!.form),
-        speciesCode: cue?.speciesCode ?? actor!.speciesCode,
-        speciesName: cue?.speciesName ?? actor!.speciesName,
-        spritePose: pose,
-        outfitKey: cue?.outfitKey ?? actor?.outfitKey,
-        width: width,
-        height: height,
-      ),
+    final image = Image.asset(
+      asset,
+      fit: BoxFit.fill,
+      filterQuality: FilterQuality.none,
+      isAntiAlias: false,
+      gaplessPlayback: true,
+      excludeFromSemantics: true,
+      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
     );
-    return Transform.scale(
-      key: const ValueKey('expedition-combat-actor'),
-      scale: scale,
-      alignment: Alignment.bottomLeft,
-      child: AnimatedBuilder(
-        animation: action,
-        child: artwork,
-        builder: (context, child) {
-          final progress = cue == null ? 0.0 : action.value;
-          final shake = cue?.isGuardianExchange == true && !reduceMotion
-              ? cue?.playsEnemyAttack == true
-                  ? ExpeditionCombatTimeline.impactShake(progress, cue) * .35
-                  : cue?.dealsGuardianDamage == true
-                      ? ExpeditionCombatTimeline.partyImpactShake(
-                              progress, cue) *
-                          .18
-                      : Offset.zero
-              : Offset.zero;
-          final cast = cue?.playsPartyAttack == true
-              ? math.sin(
-                  ExpeditionCombatTimeline.segment(progress, .04, .46) *
-                      math.pi,
-                )
-              : 0.0;
-          final recoil = cue?.playsEnemyAttack == true
-              ? math.sin(
-                  ExpeditionCombatTimeline.segment(progress, .56, .82) *
-                      math.pi,
-                )
-              : 0.0;
-          return Transform.translate(
-            offset: (reduceMotion
-                    ? Offset.zero
-                    : ExpeditionCombatTimeline.actorOffset(progress, cue)) +
-                shake,
-            child: Transform.rotate(
-              angle: -cast * .035 + recoil * .045,
-              alignment: Alignment.bottomCenter,
-              child: Transform.scale(
-                scaleX: 1 + cast * .055 - recoil * .025,
-                scaleY: 1 - cast * .025 + recoil * .035,
-                alignment: Alignment.bottomCenter,
-                child: child,
-              ),
+    if (flash <= .01) return image;
+    // 몸의 모양대로만 하얗게. `srcATop`은 투명한 자리를 건드리지 않는다.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        image,
+        Opacity(
+          opacity: flash.clamp(0.0, 1.0),
+          child: ColorFiltered(
+            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcATop),
+            child: Image.asset(
+              asset,
+              fit: BoxFit.fill,
+              filterQuality: FilterQuality.none,
+              isAntiAlias: false,
+              gaplessPlayback: true,
+              excludeFromSemantics: true,
+              errorBuilder: (context, error, stackTrace) =>
+                  const SizedBox.shrink(),
             ),
-          );
-        },
-      ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-/// 현재 행동 대원 뒤에서 나머지 탐험대가 실제 성장형과 의상을 유지한다.
+/// 행동 대원의 도트. 전투용 도트가 있으면 그것을, 없으면 걷기 시트의 옆모습 칸을 쓴다.
+class _PixelActor extends StatelessWidget {
+  const _PixelActor({
+    required this.action,
+    required this.ambient,
+    required this.cue,
+    required this.actor,
+    required this.stage,
+    required this.unit,
+    required this.foot,
+    required this.reduceMotion,
+  });
+
+  final Animation<double> action;
+  final Animation<double> ambient;
+  final ExpeditionActionCue? cue;
+  final ExpeditionMember? actor;
+  final int stage;
+  final double unit;
+  final Offset foot;
+  final bool reduceMotion;
+
+  @override
+  Widget build(BuildContext context) {
+    final speciesCode = cue?.speciesCode ?? actor?.speciesCode;
+    final sprite = _PartySprite(speciesCode: speciesCode, unit: unit);
+    final artwork = RepaintBoundary(
+      key: const ValueKey('expedition-combat-actor-artwork'),
+      child: sprite.build(flash: 0),
+    );
+    return AnimatedBuilder(
+      key: const ValueKey('expedition-combat-actor'),
+      animation: Listenable.merge([action, ambient]),
+      child: artwork,
+      builder: (context, child) {
+        final progress = cue == null ? 0.0 : action.value;
+        final shake = cue?.isGuardianExchange == true && !reduceMotion
+            ? cue?.playsEnemyAttack == true
+                ? ExpeditionCombatTimeline.impactShake(progress, cue) * .35
+                : cue?.dealsGuardianDamage == true
+                    ? ExpeditionCombatTimeline.partyImpactShake(progress, cue) *
+                        .18
+                    : Offset.zero
+            : Offset.zero;
+        final cast = cue?.playsPartyAttack == true
+            ? math.sin(
+                ExpeditionCombatTimeline.segment(progress, .04, .46) * math.pi,
+              )
+            : 0.0;
+        final recoil = cue?.playsEnemyAttack == true
+            ? math.sin(
+                ExpeditionCombatTimeline.segment(progress, .56, .82) * math.pi,
+              )
+            : 0.0;
+        final breath = reduceMotion || cue != null
+            ? 0.0
+            : (math.sin(ambient.value * math.pi * 2 + math.pi) > 0 ? 1.0 : 0.0);
+        final rawOffset = (reduceMotion
+                ? Offset.zero
+                : ExpeditionCombatTimeline.actorOffset(progress, cue)) +
+            shake +
+            Offset(0, breath * unit);
+        final offset = Offset(
+          (rawOffset.dx / unit).round() * unit,
+          (rawOffset.dy / unit).round() * unit,
+        );
+        final hurt = cue?.playsEnemyAttack == true &&
+                (cue?.combat?.counterDamage ?? 0) > 0
+            ? recoil
+            : 0.0;
+        final box = sprite.size;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              left: foot.dx - box.width / 2 + offset.dx,
+              top: foot.dy - box.height + offset.dy,
+              width: box.width,
+              height: box.height,
+              child: Transform.scale(
+                scaleX: 1 + cast * .06 - recoil * .04,
+                scaleY: 1 - cast * .03 + recoil * .05,
+                alignment: Alignment.bottomCenter,
+                child: hurt > .05
+                    ? Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          child!,
+                          Opacity(
+                            opacity: (hurt * .7).clamp(0.0, 1.0),
+                            child: sprite.build(flash: 1),
+                          ),
+                        ],
+                      )
+                    : child,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// 아군 한 명의 도트 그림과 그 크기. 전투용 도트가 없으면 걷기 시트로 떨어진다.
+class _PartySprite {
+  _PartySprite({required this.speciesCode, required this.unit})
+      : asset = expeditionPixelActorAsset(speciesCode);
+
+  final String? speciesCode;
+  final double unit;
+  final String? asset;
+
+  /// 걷기 시트는 원화 한 도트가 4px이라, 무대 배율 [unit]에 맞추려면 그만큼
+  /// 나눠 그린다. 옆모습(오른쪽 보기)은 셋째 줄이다.
+  static const _walkerCell = Rect.fromLTWH(96, 240, 96, 120);
+
+  Size get size {
+    final battle = asset;
+    if (battle != null) {
+      final native = expeditionPixelSpriteSize(battle, fallback: const Size(24, 48));
+      return Size(native.width * unit, native.height * unit);
+    }
+    return Size(
+      _walkerCell.width * unit / 4,
+      _walkerCell.height * unit / 4,
+    );
+  }
+
+  Widget build({required double flash}) {
+    final battle = asset;
+    if (battle != null) {
+      final image = Image.asset(
+        battle,
+        fit: BoxFit.fill,
+        filterQuality: FilterQuality.none,
+        isAntiAlias: false,
+        gaplessPlayback: true,
+        excludeFromSemantics: true,
+        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+      );
+      if (flash <= 0) return image;
+      return ColorFiltered(
+        colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcATop),
+        child: image,
+      );
+    }
+    final candidates = expeditionWalkerAssetCandidates(speciesCode);
+    return _WalkerFallback(
+      candidates: candidates,
+      cell: _walkerCell,
+      scale: unit / 4,
+      flash: flash,
+    );
+  }
+}
+
+/// 걷기 시트의 옆모습 한 칸. 품종 시트가 없으면 공용 시트를 쓴다.
+class _WalkerFallback extends StatefulWidget {
+  const _WalkerFallback({
+    required this.candidates,
+    required this.cell,
+    required this.scale,
+    required this.flash,
+  });
+
+  final List<String> candidates;
+  final Rect cell;
+  final double scale;
+  final double flash;
+
+  @override
+  State<_WalkerFallback> createState() => _WalkerFallbackState();
+}
+
+class _WalkerFallbackState extends State<_WalkerFallback> {
+  String? _asset;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolve();
+  }
+
+  @override
+  void didUpdateWidget(covariant _WalkerFallback oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.candidates.join() != widget.candidates.join()) _resolve();
+  }
+
+  Future<void> _resolve() async {
+    for (final candidate in widget.candidates) {
+      final image = await ExpeditionPixelImages.load(candidate);
+      if (!mounted) return;
+      if (image != null) {
+        setState(() => _asset = candidate);
+        return;
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = _asset;
+    if (asset == null) return const SizedBox.shrink();
+    return PixelSheetCell(
+      asset: asset,
+      source: widget.cell,
+      scale: widget.scale,
+      flash: widget.flash,
+    );
+  }
+}
+
+/// 현재 행동 대원 뒤에서 나머지 탐험대가 자기 도트로 서 있는다.
 /// 전투원 수가 늘어도 무대 밀도를 일정하게 유지하도록 후열은 최대 두 명만 보인다.
 class _CombatPartyFormation extends StatelessWidget {
   const _CombatPartyFormation({
     required this.party,
     required this.battle,
     required this.activeMemberId,
+    required this.layout,
+    required this.ambient,
+    required this.reduceMotion,
   });
 
   final List<ExpeditionMember> party;
   final ExpeditionBattle? battle;
   final int? activeMemberId;
+  final _StageLayout layout;
+  final Animation<double> ambient;
+  final bool reduceMotion;
 
   @override
   Widget build(BuildContext context) {
@@ -1107,23 +1236,24 @@ class _CombatPartyFormation extends StatelessWidget {
         .take(2)
         .toList(growable: false);
     if (members.isEmpty) return const SizedBox.shrink();
+    // 후열은 한 배율 작게 — 뒤에 서 있다는 뜻이다. 2배 아래로는 안 내려간다.
+    final unit = math.max(2.0, layout.unit - 1);
     return RepaintBoundary(
       key: const ValueKey('expedition-combat-party-lineup'),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           for (var index = 0; index < members.length; index++)
-            Positioned(
-              left: 4 + index * 48,
-              bottom: 20 + index * 9,
-              width: 78,
-              height: 112,
-              child: _BacklineMember(
-                member: members[index],
-                status: battle?.party
-                    .where((item) => item.memberId == members[index].id)
-                    .firstOrNull,
-              ),
+            _BacklineMember(
+              member: members[index],
+              status: battle?.party
+                  .where((item) => item.memberId == members[index].id)
+                  .firstOrNull,
+              foot: layout.backlineFeet[index],
+              unit: unit,
+              ambient: ambient,
+              reduceMotion: reduceMotion,
+              phase: index,
             ),
         ],
       ),
@@ -1132,64 +1262,66 @@ class _CombatPartyFormation extends StatelessWidget {
 }
 
 class _BacklineMember extends StatelessWidget {
-  const _BacklineMember({required this.member, required this.status});
+  const _BacklineMember({
+    required this.member,
+    required this.status,
+    required this.foot,
+    required this.unit,
+    required this.ambient,
+    required this.reduceMotion,
+    required this.phase,
+  });
 
   final ExpeditionMember member;
   final ExpeditionBattleMember? status;
+  final Offset foot;
+  final double unit;
+  final Animation<double> ambient;
+  final bool reduceMotion;
+  final int phase;
 
   @override
   Widget build(BuildContext context) {
     final health = status == null || status!.maxHp <= 0
         ? 1.0
         : (status!.hp / status!.maxHp).clamp(0.0, 1.0);
-    final formationScale = switch (member.stage) {
-      <= 2 => 1.5,
-      3 => 1.24,
-      4 => 1.1,
-      _ => 1.0,
-    };
-    return Opacity(
-      opacity: status?.isAlive == false ? .42 : .76,
-      child: Column(
-        children: [
-          Expanded(
-            child: Transform.scale(
-              scale: formationScale,
-              alignment: Alignment.bottomCenter,
-              child: PlantView(
-                stage: member.stage,
-                form: PlantGrowthForm.fromCode(member.form),
-                speciesCode: member.speciesCode,
-                speciesName: member.speciesName,
-                spritePose: PlantSpritePose.idle,
-                outfitKey: member.outfitKey,
-                width: 78,
-                height: 94,
-              ),
-            ),
-          ),
-          Container(
-            width: 46,
-            height: 5,
-            decoration: BoxDecoration(
-              color: Colors.black.withAlpha(110),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            alignment: Alignment.centerLeft,
-            child: FractionallySizedBox(
-              widthFactor: health,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: health > .35
-                      ? const Color(0xFF8EE0A8)
-                      : const Color(0xFFFF8D78),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-          ),
-        ],
+    final sprite = _PartySprite(speciesCode: member.speciesCode, unit: unit);
+    final box = sprite.size;
+    return AnimatedBuilder(
+      animation: ambient,
+      child: Opacity(
+        opacity: status?.isAlive == false ? .42 : 1,
+        child: sprite.build(flash: 0),
       ),
+      builder: (context, child) {
+        final breath = reduceMotion
+            ? 0.0
+            : (math.sin(ambient.value * math.pi * 2 + phase * 1.9) > 0
+                ? 1.0
+                : 0.0);
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              left: foot.dx - box.width / 2,
+              top: foot.dy - box.height + breath * unit,
+              width: box.width,
+              height: box.height,
+              child: child!,
+            ),
+            Positioned(
+              left: foot.dx - unit * 8,
+              top: foot.dy + unit * 2,
+              width: unit * 16,
+              child: PixelBar(
+                value: health,
+                unit: math.max(1, unit / 2),
+                height: unit * 2,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -1199,11 +1331,15 @@ class _GuardianIntentLayer extends StatelessWidget {
     required this.ambient,
     required this.reduceMotion,
     required this.target,
+    required this.unit,
+    required this.anchor,
   });
 
   final Animation<double> ambient;
   final bool reduceMotion;
   final String target;
+  final double unit;
+  final Offset anchor;
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
@@ -1214,6 +1350,8 @@ class _GuardianIntentLayer extends StatelessWidget {
               phase: ambient.value,
               reduceMotion: reduceMotion,
               target: target,
+              unit: unit,
+              anchor: anchor,
             ),
           ),
         ),
@@ -1228,6 +1366,7 @@ class _AnimatedGuardHud extends StatelessWidget {
     required this.before,
     required this.after,
     required this.animate,
+    required this.elite,
   });
 
   final Animation<double> action;
@@ -1236,6 +1375,7 @@ class _AnimatedGuardHud extends StatelessWidget {
   final int before;
   final int after;
   final bool animate;
+  final bool elite;
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
@@ -1247,6 +1387,7 @@ class _AnimatedGuardHud extends StatelessWidget {
             before: before,
             after: after,
             progress: animate ? action.value : 0,
+            elite: elite,
           ),
         ),
       );
@@ -1257,11 +1398,15 @@ class _AnimatedCombatLabels extends StatelessWidget {
     required this.action,
     required this.cue,
     required this.combat,
+    required this.layout,
+    required this.enemyBox,
   });
 
   final Animation<double> action;
   final ExpeditionActionCue cue;
   final ExpeditionCombatFeedback? combat;
+  final _StageLayout layout;
+  final Size enemyBox;
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
@@ -1273,6 +1418,7 @@ class _AnimatedCombatLabels extends StatelessWidget {
                 ExpeditionCombatTimeline.partyContactProgress(cue);
             final enemyContact =
                 ExpeditionCombatTimeline.enemyContactProgress(cue);
+            final unit = layout.unit;
             return Stack(
               clipBehavior: Clip.none,
               children: [
@@ -1287,17 +1433,21 @@ class _AnimatedCombatLabels extends StatelessWidget {
                   ),
                 if (progress >= partyContact && (combat?.guardDamage ?? 0) > 0)
                   Positioned(
-                    right: 54,
-                    top: 104 -
-                        ExpeditionCombatTimeline.segment(
-                              progress,
-                              partyContact,
-                              partyContact + .25,
-                            ) *
-                            18,
+                    left: layout.enemyFoot.dx - unit * 12,
+                    top: layout.enemyFoot.dy -
+                        enemyBox.height -
+                        unit * 4 -
+                        (ExpeditionCombatTimeline.segment(
+                                  progress,
+                                  partyContact,
+                                  partyContact + .25,
+                                ) *
+                                6)
+                            .round() *
+                            unit,
                     child: ExpeditionDamageNumber(
                       label: '-${combat!.guardDamage}',
-                      caption: '수호 장벽 피해',
+                      caption: cue.weaknessHit ? '약점!' : '수호 장벽 피해',
                       color: expeditionCombatEffectColor(cue.effectKey),
                       opacity: ExpeditionCombatTimeline.floatingOpacity(
                         progress,
@@ -1320,14 +1470,17 @@ class _AnimatedCombatLabels extends StatelessWidget {
                   ),
                 if (cue.playsEnemyAttack && progress >= enemyContact)
                   Positioned(
-                    left: 58,
-                    bottom: 78 +
-                        ExpeditionCombatTimeline.segment(
-                              progress,
-                              enemyContact,
-                              enemyContact + .34,
-                            ) *
-                            12,
+                    left: layout.actorFoot.dx - unit * 4,
+                    top: layout.actorFoot.dy -
+                        unit * 40 -
+                        (ExpeditionCombatTimeline.segment(
+                                  progress,
+                                  enemyContact,
+                                  enemyContact + .34,
+                                ) *
+                                4)
+                            .round() *
+                            unit,
                     child: ExpeditionDamageNumber(
                       label: combat!.counterDamage > 0
                           ? '-${combat!.counterDamage}'
@@ -1340,8 +1493,8 @@ class _AnimatedCombatLabels extends StatelessWidget {
                               ? '교전 없이 이탈'
                               : '${combat!.attackName} 차단',
                       color: combat!.counterDamage > 0
-                          ? const Color(0xFFFF8D78)
-                          : const Color(0xFF9FE7D2),
+                          ? ExpeditionCombatHudColors.hurt
+                          : ExpeditionCombatHudColors.heal,
                       opacity: ExpeditionCombatTimeline.floatingOpacity(
                         progress,
                         enemyContact,

@@ -320,11 +320,11 @@ class _RegionCard extends StatelessWidget {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          Image.asset(
-                            scene.assetPath,
-                            fit: BoxFit.cover,
-                            filterQuality: FilterQuality.medium,
-                            excludeFromSemantics: true,
+                          ExpeditionSceneImage(
+                            scene: scene,
+                            regionCode: region.code,
+                            sceneKey: zone.key,
+                            decodeForScreen: false,
                           ),
                           DecoratedBox(
                             decoration: BoxDecoration(
