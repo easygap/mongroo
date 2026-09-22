@@ -46,17 +46,20 @@
 | Flutter Web 릴리스 빌드 | 성공 |
 | 브라우저 일기 저장 | 경험치 +30, 씨앗 +15와 홈 상태 반영 확인 |
 | 브라우저 자동 전투 설정 창 | 3초간 열린 상태에서 행동 요청 0건, 닫은 뒤 자동 모드 변경 확인 |
+| 브라우저 연속 입력·전투 종료 | 숫자키 연속 입력 두 번에 행동 요청 한 번, 승리와 탐험 종료 확인 |
 | 음원 파일 측정 | 28개 검사, 가장 높은 피크 −1.3dBFS |
+| GitHub CI | 여섯 작업 모두 성공. Android APK·WebAssembly·운영용 이미지 빌드 포함 |
 
 검사 명령은 `flutter analyze --no-pub`, `flutter test --no-pub`,
 `python -m pytest -q`, `python -m ruff check app tests`,
 `python -m app.content.expeditions.validator`, `python -m app.export_openapi`다.
 Android와 WebAssembly 빌드, MySQL 운영 계약 검사는 저장소의 GitHub Actions에서도 실행한다.
+구현 커밋 `f94f021`의 [전체 실행 결과](https://github.com/easygap/mongroo/actions/runs/35696906714)를 확인할 수 있다.
 
 ## 실제 화면
 
-README의 홈·일기·지도·전투·설정·방 사진은 [이번 버전의 캡처](screenshots/release-2026-09-22/)다.
-성장 계보 그림은 게임에 포함된 스프라이트를 나란히 놓은 자료이며, 앱 화면으로 소개하지 않는다.
+README의 홈·일기·지도·전투·설정·방·성장 도감 사진은 모두 [이번 버전의 실제 앱 캡처](screenshots/release-2026-09-22/)다.
+예전 영어 성장표는 현재 앱의 한국어 도감 화면으로 교체했다.
 
 ## 남은 출시 확인
 

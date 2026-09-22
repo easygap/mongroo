@@ -44,7 +44,9 @@
 
 캐릭터는 다섯 단계를 거칩니다. 어떤 감정이 쌓였는지에 따라 여섯 타입으로 나뉘고, 모습과 말투가 달라져요. 특정 감정을 적는다고 더 빨리 자라거나 더 좋은 보상을 받지는 않습니다.
 
-![한 캐릭터가 씨앗에서 시작해 감정에 따라 여섯 가지 모습으로 자라는 과정](design-system/character-lineage-previews/baby-pot-growth-preview.webp)
+<p align="center">
+  <img src="docs/screenshots/release-2026-09-22/growth.png" width="420" alt="앱의 성장 도감에서 여섯 감정별 캐릭터 모습을 비교하는 화면">
+</p>
 
 다 자란 캐릭터를 박물관에 보낸 뒤에는 새 씨앗을 심을 수 있습니다. 모은 캐릭터로 탐험대를 바꾸거나 서로 다른 스킬을 써 보는 재미도 있어요.
 
