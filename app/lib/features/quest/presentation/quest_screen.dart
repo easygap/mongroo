@@ -150,6 +150,7 @@ class QuestScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(rewardAudioWarmupProvider);
     final state = ref.watch(questControllerProvider);
     ref.listen(
       questControllerProvider.select((value) => value.actionError),

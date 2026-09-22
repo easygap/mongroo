@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/error/api_exception.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
+import '../../home/presentation/reward_feedback.dart';
 import '../domain/garden_models.dart';
 import 'garden_controller.dart';
 import 'garden_item_visual.dart';
@@ -112,6 +113,7 @@ class _ShopTabState extends ConsumerState<ShopTab> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(rewardAudioWarmupProvider);
     final state = ref.watch(shopControllerProvider);
     ref.listen(
       shopControllerProvider.select((value) => value.actionError),

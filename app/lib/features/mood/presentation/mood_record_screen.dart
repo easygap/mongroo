@@ -397,6 +397,7 @@ class _MoodRecordScreenState extends ConsumerState<MoodRecordScreen> {
     // 저장 직후 성장 다이얼로그가 열릴 때 처음 팜 상태를 읽으면 로드 전 null을
     // 캡처한다. 작성 화면이 열려 있는 동안 미리 구독해 장착 의상을 준비한다.
     ref.watch(equippedWardrobeLayerKeyProvider);
+    ref.watch(rewardAudioWarmupProvider);
     final palette = MongrooPalette.of(context);
     final hasContent = _contentController.text.trim().isNotEmpty;
     return PopScope<void>(

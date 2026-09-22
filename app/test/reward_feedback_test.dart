@@ -11,9 +11,11 @@ import 'package:mongroo/features/home/domain/reward_result.dart';
 import 'package:mongroo/features/home/presentation/reward_feedback.dart';
 
 class _MutedSettings extends ExpeditionBattleSettingsNotifier {
+  _MutedSettings([this.shortEffects = false]);
+  final bool shortEffects;
   @override
-  ExpeditionBattleSettings build() =>
-      const ExpeditionBattleSettings(audioMode: ExpeditionAudioMode.muted);
+  ExpeditionBattleSettings build() => ExpeditionBattleSettings(
+      audioMode: ExpeditionAudioMode.muted, shortEffects: shortEffects);
 }
 
 RewardResult _reward({int seeds = 10, int exp = 20, int balance = 100}) =>
@@ -32,6 +34,7 @@ Future<void> _pump(
   WidgetTester tester,
   Widget child, {
   bool reducedMotion = false,
+  bool shortEffects = false,
   double textScale = 1,
 }) async {
   tester.view.physicalSize = const Size(320, 800);
@@ -40,7 +43,8 @@ Future<void> _pump(
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(ProviderScope(
     overrides: [
-      expeditionBattleSettingsProvider.overrideWith(_MutedSettings.new)
+      expeditionBattleSettingsProvider
+          .overrideWith(() => _MutedSettings(shortEffects))
     ],
     child: MaterialApp(
         theme: AppTheme.light(),
@@ -59,6 +63,20 @@ int _shownBalance(WidgetTester tester) =>
     tester.widget<MongrooSeedToken>(find.byType(MongrooSeedToken)).value;
 
 void main() {
+  testWidgets('게임의 연출 줄이기도 보상과 해금에 함께 적용한다', (tester) async {
+    await _pump(
+        tester,
+        Column(children: [
+          RewardReceipt(reward: _reward()),
+          const MilestoneReveal(child: SizedBox(width: 100, height: 100)),
+        ]),
+        shortEffects: true);
+    expect(_shownBalance(tester), 100);
+    await tester.pumpAndSettle();
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('해금은 받은 아이템과 잔액을 보여 주며 연출 중에도 닫을 수 있다', (tester) async {
     const item = ShopItem(
         id: 1,

@@ -10,6 +10,30 @@ import '../../../core/theme/mongroo_ui.dart';
 import '../../expedition/presentation/expedition_settings.dart';
 import '../domain/reward_result.dart';
 
+const _seedSoundPath = 'adventure/sfx/cue-patrol-return.wav';
+const _milestoneSoundPath = 'adventure/sfx/cue-research-complete.wav';
+
+final _rewardSoundsProvider = Provider((ref) {
+  final sounds = (seed: _RewardSound(), milestone: _RewardSound());
+  ref.onDispose(() {
+    sounds.seed.dispose();
+    sounds.milestone.dispose();
+  });
+  return sounds;
+});
+
+/// 화면을 읽는 동안 두 확정음을 준비한다. 지급 순간에 플레이어를 만들거나
+/// 다음 보상 때 같은 음원을 다시 초기화하지 않는다. 무음이면 준비도 생략한다.
+final rewardAudioWarmupProvider = Provider<void>((ref) {
+  if (!ref
+      .watch(expeditionBattleSettingsProvider.select((s) => s.sfxEnabled))) {
+    return;
+  }
+  final sounds = ref.watch(_rewardSoundsProvider);
+  unawaited(sounds.seed.prepare(_seedSoundPath));
+  unawaited(sounds.milestone.prepare(_milestoneSoundPath));
+});
+
 /// 서버가 확정한 보상을 보여 준다. 잔액 저장과 연출의 수명은 서로 독립적이다.
 /// 시트를 바로 닫아도 지급은 끝나 있으며, 재조회/화면 재진입에는 사용하지 않는다.
 class RewardReceipt extends ConsumerStatefulWidget {
@@ -28,7 +52,8 @@ class _RewardReceiptState extends ConsumerState<RewardReceipt>
   final _walletKey = GlobalKey();
   late final AnimationController _flight;
   late final ValueNotifier<int> _balance;
-  final _sound = _RewardSound();
+  late final _RewardSound _sound;
+  final _soundOwner = Object();
   bool _started = false;
   bool _arrived = false;
 
@@ -39,6 +64,7 @@ class _RewardReceiptState extends ConsumerState<RewardReceipt>
   @override
   void initState() {
     super.initState();
+    _sound = ref.read(_rewardSoundsProvider).seed;
     WidgetsBinding.instance.addObserver(this);
     _balance = ValueNotifier(_before);
     _flight = AnimationController(
@@ -51,7 +77,8 @@ class _RewardReceiptState extends ConsumerState<RewardReceipt>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (MediaQuery.disableAnimationsOf(context) ||
-        !TickerMode.valuesOf(context).enabled) {
+        !TickerMode.valuesOf(context).enabled ||
+        ref.read(expeditionBattleSettingsProvider).shortEffects) {
       _finish();
     } else if (!_started) {
       _started = true;
@@ -59,7 +86,7 @@ class _RewardReceiptState extends ConsumerState<RewardReceipt>
         if (!mounted || _flight.value == 1) return;
         if (_seeds > 0 || widget.reward.totalExp > 0) {
           if (ref.read(expeditionBattleSettingsProvider).sfxEnabled) {
-            unawaited(_sound.prepare('adventure/sfx/cue-patrol-return.wav'));
+            unawaited(_sound.prepare(_seedSoundPath));
           }
           _flight.forward();
         } else {
@@ -90,7 +117,8 @@ class _RewardReceiptState extends ConsumerState<RewardReceipt>
       if (ModalRoute.of(context)?.isCurrent == false) return;
       unawaited(HapticFeedback.lightImpact());
       unawaited(_sound.play(
-        'adventure/sfx/cue-patrol-return.wav',
+        _seedSoundPath,
+        owner: _soundOwner,
         enabled: ref.read(expeditionBattleSettingsProvider).sfxEnabled,
       ));
     }
@@ -101,7 +129,7 @@ class _RewardReceiptState extends ConsumerState<RewardReceipt>
     _arrived = true;
     _flight.value = 1;
     _balance.value = widget.reward.seedBalance;
-    _sound.stop();
+    _sound.stop(_soundOwner);
   }
 
   @override
@@ -121,7 +149,7 @@ class _RewardReceiptState extends ConsumerState<RewardReceipt>
     WidgetsBinding.instance.removeObserver(this);
     _flight.dispose();
     _balance.dispose();
-    _sound.dispose();
+    _sound.stop(_soundOwner);
     super.dispose();
   }
 
@@ -129,7 +157,11 @@ class _RewardReceiptState extends ConsumerState<RewardReceipt>
   Widget build(BuildContext context) {
     ref.listen(expeditionBattleSettingsProvider.select((s) => s.sfxEnabled),
         (_, enabled) {
-      if (!enabled) _sound.stop();
+      if (!enabled) _sound.stop(_soundOwner);
+    });
+    ref.listen(expeditionBattleSettingsProvider.select((s) => s.shortEffects),
+        (_, reduced) {
+      if (reduced) _finish();
     });
     final scheme = Theme.of(context).colorScheme;
     final reward = widget.reward;
@@ -142,7 +174,8 @@ class _RewardReceiptState extends ConsumerState<RewardReceipt>
         child: Stack(
           key: _canvasKey,
           children: [
-            Column(
+            RepaintBoundary(
+                child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
@@ -202,7 +235,7 @@ class _RewardReceiptState extends ConsumerState<RewardReceipt>
                   ),
                 ),
               ],
-            ),
+            )),
             Positioned.fill(
               child: IgnorePointer(
                 child: RepaintBoundary(
@@ -268,6 +301,7 @@ class _SeedFlightPainter extends CustomPainter {
   final Offset? Function() target;
   final Color color;
   final Color ink;
+  final _paint = Paint();
   static final _leaf = Path()
     ..moveTo(-5, 4)
     ..cubicTo(-8, -3, -1, -7, 6, -7)
@@ -280,7 +314,7 @@ class _SeedFlightPainter extends CustomPainter {
     final from = source();
     final to = target();
     if (from == null || to == null) return;
-    final paint = Paint();
+    final paint = _paint..style = PaintingStyle.fill;
     for (var i = 0; i < count; i++) {
       final t = (animation.value - (_arrival(i) - .42)) / .42;
       if (t < 0 || t > 1) continue;
@@ -336,12 +370,14 @@ class MilestoneReveal extends ConsumerStatefulWidget {
 class _MilestoneRevealState extends ConsumerState<MilestoneReveal>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _reveal;
-  final _sound = _RewardSound();
+  late final _RewardSound _sound;
+  final _soundOwner = Object();
   bool _started = false;
 
   @override
   void initState() {
     super.initState();
+    _sound = ref.read(_rewardSoundsProvider).milestone;
     WidgetsBinding.instance.addObserver(this);
     _reveal = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 850));
@@ -351,10 +387,11 @@ class _MilestoneRevealState extends ConsumerState<MilestoneReveal>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (MediaQuery.disableAnimationsOf(context) ||
-        !TickerMode.valuesOf(context).enabled) {
+        !TickerMode.valuesOf(context).enabled ||
+        ref.read(expeditionBattleSettingsProvider).shortEffects) {
       _started = true;
       _reveal.value = 1;
-      _sound.stop();
+      _sound.stop(_soundOwner);
     } else if (!_started) {
       _started = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -362,7 +399,8 @@ class _MilestoneRevealState extends ConsumerState<MilestoneReveal>
         _reveal.forward();
         if (widget.sound) {
           unawaited(HapticFeedback.mediumImpact());
-          unawaited(_sound.play('adventure/sfx/cue-research-complete.wav',
+          unawaited(_sound.play(_milestoneSoundPath,
+              owner: _soundOwner,
               enabled: ref.read(expeditionBattleSettingsProvider).sfxEnabled));
         }
       });
@@ -373,7 +411,7 @@ class _MilestoneRevealState extends ConsumerState<MilestoneReveal>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) {
       _reveal.value = 1;
-      _sound.stop();
+      _sound.stop(_soundOwner);
     }
   }
 
@@ -381,7 +419,7 @@ class _MilestoneRevealState extends ConsumerState<MilestoneReveal>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _reveal.dispose();
-    _sound.dispose();
+    _sound.stop(_soundOwner);
     super.dispose();
   }
 
@@ -389,7 +427,14 @@ class _MilestoneRevealState extends ConsumerState<MilestoneReveal>
   Widget build(BuildContext context) {
     ref.listen(expeditionBattleSettingsProvider.select((s) => s.sfxEnabled),
         (_, enabled) {
-      if (!enabled) _sound.stop();
+      if (!enabled) _sound.stop(_soundOwner);
+    });
+    ref.listen(expeditionBattleSettingsProvider.select((s) => s.shortEffects),
+        (_, reduced) {
+      if (reduced) {
+        _reveal.value = 1;
+        _sound.stop(_soundOwner);
+      }
     });
     return Stack(
       alignment: Alignment.center,
@@ -419,6 +464,17 @@ class _MilestonePainter extends CustomPainter {
   _MilestonePainter(this.animation, this.color) : super(repaint: animation);
   final Animation<double> animation;
   final Color color;
+  final _paint = Paint();
+  static final _star = Path()
+    ..moveTo(0, -1)
+    ..lineTo(.35, -.35)
+    ..lineTo(1, 0)
+    ..lineTo(.35, .35)
+    ..lineTo(0, 1)
+    ..lineTo(-.35, .35)
+    ..lineTo(-1, 0)
+    ..lineTo(-.35, -.35)
+    ..close();
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -426,7 +482,7 @@ class _MilestonePainter extends CustomPainter {
     if (t == 0 || t == 1) return;
     final radius = size.shortestSide * .32;
     final center = size.center(Offset.zero);
-    final paint = Paint()
+    final paint = _paint
       ..color = color.withValues(alpha: (1 - t) * .85)
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
@@ -436,17 +492,11 @@ class _MilestonePainter extends CustomPainter {
       final start = center + direction * (radius * (.65 + .95 * t));
       if (i.isEven) {
         final length = 3 + math.sin(t * math.pi) * 5;
-        final star = Path()
-          ..moveTo(start.dx, start.dy - length)
-          ..lineTo(start.dx + length * .35, start.dy - length * .35)
-          ..lineTo(start.dx + length, start.dy)
-          ..lineTo(start.dx + length * .35, start.dy + length * .35)
-          ..lineTo(start.dx, start.dy + length)
-          ..lineTo(start.dx - length * .35, start.dy + length * .35)
-          ..lineTo(start.dx - length, start.dy)
-          ..lineTo(start.dx - length * .35, start.dy - length * .35)
-          ..close();
-        canvas.drawPath(star, paint);
+        canvas.save();
+        canvas.translate(start.dx, start.dy);
+        canvas.scale(length);
+        canvas.drawPath(_star, paint);
+        canvas.restore();
       } else {
         canvas.drawLine(start, start + direction * (14 * (1 - t)), paint);
       }
@@ -457,12 +507,13 @@ class _MilestonePainter extends CustomPainter {
   bool shouldRepaint(covariant _MilestonePainter old) => old.color != color;
 }
 
-/// 보상 하나에 플레이어 하나만 필요하다. 전투용 오디오 풀은 만들지 않는다.
+/// 씨앗/해금에 하나씩 재사용한다. 이전 시트가 닫혀도 새 시트의 소리는 끊지 않는다.
 class _RewardSound {
   AudioPlayer? _player;
   Future<void>? _ready;
   int _generation = 0;
   bool _disposed = false;
+  Object? _owner;
 
   Future<void> prepare(String path) => _ready ??= _prepare(path);
 
@@ -479,20 +530,27 @@ class _RewardSound {
         iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
       ));
       if (_disposed) return;
+      await player.setReleaseMode(ReleaseMode.stop);
+      if (_disposed) return;
       await player.setSource(AssetSource(path));
       if (_disposed) return;
       await player.setVolume(.52);
     } on Object {
+      _ready = null;
       // 오디오를 지원하지 않는 환경에서도 결과 화면을 계속 보여 준다.
     }
   }
 
-  Future<void> play(String path, {required bool enabled}) async {
+  Future<void> play(String path,
+      {required bool enabled, required Object owner}) async {
     if (!enabled || _disposed) return;
+    _owner = owner;
     final generation = ++_generation;
     try {
       // 느린 다운로드가 뒤늦게 성공음을 재생하지 않도록 시점을 제한한다.
       await prepare(path).timeout(const Duration(milliseconds: 250));
+      if (_disposed || generation != _generation) return;
+      await _player?.seek(Duration.zero);
       if (_disposed || generation != _generation) return;
       await _player?.resume();
     } on Object {
@@ -500,7 +558,9 @@ class _RewardSound {
     }
   }
 
-  void stop() {
+  void stop([Object? owner]) {
+    if (owner != null && !identical(owner, _owner)) return;
+    _owner = null;
     _generation++;
     final player = _player;
     if (player != null) unawaited(player.stop().catchError((Object _) {}));
