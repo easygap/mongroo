@@ -65,7 +65,7 @@ class _ExpeditionPreparation extends ConsumerWidget {
                         style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 6),
                     Text(
-                      '최대 3명. 이번 길에서 활약시키고 싶은 캐릭터를 직접 골라요.',
+                      '함께 갈 대원을 최대 3명 고르세요.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -94,16 +94,6 @@ class _ExpeditionPreparation extends ConsumerWidget {
                         ),
                       ),
                     const SizedBox(height: 18),
-                    Text('출발 방식',
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 10),
-                    if (!catalog.tutorialCompleted) ...[
-                      _TutorialCoachCard(
-                        step: 1,
-                        onDismiss: null,
-                      ),
-                      const SizedBox(height: 10),
-                    ],
                     _StartActions(state: state),
                   ],
                 ),
@@ -470,81 +460,70 @@ class _StartActions extends ConsumerWidget {
     final controller = ref.read(expeditionControllerProvider.notifier);
     final busy = state.busyAction != null;
     final hasParty = state.selectedPlantIds.isNotEmpty;
+    final catalog = state.catalog!;
+    final deep = state.selectedStageNo == null;
+    final mode = deep
+        ? 'deep'
+        : catalog.heartResonanceAvailable
+            ? 'heart_resonance'
+            : 'free_explore';
+    final available = deep
+        ? catalog.deepAvailable
+        : catalog.heartResonanceAvailable || catalog.freeExploreAvailable;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FilledButton.icon(
-          onPressed: !busy && hasParty && state.catalog!.heartResonanceAvailable
-              ? () => controller.start('heart_resonance')
+          key: ValueKey(deep ? 'prep-start-deep' : 'prep-start-expedition'),
+          onPressed: !busy && hasParty && available
+              ? () => controller.start(mode)
               : null,
-          icon: busy && state.busyAction?.startsWith('start:heart') == true
+          style: FilledButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.onSurface,
+            foregroundColor: Theme.of(context).colorScheme.surface,
+          ),
+          icon: busy
               ? const SizedBox.square(
                   dimension: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.favorite_outline),
-          label: const Text('마음 공명 탐험 시작'),
+              : const Icon(Icons.arrow_forward_rounded),
+          label: Text(busy
+              ? '출발 준비 중…'
+              : deep
+                  ? '깊은 조사 떠나기'
+                  : '탐험 시작'),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Text(
-          state.catalog!.heartResonanceAvailable
-              ? '오늘 1회, 목표를 확보하고 귀환하면 성장과 씨앗을 받아요.'
-              // 못 쓴 것과 이미 받은 것은 다른 상황이다. 하나로 묶으면 오늘 일기를
-              // 쓰고 다녀온 사람에게 일기를 쓰라고 다시 시킨다.
-              : state.catalog!.diaryReady
-                  ? '오늘의 마음 공명 보상은 이미 받았어요. 지금부터는 자유 탐험이에요.'
-                  : '마음 공명 보상은 오늘 50자 이상의 마음 일기를 쓴 뒤 열려요.',
+          !hasParty
+              ? '함께 갈 대원을 한 명 이상 골라 주세요.'
+              : deep && !catalog.deepAvailable
+                  ? catalog.deepLockedReason ?? '지역의 8곳을 모두 마치면 열립니다.'
+                  : mode == 'heart_resonance'
+                      ? '귀환하면 오늘의 성장과 씨앗 보상을 함께 받습니다.'
+                      : '탐험 진행과 발견한 이야기가 저장됩니다.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: !busy && hasParty && state.catalog!.freeExploreAvailable
-              ? () => controller.start('free_explore')
-              : null,
-          icon: const Icon(Icons.route_outlined),
-          label: const Text('보상 없이 자유 탐험'),
-        ),
-        // 깊은 조사는 지역 자유 지도를 쓰므로 스테이지를 고르고 들어온 편성에는
-        // 내놓지 않는다. 고른 스테이지를 조용히 무시하는 버튼이 되기 때문이다.
-        // 허브의 `깊은 조사`로 들어오면 스테이지가 비어 있어 여기가 켜진다.
-        // 잠겼을 때도 버튼을 남기고 서버가 준 사유를 그대로 말한다 — 빼 버리면
-        // 있는 줄도 모른다.
-        if (state.selectedStageNo == null) ...[
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            key: const ValueKey('prep-start-deep'),
-            onPressed: !busy && hasParty && state.catalog!.deepAvailable
-                ? () => controller.start('deep')
-                : null,
-            icon: busy && state.busyAction?.startsWith('start:deep') == true
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.travel_explore_outlined),
-            label: const Text('깊은 조사 떠나기'),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            state.catalog!.deepAvailable
-                ? '엉킴이 더 단단해지는 대신, 처음 여는 기록서와 이야기를 만나요. 씨앗은 늘지 않아요.'
-                : state.catalog!.deepLockedReason ??
-                    '지역의 8스테이지를 모두 마치면 열려요.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         TextButton.icon(
           onPressed:
               !busy && hasParty ? () => controller.start('tutorial') : null,
-          icon: const Icon(Icons.school_outlined),
+          icon: const Icon(Icons.school_outlined, size: 18),
           label: const Text('안내자와 조작 연습'),
+        ),
+        ExpansionTile(
+          key: const PageStorageKey('expedition-reward-help'),
+          title: const Text('보상 안내'),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          children: [
+            Text(catalog.diaryReady && !catalog.heartResonanceAvailable
+                ? '오늘의 일일 보상은 받았습니다. 이후에도 탐험과 이야기 수집을 계속할 수 있습니다.'
+                : '50자 이상 일기를 쓴 날에는 하루 한 번, 목표를 확보하고 귀환하면 성장과 씨앗을 추가로 받습니다. 일기 없이도 탐험할 수 있습니다.'),
+          ],
         ),
       ],
     );

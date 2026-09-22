@@ -25,19 +25,19 @@ void main() {
     final main = File('lib/main.dart').readAsStringSync();
 
     expect(
-      File('assets/fonts/GothicA1-Regular.ttf').lengthSync(),
+      File('assets/fonts/WantedSans-Regular.ttf').lengthSync(),
       greaterThan(2000000),
     );
     expect(
-      File('assets/fonts/GothicA1-Bold.ttf').lengthSync(),
+      File('assets/fonts/WantedSans-Bold.ttf').lengthSync(),
       greaterThan(2000000),
     );
-    expect(File('assets/fonts/LICENSE-GothicA1.txt').existsSync(), isTrue);
-    expect(pubspec, contains('family: GothicA1'));
+    expect(File('assets/fonts/LICENSE-WantedSans.txt').existsSync(), isTrue);
+    expect(pubspec, contains('family: WantedSans'));
     expect(pubspec, contains('family: Roboto'));
     expect(pubspec, contains('family: Noto Sans KR'));
     expect(main, contains("FontLoader('Roboto')"));
-    expect(main, contains('GothicA1-Regular.ttf'));
+    expect(main, contains('WantedSans-Regular.ttf'));
     expect(dockerfile, contains('--no-web-resources-cdn'));
   });
 }

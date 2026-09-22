@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../adventure/presentation/adventure_tab.dart';
 import '../../auth/presentation/auth_controller.dart';
 import 'collection_tab.dart';
 import 'farm_tab.dart';
@@ -28,8 +27,8 @@ class GardenScreen extends ConsumerWidget {
     final palette = MongrooPalette.of(context);
     return DefaultTabController(
       key: ValueKey((initialTab, initialSpeciesCode)),
-      length: 4,
-      initialIndex: initialTab.clamp(0, 3).toInt(),
+      length: 3,
+      initialIndex: initialTab.clamp(0, 2).toInt(),
       child: Scaffold(
         appBar: AppBar(
           title: Row(
@@ -38,9 +37,9 @@ class GardenScreen extends ConsumerWidget {
               Icon(Icons.yard_rounded, color: palette.leaf, size: 22),
               const SizedBox(width: 8),
               const Text(
-                '나의 정원',
+                '정원',
                 style: TextStyle(
-                  fontFamily: AppTheme.pixelFont,
+                  fontFamily: AppTheme.bodyFont,
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                 ),
@@ -50,7 +49,7 @@ class GardenScreen extends ConsumerWidget {
           actions: [
             IconButton(
               tooltip: '마음 식물 박물관',
-              onPressed: () => context.go('/museum'),
+              onPressed: () => context.push('/museum'),
               icon: const Icon(Icons.account_balance_outlined),
             ),
             Padding(
@@ -59,7 +58,7 @@ class GardenScreen extends ConsumerWidget {
             ),
           ],
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(54),
+            preferredSize: const Size.fromHeight(48),
             child: ColoredBox(
               color: palette.paper,
               child: Padding(
@@ -74,26 +73,16 @@ class GardenScreen extends ConsumerWidget {
                     fontWeight: FontWeight.w800,
                   ),
                   indicator: BoxDecoration(
-                    color: AppTheme.seed,
-                    borderRadius: BorderRadius.circular(12),
+                    color: palette.paperDeep,
+                    borderRadius: BorderRadius.circular(6),
                     border: Border.fromBorderSide(
-                      BorderSide(color: Color(0x263B1F06)),
+                      BorderSide.none,
                     ),
                   ),
                   tabs: const [
-                    Tab(icon: Icon(Icons.home_outlined, size: 19), text: '방'),
-                    Tab(
-                      icon: Icon(Icons.storefront_outlined, size: 19),
-                      text: '상점',
-                    ),
-                    Tab(
-                      icon: Icon(Icons.auto_stories_outlined, size: 19),
-                      text: '도감',
-                    ),
-                    Tab(
-                      icon: Icon(Icons.explore_outlined, size: 19),
-                      text: '탐험',
-                    ),
+                    Tab(text: '방'),
+                    Tab(text: '상점'),
+                    Tab(text: '도감'),
                   ],
                 ),
               ),
@@ -105,7 +94,6 @@ class GardenScreen extends ConsumerWidget {
             const FarmTab(),
             ShopTab(initialSpeciesCode: initialSpeciesCode),
             const CollectionTab(),
-            const AdventureTab(),
           ],
         ),
       ),

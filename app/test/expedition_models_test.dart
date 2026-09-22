@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -342,8 +343,8 @@ Map<String, dynamic> _battleSnapshotJson() {
               : 'sunny',
           'kel_label':
               (element ?? (affinity == 'care' ? 'nature' : 'ink')) == 'ink'
-                  ? '모아결'
-                  : '햇살결',
+                  ? '무지개'
+                  : '햇살',
           'kels': [
             (element ?? (affinity == 'care' ? 'nature' : 'ink')) == 'ink'
                 ? 'mosaic'
@@ -351,8 +352,8 @@ Map<String, dynamic> _battleSnapshotJson() {
           ],
           'kel_labels': [
             (element ?? (affinity == 'care' ? 'nature' : 'ink')) == 'ink'
-                ? '모아결'
-                : '햇살결',
+                ? '무지개'
+                : '햇살',
           ],
           'damage_type': 'projectile',
           'damage_type_label': '투사체',
@@ -391,7 +392,7 @@ Map<String, dynamic> _battleSnapshotJson() {
       'basic': {
         'code': 'attack',
         'name': '공명 공격',
-        'description': '집중력 1을 얻고 장벽을 공격해요.',
+        'description': '기력 1을 얻고 장벽을 공격해요.',
         'power': 13,
         'raw_power': 12,
         'power_scale_bp': 10800,
@@ -408,9 +409,9 @@ Map<String, dynamic> _battleSnapshotJson() {
         'element_label': affinity == 'care' ? '빛' : '바람',
         'elements': [affinity == 'care' ? 'light' : 'wind'],
         'kel': affinity == 'care' ? 'sunny' : 'moonlit',
-        'kel_label': affinity == 'care' ? '햇살결' : '달빛결',
+        'kel_label': affinity == 'care' ? '햇살' : '달빛',
         'kels': [affinity == 'care' ? 'sunny' : 'moonlit'],
-        'kel_labels': [affinity == 'care' ? '햇살결' : '달빛결'],
+        'kel_labels': [affinity == 'care' ? '햇살' : '달빛'],
         'damage_type': 'projectile',
         'damage_type_label': '투사체',
         'motion_profile': 'emotion.basic',
@@ -434,7 +435,7 @@ Map<String, dynamic> _battleSnapshotJson() {
         skill(
           slot: 'selected_1',
           code: isBabyPot ? 'sunny_warmth_share' : '${affinity}_emotion',
-          name: '$affinityLabel 성장결',
+          name: '$affinityLabel 성장 타입',
           source: 'emotion',
           skillEffect: 'focus_refund',
           power: 15,
@@ -445,7 +446,7 @@ Map<String, dynamic> _battleSnapshotJson() {
         skill(
           slot: 'selected_2',
           code: 'field_note_echo',
-          name: '현장 기록: 되울림',
+          name: '메아리 기록',
           source: 'skillbook',
           skillEffect: 'study_refund',
           power: 13,
@@ -456,8 +457,8 @@ Map<String, dynamic> _battleSnapshotJson() {
       ],
       'guard': {
         'code': 'guard',
-        'name': '마음 지키기',
-        'description': '피해를 두 칸 막고 집중력을 얻어요.',
+        'name': '방어',
+        'description': '피해를 두 칸 막고 기력을 얻어요.',
         'guard': 2,
         'focus_delta': 1,
       },
@@ -496,9 +497,9 @@ Map<String, dynamic> _battleSnapshotJson() {
         'resist_element': 'steel',
         'resist_element_label': '강철',
         'weak_kel': 'sunny',
-        'weak_kel_label': '햇살결',
+        'weak_kel_label': '햇살',
         'resist_kel': 'mosaic',
-        'resist_kel_label': '모아결',
+        'resist_kel_label': '무지개',
         'intent': {
           'code': 'ledger_claw',
           'name': '장부 발톱',
@@ -584,7 +585,7 @@ Map<String, dynamic> _battleSnapshotJson() {
       'enemy_guard_before': 100,
       'enemy_guard_after': 0,
       'focus_after': 0,
-      'caption': '수호 장벽을 깨뜨렸어요.',
+      'caption': '체력을 깨뜨렸어요.',
     },
   ];
   raw['available_actions'] = [
@@ -886,10 +887,10 @@ void main() {
     expect(offsets['brace']!.dx.abs(), lessThan(offsets['dash']!.dx.abs()));
   });
 
-  test('모아결 기본 공격은 자기 그림을 재생한다', () {
-    // 서버가 모아결 대원의 기본 공격에 실어 보내는 값 그대로다. `기본 공격은
+  test('무지개 공격은 자기 그림을 재생한다', () {
+    // 서버가 무지개 대원의 공격에 실어 보내는 값 그대로다. `공격은
     // 자기 family가 없다`가 4.2의 설계라 `emotion.mosaic-steel`은 manifest에
-    // 없고, 성장결 폴백으로 내려간다.
+    // 없고, 성장 타입 폴백으로 내려간다.
     final basic = resolveExpeditionCombatEffect(
       vfxFamily: 'emotion.mosaic-steel',
       kelFallbackFamily: 'kel.mosaic',
@@ -902,7 +903,7 @@ void main() {
       basic.directory,
       isNot(expeditionCombatEffectsByFamily['fallback.echo-wave']!.directory),
     );
-    // legacy 키까지 내려가지도 않는다. 내려가면 달빛결 그림이 나간다.
+    // legacy 키까지 내려가지도 않는다. 내려가면 달빛 그림이 나간다.
     expect(basic.directory, isNot('insight-arc'));
   });
 
@@ -998,8 +999,8 @@ void main() {
     );
   });
 
-  test('감정 스킬 여섯은 성장결 공용 연출로 떨어지지 않는다', () {
-    // 여섯 다 `emotion.*`를 적어 두고도 그 family가 manifest에 없어서 성장결
+  test('감정 스킬 여섯은 성장 타입 공용 연출로 떨어지지 않는다', () {
+    // 여섯 다 `emotion.*`를 적어 두고도 그 family가 manifest에 없어서 성장 타입
     // 공용 연출이 나가고 있었다. 결 대체를 **같이 넘긴 채로** 확인해야 exact가
     // 이기는 것을 본다 — 안 넘기면 이 검사는 아무것도 증명하지 않는다.
     const skills = <String, (String, String)>{
@@ -1034,7 +1035,7 @@ void main() {
     expect(directories, hasLength(6));
   });
 
-  test('길잡이와 기록서도 성장결 공용 연출로 떨어지지 않는다', () {
+  test('길잡이와 기록서도 성장 타입 공용 연출로 떨어지지 않는다', () {
     // 실기에서 합동 수호전을 돌려 보니 여섯 자리 중 다섯이 길잡이였다. 그
     // 길잡이의 두 스킬과 기록서 한 장이 마지막까지 공용 연출로 나가고 있었다.
     const skills = <String, (String, String)>{
@@ -1061,9 +1062,9 @@ void main() {
     expect(expeditionCombatEffectForKey('echo_wave').directory, 'echo-wave');
   });
 
-  test('T3 감정층 여섯은 성장결 공용 연출과 다른 그림을 쓴다', () {
+  test('T3 감정층 여섯은 성장 타입 공용 연출과 다른 그림을 쓴다', () {
     // 감정층은 고유기 연출 **위에** 26%로 겹치는 두 번째 레이어인데, 여섯 다
-    // `kel.*`를 가리키고 있었다. `kel.sunny`는 아기화분의 care-vines라, 햇살결
+    // `kel.*`를 가리키고 있었다. `kel.sunny`는 아기화분의 care-vines라, 햇살
     // 캐릭터가 T3를 쓰면 자기 연출 위에 남의 덩굴이 겹쳐 나왔다.
     const forms = ['sunny', 'rainy', 'ember', 'moonlit', 'sparkling', 'mosaic'];
     final directories = <String>{};
@@ -1079,7 +1080,7 @@ void main() {
     }
     expect(directories, hasLength(6));
     // 공용 연출은 원래 자리에 그대로 있어야 한다. 아직 자기 연출이 없는
-    // 기본 공격 6종이 거기로 떨어진다.
+    // 공격 6종이 거기로 떨어진다.
     expect(
       resolveExpeditionCombatEffect(vfxFamily: 'kel.sunny').directory,
       'care-vines-v2',
@@ -1244,8 +1245,8 @@ void main() {
     expect(battle.enemy.weaknessLabel, '돌봄');
     expect(battle.enemy.weakElementLabel, '빛');
     expect(battle.enemy.resistElementLabel, '강철');
-    expect(battle.enemy.weakKelLabel, '햇살결');
-    expect(battle.enemy.resistKelLabel, '모아결');
+    expect(battle.enemy.weakKelLabel, '햇살');
+    expect(battle.enemy.resistKelLabel, '무지개');
     expect(battle.party.first.kit.level, 25);
     expect(battle.party.first.kit.kelMapVersion, 1);
     expect(battle.party.first.kit.signatureTier, 3);
@@ -1254,8 +1255,8 @@ void main() {
     expect(battle.party.first.kit.skill.powerScaleBp, 11600);
     expect(battle.party.first.kit.skill.tierPowerBp, 12200);
     expect(battle.party.first.kit.skill.matchupBp, 15000);
-    expect(battle.party.first.kit.skill.kelLabel, '햇살결');
-    expect(battle.party.first.kit.skill.kelLabels, ['햇살결']);
+    expect(battle.party.first.kit.skill.kelLabel, '햇살');
+    expect(battle.party.first.kit.skill.kelLabels, ['햇살']);
     expect(
       battle.party.first.kit.skill.fusionVariant,
       'sprout_cheer.sunny.unique_1.t3',
@@ -1419,8 +1420,12 @@ void main() {
     await tester.pump();
 
     expect(find.text('74/100'), findsOneWidget);
-    expect(find.textContaining('기록 파동 예고'), findsOneWidget);
-    expect(find.textContaining('탐험대 전체를 덮쳐요.'), findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byType(ExpeditionTelegraphChip),
+            matching: find.textContaining('기록 파동')),
+        findsOneWidget);
+    expect(find.textContaining('탐험대 전체 · 피해'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('expedition-combat-party-lineup')),
       findsOneWidget,
@@ -1428,7 +1433,51 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('수호전은 순차 명령이 기본이고 카드 독이 집중력·약점을 읽어 준다', (tester) async {
+  testWidgets('마지막 전투 화면이 먼저 닫혀도 행동 완료 후 보조 지휘를 정리한다', (tester) async {
+    final snapshot = ExpeditionSnapshot.fromJson(_battleSnapshotJson());
+    final completed = Completer<bool>();
+    final showDock = ValueNotifier(true);
+    addTearDown(showDock.dispose);
+    await tester.pumpWidget(ProviderScope(
+      child: MaterialApp(
+        theme: AppTheme.light(),
+        home: Scaffold(
+          body: ValueListenableBuilder<bool>(
+            valueListenable: showDock,
+            builder: (context, visible, _) => visible
+                ? ExpeditionSequentialCommandDock(
+                    battle: snapshot.currentEvent!.battle!,
+                    members: snapshot.party,
+                    locked: false,
+                    fingerprintSeed: 'last-encounter',
+                    selectedMemberId: 11,
+                    onSelectMember: (_) {},
+                    onSubmit: (_) => completed.future,
+                  )
+                : const Text('조사 완료'),
+          ),
+        ),
+      ),
+    ));
+    await tester.pump();
+    final scope = ProviderScope.containerOf(
+        tester.element(find.byType(ExpeditionSequentialCommandDock)));
+    await tester.tap(find.byKey(const ValueKey('seq-dock-card-attack')));
+    await tester.pump();
+    showDock.value = false;
+    await tester.pump();
+    scope.read(expeditionBattleSettingsProvider.notifier).cycleAutoMode();
+    expect(scope.read(expeditionBattleSettingsProvider).autoMode,
+        ExpeditionAutoMode.assist);
+    completed.complete(true);
+    await tester.pump();
+    expect(find.text('조사 완료'), findsOneWidget);
+    expect(scope.read(expeditionBattleSettingsProvider).autoMode,
+        ExpeditionAutoMode.off);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('수호전은 순차 명령이 기본이고 카드 독이 기력·약점을 읽어 준다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 1100));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final raw = _battleSnapshotJson();
@@ -1441,7 +1490,7 @@ void main() {
         (kitJson['unique_skills'] as List).first as Map<String, dynamic>;
     // 약점·내성을 함께 가진 T3 기술도 서버의 약점 우선 판정만 표시해야 한다.
     uniqueSkill['kels'] = ['sunny', 'mosaic'];
-    uniqueSkill['kel_labels'] = ['햇살결', '모아결'];
+    uniqueSkill['kel_labels'] = ['햇살', '무지개'];
     uniqueSkill['matchup_bp'] = 13000;
     final snapshot = ExpeditionSnapshot.fromJson(raw);
     late _FakeExpeditionController controller;
@@ -1475,50 +1524,31 @@ void main() {
     expect(find.byKey(const ValueKey('seq-command-dock')), findsOneWidget);
     expect(
         find.byKey(const ValueKey('immersive-combat-stage')), findsOneWidget);
-    expect(find.text('R 1/6'), findsOneWidget);
+    expect(find.text('1 / 6턴'), findsOneWidget);
     expect(find.textContaining('장부 발톱'), findsWidgets);
-    expect(find.text('↑ 햇살결  ↓ 모아결'), findsOneWidget);
-    expect(find.byKey(const ValueKey('seq-dock-action-row')), findsOneWidget);
+    expect(find.byTooltip('상대 정보'), findsOneWidget);
+    expect(find.byKey(const ValueKey('seq-dock-action-grid')), findsOneWidget);
     for (final action in expeditionCombatActionOrder) {
       final slot = find.byKey(ValueKey('seq-dock-card-$action'));
       expect(slot, findsOneWidget);
       expect(tester.getSize(slot).width, greaterThanOrEqualTo(48));
       expect(tester.getSize(slot).height, greaterThanOrEqualTo(48));
     }
-    final actionIconAssets = tester
-        .widgetList<Image>(
-          find.descendant(
-            of: find.byKey(const ValueKey('seq-dock-action-row')),
-            matching: find.byType(Image),
-          ),
-        )
-        .map((image) => _assetNameOf(image.image))
-        .whereType<String>()
-        .toSet();
-    expect(
-      actionIconAssets,
-      containsAll(<String>{
-        'assets/adventure/skill-icons/baby-pot/sprout-cheer-v1.webp',
-        'assets/adventure/skill-icons/baby-pot/root-embrace-v1.webp',
-        'assets/adventure/skill-icons/baby-pot/sunny-warmth-share-v1.webp',
-        'assets/adventure/skill-icons/baby-pot/field-note-echo-v1.webp',
-      }),
-    );
-    // 이름·효과 전문은 평상시 화면에 두지 않고 상세 시트에서만 연다.
-    expect(find.text('새싹 응원'), findsNothing);
+    // 기술 이름과 비용은 평상시에도 읽힌다. 긴 설명은 상세 시트로 연다.
+    expect(find.text('새싹 응원'), findsOneWidget);
     expect(find.text('캐릭터의 개성을 살린 고유 행동이에요.'), findsNothing);
     // 첫 대기 대원의 이름으로 프롬프트가 열린다.
-    expect(find.text('새싹몬은 무엇을 할까요?'), findsOneWidget);
+    expect(find.text('스킬 선택'), findsOneWidget);
     final auto = tester.widget<FilterChip>(
       find.byKey(const ValueKey('seq-dock-auto')),
     );
     expect(auto.selected, isFalse);
 
-    // 집중력 1로는 스킬(집중 2)을 쓸 수 없다 — 카드가 사유와 함께 잠긴다.
+    // 기력 1로는 스킬(집중 2)을 쓸 수 없다 — 카드가 사유와 함께 잠긴다.
     final skillCard = find.byKey(const ValueKey('seq-dock-card-unique_1'));
     await tester.ensureVisible(skillCard);
     await tester.pump();
-    expect(find.text('집중 부족'), findsWidgets);
+    expect(find.text('기력 부족'), findsWidgets);
     expect(find.text('재사용 2'), findsWidgets);
     await tester.tap(skillCard, warnIfMissed: false);
     await tester.pump();
@@ -1536,7 +1566,7 @@ void main() {
     await tester.pump();
     expect(find.text('캐릭터의 개성을 살린 고유 행동이에요.'), findsOneWidget);
     expect(find.text('T3 · 마음 만개'), findsOneWidget);
-    expect(find.text('↑ 햇살결 · 모아결 · 약점 ×1.30'), findsOneWidget);
+    expect(find.text('↑ 햇살 · 무지개 · 약점 ×1.30'), findsOneWidget);
     expect(find.textContaining('내성 ×'), findsNothing);
     // 판정식 중간값은 화면에 두지 않는다. 셋을 곱한 결과는 머리의 `위력`이고
     // 약점 배수는 결 태그가 이미 말한다.
@@ -1545,7 +1575,7 @@ void main() {
     expect(find.textContaining('위력 '), findsWidgets);
     expect(find.text('T3 감정 융합'), findsOneWidget);
     expect(
-      find.text('연출 · 고유 움직임 위에 지금 성장결의 빛이 겹쳐요'),
+      find.text('연출 · 고유 움직임 위에 지금 성장 타입의 빛이 겹쳐요'),
       findsOneWidget,
     );
     expect(find.textContaining('VFX'), findsNothing);
@@ -1560,8 +1590,8 @@ void main() {
     // 공격 이름은 무대 위 예고판이 이미 말한다.
     expect(
       find.descendant(
-        of: find.byKey(const ValueKey('seq-dock-intent')),
-        matching: find.text('행동 순서 맨 앞 대원 · 위력 1'),
+        of: find.byType(ExpeditionTelegraphChip),
+        matching: find.textContaining('맨 앞 대원 · 피해 1'),
       ),
       findsOneWidget,
     );
@@ -1570,10 +1600,10 @@ void main() {
     final intentLine = find.byKey(const ValueKey('seq-dock-intent'));
     await tester.tap(intentLine);
     await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('상세 생태 기록'), findsOneWidget);
+    expect(find.text('몬스터 도감'), findsOneWidget);
     expect(find.text('확인한 내성'), findsOneWidget);
-    expect(find.text('??? · 전투 후 도감에서 공개'), findsOneWidget);
-    expect(find.text('??? · 실제 발견 후 공개'), findsOneWidget);
+    expect(find.text('전투가 끝나면 도감에서 볼 수 있어요'), findsOneWidget);
+    expect(find.text('직접 얻으면 확인할 수 있어요'), findsOneWidget);
     tester.state<NavigatorState>(find.byType(Navigator)).pop();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -1607,9 +1637,9 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('해답이는 무엇을 할까요?'), findsOneWidget);
-    // 집중력이 모였으니 이번 대원의 스킬 카드는 열려 있다.
-    expect(find.text('집중 부족'), findsNothing);
+    expect(find.text('스킬 선택'), findsOneWidget);
+    // 기력이 모였으니 이번 대원의 스킬 카드는 열려 있다.
+    expect(find.text('기력 부족'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('seq-dock-card-unique_1')));
     await tester.pump();
     expect(controller.combatActionRequests, 2);
@@ -1623,7 +1653,7 @@ void main() {
     await tester.tap(autoToggle);
     await tester.pump();
     expect(tester.widget<FilterChip>(autoToggle).selected, isTrue);
-    expect(find.text('AUTO·보조'), findsOneWidget);
+    expect(find.text('이번 전투'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -1659,19 +1689,19 @@ void main() {
   });
 
   testWidgets('기록서가 건 잠금은 눌러 보기 전에 카드에서 읽힌다', (tester) async {
-    // 이 화면의 다른 잠금은 다 미리 말한다 - `집중 부족`, `Lv.N 해금`.
+    // 이 화면의 다른 잠금은 다 미리 말한다 - `기력 부족`, `Lv.N 해금`.
     // 기록서가 건 잠금만 눌러야 알 수 있었다.
     await tester.binding.setSurfaceSize(const Size(390, 1100));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final raw = _battleSnapshotJson();
     final battleJson = (raw['current_event'] as Map<String, dynamic>)['battle']
         as Map<String, dynamic>;
-    // 집중력을 넉넉히 줘 `집중 부족`이 대신 뜨지 않게 한다.
+    // 기력을 넉넉히 줘 `기력 부족`이 대신 뜨지 않게 한다.
     battleJson['focus'] = 5;
     final kitJson = ((battleJson['party'] as List).first
         as Map<String, dynamic>)['kit'] as Map<String, dynamic>;
-    final unique = (kitJson['unique_skills'] as List).first
-        as Map<String, dynamic>;
+    final unique =
+        (kitJson['unique_skills'] as List).first as Map<String, dynamic>;
     unique
       ..['available'] = false
       ..['lock_reason'] = '태엽 감는 중';
@@ -1717,8 +1747,8 @@ void main() {
 
     Future<void> pumpWith(Map<String, dynamic>? nextIntent) async {
       final raw = _battleSnapshotJson();
-      final battleJson = (raw['current_event'] as Map<String, dynamic>)['battle']
-          as Map<String, dynamic>;
+      final battleJson = (raw['current_event']
+          as Map<String, dynamic>)['battle'] as Map<String, dynamic>;
       final enemy = battleJson['enemy'] as Map<String, dynamic>;
       if (nextIntent != null) enemy['next_intent'] = nextIntent;
       final snapshot = ExpeditionSnapshot.fromJson(raw);
@@ -1766,7 +1796,7 @@ void main() {
     expect(
       find.descendant(
         of: line,
-        matching: find.text('다음 라운드 · 기록 파동 · 탐험대 전체 · 위력 2'),
+        matching: find.text('다음 턴: 기록 파동 · 탐험대 전체 · 피해 2'),
       ),
       findsOneWidget,
     );
@@ -1790,11 +1820,11 @@ void main() {
       ..['name'] = '마음결 조율기'
       ..['focus_cost'] = 1
       ..['cooldown_remaining'] = 0
-      ..['mechanic_summary'] = '다음 공격 성장결을 바꿔요'
+      ..['mechanic_summary'] = '다음 공격 성장 타입을 바꿔요'
       ..['choice_kind'] = 'kel'
       ..['choice_current'] = 'sunny'
       ..['choice_options'] = [
-        {'value': 'sunny', 'label': '햇살결'},
+        {'value': 'sunny', 'label': '햇살'},
         {'value': 'ember', 'label': '잉걸결'},
       ];
     final snapshot = ExpeditionSnapshot.fromJson(raw);
@@ -1834,7 +1864,7 @@ void main() {
     expect(find.text('잉걸결'), findsOneWidget);
     // 지금과 같은 결도 목록에 남지만 고를 수는 없다.
     expect(find.text('지금 이 결'), findsOneWidget);
-    await tester.tap(find.text('햇살결'));
+    await tester.tap(find.text('햇살'));
     await tester.pump(const Duration(milliseconds: 400));
     expect(controller.combatActionRequests, 0);
 
@@ -1896,7 +1926,7 @@ void main() {
     await tester.pump();
 
     expect(find.byKey(const ValueKey('seq-dock-wave')), findsOneWidget);
-    expect(find.text('엉킴 1/2'), findsOneWidget);
+    expect(find.text('1턴 · 1/2'), findsOneWidget);
     expect(find.textContaining('웨이브'), findsNothing);
     // 엉킴은 코드에 맞는 알파 원화를 쓰고 수호짐승 원화는 쓰지 않는다.
     expect(find.byKey(const ValueKey('tangle-body-idle')), findsOneWidget);
@@ -1946,8 +1976,8 @@ void main() {
         tester.getTopLeft(find.byKey(const ValueKey('seq-command-dock'))).dy;
     expect(
       commandDockTop - stageTopBefore,
-      greaterThanOrEqualTo(844 * .72),
-      reason: '불투명 명령 덱 위로 화면 높이의 72% 이상 전장이 보여야 해요.',
+      greaterThanOrEqualTo(844 * .54),
+      reason: '기술 이름과 비용을 보여 주면서 전장이 화면 높이의 54% 이상 보여야 합니다.',
     );
     expect(stageTopBefore, greaterThanOrEqualTo(0));
     expect(stageTopBefore, lessThan(260));
@@ -1976,9 +2006,8 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final raw = _battleSnapshotJson();
-    final battleJson =
-        (raw['current_event'] as Map<String, dynamic>)['battle']
-            as Map<String, dynamic>;
+    final battleJson = (raw['current_event'] as Map<String, dynamic>)['battle']
+        as Map<String, dynamic>;
     // 상태 태그가 제일 긴 경우 - 보스 페이즈까지 붙은 상태로 잰다.
     battleJson['boss_phase'] = {
       'index': 1,
@@ -2011,8 +2040,11 @@ void main() {
     await tester.pump();
 
     // 전장에 남는 조작은 화면 안에 온전히 들어와 있어야 한다.
-    for (final key in const ['seq-dock-auto', 'seq-dock-settings',
-      'seq-dock-retreat']) {
+    for (final key in const [
+      'seq-dock-auto',
+      'seq-dock-settings',
+      'seq-dock-retreat'
+    ]) {
       final rect = tester.getRect(find.byKey(ValueKey(key)));
       expect(rect.left, greaterThanOrEqualTo(0), reason: key);
       expect(rect.right, lessThanOrEqualTo(390), reason: key);
@@ -2038,8 +2070,11 @@ void main() {
     // 전장은 대기 모션이 계속 돌아 pumpAndSettle이 끝나지 않는다.
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('전투 설정'), findsOneWidget);
-    for (final key in const ['seq-dock-pace', 'seq-dock-short',
-      'seq-dock-audio']) {
+    for (final key in const [
+      'seq-dock-pace',
+      'seq-dock-short',
+      'seq-dock-audio'
+    ]) {
       final rect = tester.getRect(find.byKey(ValueKey(key)));
       expect(rect.left, greaterThanOrEqualTo(0), reason: key);
       expect(rect.right, lessThanOrEqualTo(390), reason: key);
@@ -2094,6 +2129,19 @@ void main() {
     expect(auto.center.dy, closeTo(retreat.center.dy, 1));
     // 조작은 오른쪽 끝에 모이고 상태 태그가 왼쪽을 쓴다.
     expect(auto.left, greaterThan(400));
+    final backdrop = tester.widget<ColoredBox>(
+      find.byKey(const ValueKey('immersive-combat-background')),
+    );
+    final round = tester.widget<Text>(
+      find.byKey(const ValueKey('seq-dock-round')),
+    );
+    final foreground = round.style!.color!;
+    expect(
+      (foreground.computeLuminance() + .05) /
+          (backdrop.color.computeLuminance() + .05),
+      greaterThanOrEqualTo(4.5),
+      reason: '밝은 앱 테마에서도 전투 바탕이 흰 글씨 뒤를 채워야 한다',
+    );
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -2188,7 +2236,11 @@ void main() {
     expect(find.textContaining('침수 동굴'), findsWidgets);
     expect(find.text('지하 2층 · 수몰 구역'), findsOneWidget);
     expect(find.text('돌비늘 장부지기'), findsOneWidget);
-    expect(find.textContaining('기록 파동 예고'), findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.byType(ExpeditionTelegraphChip),
+            matching: find.textContaining('기록 파동')),
+        findsOneWidget);
     expect(find.textContaining('쓰러뜨리는 전투가 아니에요'), findsOneWidget);
     expect(find.text('장벽 -68'), findsOneWidget);
     expect(find.text('현재 · 침수 표찰 동굴'), findsOneWidget);
@@ -2292,13 +2344,13 @@ void main() {
     );
     await tester.pump();
 
-    // 수호전은 뿌연 장면 원화가 아니라 지역 도트 전장 위에서 열린다.
+    // The background is free of baked-in actors; enemy and selected plant stay separate.
     expect(
       find.byWidgetPredicate(
         (widget) =>
             widget is Image &&
-            (_assetNameOf(widget.image) ?? '')
-                .startsWith('assets/adventure/pixel/backdrops/'),
+            _assetNameOf(widget.image) ==
+                'assets/adventure/moss-encounter-v3.png',
       ),
       findsOneWidget,
     );
@@ -2513,7 +2565,7 @@ void main() {
       form: 'sunny',
       title: '공명 공격',
       effectKey: 'care_vines',
-      outcome: '수호 장벽이 부서지고 길이 열렸어요!',
+      outcome: '체력이 부서지고 길이 열렸어요!',
       combatResult: 'victory',
       combat: ExpeditionCombatFeedback(
         kind: 'guardian',
@@ -2553,15 +2605,16 @@ void main() {
       find.byKey(const ValueKey('ledger-keeper-hit')),
       findsOneWidget,
     );
-    await tester.pump(const Duration(milliseconds: 400));
+    // The finishing impact holds the contact frame for 76ms before recovery.
+    await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('수호 장벽이 부서지고 길이 열렸어요!'), findsOneWidget);
+    expect(find.text('체력이 부서지고 길이 열렸어요!'), findsOneWidget);
     expect(
       find.byKey(const ValueKey('ledger-keeper-defeated')),
       findsOneWidget,
     );
     expect(
-      find.bySemanticsLabel(RegExp('수호 장벽이 부서지고 길이 열렸어요!')),
+      find.bySemanticsLabel(RegExp('체력이 부서지고 길이 열렸어요!')),
       findsOneWidget,
     );
     expect(completed, isFalse);
@@ -3052,10 +3105,10 @@ void main() {
     }
   });
 
-  testWidgets('벨트의 기본 공격·마음 지키기·성장결 마크를 번들에서 읽는다', (tester) async {
-    // 이 셋은 머티리얼 기본 글리프였다. 기본 공격과 마음 지키기는
+  testWidgets('벨트의 공격·방어·성장 타입 마크를 번들에서 읽는다', (tester) async {
+    // 이 셋은 머티리얼 기본 글리프였다. 공격과 방어는
     // `Icons.sports_martial_arts_rounded`/`Icons.shield_outlined`였고, 여섯
-    // 성장결은 `Icons.hub_outlined` 하나를 나눠 써서 색과 글자를 못 읽으면
+    // 성장 타입은 `Icons.hub_outlined` 하나를 나눠 써서 색과 글자를 못 읽으면
     // 구분이 되지 않았다.
     const assets = <String>[
       'assets/adventure/skill-icons/action/attack-v1.webp',
@@ -3079,14 +3132,15 @@ void main() {
     expect(bytes.values.toSet(), hasLength(assets.length));
 
     // 화면이 실제로 부르는 경로가 이 여덟인지. 실기에서는 그때 화면에 나온
-    // 성장결 하나(햇살결)밖에 못 봤다 - 나머지 다섯은 여기서 짚는다.
+    // 성장 타입 하나(햇살)밖에 못 봤다 - 나머지 다섯은 여기서 짚는다.
     expect(expeditionKelsWithIcons, hasLength(6));
     for (final kel in expeditionKelsWithIcons) {
       expect(expeditionKelIconAsset(kel), contains('/kel/$kel-v1.webp'));
       expect(assets, contains(expeditionKelIconAsset(kel)), reason: kel);
     }
     for (final action in const ['attack', 'guard']) {
-      expect(assets, contains(expeditionActionIconAsset(action)), reason: action);
+      expect(assets, contains(expeditionActionIconAsset(action)),
+          reason: action);
     }
   });
 
@@ -3315,7 +3369,7 @@ void main() {
     expect(restored.audioMode, ExpeditionAudioMode.sfxOnly);
     expect(restored.pace, 2);
     expect(restored.shortEffects, isTrue);
-    // 품질 기준의 `자동 지휘는 초기 OFF`. 지난 전투에서 켰다는 이유로 이번
+    // 품질 기준의 `자동 전투는 초기 OFF`. 지난 전투에서 켰다는 이유로 이번
     // 전투를 앱이 대신 지휘하기 시작하면 안 된다.
     expect(restored.autoMode, ExpeditionAutoMode.off);
     expect(tuned.encode().contains('auto'), isFalse);
@@ -3458,7 +3512,7 @@ void _combatChoiceContractTests() {
       'choice_kind': 'kel',
       'choice_current': 'sunny',
       'choice_options': [
-        {'value': 'sunny', 'label': '햇살결'},
+        {'value': 'sunny', 'label': '햇살'},
         {'value': 'ember', 'label': '잉걸결'},
       ],
     });
@@ -3467,7 +3521,7 @@ void _combatChoiceContractTests() {
     expect(action.choiceCurrent, 'sunny');
     expect(
       action.choiceOptions.map((option) => option.label),
-      ['햇살결', '잉걸결'],
+      ['햇살', '잉걸결'],
     );
   });
 
@@ -3661,7 +3715,8 @@ void _regionSceneTests() {
       final shared = expeditionSceneTheme(scene);
       final regional = expeditionSceneTheme(scene, regionCode: region);
       expect(regional.assetPath, contains(marker), reason: '$region/$scene');
-      expect(regional.assetPath, isNot(shared.assetPath), reason: '$region/$scene');
+      expect(regional.assetPath, isNot(shared.assetPath),
+          reason: '$region/$scene');
     }
   });
 
@@ -3675,7 +3730,8 @@ void _regionSceneTests() {
     // 자기 것이라 표에 없다.
     expect(expeditionRegionSceneAssets, hasLength(14));
     expect(
-      expeditionRegionSceneAssets.keys.where((key) => key.startsWith('echo_well/')),
+      expeditionRegionSceneAssets.keys
+          .where((key) => key.startsWith('echo_well/')),
       hasLength(6),
     );
     expect(
@@ -3737,7 +3793,8 @@ void _regionSceneTests() {
     );
     // 전용 원화가 없는 장면은 여전히 보정을 받는다.
     expect(
-      expeditionRegionGrade('heartwood_observatory', sceneKey: 'flooded_cave').a,
+      expeditionRegionGrade('heartwood_observatory', sceneKey: 'flooded_cave')
+          .a,
       greaterThan(0),
     );
     // 장면을 모르면 지역 기준으로만 판단한다(기존 동작).
@@ -4319,7 +4376,12 @@ void _freeWalkTests() {
       'name': '돌비늘 장부지기',
       'guard': 80,
       'max_guard': 100,
-      'intent': {'code': 'claw', 'name': '장부 발톱', 'target': 'front', 'power': 1},
+      'intent': {
+        'code': 'claw',
+        'name': '장부 발톱',
+        'target': 'front',
+        'power': 1
+      },
       'next_intent': {
         'code': 'record_wave',
         'name': '기록 파동',
@@ -4332,7 +4394,12 @@ void _freeWalkTests() {
 
     final plain = ExpeditionBattleEnemy.fromJson(const {
       'name': '돌비늘 장부지기',
-      'intent': {'code': 'claw', 'name': '장부 발톱', 'target': 'front', 'power': 1},
+      'intent': {
+        'code': 'claw',
+        'name': '장부 발톱',
+        'target': 'front',
+        'power': 1
+      },
     });
     expect(plain.nextIntent, isNull);
   });
@@ -4366,8 +4433,7 @@ void _freeWalkTests() {
     );
     // 지도를 아직 못 받았거나 모르는 코드면 첫 지역으로 떨어진다.
     expect(expeditionDestinationRegion(regions, null)?.code, 'moss_archive');
-    expect(expeditionDestinationRegion(regions, '없는지역')?.code,
-        'moss_archive');
+    expect(expeditionDestinationRegion(regions, '없는지역')?.code, 'moss_archive');
     expect(expeditionDestinationRegion(const [], 'echo_well'), isNull);
   });
 

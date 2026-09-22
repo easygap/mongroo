@@ -96,6 +96,22 @@ def _encounter(**overrides) -> dict:
     }
 
 
+@pytest.mark.parametrize("species", ["basic_sprout", "mood_seed"])
+def test_legacy_starter_keeps_plant_skills_instead_of_guide_skills(species):
+    starter = _profile(1, name="새싹몬", species=species, form="mosaic",
+                       stats={"insight": 7, "care": 7, "courage": 7, "focus": 7},
+                       level=5)
+    canonical = copy.deepcopy(starter)
+    canonical["snapshot"]["species"]["code"] = "baby-pot"
+    actual = member_battle_kit(starter)
+    expected = member_battle_kit(canonical)
+    assert actual["unique_skills"] == expected["unique_skills"]
+    assert actual["combat_stats"] == expected["combat_stats"]
+    assert actual["basic"]["name"] == "공격"
+    assert "archive" not in actual["unique_skills"][0]["code"]
+    assert starter["snapshot"]["species"]["code"] == species
+
+
 @pytest.fixture
 def profiles() -> list[dict]:
     return [
@@ -367,7 +383,7 @@ def test_sequential_round_matches_batch_round_exactly(profiles):
         except CombatRuleError as error:
             sequential_error = error.code
 
-        # 규칙 오류(예: 집중력 부족)도 두 경로에서 같은 코드로 일어나야 한다.
+        # 규칙 오류(예: 기력 부족)도 두 경로에서 같은 코드로 일어나야 한다.
         assert batch_error == sequential_error, (first, second)
         if batch_error is not None:
             continue
@@ -606,7 +622,7 @@ def test_clearing_a_wave_ends_the_round_and_brings_the_next_tangle(profiles):
     assert resolved["round"] == 2
     assert resolved["weakness"] == "care"
     assert resolved["pending"] is None
-    # Lv18 보너스 집중력도 웨이브를 넘어 이어진다. 4 - 스킬 2 + 기본 공격 1 = 3.
+    # Lv18 보너스 기력도 웨이브를 넘어 이어진다. 4 - 스킬 2 + 공격 1 = 3.
     assert resolved["focus"] == 3
     cleared = resolved["last_exchange"][2]
     assert cleared["caption"] == "엉킨 장부가 스르르 풀려 제자리 서가로 돌아갔어요."
@@ -1753,7 +1769,7 @@ def test_all_twenty_four_tangle_intents_have_unique_visual_contracts():
     assert len(intents) == len(TANGLE_INTENT_PRESENTATION) == 24
     assert len({intent["vfx_family"] for intent in intents}) == 24
     # 스물넷 **전부** 자기 코드를 이펙트 키로 쓴다. 한때는 여섯만 그랬고
-    # 나머지 열여덟은 성장결별 공용 키로 떨어졌는데, 그 상태가 곧 설계서 9장이
+    # 나머지 열여덟은 성장 타입별 공용 키로 떨어졌는데, 그 상태가 곧 설계서 9장이
     # 금지한 `적 12종을 공용 연출로 끝내는 것`이었다.
     exact_intents = [
         intent for intent in intents if intent["effect_key"] == intent["code"]
@@ -2238,7 +2254,7 @@ def test_every_action_event_names_the_skill_it_used(profiles):
     """슬롯이 아니라 **무엇을 썼는지**가 이벤트에 실려야 한다.
 
     앱은 이 코드로 그 행동만의 소리와 아이콘을 고른다. 슬롯(`selected_1`)만
-    보내면 여섯 성장결 스킬이 모두 같은 자리로 들어와 구분되지 않는다.
+    보내면 여섯 성장 타입 스킬이 모두 같은 자리로 들어와 구분되지 않는다.
     """
 
     encounter = _encounter()
@@ -2282,5 +2298,5 @@ def test_basic_attack_reports_its_own_code(profiles):
     for event in resolved["last_exchange"]:
         if event["type"] != "party_action":
             continue
-        assert event["skill_code"], "기본 공격도 자기 코드를 가진다"
+        assert event["skill_code"], "공격도 자기 코드를 가진다"
         assert event["skill_code"] != "guard"

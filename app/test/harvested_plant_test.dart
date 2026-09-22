@@ -15,7 +15,7 @@ void main() {
       'museum_featured': true,
       'growth_persona': {
         'persona_key': 'sunny_share',
-        'persona_name': '햇살결',
+        'persona_name': '햇살',
       },
       'emotion_profile': {
         'version': 1,
@@ -41,7 +41,7 @@ void main() {
 
     expect(plant.finalForm, PlantFinalForm.sunny);
     expect(plant.museumFeatured, isTrue);
-    expect(plant.personalityName, '햇살결');
+    expect(plant.personalityName, '햇살');
     expect(plant.emotionProfile.total, 5);
     expect(plant.emotionProfile.counts['joy'], 4);
     expect(plant.emotionProfile.ratioFor(PlantEmotion.joy), .8);
@@ -86,7 +86,7 @@ void main() {
     expect(profile.ratioFor(PlantEmotion.sadness), .6);
   });
 
-  test('박물관 표본은 주결·보조결·기질과 보조 렌더 레이어를 보존한다', () {
+  test('박물관 표본은 주 타입·보조 타입·기질과 보조 렌더 레이어를 보존한다', () {
     final plant = HarvestedPlant.fromJson({
       'id': 23,
       'name': '빗별이',
@@ -97,7 +97,7 @@ void main() {
       'growth_traits': {
         'stage': 5,
         'reveal_state': 'signature_complete',
-        'title': '햇살 한 줌 품은 빗물결',
+        'title': '햇살 한 줌 품은 빗방울',
         'traits': ['오래 귀 기울이는 결', '빛을 나누는 결'],
         'temperament': {
           'revealed': true,
@@ -124,7 +124,7 @@ void main() {
     expect(plant.dominantForm, PlantGrowthForm.rainy);
     expect(plant.secondaryForm, PlantGrowthForm.sunny);
     expect(plant.growthTraits.revealState, 'signature_complete');
-    expect(plant.personalityName, '햇살 한 줌 품은 빗물결');
+    expect(plant.personalityName, '햇살 한 줌 품은 빗방울');
     expect(plant.temperamentSummary, contains('섬세한 반응'));
     expect(plant.conversationProfile.cadence, '천천히 말한다');
     expect(

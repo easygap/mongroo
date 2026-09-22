@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
@@ -184,7 +185,15 @@ Map<String, dynamic> _finishedSnapshotJson() => _snapshotBase(
           'disposition': 'recorded',
         },
       ],
-    );
+    )..['last_resolution'] = {
+        'event_code': 'wet_label_order',
+        'title': '번진 이름들',
+        'choice': '표찰의 글씨를 읽는다',
+        'outcome': '성공',
+        'result_text': '등불을 비추자 주소 세 글자가 드러났다.',
+        'finding': '주소 조각',
+        'resource_changes': {'trail_light': 0},
+      };
 
 Map<String, dynamic> _campSnapshotJson() => _snapshotBase(
       den: _stageDen(type: 'camp', sceneKey: 'echo_well', status: 'resolved'),
@@ -349,6 +358,28 @@ Future<_FakeSceneController> _pump(
 }
 
 void main() {
+  testWidgets('걷기 목표는 전문을 읽을 수 있고 경로 버튼의 접근성 영역은 필드를 덮지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final semantics = tester.ensureSemantics();
+    await _pump(tester, _walkingSnapshotJson(), stageMap: _railStageMap());
+
+    expect(
+        tester
+            .getSize(find.byKey(const ValueKey('stage-progress-rail')))
+            .height,
+        lessThan(80));
+    expect(tester.getSize(find.byKey(const ValueKey('stage-field-map'))).height,
+        greaterThan(650));
+    await tester.tap(find.byKey(const ValueKey('stage-field-story')));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('젖은 표찰의 글자를 어떤 방식으로 되살릴지 골라요.'), findsOneWidget);
+    expect(find.text('등불이 젖은 종이 냄새를 따라 하나씩 켜져요.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('스테이지는 지역 지형 위를 직접 걷고 목적 표식으로 사건에 진입한다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -358,8 +389,7 @@ void main() {
     expect(find.byKey(const ValueKey('stage-field-story')), findsOneWidget);
     expect(find.byKey(const ValueKey('stage-field-map')), findsOneWidget);
     expect(find.text('번진 이름들'), findsWidgets);
-    expect(find.textContaining('누른 채 원하는 방향'), findsOneWidget);
-    expect(find.textContaining('가까이서 살펴봐야'), findsOneWidget);
+    expect(find.textContaining('끌어서 이동'), findsOneWidget);
 
     // 빈 길을 끌면 파티가 월드 좌표 안에서 실제로 이동한다. 카메라 추적형이라
     // 캐릭터는 화면 중앙에 머물 수 있으므로 스크린 픽셀이 아니라 좌표를 본다.
@@ -399,6 +429,75 @@ void main() {
     await tester.tap(landmark);
     await tester.pump();
     expect(controller.moved, ['stage_den']);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('스틱을 중앙으로 되돌리면 손가락을 떼지 않아도 멈추고 두 번째 손가락은 조종하지 않는다',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await _pump(tester, _walkingSnapshotJson());
+    String position() => tester
+        .widget<Semantics>(
+            find.byKey(const ValueKey('tile-world-player-position')))
+        .properties
+        .value!;
+    Future<void> frames(int count) async {
+      for (var frame = 0; frame < count; frame++) {
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+    }
+
+    final map =
+        tester.getRect(find.byKey(const ValueKey('expedition-walk-surface')));
+    final origin =
+        Offset(map.left + map.width * .34, map.top + map.height * .78);
+    final before = position();
+    final first = await tester.startGesture(origin, pointer: 1);
+    await first.moveBy(const Offset(0, 52));
+    await frames(12);
+    expect(position(), isNot(before));
+    await first.moveTo(origin);
+    await frames(12); // Finish the current tile, then stay still.
+    final centered = position();
+    final second =
+        await tester.startGesture(origin + const Offset(40, 0), pointer: 2);
+    await second.moveBy(const Offset(-60, 0));
+    await frames(30);
+    expect(position(), centered);
+    await second.up();
+    await first.moveBy(const Offset(0, 52));
+    await frames(12);
+    expect(position(), isNot(centered));
+    await first.up();
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('방향키를 누른 채 포커스를 잃어도 이동이 남지 않는다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await _pump(tester, _walkingSnapshotJson());
+    String position() => tester
+        .widget<Semantics>(
+            find.byKey(const ValueKey('tile-world-player-position')))
+        .properties
+        .value!;
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
+    for (var frame = 0; frame < 12; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    FocusManager.instance.primaryFocus?.unfocus();
+    for (var frame = 0; frame < 12; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    final stopped = position();
+    for (var frame = 0; frame < 30; frame++) {
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(position(), stopped);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -449,10 +548,10 @@ void main() {
     expect(find.text('새싹몬은 어떻게 할까요?'), findsOneWidget);
 
     // 선택 카드는 어울리는 힘과 성공 예상 세 단어만 크게 보여 준다.
-    expect(find.text('어울리는 힘 · 관찰'), findsOneWidget);
-    expect(find.text('해 볼 만해요'), findsOneWidget);
-    expect(find.text('어려워 보여요'), findsOneWidget);
-    expect(find.text('안전하게 진행돼요'), findsOneWidget);
+    expect(find.textContaining('관찰 / 성공'), findsOneWidget);
+    expect(find.textContaining('성공 100%'), findsOneWidget);
+    expect(find.textContaining('성공 25%'), findsOneWidget);
+    expect(find.text('그냥 지나가기'), findsOneWidget);
     // 정확한 수치는 기본 화면에 노출하지 않는다.
     expect(find.textContaining('기준 8'), findsNothing);
 
@@ -478,9 +577,9 @@ void main() {
 
     final controller = await _pump(tester, _finishedSnapshotJson());
 
-    // 말풍선이 28자로 줄면서 `기록을 안고`가 빠졌다. 돌아갈 수 있다는 것은
-    // 그대로 말한다 - 그게 이 검사가 지키려던 것이다.
-    expect(find.textContaining('돌아갈 수 있어요'), findsOneWidget);
+    // 선택의 구체적인 결과와 남은 단서를 같은 화면에서 확인한다.
+    expect(find.textContaining('주소 세 글자가 드러났다'), findsOneWidget);
+    expect(find.text('수첩에 기록: 주소 조각'), findsOneWidget);
     expect(find.textContaining('이끼 열쇠'), findsOneWidget);
     final extract = find.byKey(const ValueKey('stage-scene-extract'));
     expect(extract, findsOneWidget);
@@ -500,7 +599,7 @@ void main() {
     await _pump(tester, _campSnapshotJson());
 
     // 5.4의 28자 계약에 맞춰 줄인 문구다. 회복했다는 사실은 그대로 말한다.
-    expect(find.textContaining('길빛과 결의가 차올라요'), findsOneWidget);
+    expect(find.textContaining('등불을 채우고 장비를 정리했다'), findsOneWidget);
     expect(find.byKey(const ValueKey('stage-scene-extract')), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());

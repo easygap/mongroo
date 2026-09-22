@@ -112,7 +112,7 @@ void main() {
         reason: form.personalityName,
       );
     }
-    expect(find.text('불안 · 달빛결'), findsOneWidget);
+    expect(find.text('불안 · 달빛'), findsOneWidget);
 
     await _tapVisible(tester, find.byKey(const Key('trial-sample')));
     final save = tester.widget<FilledButton>(
@@ -121,7 +121,7 @@ void main() {
     expect(save.onPressed, isNotNull);
     await _tapVisible(tester, find.byKey(const Key('trial-save-diary')));
 
-    expect(find.textContaining('햇살결 새싹'), findsOneWidget);
+    expect(find.textContaining('햇살 새싹'), findsOneWidget);
     expect(find.text('성장 +30 · 씨앗 +12'), findsOneWidget);
     await _tapVisible(tester, find.byKey(const Key('trial-open-exploration')));
 
@@ -159,7 +159,7 @@ void main() {
 
     await _pumpTrial(tester, storage);
 
-    expect(find.textContaining('빗물결 새싹'), findsOneWidget);
+    expect(find.textContaining('빗방울 새싹'), findsOneWidget);
     expect(find.byKey(const Key('trial-start')), findsNothing);
   });
 
@@ -180,7 +180,7 @@ void main() {
     await _pumpTrial(tester, storage);
     await _tapVisible(tester, find.byKey(const Key('trial-start')));
 
-    final helper = find.text('10자 이상이면 캐릭터가 마음의 결을 받아요.');
+    final helper = find.text('10자 이상 적으면 저장할 수 있어요.');
     expect(helper, findsOneWidget);
     expect(
       _ellipsized(tester, helper),

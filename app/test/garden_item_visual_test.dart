@@ -453,7 +453,7 @@ void main() {
     }
   });
 
-  test('여섯 마음결 기념품의 번들 자산을 감정별로 찾는다', () {
+  test('여섯 성장 기념품의 번들 자산을 감정별로 찾는다', () {
     const expected = {
       'deco/resonance_sunny': 'assets/decorations/mood-lamp-sunny.webp',
       'deco/resonance_rainy': 'assets/decorations/listening-chime-rainy.webp',
@@ -470,7 +470,7 @@ void main() {
         'id': id++,
         'code': 'resonance_$id',
         'type': 'deco',
-        'name': '마음결 기념품',
+        'name': '성장 기념품',
         'asset_manifest': {'asset_key': entry.key},
       });
       expect(gardenVisualAssetPath(item), entry.value);

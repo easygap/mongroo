@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/text/korean_particles.dart';
+import '../../home/domain/plant.dart';
+import '../../home/presentation/plant_view.dart';
 import '../domain/expedition_models.dart';
 import 'expedition_action_cue.dart';
 import 'expedition_combat_audio.dart';
@@ -13,9 +15,9 @@ import 'expedition_combat_effects.dart';
 import 'expedition_combat_hud.dart';
 import 'expedition_combat_sprites.dart';
 import 'expedition_combat_timeline.dart';
+import 'expedition_music_mix.dart';
 import 'expedition_pixel_art.dart';
 import 'expedition_pixel_sprites.dart';
-import 'expedition_scene.dart';
 
 /// 탐험 결과를 짧은 전투 연출로 보여 주는 도트 무대다.
 ///
@@ -42,6 +44,7 @@ class ExpeditionEncounterStage extends StatefulWidget {
     this.ownsMusic = true,
     this.bottomHudInset = 0,
     this.topHudInset = 0,
+    this.onContact,
   });
 
   final ExpeditionEncounter? encounter;
@@ -55,6 +58,7 @@ class ExpeditionEncounterStage extends StatefulWidget {
   final List<ExpeditionMember> party;
   final ExpeditionActionCue? cue;
   final VoidCallback onCueCompleted;
+  final ValueChanged<ExpeditionActionCue>? onContact;
 
   /// 연출 배속. 2.0이면 같은 타임라인을 절반 시간에 재생한다.
   /// 프레임을 건너뛰지 않고 판정 결과도 바꾸지 않는다.
@@ -134,6 +138,7 @@ class _StageLayout {
 class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     with TickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _actionController;
+  late Animation<double> _presentation;
   late final AnimationController _ambientController;
   late final ExpeditionCombatAudio _audio;
   Timer? _holdTimer;
@@ -149,6 +154,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     _actionController = AnimationController(vsync: this)
       ..addListener(_handleTimelineFeedback)
       ..addStatusListener(_handleActionStatus);
+    _presentation = _actionController;
     _ambientController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3600),
@@ -165,8 +171,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   /// 500ms에 걸쳐 돌아온다. 다른 앱의 소리를 갑자기 자르지 않기 위해서다.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // 음악을 안 드는 전장에는 멈출 곡이 없다. 화면 쪽이 같은 일을 한다.
-    if (!widget.ownsMusic) return;
+    // Effects must also stay silent while the app is in the background.
     switch (state) {
       case AppLifecycleState.resumed:
         unawaited(_audio.handleAppResumed());
@@ -221,6 +226,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     super.didChangeDependencies();
     _precacheEnemyImages();
     _precacheRelevantEffects();
+    _warmUpAudio();
     _syncMusic();
     if (MediaQuery.disableAnimationsOf(context)) {
       _ambientController
@@ -242,15 +248,11 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
       _precacheEnemyImages();
     }
     _precacheRelevantEffects();
+    _warmUpAudio();
     if (oldWidget.audioMode != widget.audioMode) {
       unawaited(_applyAudioMode());
     }
-    if (oldWidget.battle?.enemyKind != widget.battle?.enemyKind ||
-        oldWidget.battle?.regionCode != widget.battle?.regionCode ||
-        oldWidget.regionCode != widget.regionCode ||
-        oldWidget.encounter?.kind != widget.encounter?.kind) {
-      _syncMusic();
-    }
+    _syncMusic();
     _playTelegraphIfNeeded();
     if (oldWidget.cue?.id != widget.cue?.id) {
       _playCueIfNeeded();
@@ -266,6 +268,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     // 효과음만으로 입장한 경우에는 아직 재개할 BGM 상태가 없다. 채널 전환이
     // 끝난 뒤 현재 전장 stem을 새로 동기화해야 음악을 켠 즉시 재생된다.
     _syncMusic();
+    _warmUpAudio();
     _playTelegraphIfNeeded();
   }
 
@@ -293,18 +296,52 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   void _syncMusic() {
     if (!widget.ownsMusic) return;
     if (widget.audioMode != ExpeditionAudioMode.all) return;
-    final state = widget.battle?.enemyKind == 'guardian' ||
-            widget.encounter?.kind == 'guardian'
-        ? ExpeditionMusicState.guardian
-        : widget.battle != null
-            ? ExpeditionMusicState.combat
-            : ExpeditionMusicState.base;
+    final mix = expeditionMusicMix(
+        battle: widget.battle,
+        guardianEncounter: widget.encounter?.kind == 'guardian');
     final regionCode = widget.regionCode ?? widget.battle?.regionCode;
     // 지역마다 다른 곡을 쓴다. 지역을 모르는 구버전 응답은 첫 지역 곡으로
     // 떨어지므로 무음이 되지 않는다.
     unawaited(
-      _audio.playMusic(state, regionCode: regionCode),
+      _audio.playMusic(mix.state, regionCode: regionCode, volume: mix.volume),
     );
+  }
+
+  void _warmUpAudio() {
+    final battle = widget.battle;
+    final member = battle?.party
+            .where((m) => m.memberId == widget.actor?.id)
+            .firstOrNull ??
+        battle?.party.firstOrNull;
+    unawaited(_audio.warmUp(
+      sounds: {
+        ExpeditionCombatSound.hit,
+        ExpeditionCombatSound.weakness,
+        ExpeditionCombatSound.guard,
+        ExpeditionCombatSound.contactGuard,
+        ExpeditionCombatSound.victory,
+        ExpeditionCombatSound.defeat,
+        ExpeditionCombatSound.skillLight,
+        ExpeditionCombatSound.skillFull,
+        ExpeditionCombatSound.skillSignature,
+        ExpeditionCombatSound.bossPhaseBreak,
+        expeditionReleaseSound(widget.regionCode ?? battle?.regionCode),
+        if (expeditionContactSound(battle?.enemy.intent.contactMaterial)
+            case final sound?)
+          sound,
+        if (expeditionContactSound(widget.cue?.contactMaterial)
+            case final sound?)
+          sound,
+      },
+      skillCodes: member == null
+          ? const []
+          : [
+              member.kit.basic.code,
+              for (final skill in member.kit.combatSkills)
+                if (skill.available) skill.code,
+            ],
+      enemyCodes: [battle?.enemy.intent.code],
+    ));
   }
 
   String get _enemyAsset => expeditionPixelEnemyAsset(
@@ -319,7 +356,17 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     if (_precacheSignature == asset) return;
     _precacheSignature = asset;
     // 디코드는 첫 공격보다 먼저 시작하되 화면 진입은 기다리지 않는다.
-    precacheImage(AssetImage(asset), context).ignore();
+    for (final pose in ['idle', 'attack', 'hit', 'release', 'defeated']) {
+      final artwork = expeditionEnemyPoseAsset(asset, pose);
+      precacheImage(
+        ResizeImage.resizeIfNeeded(
+          artwork.endsWith('.webp') ? 512 : null,
+          null,
+          AssetImage(artwork),
+        ),
+        context,
+      ).ignore();
+    }
   }
 
   void _precacheRelevantEffects() {
@@ -377,12 +424,17 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     if (_effectPrecacheSignature == signature) return;
     _effectPrecacheSignature = signature;
 
-    for (final asset in <String>{
-      for (final effect in firstFrames.values) effect.asset(0),
-      for (final effect in fullSequences.values)
-        ...expeditionCombatEffectAssetsFor(effect),
-    }) {
-      precacheImage(AssetImage(asset), context).ignore();
+    for (final effect in {...firstFrames.values, ...fullSequences.values}) {
+      final assets = fullSequences.containsKey(effect.family)
+          ? expeditionCombatEffectAssetsFor(effect)
+          : [effect.asset(0)];
+      for (final asset in assets) {
+        precacheImage(
+                ResizeImage(AssetImage(asset),
+                    width: math.max(96, effect.frameWidth ~/ 4)),
+                context)
+            .ignore();
+      }
     }
   }
 
@@ -395,7 +447,10 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     await Future.wait<void>([
       for (final effect in effects)
         for (final asset in expeditionCombatEffectAssetsFor(effect))
-          precacheImage(AssetImage(asset), context),
+          precacheImage(
+              ResizeImage(AssetImage(asset),
+                  width: math.max(96, effect.frameWidth ~/ 4)),
+              context),
     ]);
   }
 
@@ -412,7 +467,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     // 스킬처럼 바로 들어온 큐도 재생과 병렬로 나머지 프레임을 캐시에 올린다.
     unawaited(_precacheCueEffects(cue));
     final serverMotionMs = cue.motion?.totalMs ?? 0;
-    _actionController.duration = MediaQuery.disableAnimationsOf(context)
+    final motionDuration = MediaQuery.disableAnimationsOf(context)
         ? const Duration(milliseconds: 1)
         : cue.isCombatRound && serverMotionMs > 0
             ? _scaled(Duration(milliseconds: serverMotionMs))
@@ -423,6 +478,13 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                 : cue.isGuardianExchange
                     ? _scaled(ExpeditionCombatTimeline.guardianDuration)
                     : _scaled(ExpeditionCombatTimeline.skillDuration);
+    final impact = ExpeditionImpactCurve(
+      cue: cue,
+      motionDuration: motionDuration,
+      reducedMotion: MediaQuery.disableAnimationsOf(context),
+    );
+    _presentation = _actionController.drive(CurveTween(curve: impact));
+    _actionController.duration = impact.duration;
     _actionController.forward(from: 0);
     if (cue.isBossPhase) {
       unawaited(_audio.playBossPhaseBreak());
@@ -451,11 +513,18 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
   void _handleTimelineFeedback() {
     final cue = widget.cue;
     if (cue?.isGuardianExchange != true) {
-      _previousProgress = _actionController.value;
+      _previousProgress = _presentation.value;
       return;
     }
-    final progress = _actionController.value;
+    final progress = _presentation.value;
     final partyContact = ExpeditionCombatTimeline.partyContactProgress(cue!);
+    if (cue.playsPartyAttack &&
+        cue.effectKey == 'safe_guard' &&
+        _previousProgress < partyContact &&
+        progress >= partyContact) {
+      HapticFeedback.selectionClick();
+      unawaited(_audio.play(ExpeditionCombatSound.guard, volume: .54));
+    }
     if (cue.dealsGuardianDamage &&
         _previousProgress < partyContact &&
         progress >= partyContact) {
@@ -474,8 +543,12 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
       if (releaseRegion != null) {
         unawaited(
           Future<void>.delayed(
-            const Duration(milliseconds: 320),
-            () => _audio.playRelease(releaseRegion),
+            _scaled(const Duration(milliseconds: 320), floorMs: 100),
+            () {
+              if (mounted && widget.cue?.id == cue.id) {
+                return _audio.playRelease(releaseRegion);
+              }
+            },
           ),
         );
       }
@@ -505,6 +578,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     if (cue.playsEnemyAttack &&
         _previousProgress < enemyContact &&
         progress >= enemyContact) {
+      widget.onContact?.call(cue);
       final blocked = (cue.combat?.counterDamage ?? 0) == 0;
       if (blocked) {
         HapticFeedback.selectionClick();
@@ -537,7 +611,10 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
     final cue = widget.cue;
     final encounter = widget.encounter;
     final battle = widget.battle;
-    if (cue == null && encounter == null && battle == null) {
+    if (cue == null &&
+        encounter == null &&
+        battle == null &&
+        widget.actor == null) {
       return const SizedBox.shrink();
     }
 
@@ -558,7 +635,9 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
         battle?.enemy.intent.telegraph ?? encounter?.telegraph ?? '';
     final hasTelegraph = encounter != null || battle != null;
     final semantics = cue == null
-        ? '$enemyName 조우. $currentTelegraph'
+        ? enemyName == null
+            ? '${widget.actor?.name ?? '탐험대'}의 현재 위치'
+            : '$enemyName 조우. $currentTelegraph'
         : cue.isTerminalCombatOutcome
             ? cue.outcome ?? '수호전이 끝났어요.'
             : cue.isBossPhase
@@ -569,9 +648,11 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                         '${combat.counterDamage > 0 ? '${combat.counterDamage} 피해.' : '피해를 막았어요.'}'
                     : cue.isGuardianExchange
                         ? '${cue.actorName}의 ${cue.title}. '
-                            '${combat!.enemyName} 수호 장벽에 ${combat.guardDamage} 피해. '
+                            '${combat!.enemyName} 체력에 ${combat.guardDamage} 피해. '
                             '${cue.playsEnemyAttack ? combat.counterDamage > 0 ? '${combat.damageTarget} ${combat.counterDamage} 피해.' : '반격 방어.' : ''}'
-                        : '${koreanSubject(cue.actorName)} ${cue.title} 스킬을 사용했어요.';
+                        : cue.kind == ExpeditionActionCueKind.resolution
+                            ? '${cue.actorName}. ${cue.outcome ?? cue.title}'
+                            : '${koreanSubject(cue.actorName)} ${cue.title} 스킬을 사용했어요.';
     final enemyAsset = _enemyAsset;
     final enemyNative = expeditionPixelSpriteSize(enemyAsset);
     final enemyKind = battle?.enemyKind ??
@@ -596,7 +677,8 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
               );
               // 어린 대원은 한 배율 작게. 화분 시절의 캐릭터가 성체와 같은
               // 키로 서면 성장이 화면에서 사라진다.
-              final actorUnit = actorStage <= 2 ? math.max(2.0, unit - 1) : unit;
+              final actorUnit =
+                  actorStage <= 2 ? math.max(2.0, unit - 1) : unit;
               final enemyBox = Size(
                 enemyNative.width * unit,
                 enemyNative.height * unit,
@@ -634,6 +716,8 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                         layout: layout,
                         ambient: _ambientController,
                         reduceMotion: reduceMotion,
+                        action: _presentation,
+                        cue: cue,
                       ),
                     ),
                   if (guardianActive)
@@ -643,7 +727,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                       width: enemyBox.width,
                       height: enemyBox.height,
                       child: _PixelEnemy(
-                        action: _actionController,
+                        action: _presentation,
                         ambient: _ambientController,
                         cue: cue,
                         combat: combat,
@@ -658,7 +742,7 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                       (cue == null && widget.actor != null))
                     Positioned.fill(
                       child: _PixelActor(
-                        action: _actionController,
+                        action: _presentation,
                         ambient: _ambientController,
                         cue: cue,
                         actor: widget.actor,
@@ -685,9 +769,15 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                   if (cue != null)
                     Positioned.fill(
                       child: ExpeditionCombatSpriteLayer(
-                        action: _actionController,
+                        action: _presentation,
                         cue: cue,
                         reduceMotion: reduceMotion,
+                        actorAnchor:
+                            layout.actorFoot - Offset(0, actorUnit * 18),
+                        enemyAnchor:
+                            layout.enemyFoot - Offset(0, enemyBox.height * .45),
+                        stageBounds: Rect.fromLTRB(0, layout.usableTop,
+                            size.width, layout.usableBottom),
                       ),
                     ),
                   // 적의 이름·장벽과 다음 공격 예고는 한 덩어리로 위에 붙인다.
@@ -711,13 +801,17 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                             SizedBox(
                               width: math.min(200.0, size.width * .53),
                               child: _AnimatedGuardHud(
-                                action: _actionController,
+                                action: _presentation,
                                 enemyName: enemyName,
                                 maxGuard: maxGuard,
                                 before:
                                     combat?.enemyGuardBefore ?? currentGuard,
                                 after: combat?.enemyGuardAfter ?? currentGuard,
                                 animate: cue != null,
+                                contactProgress: cue == null
+                                    ? .30
+                                    : ExpeditionCombatTimeline
+                                        .partyContactProgress(cue),
                                 elite: battle?.enemy.elite ?? false,
                               ),
                             ),
@@ -727,7 +821,9 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                               attackName: battle?.enemy.intent.name ??
                                   encounter?.attackName ??
                                   '수호자의 공격',
-                              text: currentTelegraph,
+                              text: battle == null
+                                  ? currentTelegraph
+                                  : '${battle.enemy.intent.targetLabel.replaceFirst('행동 순서 ', '')} · 피해 ${battle.enemy.intent.power}',
                             ),
                           ],
                         ],
@@ -736,11 +832,13 @@ class _ExpeditionEncounterStageState extends State<ExpeditionEncounterStage>
                   if (cue != null)
                     Positioned.fill(
                       child: _AnimatedCombatLabels(
-                        action: _actionController,
+                        action: _presentation,
                         cue: cue,
                         combat: combat,
                         layout: layout,
                         enemyBox: enemyBox,
+                        reduceMotion: reduceMotion,
+                        bottomInset: size.height - layout.usableBottom,
                       ),
                     ),
                 ],
@@ -815,13 +913,9 @@ class _PixelEnemy extends StatelessWidget {
                   );
             final hitBlend = cue?.dealsGuardianDamage == true
                 ? math.min(
-                    ExpeditionCombatTimeline.segment(
-                      progress,
-                      partyContact - .07,
-                      partyContact,
-                    ),
-                    1 - hitExit,
-                  )
+                    ExpeditionCombatTimeline.hitReaction(
+                        progress, partyContact),
+                    1 - hitExit)
                 : 0.0;
             final attackBlend = cue?.playsEnemyAttack == true &&
                     combat?.counterResult != 'calmed'
@@ -844,19 +938,12 @@ class _PixelEnemy extends StatelessWidget {
             final guardianHit = cue?.dealsGuardianDamage == true
                 ? ExpeditionCombatTimeline.segment(
                     progress,
-                    partyContact - .03,
+                    partyContact,
                     partyContact + .22,
                   )
                 : 0.0;
             final flash = cue?.dealsGuardianDamage == true
-                ? math.sin(
-                    ExpeditionCombatTimeline.segment(
-                          progress,
-                          partyContact - .02,
-                          partyContact + .14,
-                        ) *
-                        math.pi,
-                  )
+                ? ExpeditionCombatTimeline.hitReaction(progress, partyContact)
                 : 0.0;
             // 숨쉬기: 도트 한 칸을 3.6초에 한 번 오르내린다. 소수 픽셀로
             // 흔들면 도트가 뭉개지므로 정수 칸으로만 움직인다.
@@ -892,13 +979,17 @@ class _PixelEnemy extends StatelessWidget {
                             progress, cue)
                         : Offset.zero
                 : Offset.zero;
-            final knockback =
-                math.sin(guardianHit * math.pi * 7) * math.sin(guardianHit * math.pi);
-            final rawOffset = Offset(
-                  windUp * unit * 3 - lunge * unit * 8 + knockback * unit * 2.5,
-                  breath * unit + lunge * unit * 2,
-                ) +
-                shake;
+            final knockback = math.sin(guardianHit * math.pi * 7) *
+                math.sin(guardianHit * math.pi);
+            final rawOffset = reduceMotion
+                ? Offset.zero
+                : Offset(
+                      windUp * unit * 3 -
+                          lunge * unit * 8 +
+                          knockback * unit * 2.5,
+                      breath * unit + lunge * unit * 2,
+                    ) +
+                    shake;
             final offset = Offset(
               (rawOffset.dx / unit).round() * unit,
               (rawOffset.dy / unit).round() * unit,
@@ -912,8 +1003,12 @@ class _PixelEnemy extends StatelessWidget {
                         : 'idle';
             final keyPrefix =
                 enemyKind == 'tangle' ? 'tangle-body' : 'ledger-keeper';
-            final squashX = 1 + lunge * .08 - hitBlend * .06 - windUp * .05;
-            final squashY = 1 - lunge * .06 + hitBlend * .08 + windUp * .05;
+            final squashX = reduceMotion
+                ? 1.0
+                : 1 + lunge * .08 - hitBlend * .06 - windUp * .05;
+            final squashY = reduceMotion
+                ? 1.0
+                : 1 - lunge * .06 + hitBlend * .08 + windUp * .05;
             return Transform.translate(
               offset: offset,
               child: Transform.scale(
@@ -928,11 +1023,11 @@ class _PixelEnemy extends StatelessWidget {
                       opacity: (1 - defeatedBlend).clamp(0.0, 1.0),
                       child: _PixelEnemyImage(
                         key: ValueKey('$keyPrefix-$state'),
-                        asset: asset,
+                        asset: expeditionEnemyPoseAsset(asset, state),
                         flash: reduceMotion ? 0 : flash * .85,
                       ),
                     ),
-                    if (defeatedBlend > 0)
+                    if (defeatedBlend > 0 && !reduceMotion)
                       Positioned.fill(
                         child: CustomPaint(
                           painter: PixelScatterPainter(
@@ -960,11 +1055,14 @@ class _PixelEnemyImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final illustrated = asset.endsWith('.webp');
     final image = Image.asset(
       asset,
-      fit: BoxFit.fill,
-      filterQuality: FilterQuality.none,
-      isAntiAlias: false,
+      fit: BoxFit.contain,
+      alignment: Alignment.bottomCenter,
+      cacheWidth: illustrated ? 512 : null,
+      filterQuality: illustrated ? FilterQuality.medium : FilterQuality.none,
+      isAntiAlias: illustrated,
       gaplessPlayback: true,
       excludeFromSemantics: true,
       errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
@@ -978,12 +1076,16 @@ class _PixelEnemyImage extends StatelessWidget {
         Opacity(
           opacity: flash.clamp(0.0, 1.0),
           child: ColorFiltered(
-            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcATop),
+            colorFilter:
+                const ColorFilter.mode(Colors.white, BlendMode.srcATop),
             child: Image.asset(
               asset,
-              fit: BoxFit.fill,
-              filterQuality: FilterQuality.none,
-              isAntiAlias: false,
+              fit: BoxFit.contain,
+              alignment: Alignment.bottomCenter,
+              cacheWidth: illustrated ? 512 : null,
+              filterQuality:
+                  illustrated ? FilterQuality.medium : FilterQuality.none,
+              isAntiAlias: illustrated,
               gaplessPlayback: true,
               excludeFromSemantics: true,
               errorBuilder: (context, error, stackTrace) =>
@@ -1021,7 +1123,12 @@ class _PixelActor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final speciesCode = cue?.speciesCode ?? actor?.speciesCode;
-    final sprite = _PartySprite(speciesCode: speciesCode, unit: unit);
+    final sprite = _PartySprite(
+        speciesCode: speciesCode,
+        unit: unit,
+        stage: cue?.stage ?? actor?.stage ?? stage,
+        form: cue?.form ?? actor?.form,
+        outfitKey: actor?.outfitKey);
     final artwork = RepaintBoundary(
       key: const ValueKey('expedition-combat-actor-artwork'),
       child: sprite.build(flash: 0),
@@ -1040,15 +1147,16 @@ class _PixelActor extends StatelessWidget {
                         .18
                     : Offset.zero
             : Offset.zero;
-        final cast = cue?.playsPartyAttack == true
+        final cast = !reduceMotion && cue?.playsPartyAttack == true
             ? math.sin(
                 ExpeditionCombatTimeline.segment(progress, .04, .46) * math.pi,
               )
             : 0.0;
-        final recoil = cue?.playsEnemyAttack == true
-            ? math.sin(
-                ExpeditionCombatTimeline.segment(progress, .56, .82) * math.pi,
-              )
+        final recoil = !reduceMotion &&
+                cue?.playsEnemyAttack == true &&
+                (cue?.combat?.counterDamage ?? 0) > 0
+            ? ExpeditionCombatTimeline.hitReaction(
+                progress, ExpeditionCombatTimeline.enemyContactProgress(cue!))
             : 0.0;
         final breath = reduceMotion || cue != null
             ? 0.0
@@ -1100,113 +1208,35 @@ class _PixelActor extends StatelessWidget {
   }
 }
 
-/// 아군 한 명의 도트 그림과 그 크기. 전투용 도트가 없으면 걷기 시트로 떨어진다.
+/// The map, field, and encounter all render the actual selected plant.
+/// A missing combat sprite must not replace it with an unrelated human walker.
 class _PartySprite {
-  _PartySprite({required this.speciesCode, required this.unit})
-      : asset = expeditionPixelActorAsset(speciesCode);
-
+  const _PartySprite(
+      {required this.speciesCode,
+      required this.unit,
+      required this.stage,
+      required this.form,
+      this.outfitKey});
   final String? speciesCode;
   final double unit;
-  final String? asset;
-
-  /// 걷기 시트는 원화 한 도트가 4px이라, 무대 배율 [unit]에 맞추려면 그만큼
-  /// 나눠 그린다. 옆모습(오른쪽 보기)은 셋째 줄이다.
-  static const _walkerCell = Rect.fromLTWH(96, 240, 96, 120);
-
-  Size get size {
-    final battle = asset;
-    if (battle != null) {
-      final native = expeditionPixelSpriteSize(battle, fallback: const Size(24, 48));
-      return Size(native.width * unit, native.height * unit);
-    }
-    return Size(
-      _walkerCell.width * unit / 4,
-      _walkerCell.height * unit / 4,
-    );
-  }
-
+  final int stage;
+  final String? form;
+  final String? outfitKey;
+  Size get size => Size(60 * unit, 80 * unit);
   Widget build({required double flash}) {
-    final battle = asset;
-    if (battle != null) {
-      final image = Image.asset(
-        battle,
-        fit: BoxFit.fill,
-        filterQuality: FilterQuality.none,
-        isAntiAlias: false,
-        gaplessPlayback: true,
-        excludeFromSemantics: true,
-        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
-      );
-      if (flash <= 0) return image;
-      return ColorFiltered(
-        colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcATop),
-        child: image,
-      );
-    }
-    final candidates = expeditionWalkerAssetCandidates(speciesCode);
-    return _WalkerFallback(
-      candidates: candidates,
-      cell: _walkerCell,
-      scale: unit / 4,
-      flash: flash,
-    );
-  }
-}
-
-/// 걷기 시트의 옆모습 한 칸. 품종 시트가 없으면 공용 시트를 쓴다.
-class _WalkerFallback extends StatefulWidget {
-  const _WalkerFallback({
-    required this.candidates,
-    required this.cell,
-    required this.scale,
-    required this.flash,
-  });
-
-  final List<String> candidates;
-  final Rect cell;
-  final double scale;
-  final double flash;
-
-  @override
-  State<_WalkerFallback> createState() => _WalkerFallbackState();
-}
-
-class _WalkerFallbackState extends State<_WalkerFallback> {
-  String? _asset;
-
-  @override
-  void initState() {
-    super.initState();
-    _resolve();
-  }
-
-  @override
-  void didUpdateWidget(covariant _WalkerFallback oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.candidates.join() != widget.candidates.join()) _resolve();
-  }
-
-  Future<void> _resolve() async {
-    for (final candidate in widget.candidates) {
-      final image = await ExpeditionPixelImages.load(candidate);
-      if (!mounted) return;
-      if (image != null) {
-        setState(() => _asset = candidate);
-        return;
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final asset = _asset;
-    if (asset == null) return const SizedBox.shrink();
-    return PixelSheetCell(
-      asset: asset,
-      source: widget.cell,
-      scale: widget.scale,
-      flash: widget.flash,
-    );
+    final artwork = PlantView(
+        stage: stage,
+        speciesCode: speciesCode ?? 'basic_sprout',
+        form: PlantGrowthForm.fromCode(form),
+        outfitKey: outfitKey,
+        width: size.width,
+        height: size.height);
+    return flash <= 0
+        ? artwork
+        : ColorFiltered(
+            colorFilter:
+                const ColorFilter.mode(Colors.white, BlendMode.srcATop),
+            child: artwork);
   }
 }
 
@@ -1220,6 +1250,8 @@ class _CombatPartyFormation extends StatelessWidget {
     required this.layout,
     required this.ambient,
     required this.reduceMotion,
+    required this.action,
+    required this.cue,
   });
 
   final List<ExpeditionMember> party;
@@ -1228,6 +1260,8 @@ class _CombatPartyFormation extends StatelessWidget {
   final _StageLayout layout;
   final Animation<double> ambient;
   final bool reduceMotion;
+  final Animation<double> action;
+  final ExpeditionActionCue? cue;
 
   @override
   Widget build(BuildContext context) {
@@ -1254,6 +1288,8 @@ class _CombatPartyFormation extends StatelessWidget {
               ambient: ambient,
               reduceMotion: reduceMotion,
               phase: index,
+              action: action,
+              cue: cue,
             ),
         ],
       ),
@@ -1270,6 +1306,8 @@ class _BacklineMember extends StatelessWidget {
     required this.ambient,
     required this.reduceMotion,
     required this.phase,
+    required this.action,
+    required this.cue,
   });
 
   final ExpeditionMember member;
@@ -1279,21 +1317,42 @@ class _BacklineMember extends StatelessWidget {
   final Animation<double> ambient;
   final bool reduceMotion;
   final int phase;
+  final Animation<double> action;
+  final ExpeditionActionCue? cue;
 
   @override
   Widget build(BuildContext context) {
     final health = status == null || status!.maxHp <= 0
         ? 1.0
         : (status!.hp / status!.maxHp).clamp(0.0, 1.0);
-    final sprite = _PartySprite(speciesCode: member.speciesCode, unit: unit);
+    final sprite = _PartySprite(
+        speciesCode: member.speciesCode,
+        unit: unit,
+        stage: member.stage,
+        form: member.form,
+        outfitKey: member.outfitKey);
     final box = sprite.size;
     return AnimatedBuilder(
-      animation: ambient,
+      animation: Listenable.merge([ambient, action]),
       child: Opacity(
         opacity: status?.isAlive == false ? .42 : 1,
         child: sprite.build(flash: 0),
       ),
       builder: (context, child) {
+        final target =
+            cue?.targets.where((t) => t.memberId == member.id).firstOrNull;
+        final contact = cue == null
+            ? 1.0
+            : ExpeditionCombatTimeline.enemyContactProgress(cue!);
+        final contacted =
+            cue?.playsEnemyAttack == true && action.value >= contact;
+        final reaction = !reduceMotion && contacted && (target?.damage ?? 0) > 0
+            ? ExpeditionCombatTimeline.hitReaction(action.value, contact)
+            : 0.0;
+        final shownHealth =
+            contacted && target != null && (status?.maxHp ?? 0) > 0
+                ? (target.hpAfter / status!.maxHp).clamp(0.0, 1.0)
+                : health;
         final breath = reduceMotion
             ? 0.0
             : (math.sin(ambient.value * math.pi * 2 + phase * 1.9) > 0
@@ -1303,18 +1362,20 @@ class _BacklineMember extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             Positioned(
-              left: foot.dx - box.width / 2,
+              left: foot.dx - box.width / 2 - reaction * 8,
               top: foot.dy - box.height + breath * unit,
               width: box.width,
               height: box.height,
-              child: child!,
+              child: reaction > .05
+                  ? Opacity(opacity: 1 - reaction * .35, child: child!)
+                  : child!,
             ),
             Positioned(
               left: foot.dx - unit * 8,
               top: foot.dy + unit * 2,
               width: unit * 16,
               child: PixelBar(
-                value: health,
+                value: shownHealth,
                 unit: math.max(1, unit / 2),
                 height: unit * 2,
               ),
@@ -1366,6 +1427,7 @@ class _AnimatedGuardHud extends StatelessWidget {
     required this.before,
     required this.after,
     required this.animate,
+    required this.contactProgress,
     required this.elite,
   });
 
@@ -1375,6 +1437,7 @@ class _AnimatedGuardHud extends StatelessWidget {
   final int before;
   final int after;
   final bool animate;
+  final double contactProgress;
   final bool elite;
 
   @override
@@ -1387,6 +1450,7 @@ class _AnimatedGuardHud extends StatelessWidget {
             before: before,
             after: after,
             progress: animate ? action.value : 0,
+            contactProgress: contactProgress,
             elite: elite,
           ),
         ),
@@ -1400,6 +1464,8 @@ class _AnimatedCombatLabels extends StatelessWidget {
     required this.combat,
     required this.layout,
     required this.enemyBox,
+    required this.reduceMotion,
+    required this.bottomInset,
   });
 
   final Animation<double> action;
@@ -1407,6 +1473,8 @@ class _AnimatedCombatLabels extends StatelessWidget {
   final ExpeditionCombatFeedback? combat;
   final _StageLayout layout;
   final Size enemyBox;
+  final bool reduceMotion;
+  final double bottomInset;
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
@@ -1425,7 +1493,7 @@ class _AnimatedCombatLabels extends StatelessWidget {
                 if (progress < .86)
                   Positioned(
                     left: 12,
-                    bottom: 12,
+                    bottom: bottomInset + 8,
                     child: ExpeditionActorBadge(
                       actorName: cue.actorName,
                       actionName: cue.title,
@@ -1434,37 +1502,39 @@ class _AnimatedCombatLabels extends StatelessWidget {
                 if (progress >= partyContact && (combat?.guardDamage ?? 0) > 0)
                   Positioned(
                     left: layout.enemyFoot.dx - unit * 12,
-                    top: layout.enemyFoot.dy -
-                        enemyBox.height -
-                        unit * 4 -
-                        (ExpeditionCombatTimeline.segment(
-                                  progress,
-                                  partyContact,
-                                  partyContact + .25,
-                                ) *
-                                6)
-                            .round() *
-                            unit,
+                    top: math.max(
+                        layout.usableTop + 48,
+                        layout.enemyFoot.dy -
+                            enemyBox.height -
+                            unit * 4 -
+                            (ExpeditionCombatTimeline.segment(
+                                          progress,
+                                          partyContact,
+                                          partyContact + .25,
+                                        ) *
+                                        6)
+                                    .round() *
+                                unit),
                     child: ExpeditionDamageNumber(
                       label: '-${combat!.guardDamage}',
-                      caption: cue.weaknessHit ? '약점!' : '수호 장벽 피해',
+                      caption: cue.weaknessHit ? '약점!' : '체력 피해',
                       color: expeditionCombatEffectColor(cue.effectKey),
-                      opacity: ExpeditionCombatTimeline.floatingOpacity(
-                        progress,
-                        partyContact,
-                        partyContact + .40,
-                      ),
+                      opacity: reduceMotion
+                          ? 1
+                          : ExpeditionCombatTimeline.damageOpacity(
+                              progress, partyContact),
                     ),
                   ),
                 if (cue.playsEnemyAttack && progress >= .18)
                   Positioned(
                     left: 0,
                     right: 0,
-                    top: 12,
+                    top: layout.usableTop,
                     child: Center(
                       child: ExpeditionAttackCallout(
                         attackName: combat!.attackName,
                         progress: progress,
+                        contactProgress: enemyContact,
                       ),
                     ),
                   ),
@@ -1474,12 +1544,12 @@ class _AnimatedCombatLabels extends StatelessWidget {
                     top: layout.actorFoot.dy -
                         unit * 40 -
                         (ExpeditionCombatTimeline.segment(
-                                  progress,
-                                  enemyContact,
-                                  enemyContact + .34,
-                                ) *
-                                4)
-                            .round() *
+                                      progress,
+                                      enemyContact,
+                                      enemyContact + .34,
+                                    ) *
+                                    4)
+                                .round() *
                             unit,
                     child: ExpeditionDamageNumber(
                       label: combat!.counterDamage > 0
@@ -1487,26 +1557,30 @@ class _AnimatedCombatLabels extends StatelessWidget {
                           : combat!.counterResult == 'calmed'
                               ? '진정'
                               : '방어',
-                      caption: combat!.counterDamage > 0
-                          ? '${combat!.damageTarget} 피해'
-                          : combat!.counterResult == 'calmed'
-                              ? '교전 없이 이탈'
-                              : '${combat!.attackName} 차단',
+                      caption: cue.targets.length > 1
+                          ? cue.targets
+                              .map((target) =>
+                                  '${target.name} ${target.damage > 0 ? '−${target.damage}' : '방어'}')
+                              .join(' · ')
+                          : combat!.counterDamage > 0
+                              ? '${combat!.damageTarget} 피해'
+                              : combat!.counterResult == 'calmed'
+                                  ? '교전 없이 이탈'
+                                  : '${combat!.attackName} 차단',
                       color: combat!.counterDamage > 0
                           ? ExpeditionCombatHudColors.hurt
                           : ExpeditionCombatHudColors.heal,
-                      opacity: ExpeditionCombatTimeline.floatingOpacity(
-                        progress,
-                        enemyContact,
-                        enemyContact + .38,
-                      ),
+                      opacity: reduceMotion
+                          ? 1
+                          : ExpeditionCombatTimeline.damageOpacity(
+                              progress, enemyContact),
                     ),
                   ),
                 if (progress >= .86)
                   Positioned(
                     left: 0,
                     right: 0,
-                    bottom: 10,
+                    bottom: bottomInset + 8,
                     child: Center(
                       child: ExpeditionOutcomeBadge(
                         label: cue.outcome ?? '스킬 준비 완료',

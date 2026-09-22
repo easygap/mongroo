@@ -169,28 +169,34 @@ flutter:
     - assets/adventure/ambience/
     - assets/adventure/story/archive-postcard-reveal-v1/
     - assets/species/
-    - assets/fonts/LICENSE-GothicA1.txt
+    - assets/fonts/LICENSE-WantedSans.txt
     - assets/fonts/LICENSE-Galmuri.txt
   fonts:
-    - family: GothicA1
+    - family: WantedSans
       fonts:
-        - asset: assets/fonts/GothicA1-Regular.ttf
+        - asset: assets/fonts/WantedSans-Regular.ttf
           weight: 400
-        - asset: assets/fonts/GothicA1-Bold.ttf
+        - asset: assets/fonts/WantedSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/WantedSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/WantedSans-Bold.ttf
           weight: 700
+        - asset: assets/fonts/WantedSans-ExtraBold.ttf
+          weight: 800
     # Flutter Web 엔진의 기본 대체 서체도 같은 로컬 파일로
     # 해결해 운영 CSP에서 Google Fonts 요청이 발생하지 않게 한다.
     - family: Roboto
       fonts:
-        - asset: assets/fonts/GothicA1-Regular.ttf
+        - asset: assets/fonts/WantedSans-Regular.ttf
           weight: 400
-        - asset: assets/fonts/GothicA1-Bold.ttf
+        - asset: assets/fonts/WantedSans-Bold.ttf
           weight: 700
     - family: Noto Sans KR
       fonts:
-        - asset: assets/fonts/GothicA1-Regular.ttf
+        - asset: assets/fonts/WantedSans-Regular.ttf
           weight: 400
-        - asset: assets/fonts/GothicA1-Bold.ttf
+        - asset: assets/fonts/WantedSans-Bold.ttf
           weight: 700
     - family: Galmuri11
       fonts:

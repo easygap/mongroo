@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -169,6 +171,12 @@ class _FakeStageController extends ExpeditionController {
   final ExpeditionUiState initial;
   int loadCalls = 0;
   final List<String> selectedRegions = [];
+  final List<int> seenStories = [];
+
+  @override
+  Future<void> markStageStorySeen(int stageNo) async {
+    seenStories.add(stageNo);
+  }
 
   /// 실제로 떠난 모드. 허브에서 한 번에 들어가는 길이 생기면서, 어디로 갔는지가
   /// 아니라 **떠났는지**가 검사의 관심사가 됐다.
@@ -242,6 +250,10 @@ Future<_FakeStageController> _pumpShell(
       ],
       child: MaterialApp(
         theme: AppTheme.light(),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: child!,
+        ),
         home: const ExpeditionScreen(),
       ),
     ),
@@ -255,32 +267,86 @@ Future<_FakeStageController> _pumpShell(
 }
 
 void main() {
-  testWidgets('허브는 이어서 탐험할 스테이지 하나를 크게 보여 준다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await _pumpShell(tester, clearedCount: 2);
-
-    expect(find.byKey(const ValueKey('hub-continue-card')), findsOneWidget);
-    expect(find.text('이어서 탐험하기'), findsOneWidget);
-    expect(find.text('기억서고 3'), findsOneWidget);
-    expect(find.text('오늘 일기를 써서 마음 공명이 준비됐어요.'), findsOneWidget);
-    // 잠긴 하위 진입점은 숨기지 않고 조건을 그대로 읽어 준다.
-    expect(find.text('깊은 조사'), findsOneWidget);
-    expect(find.text('기억서고 8까지 완주하면 열려요.'), findsOneWidget);
+  testWidgets('현장 수첩은 완료한 탐험의 이야기만 표시하고 펼친 기록을 저장한다', (tester) async {
+    final map = ExpeditionStageMap.fromJson({
+      'region': {'code': 'moss_archive', 'name': '이끼 기억서고'},
+      'progress': {'total': 8, 'cleared_count': 2},
+      'stages': [
+        for (var no = 1; no <= 3; no++)
+          {
+            ..._stage(no: no, kind: 'event', cleared: no < 3),
+            'story': {
+              'code': 'story-$no',
+              'title': no == 2 ? '지워진 주소' : '$no번째 기록',
+              'caption': no == 2 ? '남은 세 글자는 온실 앞.' : '$no번째에서 찾은 이야기',
+            },
+          },
+      ],
+    });
+    final controller =
+        _FakeStageController(ExpeditionUiState(loading: false, stageMap: map));
+    await tester.pumpWidget(ProviderScope(
+      overrides: [expeditionControllerProvider.overrideWith(() => controller)],
+      child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const Scaffold(
+              body: SingleChildScrollView(child: ExpeditionStoryJournal()))),
+    ));
+    expect(find.text('8곳 중 2곳 조사 완료'), findsOneWidget);
+    expect(find.text('3. 3번째 기록'), findsNothing);
+    await tester.tap(find.text('2. 지워진 주소'));
+    await tester.pumpAndSettle();
+    expect(find.text('남은 세 글자는 온실 앞.'), findsOneWidget);
+    expect(controller.seenStories, [2]);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('일기 전에는 자유 탐험 안내로 바뀌고 재촉하지 않는다', (tester) async {
+  testWidgets('탐험에 들어오면 여덟 장소와 대원이 있는 지도가 먼저 보인다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await _pumpShell(tester, heartResonance: false);
-
+    await _pumpShell(tester, clearedCount: 2);
+    final world = find.byKey(const ValueKey('expedition-world-map'));
+    expect(tester.getSize(world).height, greaterThan(650));
+    for (var no = 1; no <= 8; no++) {
+      expect(find.byKey(ValueKey('stage-point-$no')), findsOneWidget);
+    }
+    expect(find.byKey(const ValueKey('atlas-party-leader')), findsOneWidget);
     expect(
-      find.text('마음 일기를 쓰면 오늘의 보상 탐험이 열려요. 그전에도 자유롭게 다녀올 수 있어요.'),
-      findsOneWidget,
-    );
+        tester.getSize(find.byKey(const ValueKey('atlas-party-leader'))).height,
+        greaterThanOrEqualTo(80));
+    expect(find.text('3번째 자리'), findsOneWidget);
+    expect(find.text('3번째 자리에서 벌어지는 일이에요.'), findsNothing);
+    expect(find.text('깊은 조사'), findsNothing);
+    expect(find.text('오늘의 탐험 보상을 받을 수 있습니다.'), findsNothing);
+    expect(find.text('탐험하기'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('첫 탐험 장소는 아래 출발 메뉴에 가리지 않고 누를 수 있다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await _pumpShell(tester, clearedCount: 0);
+    await tester.pumpAndSettle();
+    final firstPlace = find.byKey(const ValueKey('stage-point-1'));
+    final dock = find.byKey(const ValueKey('atlas-departure-dock'));
+    expect(
+        tester.getRect(firstPlace).bottom, lessThan(tester.getRect(dock).top));
+    expect(firstPlace.hitTestable(), findsOneWidget);
+    await tester.tap(firstPlace);
+    await tester.pump();
+    expect(find.text('1번째 자리'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('보상과 잠긴 탐험의 조건은 다른 탐험을 열었을 때 표시한다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await _pumpShell(tester, heartResonance: false);
+    await tester.tap(find.byKey(const ValueKey('atlas-routes')));
+    await tester.pumpAndSettle();
+    expect(
+        find.text('지금 바로 탐험할 수 있습니다. 일기를 쓴 날에는 추가 보상을 받습니다.'), findsOneWidget);
+    expect(find.text('기억서고 8까지 완주하면 열려요.'), findsOneWidget);
     expect(find.byType(Badge), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -288,400 +354,270 @@ void main() {
   // 편성 화면은 오래 `마음 공명 = 일기 안 씀`으로만 읽었다. 서버는 `diary_ready`를
   // 따로 주는데 화면이 둘을 하나로 묶어, 오늘 일기를 쓰고 한 번 다녀온 사람에게
   // 일기를 쓰라고 다시 시켰다. 두 사유를 갈라 놓는다.
-  testWidgets('오늘 몫을 이미 받았으면 일기를 다시 쓰라고 하지 않는다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await _pumpShell(
-      tester,
-      heartResonance: false,
-      diaryReady: true,
-      shellView: ExpeditionShellView.preparation,
-      selectedStageNo: 2,
-    );
-
-    expect(
-      find.text('오늘의 마음 공명 보상은 이미 받았어요. 지금부터는 자유 탐험이에요.'),
-      findsOneWidget,
-    );
-    expect(
-      find.text('마음 공명 보상은 오늘 50자 이상의 마음 일기를 쓴 뒤 열려요.'),
-      findsNothing,
-    );
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('아직 일기를 쓰지 않았으면 일기부터 안내한다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await _pumpShell(
-      tester,
-      heartResonance: false,
-      diaryReady: false,
-      shellView: ExpeditionShellView.preparation,
-      selectedStageNo: 2,
-    );
-
-    expect(
-      find.text('마음 공명 보상은 오늘 50자 이상의 마음 일기를 쓴 뒤 열려요.'),
-      findsOneWidget,
-    );
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('지도는 8개 점과 진행도를 보여 주고 잠긴 곳은 사유를 읽어 준다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await _pumpShell(tester, clearedCount: 2);
-    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
-    await tester.pump();
-
-    for (var no = 1; no <= 8; no++) {
-      expect(
-        find.byKey(ValueKey('stage-point-$no')),
-        findsOneWidget,
-        reason: '$no번 스테이지 점',
+  for (final ready in [false, true]) {
+    testWidgets('일일 보상 여부 $ready: 하나의 출발 버튼이 알맞은 탐험을 시작한다', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final controller = await _pumpShell(
+        tester,
+        heartResonance: ready,
+        diaryReady: ready,
+        shellView: ExpeditionShellView.preparation,
+        selectedStageNo: 2,
       );
-    }
-    expect(find.text('2/8'), findsOneWidget);
-    expect(find.text('기억서고 4를 먼저 완주하면 열려요.'), findsWidgets);
+      final start = find.byKey(const ValueKey('prep-start-expedition'));
+      expect(tester.widget<FilledButton>(start).onPressed, isNotNull);
+      await tester.ensureVisible(start);
+      await tester.tap(start);
+      await tester.pump();
+      expect(controller.startedModes,
+          [ready ? 'heart_resonance' : 'free_explore']);
+      expect(find.text('보상 없이 자유 탐험'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('오늘 몫을 받았어도 출발할 수 있고 보상 안내에서 상태를 확인한다', (tester) async {
+    final controller = await _pumpShell(tester,
+        heartResonance: false,
+        diaryReady: true,
+        shellView: ExpeditionShellView.preparation,
+        selectedStageNo: 2);
+    await tester.tap(find.byKey(const ValueKey('prep-start-expedition')));
+    await tester.pump();
+    expect(controller.startedModes, ['free_explore']);
+    await tester.ensureVisible(find.text('보상 안내'));
+    await tester.tap(find.text('보상 안내'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('오늘의 일일 보상은 받았습니다'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('잠긴 곳의 글자는 흐려서 안 읽히지 않는다', (tester) async {
-    // 잠김을 불투명도로 표시하면 이미 muted 색인 설명·사유가 한 번 더
-    // 눌린다. 실측으로 4.62:1이던 `onSurfaceVariant`가 2.35:1까지 내려갔다.
-    // 잠김은 아이콘과 사유 줄이 말하고, 글자는 색 그대로 둔다.
+  testWidgets('지도 표식을 누르면 해당 장소를 살펴보고 편성으로 출발한다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await _pumpShell(tester, clearedCount: 2);
-
-    // 허브의 준비 중 항목
-    final comingSoon = find.text('여섯이서 깊이 잠든 수호짐승을 깨워 줘요.');
-    await tester.ensureVisible(comingSoon);
-    await tester.pump();
-    expect(
-      find.ancestor(of: comingSoon, matching: find.byType(Opacity)),
-      findsNothing,
-      reason: '허브 잠김 항목 설명이 흐려집니다',
-    );
-
-    // 지도의 잠긴 스테이지
-    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
-    await tester.pump();
-    final lockReason = find.text('기억서고 4를 먼저 완주하면 열려요.').first;
-    await tester.ensureVisible(lockReason);
-    await tester.pump();
-    expect(
-      find.ancestor(of: lockReason, matching: find.byType(Opacity)),
-      findsNothing,
-      reason: '잠긴 스테이지 사유가 흐려집니다',
-    );
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('스테이지를 누르면 미리보기 시트가 열리고 출발까지 이어진다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
     final controller = await _pumpShell(tester, clearedCount: 2);
-    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
-    await tester.pump();
-
     await tester.tap(find.byKey(const ValueKey('stage-point-3')));
     await tester.pumpAndSettle();
-
+    expect(find.text('3번째 자리'), findsOneWidget);
+    expect(find.byKey(const ValueKey('stage-sheet-start')), findsNothing);
+    await tester.tap(find.text('살펴보기'));
+    await tester.pumpAndSettle();
     expect(find.text('기억서고 3 · 3번째 자리'), findsOneWidget);
     expect(find.text('약 1분 15초'), findsOneWidget);
     expect(find.text('약점 관찰'), findsOneWidget);
     expect(find.text('엉킨 장부 뭉치'), findsOneWidget);
-
+    await tester.ensureVisible(find.byKey(const ValueKey('stage-sheet-start')));
     await tester.tap(find.byKey(const ValueKey('stage-sheet-start')));
     await tester.pumpAndSettle();
-
     expect(controller.state.shellView, ExpeditionShellView.preparation);
     expect(controller.state.selectedStageNo, 3);
     expect(
-      find.byKey(const ValueKey('stage-preparation-header')),
-      findsOneWidget,
-    );
-    expect(find.text('기억서고 3 · 전투'), findsOneWidget);
+        find.byKey(const ValueKey('stage-preparation-header')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('잠긴 스테이지는 시트에서 출발 버튼 대신 사유만 보여 준다', (tester) async {
+  testWidgets('잠긴 장소도 지도에서 살펴볼 수 있지만 출발할 수 없다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await _pumpShell(tester, clearedCount: 1);
-    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
-    await tester.pump();
-
-    await tester.tap(find.byKey(const ValueKey('stage-point-5')));
+    final controller = await _pumpShell(tester, clearedCount: 1);
+    final destination = find.byKey(const ValueKey('stage-point-5'));
+    await Scrollable.ensureVisible(tester.element(destination), alignment: .5);
     await tester.pumpAndSettle();
-
+    await tester.tap(destination);
+    await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('stage-sheet-start')), findsNothing);
-    expect(find.text('기억서고 4를 먼저 완주하면 열려요.'), findsWidgets);
+    expect(find.text('기억서고 4를 먼저 완주하면 열려요.'), findsOneWidget);
+    expect(controller.startedModes, isEmpty);
+    expect(
+        tester
+            .widget<FilledButton>(
+                find.byKey(const ValueKey('hub-continue-card')))
+            .onPressed,
+        isNull);
+    expect(
+        find.ancestor(
+            of: find.text('기억서고 4를 먼저 완주하면 열려요.'),
+            matching: find.byType(Opacity)),
+        findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('지도와 편성 화면에서 뒤로 가면 한 단계씩 돌아온다', (tester) async {
+  testWidgets('지도를 확대해도 선택 장소와 출발 버튼을 누를 수 있다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    await _pumpShell(tester, clearedCount: 3);
+    await tester.tap(find.byKey(const ValueKey('atlas-zoom')));
+    await tester.pumpAndSettle();
+    final selected = find.byKey(const ValueKey('stage-point-4'));
+    expect(selected.hitTestable(), findsOneWidget);
+    expect(find.byKey(const ValueKey('hub-continue-card')).hitTestable(),
+        findsOneWidget);
+    final horizontal = tester.widget<SingleChildScrollView>(
+        find.byKey(const ValueKey('atlas-horizontal-view')));
+    expect(horizontal.controller!.position.maxScrollExtent, greaterThan(100));
+    await tester.tap(selected);
+    await tester.pump();
+    expect(find.text('4번째 자리'), findsOneWidget);
+    final beforePan = horizontal.controller!.offset;
+    final gesture = await tester.startGesture(const Offset(100, 380),
+        kind: ui.PointerDeviceKind.mouse);
+    await gesture.moveBy(const Offset(24, 0));
+    await tester.pump();
+    await gesture.moveBy(const Offset(126, 0));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(horizontal.controller!.offset, lessThan(beforePan));
+    expect(find.text('4번째 자리'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
+  testWidgets('대원 버튼에서 편성하고 돌아오면 같은 지도를 보여 준다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     final controller = await _pumpShell(tester, clearedCount: 2);
     await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
-    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(controller.state.shellView, ExpeditionShellView.preparation);
+    expect(controller.state.selectedStageNo, 3);
+    await tester.tap(find.byKey(const ValueKey('stage-preparation-back')));
+    await tester.pumpAndSettle();
     expect(controller.state.shellView, ExpeditionShellView.stageMap);
-
-    await tester.tap(find.byKey(const ValueKey('stage-map-back')));
-    await tester.pump();
-    expect(controller.state.shellView, ExpeditionShellView.hub);
-    expect(find.byKey(const ValueKey('hub-continue-card')), findsOneWidget);
+    expect(find.byKey(const ValueKey('expedition-world-map')), findsOneWidget);
+    expect(find.byKey(const ValueKey('stage-point-3')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('320px과 200% 글자에서도 허브와 지도가 넘치지 않는다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(320, 720));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+  for (final size in [
+    const Size(320, 720),
+    const Size(390, 844),
+    const Size(1280, 900)
+  ]) {
+    testWidgets('지도는 ${size.width}px와 200% 글자에서도 동작한다', (tester) async {
+      await tester.binding.setSurfaceSize(size);
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final controller = _FakeStageController(ExpeditionUiState(
+          loading: false,
+          catalog: _catalog(),
+          roster: _roster(),
+          stageMap: _stageMap(clearedCount: 2),
+          selectedPlantIds: const {11}));
+      await tester.pumpWidget(ProviderScope(
+          overrides: [
+            expeditionControllerProvider.overrideWith(() => controller)
+          ],
+          child: MaterialApp(
+              theme: AppTheme.light(),
+              builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(context)
+                      .copyWith(textScaler: const TextScaler.linear(2)),
+                  child: child!),
+              home: const ExpeditionScreen())));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('hub-continue-card')), findsOneWidget);
+      expectTapTargets(tester, screen: '그림 지도');
+      expect(tester.takeException(), isNull);
+      controller.openStageMap();
+      await tester.pump();
+      expect(find.byKey(const ValueKey('stage-point-1')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
-    late _FakeStageController controller;
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          expeditionControllerProvider.overrideWith(() {
-            controller = _FakeStageController(
-              ExpeditionUiState(
-                loading: false,
-                catalog: _catalog(),
-                roster: _roster(),
-                stageMap: _stageMap(clearedCount: 2),
-                selectedPlantIds: const {11},
-              ),
-            );
-            return controller;
-          }),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.light(),
-          builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: const TextScaler.linear(2),
-            ),
-            child: child!,
-          ),
-          home: const ExpeditionScreen(),
-        ),
-      ),
-    );
-    await tester.pump();
-
-    expect(find.byKey(const ValueKey('hub-continue-card')), findsOneWidget);
-    expect(tester.takeException(), isNull);
-
-    controller.openStageMap();
-    await tester.pump();
-
-    expect(find.byKey(const ValueKey('stage-point-1')), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('지역을 완주하면 지도에서 다음 지역으로 넘어갈 수 있다', (tester) async {
+  testWidgets('지역을 완주하면 지도에서 다음 지역의 그림으로 이동한다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    final controller = await _pumpShell(
-      tester,
-      clearedCount: 8,
-      echoWellUnlocked: true,
-    );
-    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
-    await tester.pump();
-
-    expect(find.byKey(const ValueKey('region-chip-moss_archive')), findsOneWidget);
+    final controller =
+        await _pumpShell(tester, clearedCount: 8, echoWellUnlocked: true);
+    await tester.tap(find.byKey(const ValueKey('atlas-regions')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('region-chip-echo_well')));
-    await tester.pump();
-
+    await tester.pumpAndSettle();
     expect(controller.selectedRegions, ['echo_well']);
     expect(controller.state.stageMap?.region.code, 'echo_well');
-    expect(find.text('메아리 우물정원'), findsOneWidget);
+    expect(find.text('우물정원'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('아직 잠긴 지역을 누르면 이유를 말해 주고 지도는 그대로 둔다', (tester) async {
+  testWidgets('잠긴 지역의 조건을 읽을 수 있고 눌러도 현재 지도를 바꾸지 않는다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-
     final controller = await _pumpShell(tester, clearedCount: 3);
-    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
-    await tester.pump();
-
+    await tester.tap(find.byKey(const ValueKey('atlas-regions')));
+    await tester.pumpAndSettle();
+    expect(find.text('앞 지역을 완주하면 열려요.'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('region-chip-echo_well')));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 400));
-
-    expect(controller.selectedRegions, ['echo_well']);
-    // 사유는 스낵바로 한 번 알리고 상태에서는 지워진다.
+    expect(controller.selectedRegions, isEmpty);
     expect(controller.state.stageMap?.region.code, 'moss_archive');
-    expect(find.text('앞 지역을 완주하면 열려요.'), findsOneWidget);
-    expect(find.text('이끼 기억서고'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('열린 깊은 조사는 눌러서 편성까지 들어간다', (tester) async {
+  testWidgets('다른 탐험에서 깊은 조사를 누르면 편성까지 이어진다', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-
     final controller = await _pumpShell(tester, clearedCount: 8, deep: true);
-
-    expect(find.text('지도를 직접 읽으며 숨은 길과 원본 서고를 찾아요.'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('atlas-routes')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('hub-entry-깊은 조사')));
-    // 편성 화면 캐릭터는 계속 흔들리므로 pumpAndSettle이 끝나지 않는다.
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
+    await tester.pumpAndSettle();
     expect(controller.state.shellView, ExpeditionShellView.preparation);
-    // 깊은 조사는 스테이지 투기장이 아니라 지역 자유 지도를 쓴다.
     expect(controller.state.selectedStageNo, isNull);
     expect(find.byKey(const ValueKey('prep-start-deep')), findsOneWidget);
+    expect(controller.goBackInShell(), isTrue);
+    expect(controller.state.shellView, ExpeditionShellView.hub);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('스테이지를 골라 들어온 편성에는 깊은 조사 버튼을 두지 않는다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
+  testWidgets('일반 스테이지 편성에는 깊은 조사 버튼이 없다', (tester) async {
     final controller = await _pumpShell(tester, clearedCount: 8, deep: true);
     controller.openStagePreparation(3);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-
-    expect(controller.state.shellView, ExpeditionShellView.preparation);
+    await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('prep-start-deep')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('깊은 조사 편성에서 뒤로 가면 지도를 건너뛰고 허브로 돌아온다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+  for (final cleared in [2, 8]) {
+    testWidgets('합동 수호전과 개척의 실제 해금 조건을 유지한다: $cleared', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await _pumpShell(tester, clearedCount: cleared, deep: cleared == 8);
+      await tester.tap(find.byKey(const ValueKey('atlas-routes')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('hub-entry-합동 수호전')),
+          cleared == 8 ? findsOneWidget : findsNothing);
+      expect(find.byKey(const ValueKey('hub-entry-장거리 개척')), findsNothing);
+      expect(find.text('우물정원을 완주하면 온실 밖으로 나가는 길이 열려요.'), findsOneWidget);
+      expect(find.byKey(const ValueKey('hub-entry-자동 순찰')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
-    final controller = await _pumpShell(tester, clearedCount: 8, deep: true);
-    controller.openDeepPreparation();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(controller.state.shellView, ExpeditionShellView.preparation);
-
-    expect(controller.goBackInShell(), isTrue);
-    expect(controller.state.shellView, ExpeditionShellView.hub);
-  });
-
-  testWidgets('우물정원을 완주하기 전에는 장거리 개척이 이유와 함께 잠긴다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    // 기억서고를 다 걸어도 아직이다. 온실 밖으로 나가려면 두 번째 지역까지
-    // 마쳐야 한다(설계서 9.8).
-    await _pumpShell(tester, clearedCount: 8, deep: true);
-
-    expect(find.text('장거리 개척'), findsOneWidget);
-    expect(find.text('우물정원을 완주하면 온실 밖으로 나가는 길이 열려요.'), findsOneWidget);
-    expect(find.byKey(const ValueKey('hub-entry-장거리 개척')), findsNothing);
-
-    // 순찰은 탐험 탭이 들고 있으므로 여기서는 진입만 열려 있다.
-    expect(find.byKey(const ValueKey('hub-entry-자동 순찰')), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('우물정원을 완주하면 장거리 개척 입구가 선다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await _pumpShell(
-      tester,
-      clearedCount: 8,
-      deep: true,
-      regionCode: 'echo_well',
-    );
-
+  testWidgets('우물정원을 완주한 뒤에는 개척 입구가 열린다', (tester) async {
+    await _pumpShell(tester,
+        clearedCount: 8, deep: true, regionCode: 'echo_well');
+    await tester.tap(find.byKey(const ValueKey('atlas-routes')));
+    await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('hub-entry-장거리 개척')), findsOneWidget);
-    expect(find.text('우물정원을 완주하면 온실 밖으로 나가는 길이 열려요.'), findsNothing);
-    // 허브의 네 길이 전부 서버에 있다. `준비 중`으로 남은 자리는 없다.
-    expect(find.text('아직 만들고 있어요.'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('수호짐승을 만나 본 뒤에는 합동 수호전 입구가 선다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await _pumpShell(tester, clearedCount: 8, deep: true);
-
-    expect(find.text('합동 수호전'), findsOneWidget);
-    expect(find.byKey(const ValueKey('hub-entry-합동 수호전')), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('아직 수호짐승을 못 만났으면 합동 수호전이 이유와 함께 잠긴다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    await _pumpShell(tester, clearedCount: 2);
-
-    expect(find.byKey(const ValueKey('hub-entry-합동 수호전')), findsNothing);
-    expect(
-      find.text('수호짐승의 장벽을 한 번 열면 관리인이 편지를 보내요.'),
-      findsOneWidget,
-    );
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('걸어 본 지역은 허브 카드 한 번으로 바로 떠난다', (tester) async {
-    // 설계서 3.6: `재도전 사용자는 탭 한 번으로 approach에 들어간다.`
-    // 지도와 시트를 매번 지나면 그 한 번이 네 번이 된다.
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    final controller = await _pumpShell(tester, clearedCount: 2);
-    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
-    await tester.pump();
-
-    expect(controller.startedModes, ['heart_resonance']);
-    expect(controller.state.selectedStageNo, 3);
-    // 지도를 거치지 않는다.
-    expect(controller.state.shellView, ExpeditionShellView.hub);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('처음 걷는 지역은 카드를 눌러도 편성부터 연다', (tester) async {
-    // 누구와 갈지 한 번도 정한 적 없는 사람을 말없이 출발시키지 않는다.
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    final controller = await _pumpShell(tester, clearedCount: 0);
-    await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
-    await tester.pump();
-
-    expect(controller.startedModes, isEmpty);
-    expect(controller.state.shellView, ExpeditionShellView.preparation);
-    expect(controller.state.selectedStageNo, 1);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('다른 스테이지로 가고 싶으면 지도를 여는 자리가 따로 있다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    final controller = await _pumpShell(tester, clearedCount: 2);
-    expect(find.text('다른 스테이지·캐릭터 고르기'), findsOneWidget);
-
-    await tester.tap(find.byKey(const ValueKey('hub-choose-stage')));
-    await tester.pump();
-
-    expect(controller.startedModes, isEmpty);
-    expect(controller.state.shellView, ExpeditionShellView.stageMap);
-    expect(tester.takeException(), isNull);
-  });
+  for (final cleared in [0, 2]) {
+    testWidgets('지도 출발은 첫 방문이면 편성, 재방문이면 바로 탐험: $cleared', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final controller = await _pumpShell(tester, clearedCount: cleared);
+      await tester.tap(find.byKey(const ValueKey('hub-continue-card')));
+      await tester.pump();
+      expect(controller.startedModes,
+          cleared == 0 ? isEmpty : ['heart_resonance']);
+      expect(controller.state.selectedStageNo, cleared + 1);
+      expect(
+          controller.state.shellView,
+          cleared == 0
+              ? ExpeditionShellView.preparation
+              : ExpeditionShellView.hub);
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

@@ -316,7 +316,7 @@ class _MoodHeader extends StatelessWidget {
                   displayLabel,
                   style: TextStyle(
                     color: AppTheme.onNight,
-                    fontFamily: AppTheme.pixelFont,
+                    fontFamily: AppTheme.bodyFont,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),

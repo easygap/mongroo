@@ -1,17 +1,141 @@
 part of 'expedition_screen.dart';
 
+class ExpeditionJournalScreen extends ConsumerWidget {
+  const ExpeditionJournalScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(expeditionControllerProvider);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('현장 수첩'),
+        leading: IconButton(
+          tooltip: '탐험 지도로',
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/explore'),
+        ),
+      ),
+      body: SafeArea(
+        child: state.loading
+            ? const Center(child: CircularProgressIndicator())
+            : state.stageMap == null
+                ? _CenteredMessage(
+                    icon: Icons.cloud_off_outlined,
+                    title: '수첩을 불러오지 못했습니다',
+                    description: state.error ?? '연결을 확인해 주세요.',
+                    actionLabel: '다시 불러오기',
+                    onAction:
+                        ref.read(expeditionControllerProvider.notifier).load)
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                    child: Center(
+                        child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 720),
+                      child: const ExpeditionStoryJournal(),
+                    )),
+                  ),
+      ),
+    );
+  }
+}
+
+/// 직접 탐험에서 얻은 이야기를 순찰 기록과 별개로 보관한다.
+class ExpeditionStoryJournal extends ConsumerWidget {
+  const ExpeditionStoryJournal({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stageMap = ref
+        .watch(expeditionControllerProvider.select((state) => state.stageMap));
+    if (stageMap == null) return const SizedBox.shrink();
+    final collected = stageMap.stages
+        .where((stage) => stage.cleared && stage.story != null)
+        .toList();
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Text('${stageMap.region.name} · 현장 기록',
+          style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 6),
+      Text('${stageMap.total}곳 중 ${stageMap.clearedCount}곳 조사 완료',
+          style: Theme.of(context).textTheme.bodySmall),
+      const SizedBox(height: 12),
+      if (collected.isEmpty) const Text('탐험을 마치고 돌아오면 이곳에 이야기가 남습니다.'),
+      for (final stage in collected)
+        ExpansionTile(
+          key:
+              PageStorageKey('field-story-${stageMap.region.code}-${stage.no}'),
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: const EdgeInsets.only(bottom: 18),
+          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+          leading: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: SizedBox(
+                width: 58,
+                height: 58,
+                child: Builder(builder: (context) {
+                  final art = _AtlasArt.forRegion(stageMap.region.code);
+                  final stop = art.stops[(stage.no - 1).clamp(0, 7)];
+                  return Stack(children: [
+                    Positioned(
+                        left: 29 - stop.dx * 210,
+                        top: 48 - stop.dy * 315,
+                        width: 210,
+                        height: 315,
+                        child: Image.asset(art.asset,
+                            fit: BoxFit.fill, excludeFromSemantics: true)),
+                  ]);
+                })),
+          ),
+          title: Text('${stage.no}. ${stage.story!.title}'),
+          onExpansionChanged: (open) {
+            if (open && !stage.storySeen) {
+              unawaited(ref
+                  .read(expeditionControllerProvider.notifier)
+                  .markStageStorySeen(stage.no));
+            }
+          },
+          children: [
+            Align(
+                alignment: Alignment.centerLeft,
+                child: Text(stage.story!.caption))
+          ],
+        ),
+      const Divider(height: 24),
+    ]);
+  }
+}
+
 /// 모험 허브 — `지금 누를 것 하나`를 크게, 나머지를 작게.
 ///
 /// 개편 설계서 5.1. 배지·빨간 점·카운트다운으로 재촉하지 않고, 오늘의 보상
 /// 상태는 사실만 한 줄로 알린다.
 class _ExpeditionHub extends ConsumerWidget {
-  const _ExpeditionHub();
+  const _ExpeditionHub(
+      {this.embedded = false,
+      this.onPatrol,
+      this.onJournal,
+      this.mapOnly = false});
+
+  final bool embedded;
+  final VoidCallback? onPatrol;
+  final VoidCallback? onJournal;
+  final bool mapOnly;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (embedded) {
+      ref.listen(expeditionControllerProvider.select((state) => state.error),
+          (previous, next) {
+        if (next == null || previous == next) return;
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(next)));
+        ref.read(expeditionControllerProvider.notifier).clearError();
+      });
+    }
     final state = ref.watch(expeditionControllerProvider);
     final catalog = state.catalog;
     final stageMap = state.stageMap;
+    if (state.loading) return const Center(child: CircularProgressIndicator());
     if (catalog == null || stageMap == null) {
       return _CenteredMessage(
         icon: Icons.cloud_off_outlined,
@@ -29,50 +153,187 @@ class _ExpeditionHub extends ConsumerWidget {
       );
     }
     final notifier = ref.read(expeditionControllerProvider.notifier);
-    return LayoutBuilder(
-      builder: (context, constraints) => RefreshIndicator(
-        onRefresh: notifier.load,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(
-            constraints.maxWidth >= 720 ? 32 : 16,
-            16,
-            constraints.maxWidth >= 720 ? 32 : 16,
-            40,
-          ),
-          children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
-                child: Column(
+    return _ExpeditionAtlas(
+      stageMap: stageMap,
+      roster: state.roster,
+      selectedPlantIds: state.selectedPlantIds,
+      resume: state.expedition?.run.isActive == true,
+      busy: state.busyAction != null,
+      onRefresh: notifier.load,
+      onBack: !embedded && Navigator.canPop(context)
+          ? () => context.pop()
+          : mapOnly
+              ? notifier.goBackInShell
+              : null,
+      onDepart: () {
+        if (state.expedition?.run.isActive != true) {
+          unawaited(notifier.continueNextStage());
+        }
+        if (embedded) context.push('/expedition');
+      },
+      onParty: () {
+        final stage = stageMap.nextStage ?? stageMap.stages.lastOrNull;
+        if (stage == null) return;
+        notifier.openStagePreparation(stage.no);
+        if (embedded) context.push('/expedition');
+      },
+      onStage: (stage) => _openAtlasStage(context, ref, stage),
+      onPrepare: (stage) {
+        if (!stage.unlocked || state.expedition?.run.isActive == true) return;
+        notifier.openStagePreparation(stage.no);
+        if (embedded) context.push('/expedition');
+      },
+      onRegions: () => _openRegions(context, ref),
+      onJournal: onJournal ??
+          () => showModalBottomSheet<void>(
+              context: context,
+              showDragHandle: true,
+              isScrollControlled: true,
+              builder: (context) => SafeArea(
+                  child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                      child: const ExpeditionStoryJournal()))),
+      onRoutes: () => showModalBottomSheet<void>(
+          context: context,
+          showDragHandle: true,
+          isScrollControlled: true,
+          builder: (sheetContext) => SafeArea(
+              child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('다른 탐험',
+                            style: Theme.of(context).textTheme.titleLarge),
+                        const SizedBox(height: 16),
+                        for (final entry in _hubEntries(context, ref, stageMap))
+                          Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _HubEntryTile(
+                                  entry: _HubEntry(
+                                      icon: entry.icon,
+                                      title: entry.title,
+                                      description: entry.description,
+                                      lockReason: entry.lockReason,
+                                      onTap: entry.onTap == null
+                                          ? null
+                                          : () {
+                                              Navigator.pop(sheetContext);
+                                              entry.onTap!();
+                                            }))),
+                        const SizedBox(height: 8),
+                        _TodayRewardLine(catalog: catalog),
+                      ])))),
+    );
+  }
+
+  Future<void> _openAtlasStage(
+      BuildContext context, WidgetRef ref, ExpeditionStage stage) async {
+    final state = ref.read(expeditionControllerProvider);
+    if (state.busyAction != null) return;
+    final active = state.expedition?.run.isActive == true;
+    if (active && stage.no == state.expedition?.run.stageNo) {
+      if (embedded) context.push('/expedition');
+      return;
+    }
+    final region = state.stageMap!.region.code;
+    final depart = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) => ConstrainedBox(
+          constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * .88),
+          child: SingleChildScrollView(
+              child: _StageDetailSheet(
+                  stage: stage, regionCode: region, canDepart: !active))),
+    );
+    if (depart != true || !context.mounted) return;
+    ref
+        .read(expeditionControllerProvider.notifier)
+        .openStagePreparation(stage.no);
+    if (embedded) context.push('/expedition');
+  }
+
+  void _openRegions(BuildContext context, WidgetRef ref) {
+    final map = ref.read(expeditionControllerProvider).stageMap!;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+          child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+              child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    _ContinueAdventureCard(
-                      stageMap: stageMap,
-                      roster: state.roster,
-                      busy: state.busyAction != null,
-                      onTap: notifier.continueNextStage,
-                      onChoose: notifier.openStageMap,
-                    ),
-                    const SizedBox(height: 10),
-                    _TodayRewardLine(catalog: catalog),
-                    const SizedBox(height: 22),
-                    Text('다른 길',
-                        style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 10),
-                    ..._hubEntries(context, ref, stageMap).map(
-                      (entry) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _HubEntryTile(entry: entry),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+                    Text('탐험 지역',
+                        style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 16),
+                    for (final region in map.regions)
+                      Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Material(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(12),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              key: ValueKey('region-chip-${region.code}'),
+                              onTap: !region.unlocked
+                                  ? null
+                                  : () {
+                                      Navigator.pop(sheetContext);
+                                      ref
+                                          .read(expeditionControllerProvider
+                                              .notifier)
+                                          .selectRegion(region.code);
+                                    },
+                              child: Row(children: [
+                                SizedBox(
+                                    width: 86,
+                                    height: 106,
+                                    child: Image.asset(
+                                        _AtlasArt.forRegion(region.code).asset,
+                                        fit: BoxFit.cover,
+                                        excludeFromSemantics: true)),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                    child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 12),
+                                        child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(region.name,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .titleSmall),
+                                              const SizedBox(height: 6),
+                                              Text(
+                                                  region.unlocked
+                                                      ? '${region.clearedCount}/${region.total}곳 탐험'
+                                                      : region.lockReason ??
+                                                          '앞 지역을 마치면 열립니다.',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodySmall),
+                                            ]))),
+                                Padding(
+                                    padding: const EdgeInsets.all(14),
+                                    child: Icon(!region.unlocked
+                                        ? Icons.lock_outline_rounded
+                                        : region.code == map.region.code
+                                            ? Icons.check_circle_outline_rounded
+                                            : Icons.chevron_right_rounded)),
+                              ]),
+                            ),
+                          )),
+                  ]))),
     );
   }
 
@@ -109,186 +370,47 @@ class _ExpeditionHub extends ConsumerWidget {
       _HubEntry(
         icon: Icons.hiking_rounded,
         title: '자동 순찰',
-        description: '앱을 닫아 두면 캐릭터가 혼자 다녀와요.',
+        description: '대원을 보내 두고 나중에 발견물을 받습니다.',
         lockReason: null,
         // 순찰 보내기는 모험 탭(`오늘의 순찰`)이 들고 있다. 같은 것을 두 곳에
         // 만들지 않고, 여기서는 그 화면으로 돌려보낸다.
-        onTap: () => Navigator.of(context).maybePop(),
+        onTap: onPatrol ?? () => context.push('/patrol'),
       ),
       _HubEntry(
         icon: Icons.travel_explore_rounded,
         title: '깊은 조사',
-        description: '지도를 직접 읽으며 숨은 길과 원본 서고를 찾아요.',
+        description: '등불을 관리하며 갈림길과 숨은 방을 조사합니다.',
         // 사유는 지역 이름을 넣어 직접 만든다. 서버도 같은 뜻을 보내지만
         // `지역의 8스테이지`라고만 해서, 지금 보고 있는 곳이 어디인지 모른다.
-        lockReason: deepAvailable
-            ? null
-            : '${stageMap.region.shortName} 8까지 완주하면 열려요.',
-        onTap: deepAvailable ? notifier.openDeepPreparation : null,
+        lockReason:
+            deepAvailable ? null : '${stageMap.region.shortName} 8까지 완주하면 열려요.',
+        onTap: deepAvailable
+            ? () {
+                notifier.openDeepPreparation();
+                if (embedded) context.push('/expedition');
+              }
+            : null,
       ),
       _HubEntry(
         icon: Icons.groups_2_rounded,
         title: '합동 수호전',
-        description: '여섯이서 깊이 잠든 수호짐승을 깨워 줘요.',
+        description: '대원 여섯 명의 역할을 나눠 수호짐승과 맞섭니다.',
         // 수호짐승의 장벽을 **어디서든** 한 번 열면 입구가 상시 열린다.
         // 지금 보고 있는 지역으로 재면, 첫 지역을 깬 사람이 다음 지역
         // 지도를 보는 동안 잠긴 것처럼 보인다.
-        lockReason: jointGuardOpen
-            ? null
-            : '수호짐승의 장벽을 한 번 열면 관리인이 편지를 보내요.',
-        onTap: jointGuardOpen
-            ? () => context.push('/joint-guard')
-            : null,
+        lockReason: jointGuardOpen ? null : '수호짐승의 장벽을 한 번 열면 관리인이 편지를 보내요.',
+        onTap: jointGuardOpen ? () => context.push('/joint-guard') : null,
       ),
       _HubEntry(
         icon: Icons.map_outlined,
         title: '장거리 개척',
-        description: '여러 구간을 다른 조로 나눠 멀리까지 다녀와요.',
+        description: '구간마다 탐험대를 배치해 온실 밖을 조사합니다.',
         // 우물정원을 완주하면 첫 방향이 열린다(설계서 9.8). 합동 수호전과
         // 달리 **지역을 끝까지** 걸어야 하므로 조건이 한 칸 더 높다.
-        lockReason: journeyOpen
-            ? null
-            : '우물정원을 완주하면 온실 밖으로 나가는 길이 열려요.',
+        lockReason: journeyOpen ? null : '우물정원을 완주하면 온실 밖으로 나가는 길이 열려요.',
         onTap: journeyOpen ? () => context.push('/journey') : null,
       ),
     ];
-  }
-}
-
-class _ContinueAdventureCard extends StatelessWidget {
-  const _ContinueAdventureCard({
-    required this.stageMap,
-    required this.roster,
-    required this.busy,
-    required this.onTap,
-    required this.onChoose,
-  });
-
-  final ExpeditionStageMap stageMap;
-  final List<ExpeditionRosterItem> roster;
-  final bool busy;
-
-  /// 카드를 누르면 다음 스테이지로 바로 들어간다.
-  final VoidCallback onTap;
-
-  /// 다른 스테이지나 다른 캐릭터로 가고 싶을 때. 지도를 연다.
-  final VoidCallback onChoose;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final next = stageMap.nextStage;
-    final headline = stageMap.regionCleared
-        ? '${koreanObject(stageMap.region.shortName)} 모두 걸었어요'
-        : '이어서 탐험하기';
-    final detail = next?.label ?? '${stageMap.region.name} 완주';
-    final party = roster.where((item) => item.eligible).take(3).toList();
-    return Semantics(
-      button: true,
-      label: '$headline, $detail. '
-          '${stageMap.clearedCount}/${stageMap.total} 스테이지 완주. '
-          '${stageMap.clearedCount == 0 ? '눌러서 탐험대를 꾸려요' : '눌러서 바로 떠나요'}',
-      child: MongrooPanel(
-        padding: EdgeInsets.zero,
-        radius: 20,
-        borderColor: scheme.primary.withAlpha(95),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            key: const ValueKey('hub-continue-card'),
-            borderRadius: BorderRadius.circular(20),
-            onTap: busy ? null : onTap,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 15, 14, 15),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              headline,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(color: scheme.onSurfaceVariant),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              detail,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall
-                                  ?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                            if (next != null) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                next.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(Icons.chevron_right_rounded, color: scheme.primary),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _StageProgressBar(
-                    cleared: stageMap.clearedCount,
-                    total: stageMap.total,
-                  ),
-                  if (party.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        for (final item in party)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: SizedBox(
-                              width: 34,
-                              child: PlantView(
-                                stage: item.stage,
-                                form: PlantGrowthForm.fromCode(item.form),
-                                speciesCode: item.speciesCode,
-                                speciesName: item.speciesName,
-                                spritePose: PlantSpritePose.idle,
-                                outfitKey: item.outfitKey,
-                                width: 34,
-                                height: 50,
-                              ),
-                            ),
-                          ),
-                        // 예전에는 `고를 수 있어요`라고 말만 하고 누를 곳이
-                        // 없었다. 카드를 누르면 바로 떠나므로, 고르고 싶은
-                        // 사람이 갈 자리를 여기에 만든다.
-                        Expanded(
-                          child: Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: TextButton(
-                              key: const ValueKey('hub-choose-stage'),
-                              onPressed: busy ? null : onChoose,
-                              child: const Text('다른 스테이지·캐릭터 고르기'),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -302,10 +424,10 @@ class _TodayRewardLine extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final ready = catalog.heartResonanceAvailable;
     final text = ready
-        ? '오늘 일기를 써서 마음 공명이 준비됐어요.'
+        ? '오늘의 탐험 보상을 받을 수 있습니다.'
         : catalog.diaryReady
-            ? '오늘의 마음 공명 보상은 이미 받았어요. 지금부터는 자유 탐험이에요.'
-            : '마음 일기를 쓰면 오늘의 보상 탐험이 열려요. 그전에도 자유롭게 다녀올 수 있어요.';
+            ? '오늘 보상 수령 완료. 탐험은 계속할 수 있습니다.'
+            : '지금 바로 탐험할 수 있습니다. 일기를 쓴 날에는 추가 보상을 받습니다.';
     return Row(
       children: [
         Icon(
@@ -410,6 +532,7 @@ class _HubEntryTile extends StatelessWidget {
       ),
     );
     return Semantics(
+      container: true,
       button: onTap != null,
       label: locked
           ? '${entry.title}, 잠김. ${entry.description} ${entry.lockReason}'
@@ -432,252 +555,11 @@ class _HubEntryTile extends StatelessWidget {
   }
 }
 
-/// 스테이지 지도 — 8개 점이 완만한 길로 이어진다.
-///
-/// 개편 설계서 5.2. 별점·점수·랭킹은 만들지 않고 클리어 체크와 이야기
-/// 책갈피만 남긴다.
-class _ExpeditionStageMapView extends ConsumerWidget {
+/// Returning from party preparation restores the same spatial map.
+class _ExpeditionStageMapView extends StatelessWidget {
   const _ExpeditionStageMapView();
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(expeditionControllerProvider);
-    final stageMap = state.stageMap;
-    if (stageMap == null) {
-      return const _CenteredMessage(
-        icon: Icons.map_outlined,
-        title: '지도를 불러오는 중이에요',
-        description: '잠시만 기다려 주세요.',
-      );
-    }
-    final notifier = ref.read(expeditionControllerProvider.notifier);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _StageMapHeader(stageMap: stageMap, onBack: notifier.goBackInShell),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) => ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                constraints.maxWidth >= 720 ? 32 : 14,
-                6,
-                constraints.maxWidth >= 720 ? 32 : 14,
-                32,
-              ),
-              children: [
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 640),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (final stage in stageMap.stages)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: _StagePointTile(
-                              key: ValueKey('stage-point-${stage.no}'),
-                              stage: stage,
-                              isNext: stage.no == stageMap.nextStageNo,
-                              onTap: () => _openStageSheet(
-                                context,
-                                ref,
-                                stage,
-                                stageMap.region.code,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _openStageSheet(
-    BuildContext context,
-    WidgetRef ref,
-    ExpeditionStage stage,
-    String regionCode,
-  ) async {
-    HapticFeedback.selectionClick();
-    final start = await showModalBottomSheet<bool>(
-      context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (context) =>
-          _StageDetailSheet(stage: stage, regionCode: regionCode),
-    );
-    if (start != true) return;
-    ref.read(expeditionControllerProvider.notifier).openStagePreparation(
-          stage.no,
-        );
-  }
-}
-
-class _StageMapHeader extends ConsumerWidget {
-  const _StageMapHeader({required this.stageMap, required this.onBack});
-
-  final ExpeditionStageMap stageMap;
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => Padding(
-        padding: const EdgeInsets.fromLTRB(6, 6, 14, 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                IconButton(
-                  key: const ValueKey('stage-map-back'),
-                  onPressed: onBack,
-                  tooltip: '탐험 허브로',
-                  icon: const Icon(Icons.arrow_back_rounded),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        stageMap.region.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      _StageProgressBar(
-                        cleared: stageMap.clearedCount,
-                        total: stageMap.total,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (stageMap.regions.length > 1) ...[
-              const SizedBox(height: 8),
-              _RegionSwitcher(stageMap: stageMap),
-            ],
-          ],
-        ),
-      );
-}
-
-/// 지역을 오가는 줄.
-///
-/// 첫 지역을 완주하면 서버가 다음 지역을 기본으로 주지만, 지나온 지역을
-/// 다시 걸을 길이 없으면 완주가 곧 막다른 길이 된다. 잠긴 지역도 남겨서
-/// 다음에 무엇이 열리는지 보이게 한다.
-class _RegionSwitcher extends ConsumerWidget {
-  const _RegionSwitcher({required this.stageMap});
-
-  final ExpeditionStageMap stageMap;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
-    final busy = ref.watch(
-      expeditionControllerProvider.select((state) => state.busyAction != null),
-    );
-    return SizedBox(
-      height: 38,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        itemCount: stageMap.regions.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final region = stageMap.regions[index];
-          final current = region.code == stageMap.region.code;
-          final label = region.unlocked
-              ? '${region.shortName} ${region.clearedCount}/${region.total}'
-              : region.shortName;
-          return Semantics(
-            button: true,
-            selected: current,
-            enabled: region.unlocked && !busy,
-            label: current
-                ? '${region.name}, 지금 보는 지역'
-                : region.unlocked
-                    ? '${region.name}, ${region.total}개 중 '
-                        '${region.clearedCount}개 완주. 눌러서 이동'
-                    : '${region.name}, ${region.lockReason ?? '아직 잠김'}',
-            child: ExcludeSemantics(
-              child: ChoiceChip(
-                key: ValueKey('region-chip-${region.code}'),
-                selected: current,
-                avatar: region.unlocked
-                    ? (region.cleared
-                        ? const Icon(Icons.verified_rounded, size: 16)
-                        : null)
-                    : Icon(
-                        Icons.lock_outline_rounded,
-                        size: 16,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                label: Text(label),
-                // 지금 보고 있는 지역이라고 `onSelected`를 비우면 칩이
-                // 비활성으로 그려져 글자가 흐려진다. 눌러도 아무 일이 없게만
-                // 두고 칩은 살려 둔다.
-                onSelected: busy
-                    ? null
-                    : (_) {
-                        if (current) return;
-                        ref
-                            .read(expeditionControllerProvider.notifier)
-                            .selectRegion(region.code);
-                      },
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _StageProgressBar extends StatelessWidget {
-  const _StageProgressBar({required this.cleared, required this.total});
-
-  final int cleared;
-  final int total;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Semantics(
-      label: '$total개 중 $cleared개 완주',
-      child: Row(
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(99),
-              child: LinearProgressIndicator(
-                value: total == 0 ? 0 : cleared / total,
-                minHeight: 6,
-                backgroundColor: scheme.outlineVariant.withAlpha(90),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$cleared/$total',
-            textScaler: TextScaler.noScaling,
-            style: Theme.of(context)
-                .textTheme
-                .labelMedium
-                ?.copyWith(fontWeight: FontWeight.w800),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const _ExpeditionHub(mapOnly: true);
 }
 
 IconData _stageIcon(ExpeditionStage stage) => switch (stage.kind) {
@@ -687,175 +569,13 @@ IconData _stageIcon(ExpeditionStage stage) => switch (stage.kind) {
       ExpeditionStageKind.battle => Icons.directions_walk_rounded,
     };
 
-class _StagePointTile extends StatelessWidget {
-  const _StagePointTile({
-    super.key,
-    required this.stage,
-    required this.isNext,
-    required this.onTap,
-  });
-
-  final ExpeditionStage stage;
-  final bool isNext;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final locked = !stage.unlocked;
-    return Semantics(
-      button: true,
-      label: '${stage.label} ${stage.kindLabel}, ${stage.title}. '
-          '${locked ? stage.lockReason ?? '잠김' : stage.cleared ? '완주함' : '아직 걷지 않음'}'
-          '${stage.hasUnreadStory ? ', 못 본 이야기 있음' : ''}',
-      // 잠긴 스테이지도 배지와 사유 줄이 이미 잠김을 말한다. 여기에 불투명도를
-      // 곱하면 표기와 사유가 쓰는 `onSurfaceVariant`가 2.3:1로 내려간다.
-      child: MongrooPanel(
-          padding: EdgeInsets.zero,
-          radius: 14,
-          borderColor: isNext
-              ? scheme.primary.withAlpha(140)
-              : scheme.outlineVariant.withAlpha(120),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: onTap,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-                child: Row(
-                  children: [
-                    _StagePointBadge(stage: stage, isNext: isNext),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 큰 글자에서는 표기와 종류 태그가 자연스럽게 아래로 접힌다.
-                          LayoutBuilder(
-                            builder: (context, constraints) => Wrap(
-                              spacing: 6,
-                              runSpacing: 4,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              children: [
-                                Text(
-                                  stage.label,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.copyWith(
-                                        color: scheme.onSurfaceVariant,
-                                      ),
-                                ),
-                                MongrooTag(
-                                  label: stage.elite
-                                      ? '${stage.kindLabel} · 큰 엉킴'
-                                      : stage.kindLabel,
-                                  icon: _stageIcon(stage),
-                                  maxWidth: constraints.maxWidth,
-                                  backgroundColor:
-                                      scheme.secondaryContainer.withAlpha(120),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            stage.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          if (locked) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              stage.lockReason ?? '',
-                              maxLines: 2,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(color: scheme.onSurfaceVariant),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    if (stage.hasUnreadStory)
-                      Icon(
-                        Icons.bookmark_added_outlined,
-                        size: 18,
-                        color: scheme.tertiary,
-                      ),
-                    if (isNext && !stage.cleared)
-                      Icon(Icons.play_arrow_rounded, color: scheme.primary),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-    );
-  }
-}
-
-class _StagePointBadge extends StatelessWidget {
-  const _StagePointBadge({required this.stage, required this.isNext});
-
-  final ExpeditionStage stage;
-  final bool isNext;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final background = stage.cleared
-        ? scheme.primary
-        : isNext
-            ? scheme.primaryContainer
-            : scheme.surfaceContainerHighest;
-    final foreground = stage.cleared
-        ? scheme.onPrimary
-        : isNext
-            ? scheme.onPrimaryContainer
-            : scheme.onSurfaceVariant;
-    return Container(
-      width: 42,
-      height: 42,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: background,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: stage.elite ? scheme.error.withAlpha(170) : Colors.transparent,
-          width: stage.elite ? 2 : 0,
-        ),
-      ),
-      child: stage.cleared
-          ? Icon(Icons.check_rounded, size: 22, color: foreground)
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(_stageIcon(stage), size: 16, color: foreground),
-                Text(
-                  '${stage.no}',
-                  textScaler: TextScaler.noScaling,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: foreground,
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-}
-
 /// 스테이지 상세 시트 — 종류, 등장 엉킴과 약점, 예상 시간, 출발.
 class _StageDetailSheet extends ConsumerWidget {
-  const _StageDetailSheet({required this.stage, required this.regionCode});
+  const _StageDetailSheet(
+      {required this.stage, required this.regionCode, this.canDepart = true});
 
   final ExpeditionStage stage;
+  final bool canDepart;
 
   /// 이야기 컷이 지역 전용 원화를 고르는 데 쓴다.
   final String regionCode;
@@ -1012,6 +732,9 @@ class _StageDetailSheet extends ConsumerWidget {
                     .bodyMedium
                     ?.copyWith(color: scheme.onSurfaceVariant),
               )
+            else if (!canDepart)
+              const Text('현재 탐험을 마치면 이곳으로 이동할 수 있습니다.',
+                  textAlign: TextAlign.center)
             else
               FilledButton.icon(
                 key: const ValueKey('stage-sheet-start'),

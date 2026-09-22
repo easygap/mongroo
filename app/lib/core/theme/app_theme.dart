@@ -91,11 +91,11 @@ abstract final class MongrooMotion {
 }
 
 abstract final class AppTheme {
-  static const bodyFont = 'GothicA1';
+  static const bodyFont = 'WantedSans';
   static const pixelFont = 'Galmuri11';
   static const seed = MongrooBrandColors.sprout;
   static const onNight = MongrooBrandColors.paper;
-  static const onNightMuted = Color(0xFFD0C3B5);
+  static const onNightMuted = Color(0xFFC8C8C8);
 
   /// 밤색 면 위의 오류 문구.
   ///
@@ -105,89 +105,109 @@ abstract final class AppTheme {
 
   static const _lightPalette = MongrooPalette(
     paper: MongrooBrandColors.paper,
-    paperDeep: Color(0xFFE9E1D3),
-    ink: Color(0xFF3B1F06),
-    inkMuted: Color(0xFF75685D),
-    leaf: Color(0xFF68864D),
-    coral: Color(0xFFB84F46),
-    butter: Color(0xFFFAED27),
-    sky: Color(0xFFB9E0FD),
-    blush: Color(0xFFF2D5CE),
-    wood: Color(0xFF936445),
-    night: Color(0xFF3B1F06),
+    paperDeep: Color(0xFFEBEBEB),
+    ink: MongrooBrandColors.ink,
+    inkMuted: Color(0xFF616161),
+    leaf: MongrooBrandColors.action,
+    coral: Color(0xFF6A4B44),
+    butter: Color(0xFFD5D5D5),
+    sky: Color(0xFFE2E5E9),
+    blush: Color(0xFFF4E7E9),
+    wood: Color(0xFF686868),
+    night: Color(0xFF202020),
   );
 
   static const _darkPalette = MongrooPalette(
-    paper: Color(0xFF221C16),
-    paperDeep: Color(0xFF302820),
+    paper: Color(0xFF1B1B1B),
+    paperDeep: Color(0xFF2A2A2A),
     ink: MongrooBrandColors.paper,
-    inkMuted: Color(0xFFCDBFB0),
-    leaf: Color(0xFFA8D984),
-    coral: Color(0xFFE9978D),
-    butter: Color(0xFFF4DE52),
-    sky: Color(0xFF9CCAE8),
-    blush: Color(0xFF4C302C),
-    wood: Color(0xFFC79B7A),
-    night: Color(0xFF16110D),
+    inkMuted: Color(0xFFBDBDBD),
+    leaf: Color(0xFFF0F0F0),
+    coral: Color(0xFFDFB9B1),
+    butter: Color(0xFFD5D5D5),
+    sky: Color(0xFFC9CDD4),
+    blush: Color(0xFF3C282D),
+    wood: Color(0xFFBDBDBD),
+    night: Color(0xFF121212),
   );
 
   static ThemeData light() => _base(
         scheme: const ColorScheme.light(
-          primary: MongrooBrandColors.sprout,
-          onPrimary: MongrooBrandColors.soil,
-          primaryContainer: Color(0xFFE2F8CC),
-          onPrimaryContainer: MongrooBrandColors.soil,
-          secondary: Color(0xFF9D443D),
+          primary: MongrooBrandColors.action,
+          onPrimary: Colors.white,
+          primaryContainer: Color(0xFFEFEFEF),
+          onPrimaryContainer: Color(0xFF242424),
+          secondary: Color(0xFF6A4B44),
           onSecondary: MongrooBrandColors.paper,
-          secondaryContainer: Color(0xFFF2D5CE),
-          onSecondaryContainer: Color(0xFF4B201C),
-          tertiary: Color(0xFF536D3F),
+          secondaryContainer: Color(0xFFF1E9E6),
+          onSecondaryContainer: Color(0xFF54342F),
+          tertiary: Color(0xFF5F6268),
           onTertiary: MongrooBrandColors.paper,
-          tertiaryContainer: Color(0xFFDCE9D7),
-          onTertiaryContainer: Color(0xFF243D29),
-          error: Color(0xFFB3261E),
+          tertiaryContainer: Color(0xFFECEDEF),
+          onTertiaryContainer: Color(0xFF303236),
+          error: Color(0xFFBE233C),
           onError: Color(0xFFFFFFFF),
+          errorContainer: Color(0xFFFFE9EE),
+          onErrorContainer: Color(0xFF6A1026),
           surface: MongrooBrandColors.paper,
-          onSurface: Color(0xFF3B1F06),
-          onSurfaceVariant: Color(0xFF75685D),
-          outline: Color(0xFF8A7768),
-          outlineVariant: Color(0xFFD8CFC2),
-          shadow: Color(0xFF3B1F06),
-          inverseSurface: Color(0xFF3B1F06),
+          surfaceDim: Color(0xFFE3E3E3),
+          surfaceBright: Colors.white,
+          surfaceContainerLowest: Colors.white,
+          surfaceContainerLow: Color(0xFFFAFAFA),
+          surfaceContainer: Color(0xFFF3F3F3),
+          surfaceContainerHigh: Color(0xFFEBEBEB),
+          surfaceContainerHighest: Color(0xFFE3E3E3),
+          surfaceTint: Colors.transparent,
+          onSurface: MongrooBrandColors.ink,
+          onSurfaceVariant: Color(0xFF616161),
+          outline: Color(0xFF808080),
+          outlineVariant: Color(0xFFDEDEDE),
+          shadow: MongrooBrandColors.ink,
+          inverseSurface: Color(0xFF232323),
           onInverseSurface: MongrooBrandColors.paper,
           inversePrimary: MongrooBrandColors.sprout,
         ),
-        canvas: const Color(0xFFF2EDE3),
+        canvas: const Color(0xFFF7F7F7),
         palette: _lightPalette,
       );
 
   static ThemeData dark() => _base(
         scheme: const ColorScheme.dark(
-          primary: MongrooBrandColors.sprout,
-          onPrimary: MongrooBrandColors.soil,
-          primaryContainer: Color(0xFF3F5830),
-          onPrimaryContainer: Color(0xFFE2F8CC),
-          secondary: Color(0xFFE9978D),
-          onSecondary: Color(0xFF4C211D),
-          secondaryContainer: Color(0xFF673832),
-          onSecondaryContainer: Color(0xFFF4D7D1),
-          tertiary: Color(0xFFA8D984),
-          onTertiary: Color(0xFF233B27),
-          tertiaryContainer: Color(0xFF36533A),
-          onTertiaryContainer: Color(0xFFDCE9D7),
-          error: Color(0xFFFFB4AB),
-          onError: Color(0xFF690005),
-          surface: Color(0xFF221C16),
+          primary: Color(0xFFF0F0F0),
+          onPrimary: Color(0xFF202020),
+          primaryContainer: Color(0xFF343434),
+          onPrimaryContainer: Color(0xFFF3F3F3),
+          secondary: Color(0xFFDFB9B1),
+          onSecondary: Color(0xFF45302B),
+          secondaryContainer: Color(0xFF41332F),
+          onSecondaryContainer: Color(0xFFF1DED9),
+          tertiary: Color(0xFFCACCD1),
+          onTertiary: Color(0xFF2E3035),
+          tertiaryContainer: Color(0xFF34363B),
+          onTertiaryContainer: Color(0xFFE4E5E8),
+          error: Color(0xFFFF9BAC),
+          onError: Color(0xFF670018),
+          errorContainer: Color(0xFF4B202D),
+          onErrorContainer: Color(0xFFFFDCE3),
+          surface: Color(0xFF1B1B1B),
+          surfaceDim: Color(0xFF121212),
+          surfaceBright: Color(0xFF3D3D3D),
+          surfaceContainerLowest: Color(0xFF121212),
+          surfaceContainerLow: Color(0xFF202020),
+          surfaceContainer: Color(0xFF242424),
+          surfaceContainerHigh: Color(0xFF2A2A2A),
+          surfaceContainerHighest: Color(0xFF323232),
+          surfaceTint: Colors.transparent,
           onSurface: MongrooBrandColors.paper,
-          onSurfaceVariant: Color(0xFFCDBFB0),
-          outline: Color(0xFFA18F7E),
-          outlineVariant: Color(0xFF51463C),
+          onSurfaceVariant: Color(0xFFBDBDBD),
+          outline: Color(0xFF919191),
+          outlineVariant: Color(0xFF404040),
           shadow: Color(0xFF000000),
           inverseSurface: MongrooBrandColors.paper,
           onInverseSurface: MongrooBrandColors.soil,
-          inversePrimary: Color(0xFF668E4F),
+          inversePrimary: MongrooBrandColors.action,
         ),
-        canvas: const Color(0xFF17130F),
+        canvas: const Color(0xFF121212),
         palette: _darkPalette,
       );
 
@@ -213,35 +233,37 @@ abstract final class AppTheme {
         fontSize: 36,
         height: 1.2,
         fontWeight: FontWeight.w800,
-        letterSpacing: -1.3,
+        letterSpacing: -1.0,
       ),
       headlineLarge: base.textTheme.headlineLarge?.copyWith(
         fontSize: 30,
         height: 1.25,
         fontWeight: FontWeight.w800,
-        letterSpacing: -1.0,
+        letterSpacing: -.75,
       ),
       headlineSmall: base.textTheme.headlineSmall?.copyWith(
         fontSize: 22,
         height: 1.3,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.55,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.4,
       ),
       titleLarge: base.textTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         letterSpacing: -0.35,
       ),
       titleMedium: base.textTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.w700,
         letterSpacing: -0.15,
       ),
-      bodyLarge: base.textTheme.bodyLarge?.copyWith(height: 1.55),
-      bodyMedium: base.textTheme.bodyMedium?.copyWith(height: 1.52),
+      bodyLarge:
+          base.textTheme.bodyLarge?.copyWith(height: 1.55, letterSpacing: -.15),
+      bodyMedium:
+          base.textTheme.bodyMedium?.copyWith(height: 1.5, letterSpacing: -.1),
       labelLarge: base.textTheme.labelLarge?.copyWith(
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w600,
       ),
       labelSmall: base.textTheme.labelSmall?.copyWith(
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w500,
         height: 1.4,
       ),
     );
@@ -282,7 +304,7 @@ abstract final class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -293,20 +315,20 @@ abstract final class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w800),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           minimumSize: const Size(48, 48),
           foregroundColor: scheme.onSurface,
-          textStyle: const TextStyle(fontWeight: FontWeight.w800),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
       textSelectionTheme: TextSelectionThemeData(
-        cursorColor: scheme.onSurface,
-        selectionColor: scheme.tertiary.withAlpha(130),
-        selectionHandleColor: scheme.onSurface,
+        cursorColor: scheme.primary,
+        selectionColor: scheme.primary.withAlpha(45),
+        selectionHandleColor: scheme.primary,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -316,7 +338,7 @@ abstract final class AppTheme {
         border: fieldBorder,
         enabledBorder: fieldBorder,
         focusedBorder: fieldBorder.copyWith(
-          borderSide: BorderSide(color: scheme.onSurface, width: 2),
+          borderSide: BorderSide(color: scheme.primary, width: 2),
         ),
       ),
       chipTheme: base.chipTheme.copyWith(
@@ -348,9 +370,7 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: scheme.brightness == Brightness.light
-            ? const Color(0xFF41671F)
-            : scheme.primary,
+        color: scheme.primary,
         linearTrackColor: palette.paperDeep,
       ),
       tooltipTheme: TooltipThemeData(

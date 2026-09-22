@@ -25,7 +25,7 @@ Future<void> _primeBundledWebFallbackFont() async {
     // Web renderer의 기본 family cache를 앱 시작 전에 비워 한글을 원격
     // Noto fallback으로 다시 찾지 않고 번들 서체만 사용하게 한다.
     await (FontLoader('Roboto')
-          ..addFont(rootBundle.load('assets/fonts/GothicA1-Regular.ttf')))
+          ..addFont(rootBundle.load('assets/fonts/WantedSans-Regular.ttf')))
         .load();
   } catch (_) {
     // 서체 캐시 준비가 실패해도 로그인과 로컬 체험 진입은 막지 않는다.
@@ -35,8 +35,8 @@ Future<void> _primeBundledWebFallbackFont() async {
 void _registerBundledFontLicenses() {
   LicenseRegistry.addLicense(() async* {
     yield LicenseEntryWithLineBreaks(
-      const ['Gothic A1'],
-      await rootBundle.loadString('assets/fonts/LICENSE-GothicA1.txt'),
+      const ['Wanted Sans'],
+      await rootBundle.loadString('assets/fonts/LICENSE-WantedSans.txt'),
     );
     yield LicenseEntryWithLineBreaks(
       const ['Galmuri11'],

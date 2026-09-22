@@ -105,11 +105,7 @@ def _validate_reward_budget(reward: dict[str, Any], errors: list[str]) -> None:
         or any(not isinstance(code, str) or not code for code in field_items)
     ):
         errors.append("region.reward.field_items: 현장 재료 코드가 둘 이상 필요합니다")
-    if (
-        objective_value is not None
-        and budget is not None
-        and objective_value > budget
-    ):
+    if objective_value is not None and budget is not None and objective_value > budget:
         errors.append(
             f"region.reward: 목표 재료 가치({objective_value})가 예산({budget})보다 큽니다"
         )
@@ -605,6 +601,48 @@ def _validate_event(event_code: str, event: Any, errors: list[str]) -> None:
         if not isinstance(choice, dict):
             errors.append(f"{choice_prefix}: 객체가 필요합니다")
             continue
+        if "consequence" in choice:
+            if (
+                not isinstance(choice["consequence"], str)
+                or not choice["consequence"].strip()
+            ):
+                errors.append(
+                    f"{choice_prefix}.consequence: 선택 결과 설명이 필요합니다"
+                )
+            if not isinstance(choice.get("collects_loot"), bool):
+                errors.append(
+                    f"{choice_prefix}.collects_loot: 발견물 획득 여부가 필요합니다"
+                )
+            outcomes = choice.get("outcome_text")
+            if not isinstance(outcomes, dict) or any(
+                not isinstance(outcomes.get(key), str) or not outcomes[key].strip()
+                for key in ("clear", "flourish", "detour", "safe")
+            ):
+                errors.append(
+                    f"{choice_prefix}.outcome_text: 판정별 결과 문장이 필요합니다"
+                )
+            effect = choice.get("success_effect")
+            if not isinstance(effect, dict):
+                errors.append(f"{choice_prefix}.success_effect: 객체가 필요합니다")
+            else:
+                for key, value in effect.items():
+                    if key == "finding":
+                        if not isinstance(value, str) or not value.strip():
+                            errors.append(
+                                f"{choice_prefix}.finding: 발견한 단서 이름이 필요합니다"
+                            )
+                    elif (
+                        key not in ("resolve", "trail_light")
+                        or type(value) is not int
+                        or not 0 <= value <= 2
+                    ):
+                        errors.append(
+                            f"{choice_prefix}.success_effect: 지원하지 않는 회복 효과입니다"
+                        )
+                if choice.get("safe") and (effect or choice.get("collects_loot")):
+                    errors.append(
+                        f"{choice_prefix}: 건너뛰기는 발견물이나 회복을 주지 않습니다"
+                    )
         code = choice.get("code")
         if not isinstance(code, str) or not code:
             errors.append(f"{choice_prefix}.code: 값이 필요합니다")

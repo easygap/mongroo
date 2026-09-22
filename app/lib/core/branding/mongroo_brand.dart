@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 
-/// 몽그루 BI에만 사용하는 기준 색입니다.
+/// Interface identity, revised 2026-09-22. See the dated design research.
 abstract final class MongrooBrandColors {
-  static const sprout = Color(0xFFB9EE84);
-  static const soil = Color(0xFF3B1F06);
-  static const paper = Color(0xFFEFEFEF);
+  static const action = Color(0xFF242424);
+  static const ink = Color(0xFF202020);
+  static const signal = Color(0xFFC53B49);
+  static const paper = Color(0xFFFFFFFF);
+
+  // Compatibility with the existing illustrations and shared components.
+  static const sprout = action;
+  static const soil = ink;
 }
 
-/// 확정한 입체 `m` 심볼을 앱 안에서 일관되게 표시합니다.
+/// 작은 화면에서도 잎과 m의 윤곽이 남는 두 색 심볼.
 class MongrooBrandMark extends StatelessWidget {
   const MongrooBrandMark({
     super.key,
     this.size = 48,
     this.withPlate = false,
-    this.semanticLabel = '몽그루, 오늘의 마음이 한 그루 자라나요',
+    this.semanticLabel = '몽그루',
   });
 
   static const assetPath = 'assets/brand/mongroo-symbol.webp';
@@ -24,13 +29,7 @@ class MongrooBrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mark = Image.asset(
-      assetPath,
-      fit: BoxFit.contain,
-      filterQuality: FilterQuality.high,
-      gaplessPlayback: true,
-      excludeFromSemantics: true,
-    );
+    const mark = CustomPaint(painter: _MongrooMarkPainter());
 
     return Semantics(
       image: true,
@@ -54,4 +53,40 @@ class MongrooBrandMark extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MongrooMarkPainter extends CustomPainter {
+  const _MongrooMarkPainter();
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.scale(size.width / 100, size.height / 100);
+    final stem = Paint()
+      ..color = MongrooBrandColors.soil
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(
+        Path()
+          ..moveTo(16, 80)
+          ..lineTo(16, 45)
+          ..cubicTo(16, 18, 49, 18, 49, 45)
+          ..lineTo(49, 80)
+          ..moveTo(49, 45)
+          ..cubicTo(49, 18, 82, 18, 82, 45)
+          ..lineTo(82, 80),
+        stem);
+    canvas.drawPath(
+        Path()
+          ..moveTo(66, 24)
+          ..quadraticBezierTo(62, 3, 90, 7)
+          ..quadraticBezierTo(90, 30, 66, 24)
+          ..close(),
+        Paint()..color = MongrooBrandColors.sprout);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_MongrooMarkPainter oldDelegate) => false;
 }

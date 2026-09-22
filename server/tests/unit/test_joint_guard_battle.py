@@ -167,7 +167,7 @@ def test_the_hug_leaves_an_echo_the_next_round(front_three):
 
 
 def test_deep_sleeptalk_raises_the_next_round_cost_only(front_three):
-    """비용은 다음 라운드에만 오르고, 집중력을 버는 행동은 그대로다."""
+    """비용은 다음 라운드에만 오르고, 기력을 버는 행동은 그대로다."""
     battle, encounter = _start("ledger_keeper", 2, front_three, hp=90)
     profile = front_three[0]
 
@@ -199,8 +199,8 @@ def test_deep_sleeptalk_raises_the_next_round_cost_only(front_three):
     during = skill_costs(battle)
     assert during == [cost + 1 for cost in before], (before, during)
 
-    # 버는 행동은 올리지 않는다. 기본 공격·방어는 비용 키 자체가 없고
-    # 집중력을 `버는` 쪽(`focus_delta`)이라, 여기에 1을 더하면 안 된다.
+    # 버는 행동은 올리지 않는다. 공격·방어는 비용 키 자체가 없고
+    # 기력을 `버는` 쪽(`focus_delta`)이라, 여기에 1을 더하면 안 된다.
     kit = member_battle_kit(
         profile,
         member_state=battle["party"][0],

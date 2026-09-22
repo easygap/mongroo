@@ -228,6 +228,17 @@ class GalleryScreen extends ConsumerWidget {
       backgroundColor: palette.paper,
       appBar: AppBar(
         backgroundColor: palette.paper,
+        leading: IconButton(
+          tooltip: '정원으로',
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go('/garden');
+            }
+          },
+        ),
         title: const Text('마음 식물 박물관'),
         actions: [
           IconButton(
@@ -1661,15 +1672,15 @@ class _PlantGrowthLineage extends StatelessWidget {
       ),
       _GrowthLineageStep(
         stage: 3,
-        title: '주결 분기',
+        title: '주 타입 분기',
         detail: '${dominant.personalityName}이 줄기와 말투의 중심이 됨',
         form: dominant,
       ),
       _GrowthLineageStep(
         stage: 4,
-        title: '보조결 · 기질',
+        title: '보조 타입 · 기질',
         detail: secondary == null
-            ? '주결의 캐릭터 기질과 말걸음이 또렷해짐'
+            ? '캐릭터의 성격과 말투가 정해져요'
             : '${secondary.personalityName}이 색과 반응에 한 겹을 보탬',
         form: dominant,
         secondaryForm: secondary,
@@ -1694,7 +1705,7 @@ class _PlantGrowthLineage extends StatelessWidget {
         ),
         const SizedBox(height: 5),
         Text(
-          '씨앗에서 시작해 기록이 쌓일수록 외형과 식물 캐릭터의 말걸음이 갈라졌어요.',
+          '일기가 쌓이면서 캐릭터의 모습과 말투가 달라졌어요.',
           style: TextStyle(color: palette.inkMuted, height: 1.45),
         ),
         const SizedBox(height: 12),
@@ -1866,7 +1877,7 @@ class _PlantIdentityPanel extends StatelessWidget {
     final conversation = _conversationCopy(plant);
     return Semantics(
       container: true,
-      label: '${plant.name}의 주결, 보조결, 식물 캐릭터 기질과 말걸음',
+      label: '${plant.name}의 주 타입, 보조 타입, 식물 캐릭터 기질과 말투',
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
@@ -1897,16 +1908,16 @@ class _PlantIdentityPanel extends StatelessWidget {
             const SizedBox(height: 12),
             _IdentityRow(
               icon: Icons.filter_vintage_rounded,
-              label: '주결',
+              label: '주 타입',
               value:
                   '${dominant.personalityName} · ${dominant.emotionLabel} 기록이 가장 오래 머문 중심 결',
               accent: formColors.foreground,
             ),
             _IdentityRow(
               icon: Icons.auto_awesome_rounded,
-              label: '보조결',
+              label: '보조 타입',
               value: secondary == null
-                  ? '별도 보조결 없이 주결 하나가 또렷하게 이어졌어요.'
+                  ? '별도 보조 타입 없이 주 타입 하나가 또렷하게 이어졌어요.'
                   : '${secondary.personalityName} · ${secondary.emotionLabel}의 결이 색과 반응에 한 겹 보탰어요.',
               accent: formColors.foreground,
             ),
@@ -1918,7 +1929,7 @@ class _PlantIdentityPanel extends StatelessWidget {
             ),
             _IdentityRow(
               icon: Icons.record_voice_over_rounded,
-              label: '말걸음',
+              label: '말투',
               value: conversation,
               accent: formColors.foreground,
               last: true,

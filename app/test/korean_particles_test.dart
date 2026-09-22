@@ -19,9 +19,9 @@ void main() {
   });
 
   test('로/으로는 ㄹ 받침을 받침 없는 것처럼 다룬다', () {
-    // 다른 조사와 규칙이 하나 다르다. `모아결으로`는 홈 화면에 그대로 나갔다.
-    expect(koreanDirection('모아결'), '모아결로');
-    expect(koreanDirection('햇살결'), '햇살결로');
+    // 다른 조사와 규칙이 하나 다르다. `무지개으로`는 홈 화면에 그대로 나갔다.
+    expect(koreanDirection('무지개'), '무지개로');
+    expect(koreanDirection('햇살'), '햇살로');
     expect(koreanDirection('모자이크형'), '모자이크형으로');
     expect(koreanDirection('뽀또'), '뽀또로');
     // 숫자는 한국어로 읽었을 때를 따른다 - 일·칠·팔은 ㄹ 받침이다.
@@ -33,7 +33,7 @@ void main() {
 
   test('자리표시자를 화면 문자열에 그대로 두지 않는다', () {
     // 서버 쪽에서 `새싹몬이(가) 고른 길과…`가 그대로 나갔다. 앱에도 같은
-    // 모양이 하나 있었다 - `집중력 2이(가) 필요해요`.
+    // 모양이 하나 있었다 - `기력 2이(가) 필요해요`.
     final lib = Directory('lib');
     const placeholders = ['이(가)', '을(를)', '은(는)', '와(과)', '과(와)'];
     final offenders = <String>[];

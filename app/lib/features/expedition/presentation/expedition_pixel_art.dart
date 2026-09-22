@@ -7,17 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../../../core/theme/app_theme.dart';
 
-/// 탐험·전투 화면이 함께 쓰는 도트 표현의 기본 요소.
-///
-/// 규칙은 셋뿐이다.
-///
-/// 1. **화소는 정수 배율로만 키운다.** 배경·캐릭터·적·이펙트가 같은 배율을
-///    써야 한 화면이 한 그림으로 읽힌다. 배율이 제각각이면 캐릭터만 큼직한
-///    도트, 배경만 잔도트가 되어 오려 붙인 것처럼 보인다.
-/// 2. **보간하지 않는다.** [FilterQuality.none]과 `isAntiAlias = false`로만
-///    그린다. 흐려진 도트는 도트가 아니라 저해상도 그림이다.
-/// 3. **UI도 같은 문법이다.** 둥근 모서리·그림자 번짐·유리 효과 대신 1~2화소
-///    테두리와 한 칸 어긋난 그림자만 쓴다.
+/// Sprite sampling remains discrete; interface typography and panels use the app design system.
 abstract final class ExpeditionPixelArt {
   /// 화면 크기와 원화 native 크기로 정수 배율을 정한다.
   ///
@@ -32,24 +22,27 @@ abstract final class ExpeditionPixelArt {
     return needed.ceil().clamp(2, 6);
   }
 
-  /// 도트 글자. 숫자와 한두 단어짜리 게임 라벨에만 쓴다(MASTER.md).
+  /// Compact, readable game labels; no decorative text shadow by default.
   static TextStyle text(
     double size, {
     Color color = AppTheme.onNight,
     Color shadow = const Color(0xFF15100C),
-    double shadowOffset = 2,
+    double shadowOffset = 0,
     FontWeight weight = FontWeight.w700,
   }) =>
       TextStyle(
-        fontFamily: AppTheme.pixelFont,
+        fontFamily: AppTheme.bodyFont,
         fontSize: size,
         height: 1.15,
         color: color,
         fontWeight: weight,
         fontFeatures: const [FontFeature.tabularFigures()],
-        shadows: [
-          Shadow(color: shadow, offset: Offset(shadowOffset, shadowOffset)),
-        ],
+        shadows: shadowOffset == 0
+            ? null
+            : [
+                Shadow(
+                    color: shadow, offset: Offset(shadowOffset, shadowOffset)),
+              ],
       );
 }
 
@@ -91,7 +84,8 @@ abstract final class ExpeditionPixelImages {
     return _pending.putIfAbsent(asset, () async {
       try {
         final bytes = await rootBundle.load(asset);
-        final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
+        final codec =
+            await ui.instantiateImageCodec(bytes.buffer.asUint8List());
         final frame = await codec.getNextFrame();
         codec.dispose();
         _ready[asset] = frame.image;
@@ -262,18 +256,14 @@ class _PixelSheetCellPainter extends CustomPainter {
       oldDelegate.alignment != alignment;
 }
 
-/// 도트 UI 판.
-///
-/// 둥근 카드 대신 쓰는 것. 바깥 1칸 어두운 선, 안쪽 1칸 밝은 선, 그리고
-/// 오른쪽 아래로 한 칸 밀린 단단한 그림자. 네 귀퉁이는 한 칸씩 잘라 낸다 —
-/// 도트 시대의 창이 그렇게 생겼고, 지금의 도트 게임들도 그 문법을 지킨다.
+/// Shared game panel. Legacy parameters remain compatible with existing screens.
 class PixelPanel extends StatelessWidget {
   const PixelPanel({
     super.key,
     required this.child,
     this.unit = 2,
-    this.fill = const Color(0xF2201913),
-    this.border = const Color(0xFF0E0B08),
+    this.fill = const Color(0xFF202530),
+    this.border = const Color(0xFF202530),
     this.highlight = const Color(0x40FFFFFF),
     this.shadow = const Color(0x8A000000),
     this.padding = const EdgeInsets.fromLTRB(8, 6, 8, 6),
@@ -327,42 +317,15 @@ class PixelPanelPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final u = unit;
-    final body = Rect.fromLTWH(0, 0, size.width - u, size.height - u);
-    Path frame(Rect r, double cut) {
-      if (!chamfer || cut <= 0) return Path()..addRect(r);
-      return Path()
-        ..moveTo(r.left + cut, r.top)
-        ..lineTo(r.right - cut, r.top)
-        ..lineTo(r.right, r.top + cut)
-        ..lineTo(r.right, r.bottom - cut)
-        ..lineTo(r.right - cut, r.bottom)
-        ..lineTo(r.left + cut, r.bottom)
-        ..lineTo(r.left, r.bottom - cut)
-        ..lineTo(r.left, r.top + cut)
-        ..close();
-    }
-
-    final flat = Paint()..isAntiAlias = false;
-    // 그림자: 한 칸 오른쪽 아래.
-    canvas.drawPath(
-      frame(body.shift(Offset(u, u)), u),
-      flat..color = shadow,
-    );
-    // 테두리.
-    canvas.drawPath(frame(body, u), flat..color = border);
-    // 안쪽 면.
-    final inner = body.deflate(u);
-    canvas.drawPath(frame(inner, u), flat..color = fill);
-    // 위·왼쪽 밝은 선. 유리 광택이 아니라 판의 두께를 말하는 선이다.
-    canvas.drawRect(
-      Rect.fromLTWH(inner.left + u, inner.top, inner.width - u * 2, u),
-      flat..color = highlight,
-    );
-    canvas.drawRect(
-      Rect.fromLTWH(inner.left, inner.top + u, u, inner.height - u * 2),
-      flat..color = highlight,
-    );
+    final body = RRect.fromRectAndRadius(
+        (Offset.zero & size).deflate(.75), const Radius.circular(8));
+    canvas.drawRRect(body, Paint()..color = fill);
+    canvas.drawRRect(
+        body,
+        Paint()
+          ..color = border
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5);
   }
 
   @override
@@ -375,7 +338,7 @@ class PixelPanelPainter extends CustomPainter {
       oldDelegate.chamfer != chamfer;
 }
 
-/// 도트 게이지. 체력·장벽·집중력이 같은 모양을 쓴다.
+/// 도트 게이지. 체력·장벽·기력이 같은 모양을 쓴다.
 ///
 /// 채워진 만큼을 칸 단위로 끊고, 25%마다 눈금을 판다. 값이 색으로만
 /// 말하지 않게 호출부가 숫자를 옆에 둔다.
@@ -385,11 +348,11 @@ class PixelBar extends StatelessWidget {
     required this.value,
     this.unit = 2,
     this.height = 8,
-    this.color = const Color(0xFF7ED67C),
-    this.lowColor = const Color(0xFFF08A6B),
+    this.color = const Color(0xFFA7BCFF),
+    this.lowColor = const Color(0xFFFF91A6),
     this.lowThreshold = .35,
-    this.track = const Color(0xFF2A211A),
-    this.border = const Color(0xFF0E0B08),
+    this.track = const Color(0xFF303744),
+    this.border = const Color(0xFF101216),
     this.ticks = 4,
   });
 

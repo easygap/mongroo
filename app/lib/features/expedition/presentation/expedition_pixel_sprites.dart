@@ -40,6 +40,24 @@ String expeditionPixelEnemyAsset({
   return 'assets/adventure/pixel/keepers/$keeper.png';
 }
 
+/// 전투에서는 작은 지도용 도트 대신 이미 제작된 상태별 원화를 사용한다.
+/// 아직 상태 원화가 없는 보스는 자신의 도트를 그대로 유지한다.
+String expeditionEnemyPoseAsset(String mapAsset, String pose) {
+  if (mapAsset.contains('/pixel/tangles/')) {
+    final code = mapAsset.split('/').last.replaceFirst('.png', '');
+    return expeditionTangleAssetPath(code, pose);
+  }
+  if (mapAsset.endsWith('/keepers/ledger_keeper.png')) {
+    return switch (pose) {
+      'attack' => expeditionLedgerKeeperAttackAsset,
+      'hit' => expeditionLedgerKeeperHitAsset,
+      'defeated' || 'release' => expeditionLedgerKeeperDefeatedAsset,
+      _ => expeditionLedgerKeeperIdleAsset,
+    };
+  }
+  return mapAsset;
+}
+
 /// 아군 전투 도트 경로. 없으면 `null`이고 호출부가 걷기 시트로 떨어진다.
 String? expeditionPixelActorAsset(String? speciesCode) {
   final slug = (speciesCode ?? '')

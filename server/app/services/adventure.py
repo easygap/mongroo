@@ -1161,7 +1161,7 @@ async def _story_collection_payload(db: AsyncSession, user_id: int) -> dict:
                     )
                 )
                 outcome_name = (
-                    "성장 공명" if run.outcome_code == "resonant" else "차분한 발견"
+                    "성장 보너스" if run.outcome_code == "resonant" else "차분한 발견"
                 )
                 detail = f"{approach_name} · {outcome_name}"
             dungeon_items.append(

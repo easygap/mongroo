@@ -50,7 +50,7 @@ from app.content.expeditions.joint_guard_run import (
 #: 밴드를 재는 기준 손.
 #:
 #: 앱의 AUTO(`_autoActionFor`)는 **위험하면 방어하고, 아니면 약점에 맞는 가장
-#: 센 스킬을, 없으면 기본 공격**을 고른다. 시뮬레이터의 `weakness_first`가 같은
+#: 센 스킬을, 없으면 공격**을 고른다. 시뮬레이터의 `weakness_first`가 같은
 #: 손이라 이것을 기준으로 삼는다. 실제로 앱에 들어 있는 유일한 자동 손이고,
 #: 사람은 최소한 이만큼은 하므로 승률의 **하한**으로 읽을 수 있다.
 REFERENCE_POLICY: PolicyCode = "weakness_first"
@@ -539,7 +539,7 @@ def format_report(report: Mapping[str, Any]) -> str:
             f"  {beast:16s} clear={summary.get('clear_rate')}% "
             f"rounds={summary.get('average_rounds')}"
         )
-    lines += ["", "성장결별 (난이도별)"]
+    lines += ["", "성장 타입별 (난이도별)"]
     for difficulty, forms in report["form_by_difficulty"].items():
         rates = [s.get("clear_rate") for s in forms.values() if s.get("clear_rate")]
         spread = round(max(rates) - min(rates), 2) if rates else None

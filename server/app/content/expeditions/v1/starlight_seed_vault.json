@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "content_version": "2026.08.18-story-art-v10",
+  "content_version": "2026.09.16-field-decisions-v11",
   "region": {
     "code": "starlight_seed_vault",
     "name": "별빛 씨앗 보관고",
     "short_name": "보관고",
-    "description": "언젠가를 위해 모든 씨앗을 재워 둔 곳이에요. 기다리는 것과 미루는 것이 어떻게 다른지 묻게 돼요.",
+    "description": "난방이 멈춘 씨앗 보관고. 작업자의 정비 기록을 찾는다.",
     "recommended_stage": 4,
     "stat_cap": 9,
     "reward": {
@@ -30,13 +30,13 @@
         "code": "vault_someday_shelves",
         "chapter": 1,
         "phase": "setup",
-        "title": "언젠가라는 이름표",
-        "caption": "모든 칸이 `언젠가`라고만 적혀 있어요. 그게 며칠인지는 아무 데도 없어요.",
+        "title": "빈 날짜 칸",
+        "caption": "파종일을 적는 칸이 전부 비어 있다. 봉투마다 씨앗 수만 꼼꼼하게 적혀 있다.",
         "scene_key": "dungeon_gate",
         "codex_entry": "보관고.chapter.1"
       },
-      "title": "문턱의 별가루",
-      "summary": "쓸리지 않은 별가루가 성에와 엉겨 문턱을 덮고 있어요.",
+      "title": "비어 있는 파종일",
+      "summary": "문턱까지 성에가 쌓였다. 난방이 꺼진 이유를 찾아 안으로 들어간다.",
       "tangles": [
         "snarled_stardust"
       ],
@@ -50,13 +50,13 @@
         "code": "vault_one_awake",
         "chapter": 2,
         "phase": "setup",
-        "title": "혼자 깨어 있던 씨앗",
-        "caption": "다 자는 칸에서 하나만 깨어 있었어요. 기다리는 것과 미루는 것은 다른 일이었어요.",
+        "title": "금이 간 껍질",
+        "caption": "서랍 하나에서 두드리는 소리가 났다. 씨앗의 껍질이 벌어지고 있다.",
         "scene_key": "treasure_vault",
         "codex_entry": "보관고.chapter.2"
       },
       "title": "잠들지 못한 씨앗",
-      "summary": "혼자 깨어 있는 씨앗을 어떻게 대할지 골라요.",
+      "summary": "서랍 하나에서 씨앗 껍질이 갈라진다. 상태를 살피거나 작업등을 손본다.",
       "event_code": "awake_seed"
     },
     {
@@ -67,13 +67,13 @@
         "code": "vault_dust_of_stars",
         "chapter": 3,
         "phase": "rising",
-        "title": "쓸리지 않은 별가루",
-        "caption": "선반 사이에 별가루가 쌓여 있어요. 아무도 지나가지 않은 시간만큼 두꺼워요.",
+        "title": "선반의 먼지",
+        "caption": "먼지가 쌓인 선반에 손자국 하나. 손자국은 안쪽 난방관까지 이어진다.",
         "scene_key": "treasure_vault",
         "codex_entry": "보관고.chapter.3"
       },
       "title": "구르는 씨앗함",
-      "summary": "별가루에 밀린 씨앗함들이 선반 사이를 제멋대로 굴러다녀요.",
+      "summary": "열린 선반에서 씨앗함이 굴러 나온다. 빈 바닥을 골라 움직인다.",
       "tangles": [
         "snarled_stardust",
         "rolling_seedbox"
@@ -88,13 +88,13 @@
         "code": "vault_time_rewinds",
         "chapter": 4,
         "phase": "turn",
-        "title": "되감기는 방",
-        "caption": "시계가 거꾸로 돌 때마다 방이 조금씩 더 차가워져요. 시간이 아니라 마음이 되감기고 있었어요.",
+        "title": "거꾸로 돈 태엽",
+        "caption": "태엽의 톱니 하나가 뒤집혀 끼었다. 바늘이 움직일 때마다 난방 밸브가 잠긴다.",
         "scene_key": "root_tunnel",
         "codex_entry": "보관고.chapter.4"
       },
       "title": "거꾸로 선 태엽",
-      "summary": "되감긴 태엽 하나가 곧게 서서 통로를 가로막아요.",
+      "summary": "뒤집힌 태엽이 통로를 막는다. 돌아가는 방향을 보고 대응한다.",
       "tangles": [
         "backwound_clockspring"
       ],
@@ -108,13 +108,13 @@
         "code": "vault_warm_shelf",
         "chapter": 5,
         "phase": "rising",
-        "title": "남은 온기",
-        "caption": "누군가 오래 앉았던 자리가 아직 따뜻해요. 여기 있었던 사람도 시작을 망설였던 것 같아요.",
+        "title": "작업자의 자리",
+        "caption": "의자 밑에서 작업 장갑을 찾았다. 손가락 끝마다 흙이 말라붙었다.",
         "scene_key": "root_tunnel",
         "codex_entry": "보관고.chapter.5"
       },
       "title": "온기 남은 선반",
-      "summary": "숨을 고르고 오늘 본 것을 이야기해요."
+      "summary": "온기가 남은 관 옆에서 등불을 채운다."
     },
     {
       "no": 6,
@@ -124,13 +124,13 @@
         "code": "vault_who_locked_it",
         "chapter": 6,
         "phase": "truth",
-        "title": "잠근 사람",
-        "caption": "칸을 잠근 것은 바깥의 누군가가 아니라 이 보관고 자신이었어요. 깨우면 잃을까 봐요.",
+        "title": "정비 일지",
+        "caption": "“온도를 올린 뒤 첫 서랍부터 열 것.” 작업 일지는 그 줄에서 끝났다.",
         "scene_key": "root_tunnel",
         "codex_entry": "보관고.chapter.6"
       },
       "title": "거꾸로 도는 태엽",
-      "summary": "되감기는 시계를 어떻게 다룰지 골라요.",
+      "summary": "시계가 밸브를 거꾸로 잠근다. 톱니를 살필지, 작업등부터 켤지 결정한다.",
       "event_code": "backward_spring"
     },
     {
@@ -141,13 +141,13 @@
         "code": "vault_wind_it_forward",
         "chapter": 7,
         "phase": "climax",
-        "title": "앞으로 감는 법",
-        "caption": "태엽은 멈추는 게 아니라 앞으로 감는 것이었어요. 방이 조금 따뜻해져요.",
+        "title": "돌아온 온기",
+        "caption": "톱니를 맞추자 난방관이 울렸다. 가장 가까운 서랍의 성에부터 녹았다.",
         "scene_key": "treasure_vault",
         "codex_entry": "보관고.chapter.7"
       },
       "title": "발아실 앞",
-      "summary": "씨앗함과 태엽이 마지막 문 앞에 뒤엉켜 쌓였어요.",
+      "summary": "발아실 문 앞에 씨앗함이 쌓였다. 마지막 태엽이 그 위를 구른다.",
       "tangles": [
         "rolling_seedbox",
         "backwound_clockspring"
@@ -162,13 +162,13 @@
         "code": "vault_today_written",
         "chapter": 8,
         "phase": "resolution",
-        "title": "오늘이라고 적힌 칸",
-        "caption": "첫 싹이 오른 칸에 `오늘`이 적혀요. 다음 편지는 마음나무 관측실로 향해요.",
+        "title": "파종 날짜",
+        "caption": "첫 씨앗을 빈 화분으로 옮겼다. 포장지 안쪽에 마음나무 관측실 열쇠가 들어 있었다.",
         "scene_key": "monster_den",
         "codex_entry": "보관고.chapter.8"
       },
       "title": "발아 시계",
-      "summary": "방 한가운데의 큰 시계가 태엽을 감기 시작해요. 다 감기기 전에 멈출 자리를 찾아야 해요.",
+      "summary": "큰 시계가 태엽을 감는다. 공격이 올 자리와 남은 행동을 확인한다.",
       "event_code": "germination_clock",
       "weakness": "courage"
     }
@@ -434,9 +434,9 @@
   ],
   "events": {
     "awake_seed": {
-      "title": "잠들지 못한 씨앗",
-      "text": "혼자 깨어 있는 씨앗이 아주 작게 떨고 있어요. 어떻게 할까요?",
-      "bubble": "혼자 깨어 있는 씨앗이 작게 떨어요.",
+      "title": "두드리는 서랍",
+      "text": "서랍 안에서 씨앗 하나가 굴러다닌다. 바닥에는 금속표가, 옆 칸에는 씨앗을 감쌌던 천과 마른 심지가 있다.",
+      "bubble": "서랍 안에서 톡, 소리가 난다.",
       "tags": [
         "puzzle",
         "mystery"
@@ -444,32 +444,63 @@
       "choices": [
         {
           "code": "let_it_wake",
-          "label": "깨어 있기로 한 선택을 존중한다",
+          "label": "씨앗 아래의 금속표를 살핀다",
           "stat": "courage",
           "difficulty": 8,
-          "resolve_cost": 1
+          "resolve_cost": 1,
+          "consequence": "성공하면 파종표와 발견물 획득",
+          "collects_loot": true,
+          "outcome_text": {
+            "flourish": "금속표에는 필요한 온도와 파종 시기가 적혀 있었다.",
+            "clear": "금속표에는 필요한 온도와 파종 시기가 적혀 있었다.",
+            "detour": "씨앗이 굴러 표를 가렸다. 깨뜨리지 않으려고 손을 멈췄다.",
+            "safe": "금속표에는 필요한 온도와 파종 시기가 적혀 있었다."
+          },
+          "success_effect": {
+            "finding": "파종표"
+          }
         },
         {
           "code": "warm_gently",
-          "label": "손으로 감싸 온도를 맞춰 준다",
+          "label": "씨앗을 받치고 등불 심지를 간다",
           "stat": "care",
           "difficulty": 8,
-          "resolve_cost": 1
+          "resolve_cost": 1,
+          "consequence": "성공하면 길빛 2 회복. 발견물 없음",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "천 위에서 씨앗이 멈췄다. 옆 칸의 마른 심지를 등불에 갈아 끼웠다.",
+            "clear": "천 위에서 씨앗이 멈췄다. 옆 칸의 마른 심지를 등불에 갈아 끼웠다.",
+            "detour": "천을 대자 먼지가 일었다. 서랍을 조금 열어 두었다.",
+            "safe": "천 위에서 씨앗이 멈췄다. 옆 칸의 마른 심지를 등불에 갈아 끼웠다."
+          },
+          "success_effect": {
+            "trail_light": 2
+          }
         },
         {
           "code": "close_again",
-          "label": "칸을 다시 닫고 지나간다",
+          "label": "서랍을 조금 열어 둔다",
           "stat": null,
           "difficulty": 0,
           "resolve_cost": 0,
-          "safe": true
+          "safe": true,
+          "consequence": "소모 없음. 이번 발견물은 건너뜁니다.",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "씨앗이 끼지 않을 만큼만 서랍을 열고 지나갔다.",
+            "clear": "씨앗이 끼지 않을 만큼만 서랍을 열고 지나갔다.",
+            "detour": "씨앗이 끼지 않을 만큼만 서랍을 열고 지나갔다.",
+            "safe": "씨앗이 끼지 않을 만큼만 서랍을 열고 지나갔다."
+          },
+          "success_effect": {}
         }
       ]
     },
     "backward_spring": {
-      "title": "거꾸로 도는 태엽",
-      "text": "벽시계가 되감기고 있어요. 이 방의 시간을 어떻게 다룰까요?",
-      "bubble": "벽시계가 거꾸로 되감기고 있어요.",
+      "title": "뒤집힌 톱니",
+      "text": "톱니 하나가 반대로 끼어 있다. 시계 뒤에는 정비표와 작은 기름통이 걸렸다.",
+      "bubble": "톱니 하나가 반대로 끼었다.",
       "tags": [
         "puzzle",
         "mystery"
@@ -477,25 +508,56 @@
       "choices": [
         {
           "code": "count_teeth",
-          "label": "톱니 수를 세어 되감긴 만큼을 잰다",
+          "label": "정비표와 톱니를 대조한다",
           "stat": "focus",
           "difficulty": 8,
-          "resolve_cost": 1
+          "resolve_cost": 1,
+          "consequence": "성공하면 정비표와 발견물 획득",
+          "collects_loot": true,
+          "outcome_text": {
+            "flourish": "정비표의 네 번째 톱니가 반대였다. 난방관 위치도 확인했다.",
+            "clear": "정비표의 네 번째 톱니가 반대였다. 난방관 위치도 확인했다.",
+            "detour": "작은 톱니를 놓쳤다. 바닥에서 다시 찾느라 시간이 들었다.",
+            "safe": "정비표의 네 번째 톱니가 반대였다. 난방관 위치도 확인했다."
+          },
+          "success_effect": {
+            "finding": "정비표"
+          }
         },
         {
           "code": "hold_the_hand",
-          "label": "바늘을 붙잡아 지금에 멈춰 둔다",
+          "label": "바늘을 고정하고 기름을 넣는다",
           "stat": "courage",
           "difficulty": 8,
-          "resolve_cost": 1
+          "resolve_cost": 1,
+          "consequence": "성공하면 길빛 2 회복. 발견물 없음",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "마른 축에 기름을 넣었다. 남은 기름은 등불에 썼다.",
+            "clear": "마른 축에 기름을 넣었다. 남은 기름은 등불에 썼다.",
+            "detour": "바늘이 손에서 빠져나왔다. 무리하게 잡지 않고 놓았다.",
+            "safe": "마른 축에 기름을 넣었다. 남은 기름은 등불에 썼다."
+          },
+          "success_effect": {
+            "trail_light": 2
+          }
         },
         {
           "code": "let_it_turn",
-          "label": "건드리지 않고 지나간다",
+          "label": "시계는 건드리지 않는다",
           "stat": null,
           "difficulty": 0,
           "resolve_cost": 0,
-          "safe": true
+          "safe": true,
+          "consequence": "소모 없음. 이번 발견물은 건너뜁니다.",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "시계 위치만 적어 두었다. 째깍 소리는 계속됐다.",
+            "clear": "시계 위치만 적어 두었다. 째깍 소리는 계속됐다.",
+            "detour": "시계 위치만 적어 두었다. 째깍 소리는 계속됐다.",
+            "safe": "시계 위치만 적어 두었다. 째깍 소리는 계속됐다."
+          },
+          "success_effect": {}
         }
       ]
     },
@@ -585,7 +647,7 @@
             "focus_reward": 1,
             "tone": "moonlit",
             "rule_name": "성에 붙듦",
-            "rule_summary": "약점을 맞히지 못한 라운드에는 수호 장벽이 2 회복돼요.",
+            "rule_summary": "약점을 맞히지 못한 라운드에는 체력이 2 회복돼요.",
             "phase_gate": "resolve_intent",
             "intro_caption": "톱니 사이에 성에가 하얗게 앉았어요.",
             "intents": [
@@ -719,53 +781,53 @@
   "run_threads": [
     {
       "code": "vault_stopped_clock",
-      "title": "멈춘 발아 시계",
+      "title": "멎은 난방 시계",
       "seed_variants": [
-        "발아 시계의 바늘이 같은 눈금 앞에서 떨기만 하고 넘어가지 못해요.",
-        "보관고의 모래시계들이 전부 위아래 정확히 절반씩에서 멈춰 있어요."
+        "시계는 돌아가는데 보관고는 차갑다. 분침이 움직일 때마다 관에서 딱 소리가 난다.",
+        "모든 온도계가 같은 자리에 멎었다. 시계 아래의 난방관만 서리가 끼지 않았다."
       ],
       "echo_variants": [
-        "멈춘 눈금 자리에 아주 작은 씨앗 하나가 끼워져 있어요.",
-        "시계지기의 태엽 소리가 벽 안쪽에서 한 박자 느리게 들려요."
+        "시계 뒤의 톱니 하나가 뒤집혀 끼었다. 밸브를 여는 대신 잠그고 있었다.",
+        "작업 일지에는 시계 점검 표시가 있다. 마지막 표시 바로 뒤부터 온도가 내려갔다."
       ],
       "payoff_variants": {
-        "careful": "씨앗을 함부로 빼지 않고 흙 한 줌을 받쳐 줘요. 씨앗이 스스로 굴러 내려오고 바늘이 한 칸 나아가요.",
-        "bold": "태엽을 힘껏 감아요. 시계가 크게 한 바퀴 돌고, 미뤄 둔 발아 알림이 별빛처럼 쏟아져요.",
-        "relational": "시계지기가 바늘을 붙잡고 있었어요. ‘이 씨앗의 때가 아직이라서.’ 함께 기다려 주기로 해요."
+        "careful": "톱니의 방향을 맞춰 끼웠다. 분침이 한 칸 움직이자 난방관에서 온기가 올라왔다.",
+        "bold": "시계와 밸브를 잇는 걸쇠를 풀었다. 수동으로 밸브를 열자 가장 아래 서랍에서 소리가 났다.",
+        "relational": "대원에게 온도계를 맡기고 밸브를 조금씩 열었다. 눈금이 오르자 멈추라는 손짓이 왔다."
       }
     },
     {
       "code": "vault_unsorted_starlight",
-      "title": "자리를 잃은 별빛",
+      "title": "섞인 씨앗 봉투",
       "seed_variants": [
-        "거울을 어느 각도로 돌려도 그늘에 남는 선반이 딱 하나 있어요.",
-        "바닥 틈에서 빛줄기가 뿌리처럼 갈라져 나와요. 위가 아니라 아래에서 오는 빛이에요."
+        "봉투에는 씨앗 수만 적혀 있다. 파종 날짜와 품종 칸은 모두 비었다.",
+        "선반 번호는 순서대로인데 봉투 번호는 뒤섞였다. 급하게 다시 넣은 흔적이다."
       ],
       "echo_variants": [
-        "그늘진 선반의 씨앗함에만 서리가 앉지 않아요. 따뜻한 무언가가 지나간 자리예요.",
-        "빛의 뿌리를 따라가면 거울들이 스스로 조금씩 각도를 바꿔요."
+        "먼지 위 손자국이 난방관까지 이어진다. 관 옆에 빈 봉투 한 장이 떨어져 있다.",
+        "봉투를 빛에 비추니 지운 이름이 보인다. 작업 일지의 첫 품종과 같다."
       ],
       "payoff_variants": {
-        "careful": "거울 하나를 반의반 칸만 돌려요. 그늘졌던 선반에 별빛이 한 줄 눕고, 씨앗함이 반짝 대답해요.",
-        "bold": "거울 전부를 한 번에 재배열해요. 보관고 바닥에 빛의 뿌리 지도가 활짝 펼쳐져요.",
-        "relational": "대원들이 거울을 하나씩 맡아 함께 돌려요. 서로의 빛이 겹치는 자리에서 씨앗함 하나가 깨어나요."
+        "careful": "봉투 속 씨앗을 목록과 하나씩 대조했다. 처음 심을 품종을 찾았다.",
+        "bold": "가장 먼저 갈라진 씨앗을 빈 화분에 옮겼다. 포장지 안쪽에서 작은 열쇠가 떨어졌다.",
+        "relational": "대원마다 선반 하나씩 맡아 번호를 불렀다. 빠진 봉투는 난방관 아래에 있었다."
       }
     },
     {
       "code": "vault_bottled_dawn",
-      "title": "새벽을 보관한 병",
+      "title": "남겨 둔 작업 장갑",
       "seed_variants": [
-        "선반 안쪽에서 병 하나가 새벽 색으로 은은하게 밝아요. 라벨은 비어 있어요.",
-        "보관고의 밤 순찰 시간인데 한 구역만 동트기 직전처럼 환해요."
+        "의자 밑에서 작업 장갑을 찾았다. 손가락 끝에 흙이 말라붙어 있다.",
+        "작업대에는 오른손 장갑만 있다. 왼쪽 장갑 모양의 먼지 자국은 선반 아래로 이어진다."
       ],
       "echo_variants": [
-        "병을 가까이서 보면 빛 속에 아주 작은 지평선이 떠 있어요.",
-        "빈 라벨 뒷면에 시계지기의 손글씨로 ‘아직’이라고만 적혀 있어요."
+        "장갑 안쪽에 작은 열쇠 자국이 눌려 있다. 열쇠는 빠지고 실밥만 남았다.",
+        "작업 일지 마지막 줄은 “온도를 올린 뒤 첫 서랍부터.” 그 아래는 비어 있다."
       ],
       "payoff_variants": {
-        "careful": "병을 흔들지 않고 창가 선반에 옮겨 둬요. 병 속 새벽이 진짜 새벽과 나란히 밝아 와요.",
-        "bold": "마개를 아주 조금 열어요. 한 줌의 새벽이 흘러나오고, 보관고의 씨앗들이 일제히 기지개를 켜요.",
-        "relational": "시계지기가 병을 받아 들어요. ‘첫 발아의 아침을 담아 뒀지.’ 언젠가 온실 밖으로 떠나는 날 열 거래요."
+        "careful": "실밥이 같은 포장지를 찾아 폈다. 관측실 열쇠가 봉한 틈에 걸려 있었다.",
+        "bold": "첫 서랍을 열어 싹이 튼 씨앗을 옮겼다. 바닥의 나무판 아래에 열쇠가 놓여 있었다.",
+        "relational": "서랍을 함께 들어 올렸다. 대원 한 명이 작업 장갑을 끼고 뜨거운 관 옆의 열쇠를 꺼냈다."
       }
     }
   ]

@@ -99,7 +99,7 @@ class CollectionCatalogView extends StatelessWidget {
                 if (resonanceItems.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   const Text(
-                    '마음결 기념품',
+                    '성장 기념품',
                     style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 4),
@@ -837,7 +837,7 @@ class _CollectionStorySheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '모든 마음결 기념품은 같은 조건으로 열리며 성장 속도나 보상에는 영향을 주지 않아요.',
+                  '모든 성장 기념품은 같은 조건으로 열리며 성장 속도나 보상에는 영향을 주지 않아요.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),

@@ -49,7 +49,7 @@ class _ResultSettlingPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final outcome = expedition.lastResolution?.outcome;
+    final outcome = expedition.lastResolution?.displayText;
     return MongrooPanel(
       color: Theme.of(context).colorScheme.primaryContainer,
       child: Row(
@@ -79,7 +79,7 @@ class _TutorialCoachCard extends StatelessWidget {
     4: '고유 스킬로 판정을 바꿔 보세요',
     5: '다른 길도 틀린 길은 아니에요',
     6: '목표를 확보했어요',
-    7: '수호전은 직접 지휘해요',
+    7: '수호전은 직접 전투해요',
   };
   static const _descriptions = {
     1: '현재 자라는 캐릭터와 안내자가 함께해요. 보상과 관계없이 언제든 다시 연습할 수 있어요.',
@@ -88,7 +88,7 @@ class _TutorialCoachCard extends StatelessWidget {
     4: '강조된 고유 스킬은 이번 사건의 판정이나 손실을 즉시 바꿔요. 그냥 해결해도 괜찮아요.',
     5: '목표 방향과 발견 방향 중 원하는 길을 골라요. 이 연습에서는 되돌아가도 불이익이 없어요.',
     6: '지금 귀환하면 발견과 기록이 저장돼요. 더 살펴보고 싶다면 다른 길을 먼저 둘러봐도 돼요.',
-    7: '적의 약점과 다음 공격을 보고, 대원을 한 명씩 골라 카드를 누르면 바로 행동해요. 누가 먼저 움직이는지가 집중력과 방어를 바꿔요. 자동 지휘는 선택 기능이며 기본은 수동이에요.',
+    7: '적의 약점과 다음 공격을 보고, 대원을 한 명씩 골라 카드를 누르면 바로 행동해요. 누가 먼저 움직이는지가 기력과 방어를 바꿔요. 자동 전투는 선택 기능이며 기본은 수동이에요.',
   };
 
   @override

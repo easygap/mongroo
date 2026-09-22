@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "content_version": "2026.08.18-story-art-v10",
+  "content_version": "2026.09.16-field-decisions-v11",
   "region": {
     "code": "heartwood_observatory",
     "name": "마음나무 관측실",
     "short_name": "관측실",
-    "description": "마음나무의 나이테를 오래 지켜본 곳이에요. 기록은 가득한데 읽어 줄 사람이 없어, 마지막 답장이 어디로 가야 할지 알게 돼요.",
+    "description": "온실이 내려다보이는 관측실. 마지막 편지의 발신인을 찾는다.",
     "recommended_stage": 5,
     "stat_cap": 10,
     "reward": {
@@ -30,13 +30,13 @@
         "code": "heartwood_unopened",
         "chapter": 1,
         "phase": "setup",
-        "title": "펼친 자국 없는 벽",
-        "caption": "기록이 벽을 가득 채웠는데 펼쳐 본 자국이 없어요. 남기기만 하고 아무도 읽지 않았어요.",
+        "title": "열지 않은 기록",
+        "caption": "벽에 꽂힌 기록은 손도 타지 않았다. 창가의 일지 한 권만 책등이 닳았다.",
         "scene_key": "dungeon_gate",
         "codex_entry": "관측실.chapter.1"
       },
-      "title": "계단의 나이테 조각",
-      "summary": "떨어져 나온 나이테 조각들이 나선 계단에 얽혀 있어요.",
+      "title": "먼지 쌓인 관측실",
+      "summary": "나선 계단에 나무 조각이 쌓였다. 창가에는 일지 한 권이 펴져 있다.",
       "tangles": [
         "ring_shard_tangle"
       ],
@@ -50,13 +50,13 @@
         "code": "heartwood_mixed_years",
         "chapter": 2,
         "phase": "setup",
-        "title": "섞여 버린 해",
-        "caption": "낱장이 순서를 잃었어요. 순서가 없으면 기록은 이야기가 되지 못해요.",
+        "title": "찢어진 순서",
+        "caption": "흩어진 종이의 찢어진 면이 맞아떨어진다. 마지막 장에는 온실 그림이 있다.",
         "scene_key": "moon_tower",
         "codex_entry": "관측실.chapter.2"
       },
       "title": "겹친 낱장",
-      "summary": "섞인 관측 기록을 어떻게 되돌릴지 골라요.",
+      "summary": "관측 기록의 낱장이 섞였다. 찢긴 면을 맞추거나 등불을 손본다.",
       "event_code": "scattered_pages"
     },
     {
@@ -67,13 +67,13 @@
         "code": "heartwood_one_off_year",
         "chapter": 3,
         "phase": "rising",
-        "title": "방향이 다른 한 해",
-        "caption": "그해의 나이테만 반대로 감겨 있어요. 무언가를 견디던 해였어요.",
+        "title": "나무의 흠집",
+        "caption": "나이테 위로 못 자국이 지나간다. 그해 이 자리에 표지판이 걸렸던 모양이다.",
         "scene_key": "moon_tower",
         "codex_entry": "관측실.chapter.3"
       },
       "title": "흩어진 낱장",
-      "summary": "나이테 조각 사이로 관측 기록 낱장이 순서 없이 날려요.",
+      "summary": "계단 위에서 낱장이 날아온다. 나무 조각 뒤에 숨은 통로를 찾는다.",
       "tangles": [
         "ring_shard_tangle",
         "scattered_records"
@@ -88,13 +88,13 @@
         "code": "heartwood_far_light",
         "chapter": 4,
         "phase": "turn",
-        "title": "창밖의 작은 불빛",
-        "caption": "창턱에서 보면 온실 불빛이 아주 작게 켜져 있어요. 아직 누가 기다리고 있어요.",
+        "title": "창밖의 불빛",
+        "caption": "먼 온실에 불이 켜져 있다. 창문을 열자 익숙한 물뿌리개 소리가 들린다.",
         "scene_key": "root_tunnel",
         "codex_entry": "관측실.chapter.4"
       },
       "title": "헝클어진 관측기",
-      "summary": "렌즈와 실이 서로 감겨 관측기가 통째로 헝클어졌어요.",
+      "summary": "렌즈에 감긴 실이 관측기를 끌어당긴다. 움직이는 순서를 살핀다.",
       "tangles": [
         "matted_observatory"
       ],
@@ -108,13 +108,13 @@
         "code": "heartwood_someone_sat",
         "chapter": 5,
         "phase": "rising",
-        "title": "오래 앉았던 자리",
-        "caption": "창가 자리만 반들반들해요. 여기서 오래 바깥을 본 사람이 있었어요.",
+        "title": "창가 의자",
+        "caption": "의자 다리 한쪽이 짧다. 접은 편지가 그 밑을 받치고 있었다.",
         "scene_key": "moon_tower",
         "codex_entry": "관측실.chapter.5"
       },
       "title": "창가 쉼터",
-      "summary": "숨을 고르고 오늘 본 것을 이야기해요."
+      "summary": "창가 의자에서 등불을 채우고 지도를 편다."
     },
     {
       "no": 6,
@@ -124,13 +124,13 @@
         "code": "heartwood_cut_sentence",
         "chapter": 6,
         "phase": "truth",
-        "title": "끊긴 마지막 문장",
-        "caption": "일지의 마지막 문장이 중간에서 멈춰요. 답을 기다리다 멈춘 문장이에요.",
+        "title": "마지막 문장",
+        "caption": "“도착하면 알려 줘.” 편지에는 그 한 문장만 남아 있다.",
         "scene_key": "root_tunnel",
         "codex_entry": "관측실.chapter.6"
       },
       "title": "어긋난 나이테",
-      "summary": "방향이 다른 한 해를 어떻게 읽을지 골라요.",
+      "summary": "나이테에 표지판을 뗀 자국이 있다. 옛 주소를 확인할 단서다.",
       "event_code": "crooked_ring"
     },
     {
@@ -141,13 +141,13 @@
         "code": "heartwood_read_aloud",
         "chapter": 7,
         "phase": "climax",
-        "title": "소리 내어 읽기",
-        "caption": "기록은 남기는 것으로 끝나지 않아요. 읽어 주는 사람이 있어야 이야기가 돼요.",
+        "title": "답장 놓을 자리",
+        "caption": "책상 위의 빈 봉투. 처음 찾은 편지와 같은 우표가 붙어 있다.",
         "scene_key": "moon_tower",
         "codex_entry": "관측실.chapter.7"
       },
       "title": "관측대 아래",
-      "summary": "낱장과 관측기가 마지막 층계에 함께 뭉쳐 길을 막아요.",
+      "summary": "관측대 아래에 부서진 기구가 쌓였다. 편지를 찾을 방이 바로 위다.",
       "tangles": [
         "scattered_records",
         "matted_observatory"
@@ -163,12 +163,12 @@
         "chapter": 8,
         "phase": "resolution",
         "title": "돌아가는 길",
-        "caption": "창밖 온실이 또렷해져요. 마지막 답장은 처음 떠나온 곳으로 돌아가요.",
+        "caption": "답장을 넣고 봉투를 닫았다. 창밖의 온실까지, 이번에는 길을 알고 있다.",
         "scene_key": "monster_den",
         "codex_entry": "관측실.chapter.8"
       },
       "title": "나이테 관측자",
-      "summary": "관측자가 눈을 떠요. 오래 본 사람만 아는 방식으로 길을 막고 있어요.",
+      "summary": "관측자가 창문 앞을 막는다. 다음 공격을 확인하고 대원에게 행동을 맡긴다.",
       "event_code": "ring_watcher",
       "weakness": "care"
     }
@@ -434,9 +434,9 @@
   ],
   "events": {
     "scattered_pages": {
-      "title": "겹친 낱장",
-      "text": "관측 기록이 순서 없이 겹쳐 있어요. 어떻게 되돌릴까요?",
-      "bubble": "관측 기록이 순서 없이 겹쳐 있어요.",
+      "title": "흩어진 관측 기록",
+      "text": "바닥에 낱장이 흩어졌다. 찢긴 면을 맞추면 순서를 알 수 있다. 책상 위에는 작은 등불이 있다.",
+      "bubble": "찢긴 종이의 가장자리가 맞는다.",
       "tags": [
         "puzzle",
         "mystery"
@@ -444,32 +444,63 @@
       "choices": [
         {
           "code": "match_edges",
-          "label": "종이 가장자리의 닳은 결을 맞춘다",
+          "label": "찢긴 면을 맞춰 읽는다",
           "stat": "insight",
           "difficulty": 8,
-          "resolve_cost": 1
+          "resolve_cost": 1,
+          "consequence": "성공하면 마지막 관측지와 발견물 획득",
+          "collects_loot": true,
+          "outcome_text": {
+            "flourish": "마지막 장을 맞췄다. 그림 속 온실은 우리가 출발한 곳이다.",
+            "clear": "마지막 장을 맞췄다. 그림 속 온실은 우리가 출발한 곳이다.",
+            "detour": "젖은 두 장이 붙어 찢어졌다. 읽히는 부분만 따로 놓았다.",
+            "safe": "마지막 장을 맞췄다. 그림 속 온실은 우리가 출발한 곳이다."
+          },
+          "success_effect": {
+            "finding": "마지막 관측지"
+          }
         },
         {
           "code": "read_each",
-          "label": "한 장씩 읽으며 이야기 순서를 찾는다",
+          "label": "종이를 정리하고 등불을 손본다",
           "stat": "focus",
           "difficulty": 8,
-          "resolve_cost": 1
+          "resolve_cost": 1,
+          "consequence": "성공하면 길빛 2 회복. 발견물 없음",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "기록을 날짜순으로 올려놓았다. 책상 등불의 기름도 나눠 담았다.",
+            "clear": "기록을 날짜순으로 올려놓았다. 책상 등불의 기름도 나눠 담았다.",
+            "detour": "날짜가 겹치는 장이 많았다. 같은 해의 기록끼리 모아 두었다.",
+            "safe": "기록을 날짜순으로 올려놓았다. 책상 등불의 기름도 나눠 담았다."
+          },
+          "success_effect": {
+            "trail_light": 2
+          }
         },
         {
           "code": "stack_neatly",
-          "label": "읽지 않고 가지런히 쌓아 둔다",
+          "label": "종이를 책상에 올려 둔다",
           "stat": null,
           "difficulty": 0,
           "resolve_cost": 0,
-          "safe": true
+          "safe": true,
+          "consequence": "소모 없음. 이번 발견물은 건너뜁니다.",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "발에 밟히지 않도록 낱장을 책상 위로 옮겼다.",
+            "clear": "발에 밟히지 않도록 낱장을 책상 위로 옮겼다.",
+            "detour": "발에 밟히지 않도록 낱장을 책상 위로 옮겼다.",
+            "safe": "발에 밟히지 않도록 낱장을 책상 위로 옮겼다."
+          },
+          "success_effect": {}
         }
       ]
     },
     "crooked_ring": {
-      "title": "어긋난 나이테",
-      "text": "한 해의 나이테만 방향이 달라요. 그해를 어떻게 읽을까요?",
-      "bubble": "한 해의 나이테만 방향이 달라요.",
+      "title": "나이테의 못 자국",
+      "text": "나이테 위에 못 자국이 세 개 남았다. 떨어진 표지판이 벽등을 가리고 있다.",
+      "bubble": "나이테에 못 자국 세 개가 남았다.",
       "tags": [
         "puzzle",
         "mystery"
@@ -477,25 +508,56 @@
       "choices": [
         {
           "code": "measure_twice",
-          "label": "앞뒤 해와 견주어 두 번 잰다",
+          "label": "앞뒤 나이테를 비교한다",
           "stat": "focus",
           "difficulty": 8,
-          "resolve_cost": 1
+          "resolve_cost": 1,
+          "consequence": "성공하면 옛 표지판과 발견물 획득",
+          "collects_loot": true,
+          "outcome_text": {
+            "flourish": "못을 박은 해를 찾았다. 떨어진 표지판에는 ‘온실로 가는 길’이 적혔다.",
+            "clear": "못을 박은 해를 찾았다. 떨어진 표지판에는 ‘온실로 가는 길’이 적혔다.",
+            "detour": "갈라진 나무 표면에서 연도를 구별할 수 없었다.",
+            "safe": "못을 박은 해를 찾았다. 떨어진 표지판에는 ‘온실로 가는 길’이 적혔다."
+          },
+          "success_effect": {
+            "finding": "옛 표지판"
+          }
         },
         {
           "code": "ask_the_tree",
-          "label": "나무에 손을 대고 그해를 물어본다",
+          "label": "표지판을 옮겨 벽등을 꺼낸다",
           "stat": "care",
           "difficulty": 8,
-          "resolve_cost": 1
+          "resolve_cost": 1,
+          "consequence": "성공하면 길빛 2 회복. 발견물 없음",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "바닥을 치우자 벽등을 찾았다. 남은 기름을 챙겼다.",
+            "clear": "바닥을 치우자 벽등을 찾았다. 남은 기름을 챙겼다.",
+            "detour": "젖은 낙엽이 계속 쏟아졌다. 발 디딜 자리만 비웠다.",
+            "safe": "바닥을 치우자 벽등을 찾았다. 남은 기름을 챙겼다."
+          },
+          "success_effect": {
+            "trail_light": 2
+          }
         },
         {
           "code": "note_and_pass",
-          "label": "표시만 남기고 지나간다",
+          "label": "못 자국만 그려 둔다",
           "stat": null,
           "difficulty": 0,
           "resolve_cost": 0,
-          "safe": true
+          "safe": true,
+          "consequence": "소모 없음. 이번 발견물은 건너뜁니다.",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "수첩에 세 못 자국의 간격을 그려 두었다.",
+            "clear": "수첩에 세 못 자국의 간격을 그려 두었다.",
+            "detour": "수첩에 세 못 자국의 간격을 그려 두었다.",
+            "safe": "수첩에 세 못 자국의 간격을 그려 두었다."
+          },
+          "success_effect": {}
         }
       ]
     },
@@ -543,7 +605,7 @@
             "focus_reward": 0,
             "tone": "moonlit",
             "rule_name": "긴 관측",
-            "rule_summary": "약점을 맞히지 못한 라운드에는 수호 장벽이 2 회복돼요.",
+            "rule_summary": "약점을 맞히지 못한 라운드에는 체력이 2 회복돼요.",
             "phase_gate": "resolve_intent",
             "intro_caption": "관측자의 눈이 천천히 초점을 맞췄어요.",
             "intents": [
@@ -719,53 +781,53 @@
   "run_threads": [
     {
       "code": "observatory_empty_ring",
-      "title": "비어 있는 나이테",
+      "title": "비어 있는 고리",
       "seed_variants": [
-        "나이테 표본의 한 겹만 소리 없이 비어 있어요. 만지면 다른 겹보다 조금 따뜻해요.",
-        "관측 일지의 같은 해 페이지가 찢긴 게 아니라, 처음부터 백지로 묶여 있어요."
+        "벽에는 일지를 거는 고리가 줄지어 있다. 가운데 고리 하나만 반들거린다.",
+        "책등에는 먼지가 쌓였지만 창가의 일지에는 손자국이 남아 있다."
       ],
       "echo_variants": [
-        "빈 나이테에 귀를 대면 아주 멀리서 물소리와 종소리가 함께 들려요.",
-        "관측자의 자에는 그 한 겹만 건너뛰고 눈금이 매겨져 있어요."
+        "일지에서 찢긴 종이와 바닥의 종이가 맞아떨어진다. 그림 끝에 우리 온실이 있다.",
+        "일지의 마지막 날짜는 우편길이 닫히기 전날이다. 옆에는 도착 예정이라고 적혀 있다."
       ],
       "payoff_variants": {
-        "careful": "빈 겹을 억지로 채우지 않고, 오늘 본 것만 여백에 작게 적어요. 나이테가 온기를 조금 되찾아요.",
-        "bold": "세 지역에서 모은 표본 태그를 빈 겹에 맞춰 봐요. 겹이 환해지며 그 해의 풍경이 한 장면 떠올라요.",
-        "relational": "관측자가 조용히 말해요. ‘그 해엔 기록할 손이 나 하나뿐이었네.’ 함께 쓰면 비지 않는다는 걸 이제 알아요."
+        "careful": "찢긴 종이를 이어 붙였다. 관측 기록 사이에 온실로 보내려던 편지가 있었다.",
+        "bold": "창문을 열어 그림과 풍경을 맞춰 봤다. 멀리 온실의 지붕이 같은 각도로 보였다.",
+        "relational": "각자 찾은 종이를 창가에 모았다. 마지막 조각을 맞추자 온실의 주소가 완성됐다."
       }
     },
     {
       "code": "observatory_shared_margin",
-      "title": "함께 그린 여백",
+      "title": "여백의 주소",
       "seed_variants": [
-        "낡은 일지의 여백마다 본문과 다른 필체의 작은 메모가 붙어 있어요.",
-        "같은 별을 그린 두 장의 스케치가 서로 다른 창가에서 그려져 있어요."
+        "나이테 위로 못 자국이 지나간다. 표지판을 떼어 낸 자리만 색이 연하다.",
+        "일지의 여백마다 같은 네모가 그려져 있다. 한 귀퉁이에만 작은 점이 있다."
       ],
       "echo_variants": [
-        "두 번째 필체는 항상 질문으로 끝나요. 본문은 다음 장에서 꼭 그 질문에 답해요.",
-        "메모의 잉크가 이 온실의 잉크와 미묘하게 달라요. 조금 더 차갑고 푸른색이에요."
+        "네모는 온실을 위에서 본 모양이다. 점은 우편함이 놓인 자리를 가리킨다.",
+        "창가에서 온실 지붕을 세어 봤다. 일지의 그림보다 창문이 하나 더 생겼다."
       ],
       "payoff_variants": {
-        "careful": "여백은 그대로 두고 오늘의 관측만 새 페이지에 적어요. 언젠가 두 번째 필체가 답을 달아 줄지도 몰라요.",
-        "bold": "두 필체의 질문과 답을 이어 붙여 읽어요. 흩어진 문장들이 하나의 긴 대화였다는 게 드러나요.",
-        "relational": "관측자와 나란히 앉아 여백에 오늘의 질문을 적어요. ‘답장이 오면, 제일 먼저 알려 주지.’"
+        "careful": "옛 주소와 현재 지붕 위치를 대조했다. 우편함을 옮긴 뒤 편지가 계속 옛자리로 간 것이다.",
+        "bold": "관측실 아래의 표지판을 돌렸다. 오래된 화살표 반대쪽에 온실이 있었다.",
+        "relational": "대원에게 온실의 우편함 위치를 물었다. 모두 새 창문 아래를 가리켰다. 일지의 주소를 고쳤다."
       }
     },
     {
       "code": "observatory_second_door",
-      "title": "두 번째 온실의 문",
+      "title": "의자 밑의 편지",
       "seed_variants": [
-        "온실 밖 첫 지도의 가장자리에 작게 문 하나가 그려져 있어요. 손잡이가 바깥쪽에 있어요.",
-        "관측실 유리 너머 안개 속에서 문틀 모양의 그림자가 잠깐 비쳐요."
+        "의자 다리 하나가 짧다. 접은 종이로 받쳐 놓았는데 봉투 모서리가 보인다.",
+        "의자를 옮기자 종이 한 장이 남았다. 오래 눌려 네모난 자국이 생겼다."
       ],
       "echo_variants": [
-        "지도의 문 그림 옆에 서고의 우편 소인과 같은 문양이 찍혀 있어요.",
-        "관측자의 낡은 열쇠꾸러미에 이 온실 어느 문에도 맞지 않는 열쇠가 하나 있어요."
+        "편지에는 “도착하면 알려 줘.” 한 문장만 남아 있다. 받는 사람 칸은 비었다.",
+        "봉투의 풀은 다 말랐다. 안쪽에 답장용 우표가 한 장 붙어 있다."
       ],
       "payoff_variants": {
-        "careful": "문 그림을 정성껏 옮겨 그려요. 떠날 준비가 되는 날 잊지 않도록, 개척 지도의 첫 장에 붙여 둬요.",
-        "bold": "유리창을 열고 안개 쪽으로 등불을 들어 보여요. 잠시 뒤, 안개 너머에서도 등불이 한 번 깜빡여요.",
-        "relational": "관측자가 열쇠를 쥐여 줘요. ‘언젠가 너희가 저 문 앞에 서면, 내 몫까지 봐 다오.’"
+        "careful": "편지를 펴고 날짜를 적었다. “오늘 도착했어.” 답장을 봉투에 넣었다.",
+        "bold": "창문 쪽으로 의자를 밀어 뒀다. 답장을 들고 온실로 돌아가는 계단을 내려갔다.",
+        "relational": "대원들의 이름을 차례로 적었다. 마지막 이름 아래에 함께 도착했다고 덧붙였다."
       }
     }
   ]

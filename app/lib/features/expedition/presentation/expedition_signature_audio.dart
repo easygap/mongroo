@@ -27,10 +27,13 @@ class ExpeditionSignatureAudioCache {
   ExpeditionSignatureAudioCache({
     this.maxPools = 12,
     AudioContext? audioContext,
-  }) : _audioContext = audioContext;
+    Future<AudioPool> Function(String asset)? poolLoader,
+  })  : _audioContext = audioContext,
+        _poolLoader = poolLoader;
 
   final int maxPools;
   final AudioContext? _audioContext;
+  final Future<AudioPool> Function(String asset)? _poolLoader;
 
   /// 삽입 순서를 그대로 쓰는 LRU. Dart의 `Map`은 삽입 순서를 지키므로
   /// 다시 쓸 때 지웠다 넣으면 맨 뒤로 간다.
@@ -41,12 +44,29 @@ class ExpeditionSignatureAudioCache {
   /// 지금 pool로 들고 있는 음원 경로. 테스트가 LRU 동작을 확인한다.
   Iterable<String> get residentAssets => _pools.keys;
 
-  Future<void> play(String asset, {double volume = .6}) async {
+  Future<void> preload(Iterable<String> assets) async {
     if (_disposed) return;
+    await Future.wait(assets.toSet().map(_pool));
+  }
+
+  Future<void> play(
+    String asset, {
+    double volume = .6,
+    bool Function()? canPlay,
+    Duration maxDelay = const Duration(milliseconds: 180),
+  }) async {
+    if (_disposed) return;
+    final waiting = Stopwatch()..start();
     final pool = await _pool(asset);
-    if (pool == null || _disposed) return;
+    if (pool == null ||
+        _disposed ||
+        canPlay?.call() == false ||
+        waiting.elapsed > maxDelay) {
+      return;
+    }
     try {
-      await pool.start(volume: volume);
+      final stop = await pool.start(volume: volume);
+      if (_disposed || canPlay?.call() == false) await stop();
     } on Object {
       // 소리는 거들 뿐이다. 판정과 연출은 이미 지나갔다.
     }
@@ -63,12 +83,13 @@ class ExpeditionSignatureAudioCache {
 
   Future<AudioPool?> _load(String asset) async {
     try {
-      final pool = await AudioPool.create(
-        source: AssetSource(asset),
-        minPlayers: 1,
-        maxPlayers: 2,
-        audioContext: _audioContext,
-      );
+      final pool = await (_poolLoader?.call(asset) ??
+          AudioPool.create(
+            source: AssetSource(asset),
+            minPlayers: 1,
+            maxPlayers: 2,
+            audioContext: _audioContext,
+          ));
       if (_disposed) {
         await pool.dispose();
         return null;

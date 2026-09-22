@@ -67,7 +67,7 @@ class _EventDecisionPanel extends ConsumerWidget {
             _GuardianEncounterBrief(encounter: event.encounter!),
           ],
           const SizedBox(height: 16),
-          Text('누가 나설까요?', style: Theme.of(context).textTheme.titleSmall),
+          Text('담당 대원', style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
           _PartySelector(
             expedition: expedition,
@@ -98,35 +98,12 @@ class _EventDecisionPanel extends ConsumerWidget {
                       enabled: !busy,
                       onPressed: choose,
                     )
-                  : OutlinedButton(
-                      onPressed: busy ? null : choose,
-                      style: OutlinedButton.styleFrom(
-                        alignment: Alignment.centerLeft,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(choice.label),
-                          if (preview != null) ...[
-                            const SizedBox(height: 3),
-                            Text(
-                              '${preview.label}${preview.forecast == null ? '' : ' · ${preview.forecast}'}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                            ),
-                          ],
-                        ],
-                      ),
+                  : _StageChoiceCard(
+                      key: ValueKey('event-choice-${choice.code}'),
+                      choice: choice,
+                      preview: preview,
+                      enabled: !busy,
+                      onPressed: choose,
                     ),
             );
           }),
@@ -147,7 +124,7 @@ class _GuardianEncounterBrief extends StatelessWidget {
     return Semantics(
       container: true,
       label: '${encounter.attackName} 공격 예고. ${encounter.telegraph}. '
-          '수호 장벽을 풀거나 안전하게 물러날 수 있어요.',
+          '체력을 풀거나 안전하게 물러날 수 있어요.',
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: scheme.tertiaryContainer.withAlpha(118),

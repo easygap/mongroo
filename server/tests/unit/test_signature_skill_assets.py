@@ -85,9 +85,9 @@ def test_all_six_emotion_fusion_layers_are_production_ready():
     """T3 감정층 여섯이 저마다의 연출을 쓴다.
 
     이 검사는 예전에 `kel.{form}`을 봤다. 그건 아직 자기 연출이 없는 행동이
-    떨어지는 **성장결 공용 연출**이라, 늘 통과하면서 아무것도 확인하지 않았다.
+    떨어지는 **성장 타입 공용 연출**이라, 늘 통과하면서 아무것도 확인하지 않았다.
     실제로 `kel.sunny`는 아기화분의 `care-vines`고 `kel.mosaic`은
-    `fallback.echo-wave`와 같은 디렉터리다 — 햇살결 캐릭터가 T3를 쓰면 자기
+    `fallback.echo-wave`와 같은 디렉터리다 — 햇살 캐릭터가 T3를 쓰면 자기
     연출 위에 아기화분 덩굴이 겹쳐 나오고 있었다.
 
     이제 감정층은 `fusion.*`로 자기 시트를 쓴다. 공용 연출과 **다른 디렉터리**를
@@ -118,7 +118,7 @@ def test_all_six_emotion_fusion_layers_are_production_ready():
         assert profile["production_ready"] is entry["production_ready"], form
         assert entry["production_ready"] is True, form
         assert (EFFECT_ROOT / entry["directory"] / "frame-00.webp").is_file()
-        # 성장결 공용 연출과 같은 그림이면 고친 것이 아니다.
+        # 성장 타입 공용 연출과 같은 그림이면 고친 것이 아니다.
         generic = by_family[f"kel.{form}"]
         assert entry["directory"] != generic["directory"], form
         directories.add(entry["directory"])
@@ -129,7 +129,7 @@ def test_all_six_emotion_skills_have_their_own_vfx():
     """감정 스킬 여섯이 저마다의 연출을 쓴다.
 
     이 검사가 생기기 전까지 여섯 다 `emotion.*` family를 적어 두고도 그 family가
-    manifest에 없어서, 앱이 성장결 공용 연출(`kel.*`)로 떨어뜨렸다. 서버가 보내는
+    manifest에 없어서, 앱이 성장 타입 공용 연출(`kel.*`)로 떨어뜨렸다. 서버가 보내는
     `effect_key`도 `prism_burst`처럼 **원소별** 공용 키였다 — 빛과 번개가 같은
     키라 `찬란한 하트`와 `경이의 전격`이 한 그림이었다.
 
@@ -176,21 +176,21 @@ def test_emotion_skills_send_their_own_effect_key_to_the_app():
 
 
 def test_only_the_basic_attack_falls_back_to_a_shared_effect():
-    """대원이 누를 수 있는 행동 중 공용 연출로 떨어지는 것은 기본 공격뿐이다.
+    """대원이 누를 수 있는 행동 중 공용 연출로 떨어지는 것은 공격뿐이다.
 
     설계서 9장이 금지한 `공용 연출로 끝내는 것`을 한 줄로 지키는 검사다. 이걸
     안 걸어 두면 스킬이 늘 때마다 조용히 하나씩 공용 연출로 새고, 그건 실기에서
     네트워크 로그를 뒤져야 보인다(실제로 그렇게 찾았다).
 
-    **기본 공격 6종은 일부러 뺀다.** 4.2가 그 자리를 `공격 glyph + 성장결`로
-    정해 뒀다 — 거기서는 성장결 연출이 나가는 것이 맞다. 안 만든 것과 못 만든
+    **공격 6종은 일부러 뺀다.** 4.2가 그 자리를 `공격 glyph + 성장 타입`로
+    정해 뒀다 — 거기서는 성장 타입 연출이 나가는 것이 맞다. 안 만든 것과 못 만든
     것을 같이 세지 않으려고 이름으로 적어 둔다.
     """
 
     manifest = json.loads((EFFECT_ROOT / "manifest.json").read_text(encoding="utf-8"))
     by_family = {entry["family"]: entry for entry in manifest["effects"]}
 
-    # 성장결별 기본 공격. 설계상 성장결 공용 연출이 나가는 자리다.
+    # 성장 타입별 공격. 설계상 성장 타입 공용 연출이 나가는 자리다.
     by_design = {
         str(discipline["basic_vfx_family"])
         for discipline in EMOTION_DISCIPLINES.values()
@@ -306,7 +306,7 @@ def test_every_effect_made_by_the_current_pipeline_is_art_complete():
 
     def _made_here(effect: dict) -> bool:
         keys = {str(key) for key in effect.get("effect_keys", [])}
-        # 성장결 폴백은 키가 없어서 family 이름으로만 닿는다.
+        # 성장 타입 폴백은 키가 없어서 family 이름으로만 닿는다.
         tail = str(effect["family"]).split(".", 1)[-1].replace("-", "_")
         return bool(keys & sheet_ids) or f"kel_{tail}" in sheet_ids
 
@@ -324,15 +324,15 @@ def test_every_effect_made_by_the_current_pipeline_is_art_complete():
 
 
 def test_no_kel_basic_attack_plays_the_unknown_effect_sheet():
-    """여섯 성장결 기본 공격은 폴백 시트를 그대로 쓰지 않는다.
+    """여섯 성장 타입 공격은 폴백 시트를 그대로 쓰지 않는다.
 
-    기본 공격에 자기 family가 없어서 성장결 폴백으로 떨어지는 것까지는 4.2가
+    공격에 자기 family가 없어서 성장 타입 폴백으로 떨어지는 것까지는 4.2가
     정한 설계다. 문제는 `kel.mosaic`이 `fallback.echo-wave`와 **같은 런타임
-    폴더**를 가리키고 있었다는 것이다 - 모아결 대원의 기본 공격이 `연출을 못
+    폴더**를 가리키고 있었다는 것이다 - 무지개 대원의 공격이 `연출을 못
     찾았을 때` 나오는 그림과 프레임까지 같았다.
 
     여섯 중 다섯은 자기 그림을 갖고 있어서 화면만 봐서는 안 보인다. 하나만
-    새면 그 성장결로 키운 사람에게만 보이고, 그 사람은 그게 폴백인 줄 모른다.
+    새면 그 성장 타입로 키운 사람에게만 보이고, 그 사람은 그게 폴백인 줄 모른다.
     """
 
     manifest = json.loads((EFFECT_ROOT / "manifest.json").read_text(encoding="utf-8"))
@@ -343,7 +343,7 @@ def test_no_kel_basic_attack_plays_the_unknown_effect_sheet():
     for kel, family in KEL_FALLBACK_FAMILIES.items():
         assert family in by_family, family
         directory = str(by_family[family]["directory"])
-        assert directory != fallback, f"{kel} 기본 공격이 폴백 시트를 그대로 쓴다"
+        assert directory != fallback, f"{kel} 공격이 폴백 시트를 그대로 쓴다"
         directories[kel] = directory
 
     # 여섯이 서로 같은 그림을 쓰지도 않는다.

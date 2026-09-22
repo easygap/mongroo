@@ -214,7 +214,7 @@ class _MonthSwitcher extends StatelessWidget {
       label,
       textAlign: TextAlign.center,
       style: const TextStyle(
-        fontFamily: AppTheme.pixelFont,
+        fontFamily: AppTheme.bodyFont,
         fontSize: 16,
         fontWeight: FontWeight.w700,
       ),

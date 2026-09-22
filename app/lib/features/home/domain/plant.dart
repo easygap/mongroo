@@ -19,15 +19,15 @@ enum PlantGrowthForm {
     emotionCode: 'joy',
     label: '햇살꽃',
     emotionLabel: '기쁨',
-    personalityName: '햇살결',
-    personalityDescription: '따뜻한 기운을 주변과 자연스럽게 나눠요.',
+    personalityName: '햇살',
+    personalityDescription: '친구들과 어울리기를 좋아해요.',
   ),
   rainy(
     code: 'rainy',
     emotionCode: 'sadness',
     label: '빗방울꽃',
     emotionLabel: '슬픔',
-    personalityName: '빗물결',
+    personalityName: '빗방울',
     personalityDescription: '작은 변화를 놓치지 않고 끝까지 들어줘요.',
   ),
   ember(
@@ -35,15 +35,15 @@ enum PlantGrowthForm {
     emotionCode: 'anger',
     label: '불씨꽃',
     emotionLabel: '화남',
-    personalityName: '불씨결',
-    personalityDescription: '중요한 마음을 숨기지 않고 밖으로 꺼내요.',
+    personalityName: '불씨',
+    personalityDescription: '자기 생각을 솔직하게 말해요.',
   ),
   moonlit(
     code: 'moonlit',
     emotionCode: 'anxiety',
     label: '달그늘꽃',
     emotionLabel: '불안',
-    personalityName: '달빛결',
+    personalityName: '달빛',
     personalityDescription: '주변을 살피고 하나씩 준비하며 앞으로 가요.',
   ),
   sparkling(
@@ -51,7 +51,7 @@ enum PlantGrowthForm {
     emotionCode: 'surprise',
     label: '반짝꽃',
     emotionLabel: '놀람',
-    personalityName: '별빛결',
+    personalityName: '별빛',
     personalityDescription: '예상 밖의 순간에서 새로운 것을 찾아요.',
   ),
   mosaic(
@@ -59,8 +59,8 @@ enum PlantGrowthForm {
     emotionCode: 'mixed',
     label: '마음모아꽃',
     emotionLabel: '여러 마음',
-    personalityName: '모아결',
-    personalityDescription: '서로 다른 마음을 한결같이 존중해요.',
+    personalityName: '무지개',
+    personalityDescription: '상황에 맞춰 유연하게 행동해요.',
   );
 
   const PlantGrowthForm({
@@ -302,7 +302,7 @@ class PlantConversationProfile {
   }
 }
 
-/// 성장 단계별로 공개되는 주결·보조결·기질의 설명 계약.
+/// 성장 단계별로 공개되는 주 타입·보조 타입·기질의 설명 계약.
 class PlantGrowthTraits {
   const PlantGrowthTraits({
     this.version = 1,
@@ -772,7 +772,7 @@ class ActivePlant {
   }
 
   String get personalityName {
-    if (stage < 3 || growthForm == null) return '아직 관찰 중';
+    if (stage < 3 || growthForm == null) return '성격이 자라는 중';
     final growthTitle = growthTraits.title.trim();
     if (growthTitle.isNotEmpty) return growthTitle;
     final serverName = personality?.name.trim() ?? '';
@@ -793,16 +793,15 @@ class ActivePlant {
       : '';
 
   String get growthSummary => switch (stage.clamp(1, 5)) {
-        1 => '일기에서 읽힌 마음을 차곡차곡 모으고 있어요.',
-        2 when visualForm != null => '잎맥에 첫 색이 비치고 있어요. 아직 어떤 결인지는 더 지켜봐요.',
-        2 => '일기가 더 쌓이면 잎맥에 첫 단서가 보여요.',
+        1 => '일기를 쓰면 씨앗이 자라요.',
+        2 when visualForm != null => '새싹에 색이 생겼어요. 자라면서 모습이 달라져요.',
+        2 => '일기가 쌓이면 새싹에 색이 생겨요.',
         _ when growthForm != null && secondaryForm != null =>
-          '${growthForm!.emotionLabel} 주결에 ${secondaryForm!.emotionLabel} 보조결이 더해져 '
+          '${growthForm!.emotionLabel} 타입에 ${secondaryForm!.emotionLabel} 타입이 더해져 '
               '${koreanDirection(personalityName)} 자라고 있어요.',
-        _ when growthForm != null =>
-          '${growthForm!.emotionLabel} 기록을 바탕으로 '
-              '${koreanDirection(personalityName)} 자라고 있어요.',
-        _ => '일기 분석을 더 모아 성장 분기를 찾고 있어요.',
+        _ when growthForm != null => '${growthForm!.emotionLabel} 기록을 바탕으로 '
+            '${koreanDirection(personalityName)} 자라고 있어요.',
+        _ => '일기가 쌓이면 캐릭터의 성격이 정해져요.',
       };
 
   String? get analysisNotice {
@@ -821,13 +820,11 @@ class ActivePlant {
 
   String get voiceLine {
     if (stage < 3) {
-      return stage <= 1
-          ? '아직은 작은 씨앗이야. 일기를 더 들려줘.'
-          : '새잎에 어떤 마음빛이 나타날지 살펴보고 있어.';
+      return stage <= 1 ? '아직은 작은 씨앗이야. 일기를 더 들려줘.' : '나 새잎이 났어. 한번 봐 줘!';
     }
     final form = visualForm;
     if (form == null) {
-      return '일기 분석이 더 쌓이면 내 결이 보일 거야.';
+      return '오늘은 무슨 일이 있었어?';
     }
     final serverLine = personality?.voiceLine.trim() ?? '';
     if (serverLine.isNotEmpty) return serverLine;
@@ -837,12 +834,12 @@ class ActivePlant {
   /// 숫자 XP만 보지 않아도 다음 성장 장면을 예상할 수 있게 하는 안내.
   /// 감정의 종류는 보상이나 성장 속도를 바꾸지 않는다.
   String get nextMilestoneLabel => switch (stage.clamp(1, 5)) {
-        1 => '다음 장면 · 새싹에 첫 마음빛 단서가 나타나요.',
-        2 => '다음 장면 · 줄기가 자라면 외형과 성격의 결이 드러나요.',
-        3 => '다음 장면 · 꽃봉오리에 보조 마음빛과 기질이 더해져요.',
-        4 => '다음 장면 · 만개하면 움직임과 대화 습관이 완성되고 박물관에 남을 수 있어요.',
-        _ when harvestable => '만개 완료 · 이제 식물의 이야기를 박물관에 남길 수 있어요.',
-        _ => '만개 완료 · 남은 일기 분석이 끝나면 박물관 준비가 완성돼요.',
+        1 => '다음 성장: 새싹이 나요.',
+        2 => '다음 성장: 모습과 성격이 정해져요.',
+        3 => '다음 성장: 꽃봉오리가 생겨요.',
+        4 => '다음 성장: 꽃이 활짝 피어요.',
+        _ when harvestable => '다 자랐어요. 박물관에 보내 새 캐릭터를 키울 수 있어요.',
+        _ => '일기를 다 읽으면 박물관에 보낼 수 있어요.',
       };
 
   /// 현재 단계 구간 안에서의 진행률(0.0~1.0). 만개면 1.0.

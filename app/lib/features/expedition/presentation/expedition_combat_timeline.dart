@@ -50,10 +50,18 @@ abstract final class ExpeditionCombatTimeline {
     return math.sin(local * math.pi).clamp(0.0, 1.0);
   }
 
+  static double damageOpacity(double value, double contact) {
+    if (value < contact) return 0;
+    return 1 - segment(value, contact + .16, contact + .42);
+  }
+
   /// 피격 순간에만 무대를 흔든다. 진폭은 멀미를 줄이기 위해 3.5px로 제한한다.
   static Offset impactShake(double value, [ExpeditionActionCue? cue]) {
+    if (cue != null && (cue.combat?.counterDamage ?? 0) <= 0) {
+      return Offset.zero;
+    }
     final contact = cue == null ? .72 : enemyContactProgress(cue);
-    final local = segment(value, contact - .05, contact + .11);
+    final local = segment(value, contact, contact + .16);
     if (local <= 0 || local >= 1) return Offset.zero;
     final amplitude = (cue?.motion?.impactShakePx ?? 3.5).clamp(0.0, 3.5);
     final strength = math.sin(local * math.pi) * amplitude;
@@ -63,7 +71,7 @@ abstract final class ExpeditionCombatTimeline {
   /// 대원의 공격이 장벽에 닿는 순간만 짧게 흔든다.
   static Offset partyImpactShake(double value, [ExpeditionActionCue? cue]) {
     final contact = cue == null ? .34 : partyContactProgress(cue);
-    final local = segment(value, contact - .04, contact + .10);
+    final local = segment(value, contact, contact + .14);
     if (local <= 0 || local >= 1) return Offset.zero;
     final amplitude = (cue?.motion?.impactShakePx ?? 2.8).clamp(0.0, 3.5);
     final strength = math.sin(local * math.pi) * amplitude;
@@ -73,14 +81,15 @@ abstract final class ExpeditionCombatTimeline {
   /// 캐릭터가 스킬을 준비하고 되밀리는 동선을 계산한다.
   static Offset actorOffset(double value, ExpeditionActionCue? cue) {
     if (cue == null) return Offset.zero;
-    if (cue.isCombatRound && !cue.playsPartyAttack) {
+    if (cue.isBossPhase) return Offset.zero;
+    if (cue.playsEnemyAttack && !cue.playsPartyAttack) {
+      if ((cue.combat?.counterDamage ?? 0) <= 0) return Offset.zero;
       final contact = enemyContactProgress(cue);
       final recoil =
-          math.sin(segment(value, contact - .06, contact + .20) * math.pi) *
-              -18;
+          math.sin(segment(value, contact, contact + .20) * math.pi) * -18;
       return Offset(
         recoil,
-        4 * math.sin(segment(value, contact - .06, contact + .20) * math.pi),
+        4 * math.sin(segment(value, contact, contact + .20) * math.pi),
       );
     }
     final motion = cue.motion;
@@ -123,8 +132,73 @@ abstract final class ExpeditionCombatTimeline {
     required int before,
     required int after,
     required double progress,
+    double contactProgress = .30,
   }) =>
       before +
       (after - before) *
-          Curves.easeOutCubic.transform(segment(progress, .30, .62));
+          Curves.easeOutCubic.transform(
+            segment(progress, contactProgress, contactProgress + .22),
+          );
+
+  /// A quick contact flash, then recovery. Nothing reacts before contact.
+  static double hitReaction(double progress, double contact) {
+    if (progress < contact || progress >= contact + .22) return 0;
+    return 1 -
+        Curves.easeOutCubic.transform(
+          segment(progress, contact, contact + .22),
+        );
+  }
+}
+
+/// Holds the shared presentation clock at impact, so sprite, body, HUD and
+/// sound keep one timebase. No timer can restart an obsolete action.
+class ExpeditionImpactCurve extends Curve {
+  const ExpeditionImpactCurve({
+    required this.cue,
+    required this.motionDuration,
+    this.reducedMotion = false,
+  });
+
+  final ExpeditionActionCue cue;
+  final Duration motionDuration;
+  final bool reducedMotion;
+
+  List<({double at, int milliseconds})> get holds => reducedMotion
+      ? const []
+      : [
+          if (cue.dealsGuardianDamage)
+            (
+              at: ExpeditionCombatTimeline.partyContactProgress(cue),
+              milliseconds: cue.isTerminalCombatOutcome
+                  ? 76
+                  : cue.weaknessHit || cue.presentationTier >= 3
+                      ? 58
+                      : 36,
+            ),
+          if (cue.playsEnemyAttack && (cue.combat?.counterDamage ?? 0) > 0)
+            (
+              at: ExpeditionCombatTimeline.enemyContactProgress(cue),
+              milliseconds: 44
+            ),
+        ];
+
+  Duration get duration =>
+      motionDuration +
+      Duration(
+        milliseconds: holds.fold(0, (sum, hold) => sum + hold.milliseconds),
+      );
+
+  @override
+  double transformInternal(double t) {
+    if (holds.isEmpty) return t;
+    final motionMs = motionDuration.inMicroseconds / 1000;
+    var elapsed = t * duration.inMicroseconds / 1000;
+    for (final hold in holds) {
+      final contactMs = hold.at * motionMs;
+      if (elapsed < contactMs) break;
+      if (elapsed < contactMs + hold.milliseconds) return hold.at;
+      elapsed -= hold.milliseconds;
+    }
+    return (elapsed / motionMs).clamp(0.0, 1.0);
+  }
 }

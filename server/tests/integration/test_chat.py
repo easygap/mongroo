@@ -103,7 +103,7 @@ async def test_revealed_growth_persona_shapes_greeting_and_generated_prompt(
 
         async def chat(self, messages):
             self.messages = messages
-            return "햇살결답게 잎을 펼쳐볼게. 오늘은 어땠어?"
+            return "햇살답게 잎을 펼쳐볼게. 오늘은 어땠어?"
 
     tokens = await signup(client)
     for index in range(3):
@@ -124,7 +124,7 @@ async def test_revealed_growth_persona_shapes_greeting_and_generated_prompt(
         await db.commit()
 
     started = await _start_session(client, tokens)
-    assert "햇빛 자리 찾았어" in started["greeting"]["content"]
+    assert "오늘은 어떤 얘기부터" in started["greeting"]["content"]
 
     llm = CapturingLlm()
     monkeypatch.setattr(ai_worker, "get_llm", lambda: llm)
@@ -133,7 +133,7 @@ async def test_revealed_growth_persona_shapes_greeting_and_generated_prompt(
     )
     assert sent.status_code == 202
     await run_pending_once(session_factory)
-    assert "햇살결" in llm.messages[0]["content"]
+    assert "햇살" in llm.messages[0]["content"]
     assert "다정함·나눔" in llm.messages[0]["content"]
     assert "현재 성장 단계: 4 (bloom)" in llm.messages[0]["content"]
     assert "식물 기질 연출:" in llm.messages[0]["content"]
@@ -142,7 +142,7 @@ async def test_revealed_growth_persona_shapes_greeting_and_generated_prompt(
 async def test_unrevealed_early_stage_keeps_species_greeting(client):
     tokens = await signup(client)
     started = await _start_session(client, tokens)
-    assert started["greeting"]["content"].startswith("새싹몬이 ")
+    assert started["greeting"]["content"].startswith("왔구나.")
     assert "햇살 자리" not in started["greeting"]["content"]
 
 

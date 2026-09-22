@@ -56,7 +56,7 @@ void main() {
         'growth_branch': 'anxiety',
         'growth_persona': {
           'persona_key': 'moonlit_careful',
-          'persona_name': '달빛결',
+          'persona_name': '달빛',
           'trait': '꼼꼼히 살피고 차분하게 준비',
           'voice_line': '달이 기울 때까지 주변을 한 번 더 살펴볼게.',
         },
@@ -91,7 +91,7 @@ void main() {
     expect(plant.growthForm, PlantGrowthForm.moonlit);
     expect(plant.visualForm, PlantGrowthForm.moonlit);
     expect(plant.personality?.code, 'moonlit_careful');
-    expect(plant.personalityName, '달빛결');
+    expect(plant.personalityName, '달빛');
     expect(plant.personalityDescription, contains('꼼꼼히'));
     expect(plant.voiceLine, contains('달이 기울'));
     expect(plant.branchStatus, PlantBranchStatus.stable);
@@ -120,7 +120,7 @@ void main() {
 
     expect(plant.growthForm, isNull);
     expect(plant.visualForm, isNull);
-    expect(plant.personalityName, '아직 관찰 중');
+    expect(plant.personalityName, '성격이 자라는 중');
   });
 
   test('2단계는 profile을 시각 단서로만 쓰고 감정·성격을 단정하지 않는다', () {
@@ -136,7 +136,7 @@ void main() {
 
     expect(plant.growthForm, isNull);
     expect(plant.visualForm, PlantGrowthForm.ember);
-    expect(plant.personalityName, '아직 관찰 중');
+    expect(plant.personalityName, '성격이 자라는 중');
     expect(plant.growthSummary, isNot(contains('화남')));
     expect(plant.voiceLine, isNot(PlantGrowthForm.ember.voiceLine(3)));
   });
@@ -179,7 +179,7 @@ void main() {
     expect(profile.ratioFor(PlantGrowthForm.sparkling), .38);
   });
 
-  test('주결·보조결·식물 기질과 보조 렌더 레이어를 하위호환 파싱한다', () {
+  test('주 타입·보조 타입·식물 기질과 보조 렌더 레이어를 하위호환 파싱한다', () {
     final json = _plantJson(stage: 4, growthForm: 'sunny')
       ..addAll({
         'dominant_form': 'rainy',
@@ -187,7 +187,7 @@ void main() {
           'version': 1,
           'stage': 4,
           'reveal_state': 'secondary_revealed',
-          'title': '별빛 품은 빗물결',
+          'title': '별빛 품은 빗방울',
           'traits': ['물방울을 오래 바라보는 결', '뜻밖의 반짝임을 좇는 결'],
           'secondary': {'form': 'sparkling'},
           'temperament': {
@@ -203,7 +203,7 @@ void main() {
             'focus': '놓친 장면을 함께 바라본다',
             'question_style': '한 번에 하나씩 묻는다',
             'secondary_modifier': '뜻밖의 관점을 가볍게 더한다',
-            'stage_expression': '보조결이 자연스럽게 섞인다',
+            'stage_expression': '보조 타입이 자연스럽게 섞인다',
           },
         },
         'growth_visual': {
@@ -221,13 +221,13 @@ void main() {
     expect(plant.growthForm, PlantGrowthForm.rainy);
     expect(plant.secondaryForm, PlantGrowthForm.sparkling);
     expect(plant.growthTraits.revealState, 'secondary_revealed');
-    expect(plant.growthTraits.title, '별빛 품은 빗물결');
+    expect(plant.growthTraits.title, '별빛 품은 빗방울');
     expect(plant.growthTraits.traits, hasLength(2));
     expect(plant.growthTraits.temperament.revealed, isTrue);
     expect(plant.growthTraits.temperament.fictionalCharacterAxes, isTrue);
     expect(plant.growthTraits.temperament.axes['curiosity'], .73);
     expect(plant.temperamentSummary, contains('호기심 많은'));
-    expect(plant.personalityName, '별빛 품은 빗물결');
+    expect(plant.personalityName, '별빛 품은 빗방울');
     expect(plant.conversationProfile.questionStyle, '한 번에 하나씩 묻는다');
     expect(plant.conversationProfile.secondaryModifier, contains('뜻밖의 관점'));
     expect(
@@ -236,7 +236,7 @@ void main() {
     );
   });
 
-  test('보조결은 서버가 일찍 보내도 4단계 전에는 공개하지 않는다', () {
+  test('보조 타입은 서버가 일찍 보내도 4단계 전에는 공개하지 않는다', () {
     final json = _plantJson(stage: 3, growthForm: 'rainy')
       ..['secondary_form'] = 'sparkling';
 
@@ -354,7 +354,7 @@ void main() {
     final sprout = ActivePlant.fromJson(_plantJson(stage: 2));
     final bloom = ActivePlant.fromJson(_plantJson(stage: 4));
 
-    expect(sprout.nextMilestoneLabel, contains('외형과 성격'));
-    expect(bloom.nextMilestoneLabel, contains('박물관'));
+    expect(sprout.nextMilestoneLabel, contains('모습과 성격'));
+    expect(bloom.nextMilestoneLabel, contains('꽃이 활짝'));
   });
 }

@@ -128,12 +128,12 @@ ExpeditionLighting expeditionLightingFor(String? regionCode) =>
         ),
       // 기억서고. 천창으로 낮빛이 들어오는 방이라 가장 밝고 중립이다.
       _ => const ExpeditionLighting(
-          ambient: Color(0xFFAAA07E),
-          edge: Color(0xFF3F3E2E),
-          lantern: Color(0xFFFFD79A),
+          ambient: Color(0xFFA8C9BE),
+          edge: Color(0xFF5B7168),
+          lantern: Color(0xFFFFE6B9),
           crystal: Color(0xFF9CE8E2),
-          skyTint: Color(0x1C30553C),
-          bloom: .75,
+          skyTint: Color(0x163B887D),
+          bloom: .25,
         ),
     };
 
@@ -240,8 +240,7 @@ Shader? _falloff(SceneLight light, List<double> stops, List<double> alphas) {
   if (power <= 0 || light.radius <= 0) return null;
   return RadialGradient(
     colors: [
-      for (final alpha in alphas)
-        light.color.withValues(alpha: alpha * power),
+      for (final alpha in alphas) light.color.withValues(alpha: alpha * power),
     ],
     stops: stops,
   ).createShader(

@@ -30,14 +30,12 @@ void main() {
         greaterThanOrEqualTo(4.5),
         reason: '${scheme.brightness} secondaryContainer',
       );
-      // 본문 기본색을 그대로 얹으면 왜 안 되는지도 함께 남긴다.
-      if (scheme.brightness == Brightness.light) {
-        expect(
-          contrastRatio(scheme.onSurface, scheme.errorContainer),
-          lessThan(4.5),
-          reason: '이 값이 4.5를 넘으면 위 계약이 의미를 잃습니다',
-        );
-      }
+      // 전투 예고는 같은 본문색을 쓰므로 새 경고 면에서도 읽혀야 한다.
+      expect(
+        contrastRatio(scheme.onSurface, scheme.errorContainer),
+        greaterThanOrEqualTo(4.5),
+        reason: '${scheme.brightness} 전투 예고 본문',
+      );
     }
   });
 
@@ -91,8 +89,8 @@ void main() {
       );
       expect(
         contrastRatio(scheme.onErrorContainer, faded),
-        lessThan(4.5),
-        reason: '진한 면용 짝을 흐린 면에 써도 되는 상태가 됐습니다',
+        greaterThanOrEqualTo(4.5),
+        reason: '${scheme.brightness} 흐린 경고 면의 전용 글자색',
       );
     }
   });

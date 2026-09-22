@@ -86,7 +86,7 @@ class ChatCharacterSnapshot {
   String get stageName => plantStageName(stage);
 
   String get dominantLabel =>
-      dominantForm?.emotionLabel ?? (stage >= 2 ? '마음빛 관찰 중' : '잠든 마음씨앗');
+      dominantForm?.emotionLabel ?? (stage >= 2 ? '성격이 자라는 중' : '씨앗');
 
   String? get secondaryLabel => secondaryForm?.emotionLabel;
 
@@ -100,7 +100,7 @@ class ChatCharacterSnapshot {
     final focus = conversationProfile.focus.trim();
     if (focus.isNotEmpty) return '$focus에 귀 기울여요.';
     if (stage < 3) return '아직 판단하지 않고 오늘 이야기를 천천히 들어요.';
-    return '$personalityName의 말걸음으로 오늘 장면을 함께 살펴봐요.';
+    return '$personalityName 타입의 캐릭터와 오늘 있었던 일을 이야기해요.';
   }
 
   String get semanticDescription {
@@ -109,7 +109,7 @@ class ChatCharacterSnapshot {
         ? ', 성장 성격 $personalityName'
         : '';
     return '$name, $stageName 단계, $dominantLabel'
-        '${secondary == null ? '' : ', 보조 마음빛 $secondary'}$personality, '
+        '${secondary == null ? '' : ', 보조 감정 $secondary'}$personality, '
         '$temperamentSummary';
   }
 
@@ -119,7 +119,7 @@ class ChatCharacterSnapshot {
       if (dominantForm != null) _dominantStarter(dominantForm!),
     ];
     if (stage <= 2) {
-      suggestions.add('아직 이름 붙이기 어려운 마음부터 들려줄게');
+      suggestions.add('무슨 말부터 해야 할지 모르겠어');
     } else if (secondaryForm != null) {
       suggestions.add(
         _secondaryStarter(secondaryForm!, conversationProfile),
@@ -151,11 +151,11 @@ class ChatCharacterSnapshot {
 }
 
 String _stageStarter(int stage) => switch (stage.clamp(1, 5).toInt()) {
-      1 => '오늘 있었던 일부터 작은 씨앗에게 들려줄게',
-      2 => '새잎에 남은 오늘 장면부터 말해볼게',
-      3 => '오늘 내 마음빛이 선명해진 순간부터 말해볼게',
-      4 => '꽃봉오리에 함께 남은 마음들을 들려줄게',
-      _ => '오늘 가장 오래 남은 장면을 같이 돌아볼래',
+      1 => '오늘 있었던 일을 얘기할래',
+      2 => '오늘 재미있는 일이 있었어',
+      3 => '오늘 기분이 어땠는지 얘기할래',
+      4 => '요즘 생각이 많아',
+      _ => '오늘 기억에 남는 일이 있어',
     };
 
 String _dominantStarter(PlantGrowthForm form) => switch (form) {
@@ -188,15 +188,15 @@ String _temperamentStarter(
 ) {
   final labels = temperament.labels.values.join(' ');
   if (labels.contains('차분히') || labels.contains('한 박자')) {
-    return '천천히, 지금 확실한 장면부터 말해볼게';
+    return '하나씩 얘기해 볼게';
   }
   if (labels.contains('깊이 느끼는')) {
-    return '아직 여운이 남은 장면을 서두르지 않고 들려줄게';
+    return '아직도 생각나는 일이 있어';
   }
   if (labels.contains('생기찬') || profile.cadence.contains('생기')) {
-    return '가장 선명하게 떠오르는 장면부터 바로 말해볼게';
+    return '제일 기억나는 일부터 얘기할게';
   }
-  return '편한 속도로 오늘 가장 마음에 남은 것부터 말해볼게';
+  return '오늘 일 좀 들어줄래?';
 }
 
 String _paceEnding(PlantConversationProfile profile) {

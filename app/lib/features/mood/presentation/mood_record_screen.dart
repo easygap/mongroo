@@ -418,7 +418,7 @@ class _MoodRecordScreenState extends ConsumerState<MoodRecordScreen> {
       child: Scaffold(
         appBar: AppBar(
           leading: BackButton(onPressed: _attemptLeave),
-          title: Text(_isEdit ? '기록 수정' : '오늘 기록'),
+          title: Text(_isEdit ? '일기 수정' : '일기 쓰기'),
         ),
         body: SafeArea(
           child: LayoutBuilder(
@@ -438,39 +438,37 @@ class _MoodRecordScreenState extends ConsumerState<MoodRecordScreen> {
                 32,
               ),
               children: [
-                _ObservationIntro(isEdit: _isEdit),
-                const SizedBox(height: 18),
-                _ObservationSection(
-                  indexLabel: '01',
-                  // 수정은 지난 날짜의 기록도 연다. 그때도 `오늘의 일기`라고
-                  // 부르면 어느 날 것을 고치는지 흐려진다.
-                  title: _isEdit ? '남긴 일기' : '오늘의 일기',
-                  helper: '감정을 고르지 않아도 돼요. 식물이 이 글을 읽고 자신만의 결로 자라요.',
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextField(
-                        key: const ValueKey('mood-diary-field'),
-                        controller: _contentController,
-                        readOnly: _saving,
-                        minLines: 5,
-                        maxLines: 16,
-                        maxLength: 5000,
-                        decoration: InputDecoration(
-                          labelText: '일기 본문',
-                          alignLabelWithHint: true,
-                          hintText: '오늘 가장 기억나는 장면은…\n그때 몸이나 마음에는…',
-                          fillColor: palette.paperDeep.withAlpha(82),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      _NotebookHint(
-                        icon: Icons.eco_outlined,
-                        text: '저장한 뒤 일기 본문에서 읽힌 마음이 현재 식물의 외형과 성격에 차곡차곡 반영돼요.',
-                      ),
-                    ],
+                Text(
+                  _isEdit ? '수정할 내용을 적어 주세요' : '오늘은 어땠나요?',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _isEdit ? '수정한 내용은 캐릭터의 성장에도 반영돼요.' : '기억에 남는 일을 편하게 적어 보세요.',
+                  style: TextStyle(color: palette.inkMuted, height: 1.5),
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  key: const ValueKey('mood-diary-field'),
+                  controller: _contentController,
+                  readOnly: _saving,
+                  minLines: 8,
+                  maxLines: 16,
+                  maxLength: 5000,
+                  decoration: InputDecoration(
+                    labelText: '일기 본문',
+                    alignLabelWithHint: true,
+                    hintText: '짧게 적어도 괜찮아요.',
+                    fillColor: palette.paper,
                   ),
                 ),
+                if (!_isEdit) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '일기를 저장하면 캐릭터가 자라요.',
+                    style: TextStyle(color: palette.inkMuted, fontSize: 13),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 Semantics(
                   button: true,
@@ -493,7 +491,7 @@ class _MoodRecordScreenState extends ConsumerState<MoodRecordScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      '일기 본문을 적으면 저장할 수 있어요.',
+                      '내용을 적으면 저장할 수 있어요.',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 13, color: palette.inkMuted),
                     ),
@@ -522,7 +520,6 @@ class _RecordSavedSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = MongrooPalette.of(context);
     final scheme = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
@@ -530,17 +527,8 @@ class _RecordSavedSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: MongrooTag(
-              label: isEdit ? '기록 갱신' : '오늘의 첫 장면',
-              icon: Icons.auto_awesome_rounded,
-              backgroundColor: palette.butter,
-            ),
-          ),
-          const SizedBox(height: 16),
           Text(
-            '이야기가 화분에 닿았어요',
+            isEdit ? '일기를 수정했어요' : '일기를 저장했어요',
             style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 8),
@@ -563,7 +551,7 @@ class _RecordSavedSheet extends StatelessWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      '${plantStageName(stage)} 단계가 열렸어요. 새로운 모습과 이야기를 확인해 보세요.',
+                      '${plantStageName(stage)} 단계로 자랐어요. 달라진 모습을 확인해 보세요.',
                       style: TextStyle(
                         color: scheme.onPrimaryContainer,
                         fontWeight: FontWeight.w800,
@@ -580,7 +568,7 @@ class _RecordSavedSheet extends StatelessWidget {
               _RecordSaveDestination.plant,
             ),
             icon: const Icon(Icons.spa_rounded),
-            label: const Text('식물 변화 보기'),
+            label: const Text('캐릭터 보기'),
           ),
           const SizedBox(height: 8),
           TextButton(
@@ -591,147 +579,6 @@ class _RecordSavedSheet extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ObservationIntro extends StatelessWidget {
-  const _ObservationIntro({required this.isEdit});
-
-  final bool isEdit;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = MongrooPalette.of(context);
-    return MongrooPanel(
-      color: palette.blush,
-      borderColor: palette.ink.withAlpha(32),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppTheme.seed,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Icon(Icons.eco_outlined, color: palette.ink, size: 24),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isEdit ? '남긴 일기를 고쳐요' : '오늘을 글로 남겨요',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: palette.ink,
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    // 새로 쓸 때의 조언을 수정 화면에 그대로 두면, 이미 쓴
-                    // 글을 앞에 두고 처음부터 적으라는 말이 된다.
-                    isEdit
-                        ? '고쳐서 저장하면 이 기록의 마음을 다시 읽어요.'
-                        : '가장 기억나는 장면 하나부터 적어도 충분해요.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: palette.inkMuted,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ObservationSection extends StatelessWidget {
-  const _ObservationSection({
-    required this.indexLabel,
-    required this.title,
-    required this.helper,
-    required this.child,
-  });
-
-  final String indexLabel;
-  final String title;
-  final String helper;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = MongrooPalette.of(context);
-    return MongrooPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              MongrooTag(label: indexLabel),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: palette.ink,
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            helper,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: palette.inkMuted,
-                ),
-          ),
-          const SizedBox(height: 14),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class _NotebookHint extends StatelessWidget {
-  const _NotebookHint({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = MongrooPalette.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 18, color: palette.leaf),
-        const SizedBox(width: 7),
-        Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: palette.inkMuted,
-                  height: 1.45,
-                ),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -758,17 +605,15 @@ class _StageUpDialog extends StatelessWidget {
     final palette = MongrooPalette.of(context);
     final previousStage = (stage - 1).clamp(1, 5);
     final title = switch (stage) {
-      2 => '첫 잎이 고개를 내밀었어요',
-      3 => '마음빛 갈래가 모습을 드러냈어요',
+      2 => '새싹이 났어요',
+      3 => '캐릭터의 성격이 생겼어요',
       4 => '꽃봉오리가 열리기 시작했어요',
-      5 => '한 그루의 이야기가 만개했어요',
-      _ => '식물의 다음 장면이 열렸어요',
+      5 => '꽃이 활짝 피었어요',
+      _ => '캐릭터가 자랐어요',
     };
     final note = stage >= 3 && form != null
-        ? '쌓인 ${form!.emotionLabel} 단서가 ${form!.label}의 외형과 '
-            '성격으로 이어지고 있어요.'
-        : '아직 어느 갈래도 확정되지 않았어요. 앞으로 쌓일 '
-            '마음이 잎의 빛과 말투를 천천히 바꿔요.';
+        ? '${form!.emotionLabel} 감정이 쌓여 ${form!.label} 타입으로 자라고 있어요.'
+        : '일기에 담긴 감정에 따라 모습과 성격이 달라져요.';
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -797,7 +642,7 @@ class _StageUpDialog extends StatelessWidget {
                 Text(title, style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 6),
                 Text(
-                  '일기의 한 장면이 식물의 다음 모습이 됐어요.',
+                  '꾸준히 일기를 써서 한 단계 성장했어요.',
                   style: TextStyle(color: palette.inkMuted, height: 1.45),
                 ),
                 const SizedBox(height: 16),

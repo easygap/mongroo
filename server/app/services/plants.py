@@ -88,7 +88,7 @@ EMOTION_BY_FINAL_FORM = {value: key for key, value in FINAL_FORM_BY_EMOTION.item
 PERSONALITY_BY_EMOTION = {
     "joy": {
         "persona_key": "sunny_optimist",
-        "persona_name": "햇살결",
+        "persona_name": "햇살",
         "trait": "다정함·나눔",
         "voice_line": "햇빛 자리 찾았어. 오늘 잎을 넓게 펼칠래.",
         "silhouette": "넓게 퍼지는 잎과 둥근 꽃잎",
@@ -97,7 +97,7 @@ PERSONALITY_BY_EMOTION = {
     },
     "sadness": {
         "persona_key": "gentle_listener",
-        "persona_name": "빗물결",
+        "persona_name": "빗방울",
         "trait": "섬세함·경청",
         "voice_line": "잎 끝의 물방울, 떨어질 때까지 지켜볼래.",
         "silhouette": "물결처럼 길게 흐르는 잎",
@@ -106,7 +106,7 @@ PERSONALITY_BY_EMOTION = {
     },
     "anger": {
         "persona_key": "brave_guardian",
-        "persona_name": "불씨결",
+        "persona_name": "불씨",
         "trait": "강인함·솔직함",
         "voice_line": "내 불씨는 작아도 또렷해. 길을 밝힐 수 있어.",
         "silhouette": "굵은 줄기와 불꽃처럼 치솟는 잎",
@@ -115,7 +115,7 @@ PERSONALITY_BY_EMOTION = {
     },
     "anxiety": {
         "persona_key": "careful_observer",
-        "persona_name": "달빛결",
+        "persona_name": "달빛",
         "trait": "신중함·준비",
         "voice_line": "달이 기울 때까지 주변을 한 번 더 살펴볼게.",
         "silhouette": "몸을 감싸는 겹잎과 단단한 봉오리",
@@ -124,7 +124,7 @@ PERSONALITY_BY_EMOTION = {
     },
     "surprise": {
         "persona_key": "curious_explorer",
-        "persona_name": "별빛결",
+        "persona_name": "별빛",
         "trait": "호기심·발견",
         "voice_line": "방금 반짝인 거 봤어? 저쪽도 확인하자!",
         "silhouette": "방향마다 튀어나온 별 모양 새잎",
@@ -133,7 +133,7 @@ PERSONALITY_BY_EMOTION = {
     },
     "mixed": {
         "persona_key": "free_spirit",
-        "persona_name": "모아결",
+        "persona_name": "무지개",
         "trait": "유연함·다채로움",
         "voice_line": "오늘은 잎마다 다른 색이야. 어느 쪽도 숨기지 않을래.",
         "silhouette": "서로 다른 모양이 어우러진 비대칭 잎",
@@ -573,7 +573,7 @@ def _temperament_payload(profile: dict, *, revealed: bool) -> dict:
         "labels": labels if revealed and has_evidence else {},
         "summary": (
             f"{labels['energy']} 움직임 · {labels['sensitivity']} 반응 · "
-            f"{labels['curiosity']} 시선 · {labels['deliberation']} 말걸음"
+            f"{labels['curiosity']} 시선 · {labels['deliberation']} 말투"
             if revealed and has_evidence
             else None
         ),
@@ -590,7 +590,7 @@ def build_growth_traits(
     """누적 감정 분포를 단계적으로 공개되는 캐릭터 성질로 번역한다.
 
     결과는 사용자에 대한 성격 검사나 진단이 아니라 식물의 외형·말투 연출 계약이다.
-    3단계에는 주결, 4단계에는 보조결과 기질 축, 5단계에는 완성된 대화 습관을
+    3단계에는 주 타입, 4단계에는 보조 타입과 기질 축, 5단계에는 완성된 대화 습관을
     공개한다. 감정 종류는 성장 속도·보상·희귀도에 영향을 주지 않는다.
     """
     stage = max(1, min(int(stage), len(STAGE_THRESHOLDS)))
@@ -625,18 +625,18 @@ def build_growth_traits(
         5: "signature_complete",
     }[stage]
     next_reveal = {
-        1: "새싹이 나면 일기에서 읽힌 첫 마음빛이 비쳐요.",
-        2: "줄기가 자라면 주된 외형과 성격 결이 드러나요.",
-        3: "꽃봉오리가 생기면 보조 감정의 색과 기질이 더해져요.",
-        4: "만개하면 움직임과 대화 습관까지 완성돼요.",
+        1: "다음 성장: 새싹이 나요.",
+        2: "다음 성장: 모습과 성격이 정해져요.",
+        3: "다음 성장: 꽃봉오리가 생겨요.",
+        4: "다음 성장: 꽃이 활짝 피어요.",
         5: None,
     }[stage]
 
     if dominant is None:
         if stage >= BRANCH_START_STAGE:
             reveal_state = "awaiting_evidence"
-            next_reveal = "일기 분석이 더 모이면 주된 외형과 성격 결이 드러나요."
-        title = "잠든 마음씨앗" if stage == 1 else "마음빛을 듣는 새싹"
+            next_reveal = "일기가 쌓이면 캐릭터의 성격이 정해져요."
+        title = "씨앗" if stage == 1 else "새싹"
         traits: list[str] = []
         chat_style = None
     else:
@@ -660,7 +660,7 @@ def build_growth_traits(
             ),
             "stage_expression": {
                 3: "주된 결의 말투가 막 드러나 서툴지만 또렷하다",
-                4: "주결에 보조결의 관찰 방식이 자연스럽게 섞인다",
+                4: "주 타입에 보조 타입의 관찰 방식이 자연스럽게 섞인다",
                 5: "완성된 고유 말버릇을 유지하되 같은 문장을 반복하지 않는다",
             }.get(stage),
         }
@@ -862,7 +862,7 @@ async def snapshot_final_form(
             await _lifecycle_entries(db, plant, harvested_at, lock=True)
         )
     # 수확 직전 refresh에서 강한 새 근거까지 반영한 뒤, 마지막으로 보이던 안정
-    # 분기를 그대로 고정한다. 안정 분기가 끝까지 없을 때만 모아결로 수확한다.
+    # 분기를 그대로 고정한다. 안정 분기가 끝까지 없을 때만 무지개로 수확한다.
     branch = (
         resolve_growth_branch(
             profile, stage_from_exp(plant.exp), plant.growth_branch, finalizing=False
@@ -891,7 +891,7 @@ def _branch_fields(
         branch = EMOTION_BY_FINAL_FORM.get(plant.final_form or "") or branch
     if not harvested and stage < BRANCH_START_STAGE:
         branch = None
-    # 만개의 모호한 프로필은 모아결을 미리 보여 주되 DB의 안정 분기로 저장하지
+    # 만개의 모호한 프로필은 무지개을 미리 보여 주되 DB의 안정 분기로 저장하지
     # 않는다. 후속 일기가 명확해지면 최초 임계값으로 다른 결을 선택할 수 있다.
     if (
         not harvested

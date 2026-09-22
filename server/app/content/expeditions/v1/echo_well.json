@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "content_version": "2026.08.18-story-art-v10",
+  "content_version": "2026.09.16-field-decisions-v11",
   "region": {
     "code": "echo_well",
     "name": "메아리 우물정원",
     "short_name": "우물정원",
-    "description": "물이 소리를 되돌려주는 정원이에요. 보낸 답장이 자꾸 돌아와, 어떻게 해야 말이 바깥으로 나가는지 배우게 돼요.",
+    "description": "반송된 우편이 모인 지하 물길. 종과 수문이 연결돼 있다.",
     "recommended_stage": 3,
     "stat_cap": 8,
     "reward": {
@@ -30,13 +30,13 @@
         "code": "echo_first_delay",
         "chapter": 1,
         "phase": "setup",
-        "title": "한 박자 늦은 인사",
-        "caption": "물목을 넘자 인사가 한 박자 늦게 돌아와요. 이 정원은 소리를 돌려주기만 해요.",
+        "title": "되돌아오는 소리",
+        "caption": "입구에서 부른 이름이 두 번 돌아왔다. 두 번째 소리는 오른쪽 물길에서 났다.",
         "scene_key": "dungeon_gate",
         "codex_entry": "우물정원.chapter.1"
       },
-      "title": "물목의 첫 매듭",
-      "summary": "주인을 못 찾은 메아리들이 문턱에서 서로 엉켜 웅웅거려요.",
+      "title": "두 갈래 물길",
+      "summary": "왼쪽과 오른쪽 수로에서 소리가 돌아온다. 문턱에는 끊어진 밧줄이 쌓였다.",
       "tangles": [
         "knotted_echo"
       ],
@@ -50,13 +50,13 @@
         "code": "echo_wet_address",
         "chapter": 2,
         "phase": "setup",
-        "title": "젖어도 남은 주소",
-        "caption": "젖은 편지에서 글자는 번졌는데 주소만 또렷해요. 받는 이는 여전히 마음정원의 친구들이에요.",
+        "title": "젖은 봉투",
+        "caption": "우편함 안에 같은 주소의 봉투가 여러 장 있다. 모두 반송 도장이 찍혀 있다.",
         "scene_key": "flooded_cave",
         "codex_entry": "우물정원.chapter.2"
       },
       "title": "잠긴 우편함",
-      "summary": "물이 차오르는 우편함에서 편지를 어떻게 꺼낼지 골라요.",
+      "summary": "우편함 안으로 물이 차오른다. 편지를 건지려면 잠금을 풀어야 한다.",
       "event_code": "flooded_post"
     },
     {
@@ -67,13 +67,13 @@
         "code": "echo_two_voices",
         "chapter": 3,
         "phase": "rising",
-        "title": "겹친 두 목소리",
-        "caption": "메아리와 진짜 목소리가 겹쳐 들려요. 누구의 말인지 가리는 법을 배워요.",
+        "title": "두 갈래 물길",
+        "caption": "왼쪽은 빈 벽. 오른쪽 벽에는 손가락 세 개가 들어갈 틈이 있다.",
         "scene_key": "echo_well",
         "codex_entry": "우물정원.chapter.3"
       },
       "title": "튀는 물방울 떼",
-      "summary": "매듭 사이에서 물방울이 튀어 올라 발밑을 자꾸 흐트러뜨려요.",
+      "summary": "수로가 좁아지며 물방울이 사방으로 튄다. 발 디딜 곳을 확보한다.",
       "tangles": [
         "knotted_echo",
         "splashing_droplets"
@@ -88,13 +88,13 @@
         "code": "echo_bell_under",
         "chapter": 4,
         "phase": "turn",
-        "title": "물 아래의 박자",
-        "caption": "가라앉은 종이 물결마다 한 번씩 울려요. 정원 전체가 같은 박자로 숨 쉬고 있었어요.",
+        "title": "가라앉은 종",
+        "caption": "물 아래 종이 밧줄에 걸렸다. 물결이 칠 때마다 벽을 한 번씩 두드린다.",
         "scene_key": "echo_well",
         "codex_entry": "우물정원.chapter.4"
       },
       "title": "소용돌이 종매듭",
-      "summary": "물살이 한자리를 맴돌다 종매듭 하나로 단단히 뭉쳤어요.",
+      "summary": "물살 가운데 묶인 종이 통로를 막는다. 밧줄의 움직임을 살핀다.",
       "tangles": [
         "bell_knot_swirl"
       ],
@@ -108,13 +108,13 @@
         "code": "echo_quiet_rest",
         "chapter": 5,
         "phase": "rising",
-        "title": "잠깐 멎은 물",
-        "caption": "쉼터에서는 메아리가 쉬어요. 돌아오지 않는 잠깐 동안 서로의 말이 또렷해져요.",
+        "title": "마른 돌턱",
+        "caption": "돌턱에 앉아 양말을 말렸다. 여기서는 우리 목소리만 들린다.",
         "scene_key": "root_tunnel",
         "codex_entry": "우물정원.chapter.5"
       },
       "title": "물뿌리 쉼터",
-      "summary": "숨을 고르고 오늘 본 것을 이야기해요."
+      "summary": "물이 닿지 않는 돌턱에서 장비를 말린다."
     },
     {
       "no": 6,
@@ -124,13 +124,13 @@
         "code": "echo_why_returns",
         "chapter": 6,
         "phase": "truth",
-        "title": "돌아오는 이유",
-        "caption": "이 정원은 답장을 붙잡는 게 아니라, 받는 이를 못 찾아 되돌려보내고 있었어요.",
+        "title": "반송함",
+        "caption": "반송 도장의 날짜가 모두 같다. 우편길이 닫힌 날이다.",
         "scene_key": "echo_well",
         "codex_entry": "우물정원.chapter.6"
       },
       "title": "되돌아온 목소리",
-      "summary": "메아리와 진짜 목소리를 가르는 방법을 골라요.",
+      "summary": "두 번째 목소리는 벽 뒤에서 난다. 틈을 조사할지, 등불을 채울지 고른다.",
       "event_code": "returning_voice"
     },
     {
@@ -141,13 +141,13 @@
         "code": "echo_open_the_throat",
         "chapter": 7,
         "phase": "climax",
-        "title": "물목을 여는 법",
-        "caption": "종지기의 박자를 어긋내면 물이 한 방향으로 흘러요. 길이 열리기 시작해요.",
+        "title": "수문 손잡이",
+        "caption": "종의 밧줄을 옆으로 옮겼다. 막혔던 수문이 조금 올라갔다.",
         "scene_key": "treasure_vault",
         "codex_entry": "우물정원.chapter.7"
       },
       "title": "고요한 방 앞",
-      "summary": "물방울과 종매듭이 마지막 물목에 함께 모여 길을 막아요.",
+      "summary": "마지막 수문에 종과 밧줄이 엉켰다. 보관고 표지가 반쯤 잠겨 있다.",
       "tangles": [
         "splashing_droplets",
         "bell_knot_swirl"
@@ -162,13 +162,13 @@
         "code": "echo_letter_leaves",
         "chapter": 8,
         "phase": "resolution",
-        "title": "떠난 답장",
-        "caption": "메아리 없는 방에서 목소리가 처음으로 돌아오지 않아요. 다음 편지는 별빛 씨앗 보관고로 향해요.",
+        "title": "다음 주소",
+        "caption": "물이 빠지자 별빛 씨앗 보관고로 가는 표지판이 드러났다. 반송함은 조용해졌다.",
         "scene_key": "monster_den",
         "codex_entry": "우물정원.chapter.8"
       },
       "title": "물결 종지기",
-      "summary": "물목 끝에서 종지기가 몸을 일으켜요. 종이 울리기 전에 물결의 결을 읽어야 해요.",
+      "summary": "종지기가 수문 앞에서 일어난다. 종을 울리기 전에 다음 공격을 확인한다.",
       "event_code": "bell_ringer",
       "weakness": "focus"
     }
@@ -434,9 +434,9 @@
   ],
   "events": {
     "flooded_post": {
-      "title": "잠긴 우편함",
-      "text": "우편함이 기울어 물이 차오르고 있어요. 편지를 어떻게 꺼낼까요?",
-      "bubble": "우편함이 기울고 물이 차올라요.",
+      "title": "기울어진 우편함",
+      "text": "우편함 안으로 물이 샌다. 봉투는 아래쪽으로 가라앉고, 등불용 심지 묶음은 윗칸에 걸려 있다.",
+      "bubble": "우편함 안으로 물이 샌다.",
       "tags": [
         "puzzle",
         "mystery"
@@ -444,32 +444,63 @@
       "choices": [
         {
           "code": "tilt_slowly",
-          "label": "기울기를 천천히 되돌려 물을 흘려보낸다",
+          "label": "윗칸의 봉투부터 건진다",
           "stat": "focus",
           "difficulty": 8,
-          "resolve_cost": 1
+          "resolve_cost": 1,
+          "consequence": "성공하면 반송 봉투와 발견물 획득",
+          "collects_loot": true,
+          "outcome_text": {
+            "flourish": "건져 낸 봉투 세 장. 받는 주소와 반송 날짜가 모두 같다.",
+            "clear": "건져 낸 봉투 세 장. 받는 주소와 반송 날짜가 모두 같다.",
+            "detour": "봉투를 잡기 전에 물살이 안쪽으로 밀어 넣었다.",
+            "safe": "건져 낸 봉투 세 장. 받는 주소와 반송 날짜가 모두 같다."
+          },
+          "success_effect": {
+            "finding": "반송 봉투"
+          }
         },
         {
           "code": "read_first",
-          "label": "젖기 전에 겉면부터 읽어 둔다",
+          "label": "우편함을 세우고 심지를 꺼낸다",
           "stat": "insight",
           "difficulty": 8,
-          "resolve_cost": 1
+          "resolve_cost": 1,
+          "consequence": "성공하면 길빛 2 회복. 발견물 없음",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "우편함을 세웠다. 마른 윗칸에서 등불용 심지를 챙겼다.",
+            "clear": "우편함을 세웠다. 마른 윗칸에서 등불용 심지를 챙겼다.",
+            "detour": "받침이 진흙 속으로 가라앉았다. 우편함을 벽 쪽으로 기대 놓았다.",
+            "safe": "우편함을 세웠다. 마른 윗칸에서 등불용 심지를 챙겼다."
+          },
+          "success_effect": {
+            "trail_light": 2
+          }
         },
         {
           "code": "leave_mark",
-          "label": "표식만 남기고 물러선다",
+          "label": "지도에 표시하고 떠난다",
           "stat": null,
           "difficulty": 0,
           "resolve_cost": 0,
-          "safe": true
+          "safe": true,
+          "consequence": "소모 없음. 이번 발견물은 건너뜁니다.",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "물이 빠지면 다시 찾을 수 있도록 위치를 적었다.",
+            "clear": "물이 빠지면 다시 찾을 수 있도록 위치를 적었다.",
+            "detour": "물이 빠지면 다시 찾을 수 있도록 위치를 적었다.",
+            "safe": "물이 빠지면 다시 찾을 수 있도록 위치를 적었다."
+          },
+          "success_effect": {}
         }
       ]
     },
     "returning_voice": {
-      "title": "되돌아온 목소리",
-      "text": "우물이 방금 낸 목소리를 그대로 돌려줘요. 어느 쪽이 진짜인지 어떻게 가릴까요?",
-      "bubble": "우물이 방금 낸 목소리를 그대로 돌려줘요.",
+      "title": "소리의 갈림길",
+      "text": "오른쪽 벽에서 소리가 두 번 돌아온다. 벽의 틈을 조사하거나, 벽등이 켜진 마른 통로를 찾을 수 있다.",
+      "bubble": "오른쪽 벽에서 두 번 울린다.",
       "tags": [
         "puzzle",
         "mystery"
@@ -477,25 +508,56 @@
       "choices": [
         {
           "code": "count_beats",
-          "label": "돌아오는 박자를 세어 거리를 잰다",
+          "label": "소리가 난 벽의 틈을 조사한다",
           "stat": "focus",
           "difficulty": 8,
-          "resolve_cost": 1
+          "resolve_cost": 1,
+          "consequence": "성공하면 수문 도면과 발견물 획득",
+          "collects_loot": true,
+          "outcome_text": {
+            "flourish": "벽돌 뒤에 접힌 도면이 있었다. 종 밧줄이 수문과 연결돼 있다.",
+            "clear": "벽돌 뒤에 접힌 도면이 있었다. 종 밧줄이 수문과 연결돼 있다.",
+            "detour": "틈이 생각보다 깊었다. 손을 다 넣기 전에 돌아섰다.",
+            "safe": "벽돌 뒤에 접힌 도면이 있었다. 종 밧줄이 수문과 연결돼 있다."
+          },
+          "success_effect": {
+            "finding": "수문 도면"
+          }
         },
         {
           "code": "call_name",
-          "label": "서로의 이름을 불러 답을 맞춰 본다",
+          "label": "마른 통로의 벽등을 찾는다",
           "stat": "care",
           "difficulty": 8,
-          "resolve_cost": 1
+          "resolve_cost": 1,
+          "consequence": "성공하면 길빛 2 회복. 발견물 없음",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "서로의 목소리를 따라 마른 통로로 나왔다. 꺼진 등불을 다시 켰다.",
+            "clear": "서로의 목소리를 따라 마른 통로로 나왔다. 꺼진 등불을 다시 켰다.",
+            "detour": "반대쪽 울림을 따라갔다가 같은 곳으로 돌아왔다.",
+            "safe": "서로의 목소리를 따라 마른 통로로 나왔다. 꺼진 등불을 다시 켰다."
+          },
+          "success_effect": {
+            "trail_light": 2
+          }
         },
         {
           "code": "stay_quiet",
-          "label": "아무 말도 하지 않고 지나간다",
+          "label": "벽을 따라 지나간다",
           "stat": null,
           "difficulty": 0,
           "resolve_cost": 0,
-          "safe": true
+          "safe": true,
+          "consequence": "소모 없음. 이번 발견물은 건너뜁니다.",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "조사는 접고 물가를 따라 걸었다.",
+            "clear": "조사는 접고 물가를 따라 걸었다.",
+            "detour": "조사는 접고 물가를 따라 걸었다.",
+            "safe": "조사는 접고 물가를 따라 걸었다."
+          },
+          "success_effect": {}
         }
       ]
     },
@@ -543,7 +605,7 @@
             "focus_reward": 0,
             "tone": "rainy",
             "rule_name": "잔물 수호",
-            "rule_summary": "약점을 맞히지 못한 라운드에는 수호 장벽이 2 회복돼요.",
+            "rule_summary": "약점을 맞히지 못한 라운드에는 체력이 2 회복돼요.",
             "phase_gate": "resolve_intent",
             "intro_caption": "종 아래 물이 거울처럼 잔잔해졌어요.",
             "intents": [
@@ -719,53 +781,53 @@
   "run_threads": [
     {
       "code": "well_unanswered_bell",
-      "title": "대답을 기다리는 종",
+      "title": "물 아래 종",
       "seed_variants": [
-        "우물 바닥에서 종 그림자가 흔들리는데 소리는 올라오지 않아요.",
-        "정원의 메아리가 유독 한 방향에서만 돌아오지 않아요."
+        "밧줄을 건드리지 않았는데 종소리가 났다. 물결이 벽에 닿는 때와 같다.",
+        "우물 벽 안에서 금속 부딪히는 소리가 난다. 바람이 멎어도 계속된다."
       ],
       "echo_variants": [
-        "물결 위에 음 하나가 동그라미로 남아 같은 자리를 맴돌아요.",
-        "종지기의 기보에 한 칸이 비어 있어요. 아직 아무도 불러 주지 않은 음이에요."
+        "물속에서 밧줄이 느슨하게 흔들린다. 끝에 달린 종이 벽을 두드린다.",
+        "돌턱 밑을 비추니 종의 손잡이가 보인다. 끊어진 줄에 비스듬히 매달려 있다."
       ],
       "payoff_variants": {
-        "careful": "물가에 앉아 같은 음을 낮게 따라 부르자, 물 아래에서 종이 처음으로 길게 대답해요.",
-        "bold": "우물 속으로 손을 뻗어 종줄을 당겨요. 물기둥과 함께 미뤄 둔 대답들이 한꺼번에 울려 퍼져요.",
-        "relational": "세 대원이 서로 다른 음을 나눠 맡자 종이 화음으로 대답해요. 종지기가 기보의 빈칸을 채워 넣어요."
+        "careful": "물결이 잠잠해질 때까지 기다려 줄을 당겼다. 종 안에서 우편함 열쇠가 나왔다.",
+        "bold": "긴 막대로 종을 돌턱까지 끌어올렸다. 종소리가 멎자 옆 수로의 물소리가 들렸다.",
+        "relational": "둘이서 줄을 잡고 한 명이 종을 받쳤다. 바닥에 끼어 있던 열쇠가 돌턱 위로 떨어졌다."
       }
     },
     {
       "code": "well_twice_returned_name",
       "title": "두 번 돌아온 이름",
       "seed_variants": [
-        "대원의 이름을 부르자 메아리가 한 박자 늦게, 두 번 돌아와요.",
-        "아무도 부르지 않았는데 우물가에서 낯선 억양의 이름이 들려요."
+        "이름을 부르자 두 번 돌아왔다. 두 번째 소리는 오른쪽 수로에서 났다.",
+        "빈 우물에 대고 손뼉을 쳤다. 짧은 메아리 뒤에 낮은 울림이 한 번 더 이어진다."
       ],
       "echo_variants": [
-        "두 번째 메아리는 항상 반 음 낮아요. 흉내가 아니라 화음에 가까워요.",
-        "물결에 비친 그림자가 한 명 더 많아 보였다가, 다시 세어 보면 맞아요."
+        "오른쪽 벽에는 손가락 세 개가 들어갈 틈이 있다. 틈 안에서 바람이 나온다.",
+        "벽의 이음새에 귀를 대자 물 흐르는 소리가 커졌다. 이 뒤에도 빈 방이 있다."
       ],
       "payoff_variants": {
-        "careful": "두 번째 목소리가 놀라지 않게 작게 인사해요. 물결이 수줍은 듯 한 번 크게 일렁여요.",
-        "bold": "두 번째 목소리를 향해 큰 소리로 물어요. ‘너는 누구야?’ 웃음 같은 파문이 우물 가득 퍼져요.",
-        "relational": "대원들이 서로의 이름을 차례로 불러 줘요. 메아리도 차례로 따라 하다, 끝에 처음 듣는 이름 하나를 남겨요."
+        "careful": "틈 앞에서 소리가 돌아오는 시간을 쟀다. 바로 뒤가 아니라 수로 건너편에 방이 있다.",
+        "bold": "벽돌 하나를 빼자 길게 이어진 통로가 보였다. 반대편 우편함이 조금 열려 있다.",
+        "relational": "대원을 양쪽 수로에 세우고 한 번씩 불렀다. 두 목소리가 같은 우편함 앞에서 만났다."
       }
     },
     {
       "code": "well_reversed_current",
-      "title": "거꾸로 흐르는 물길",
+      "title": "거꾸로 흐른 물",
       "seed_variants": [
-        "수로의 꽃잎이 물을 거슬러 올라가요. 물길이 거꾸로 흐르고 있어요.",
-        "물레방아가 반대로 돌면서 들어 본 적 없는 낮은 화음을 내요."
+        "물에 띄운 잎이 출구 반대쪽으로 간다. 바닥에는 오래된 수문이 있다.",
+        "이쪽 돌턱만 물에 젖지 않았다. 물살은 마른 자리 아래로 빨려 들어간다."
       ],
       "echo_variants": [
-        "거꾸로 흐르는 물을 따라가면 소리가 점점 어려져요. 오래된 메아리로 돌아가는 길이에요.",
-        "상류 수문에 종지기의 기보 조각이 젖지 않은 채 끼워져 있어요."
+        "수문 손잡이가 절반만 돌아가 있다. 홈 사이에 봉투 모서리가 끼었다.",
+        "돌 밑에서 도장이 찍힌 봉투가 나왔다. 반송 날짜는 우편길이 닫힌 날이다."
       ],
       "payoff_variants": {
-        "careful": "물길을 억지로 되돌리지 않고 끝까지 따라가요. 가장 오래된 메아리가 조용히 제자리를 찾아요.",
-        "bold": "수문을 열어 두 물길을 한 번에 합쳐요. 새 화음이 정원의 모든 종을 한 번씩 깨워요.",
-        "relational": "종지기와 나란히 서서 물소리를 들어요. ‘새 곡을 쓰는 중이었어.’ 종지기가 처음으로 악보를 보여 줘요."
+        "careful": "끼어 있던 봉투를 물에 불려 천천히 뺐다. 수문이 닫히며 보관고 표지가 드러났다.",
+        "bold": "손잡이를 끝까지 돌렸다. 물이 옆길로 빠지고 계단 두 칸이 나타났다.",
+        "relational": "한 명이 수문을 잡고 다른 대원이 봉투를 건졌다. 마른 돌턱 위에 반송 편지를 펼쳐 뒀다."
       }
     }
   ]

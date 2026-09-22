@@ -181,14 +181,6 @@ class _FormPanel extends StatelessWidget {
               ),
               const SizedBox(height: 20),
             ],
-            Row(
-              children: [
-                Container(width: 36, height: 4, color: palette.coral),
-                const SizedBox(width: 5),
-                Container(width: 10, height: 4, color: palette.butter),
-              ],
-            ),
-            const SizedBox(height: 14),
             Semantics(
               header: true,
               child: Text(
@@ -226,12 +218,6 @@ class _PocketTitlePanel extends StatelessWidget {
     final foreground = scheme.brightness == Brightness.dark
         ? scheme.onSurface
         : scheme.onInverseSurface;
-    final backdrop = _PocketBackdropPainter(
-      gridColor: foreground.withAlpha(16),
-      coral: palette.coral.withAlpha(150),
-      butter: palette.butter.withAlpha(135),
-      leaf: palette.leaf.withAlpha(155),
-    );
 
     Widget content({required bool horizontal}) {
       final markSize = compact ? 104.0 : 180.0;
@@ -246,7 +232,7 @@ class _PocketTitlePanel extends StatelessWidget {
               textAlign: horizontal ? TextAlign.start : TextAlign.center,
               style: Theme.of(context).textTheme.displaySmall?.copyWith(
                     color: foreground,
-                    fontFamily: AppTheme.pixelFont,
+                    fontFamily: AppTheme.bodyFont,
                     fontSize: compact ? 25 : 36,
                     letterSpacing: 0,
                   ),
@@ -259,18 +245,6 @@ class _PocketTitlePanel extends StatelessWidget {
                     color: foreground.withAlpha(205),
                     fontWeight: FontWeight.w700,
                   ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              alignment:
-                  horizontal ? WrapAlignment.start : WrapAlignment.center,
-              spacing: 7,
-              runSpacing: 7,
-              children: [
-                _PocketFeature(label: '기록', color: palette.coral),
-                _PocketFeature(label: '성장', color: palette.butter),
-                _PocketFeature(label: '수집', color: palette.leaf),
-              ],
             ),
           ],
         ),
@@ -297,31 +271,28 @@ class _PocketTitlePanel extends StatelessWidget {
 
     final panel = ColoredBox(
       color: palette.night,
-      child: CustomPaint(
-        painter: backdrop,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final textScale = MediaQuery.textScalerOf(context).scale(1);
-            final horizontal =
-                compact && constraints.maxWidth >= 330 && textScale <= 1.25;
-            final body = Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: compact ? 22 : 48,
-                vertical: compact ? 24 : 48,
-              ),
-              child: content(horizontal: horizontal),
-            );
-            if (compact) return body;
-            final minHeight =
-                constraints.hasBoundedHeight ? constraints.maxHeight : 0.0;
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: minHeight),
-                child: Center(child: body),
-              ),
-            );
-          },
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final textScale = MediaQuery.textScalerOf(context).scale(1);
+          final horizontal =
+              compact && constraints.maxWidth >= 330 && textScale <= 1.25;
+          final body = Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 22 : 48,
+              vertical: compact ? 24 : 48,
+            ),
+            child: content(horizontal: horizontal),
+          );
+          if (compact) return body;
+          final minHeight =
+              constraints.hasBoundedHeight ? constraints.maxHeight : 0.0;
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: minHeight),
+              child: Center(child: body),
+            ),
+          );
+        },
       ),
     );
 
@@ -329,41 +300,6 @@ class _PocketTitlePanel extends StatelessWidget {
       header: true,
       label: '몽그루, 감정 기록과 식물 성장',
       child: panel,
-    );
-  }
-}
-
-class _PocketFeature extends StatelessWidget {
-  const _PocketFeature({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final foreground = scheme.brightness == Brightness.dark
-        ? scheme.onSurface
-        : scheme.onInverseSurface;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: color.withAlpha(30),
-        border: Border.all(color: color.withAlpha(190)),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: foreground,
-            fontFamily: AppTheme.pixelFont,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            height: 1.25,
-          ),
-        ),
-      ),
     );
   }
 }
@@ -464,55 +400,4 @@ class AuthInlineError extends StatelessWidget {
       ),
     );
   }
-}
-
-class _PocketBackdropPainter extends CustomPainter {
-  const _PocketBackdropPainter({
-    required this.gridColor,
-    required this.coral,
-    required this.butter,
-    required this.leaf,
-  });
-
-  final Color gridColor;
-  final Color coral;
-  final Color butter;
-  final Color leaf;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final gridPaint = Paint()
-      ..isAntiAlias = false
-      ..color = gridColor
-      ..strokeWidth = 1;
-    for (var x = 24.0; x < size.width; x += 32) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
-    }
-    for (var y = 24.0; y < size.height; y += 32) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-
-    void pixel(double x, double y, Color color, [double side = 6]) {
-      canvas.drawRect(
-        Rect.fromLTWH(size.width * x, size.height * y, side, side),
-        Paint()
-          ..isAntiAlias = false
-          ..color = color,
-      );
-    }
-
-    pixel(.10, .15, butter);
-    pixel(.82, .12, coral, 8);
-    pixel(.88, .37, leaf);
-    pixel(.13, .72, coral);
-    pixel(.77, .82, butter, 8);
-    pixel(.37, .08, leaf, 4);
-  }
-
-  @override
-  bool shouldRepaint(covariant _PocketBackdropPainter oldDelegate) =>
-      oldDelegate.gridColor != gridColor ||
-      oldDelegate.coral != coral ||
-      oldDelegate.butter != butter ||
-      oldDelegate.leaf != leaf;
 }

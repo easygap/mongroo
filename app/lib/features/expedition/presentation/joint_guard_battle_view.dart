@@ -146,7 +146,7 @@ class _LayerBar extends StatelessWidget {
                 label: '${layer.name} · ${layer.progressLabel}',
                 icon: Icons.bedtime_rounded,
               ),
-              // 화살표는 통하고 안 통하고를 말하지만, **어느 성장결인지**는
+              // 화살표는 통하고 안 통하고를 말하지만, **어느 성장 타입인지**는
               // 글자로만 있었다. 마크를 앞에 붙여 글자를 못 읽어도 갈리게 한다.
               MongrooTag(
                 label: '잘 통해요 ${layer.weakKelLabel}',

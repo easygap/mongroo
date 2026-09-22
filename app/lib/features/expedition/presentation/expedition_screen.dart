@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:async';
 import 'dart:ui' as ui;
@@ -10,7 +9,6 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/config/bundled_assets.dart';
 import '../../../core/text/korean_particles.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
@@ -22,6 +20,7 @@ import 'expedition_controller.dart';
 import 'expedition_battle_dock.dart';
 import 'expedition_combat_overlay.dart';
 import 'expedition_combat_audio.dart';
+import 'expedition_music_mix.dart';
 import 'expedition_discovery_audio.dart';
 import 'expedition_walk_path.dart';
 import 'expedition_free_walk.dart';
@@ -36,6 +35,7 @@ import 'moss_archive_scene.dart';
 // 화면 전용 위젯은 외부 API로 노출하지 않되, 준비·지도·선택·결과의 책임별로
 // 파일을 나눠 탐험 흐름을 수정할 때 영향을 받는 범위를 작게 유지한다.
 part 'expedition_active_scene.dart';
+part 'expedition_atlas.dart';
 part 'expedition_battle_scene.dart';
 part 'expedition_decision.dart';
 part 'expedition_event_decision.dart';
@@ -47,6 +47,16 @@ part 'expedition_stage_map.dart';
 part 'expedition_stage_scene.dart';
 part 'expedition_tile_world.dart';
 part 'expedition_summary.dart';
+
+/// One departure screen, whether opened in the garden or as a route.
+class ExpeditionLobby extends StatelessWidget {
+  const ExpeditionLobby({super.key, required this.onPatrol, this.onJournal});
+  final VoidCallback onPatrol;
+  final VoidCallback? onJournal;
+  @override
+  Widget build(BuildContext context) =>
+      _ExpeditionHub(embedded: true, onPatrol: onPatrol, onJournal: onJournal);
+}
 
 class ExpeditionScreen extends ConsumerWidget {
   const ExpeditionScreen({super.key});
@@ -95,9 +105,14 @@ class ExpeditionScreen extends ConsumerWidget {
     );
     final expedition = shell.expedition;
     final notifier = ref.read(expeditionControllerProvider.notifier);
-    final title = expedition?.region.name ?? '함께 떠나는 탐험';
+    final title = expedition?.region.name ?? '탐험';
     final immersiveCombat = expedition?.run.isActive == true &&
         expedition?.currentEvent?.battle != null;
+    final immersiveWalk = expedition?.run.isActive == true &&
+        expedition?.run.stageNo != null &&
+        expedition?.currentEvent == null &&
+        expedition?.run.objectiveSecured == false &&
+        expedition!.availableMoveCodes.isNotEmpty;
     // 허브 안쪽 화면에서는 시스템 뒤로가기가 화면을 닫지 않고 한 단계만 돌아간다.
     final canPopShell =
         expedition != null || shell.shellView == ExpeditionShellView.hub;
@@ -107,7 +122,10 @@ class ExpeditionScreen extends ConsumerWidget {
         if (!didPop) notifier.goBackInShell();
       },
       child: Scaffold(
-        appBar: immersiveCombat
+        appBar: immersiveCombat ||
+                immersiveWalk ||
+                (expedition == null &&
+                    shell.shellView != ExpeditionShellView.preparation)
             ? null
             : AppBar(
                 // 지도·편성 화면은 본문 머리에 `허브로` 버튼을 이미 들고 있다.
@@ -127,7 +145,7 @@ class ExpeditionScreen extends ConsumerWidget {
                 ],
               ),
         body: SafeArea(
-          top: immersiveCombat,
+          top: immersiveCombat || immersiveWalk,
           child: shell.loading
               ? const Center(child: CircularProgressIndicator())
               : expedition != null
@@ -137,7 +155,19 @@ class ExpeditionScreen extends ConsumerWidget {
                   // 지역 안내가 있는 기존 결과 화면으로 간다.
                   ? expedition.run.isActive || shell.advancing
                       ? _ActiveExpedition(expedition: expedition)
-                      : _ExpeditionSummary(expedition: expedition)
+                      : _ExpeditionSummary(
+                          expedition: expedition,
+                          onExit: () {
+                            if (!context.mounted) return;
+                            if (Navigator.of(context).canPop()) {
+                              Navigator.of(context).pop();
+                            } else {
+                              context.go(expedition.run.mode == 'tutorial'
+                                  ? '/home'
+                                  : '/explore');
+                            }
+                          },
+                        )
                   : switch (shell.shellView) {
                       ExpeditionShellView.hub => const _ExpeditionHub(),
                       ExpeditionShellView.stageMap =>
@@ -232,13 +262,10 @@ class _ActiveExpeditionState extends ConsumerState<_ActiveExpedition>
     final expedition = widget.expedition;
     final battle = expedition.currentEvent?.battle;
     final encounter = expedition.currentEvent?.encounter;
-    final musicState = battle?.enemyKind == 'guardian' ||
-            encounter?.kind == 'guardian'
-        ? ExpeditionMusicState.guardian
-        : battle != null
-            ? ExpeditionMusicState.combat
-            : ExpeditionMusicState.base;
-    await _music.playMusic(musicState, regionCode: expedition.region.code);
+    final mix = expeditionMusicMix(
+        battle: battle, guardianEncounter: encounter?.kind == 'guardian');
+    await _music.playMusic(mix.state,
+        regionCode: expedition.region.code, volume: mix.volume);
   }
 
   @override
@@ -248,7 +275,8 @@ class _ActiveExpeditionState extends ConsumerState<_ActiveExpedition>
     // 지도 걷기·스테이지 필드·전투가 각자 다른 화면을 그리지만 스냅숏은 전부
     // 여기를 지난다. 발견을 알아채는 자리를 하나만 두려고 build가 아니라
     // 여기에서 본다 - build는 스크롤에도 다시 돌아 같은 소식을 되풀이한다.
-    final cue = expeditionDiscoveryCueFor(oldWidget.expedition, widget.expedition);
+    final cue =
+        expeditionDiscoveryCueFor(oldWidget.expedition, widget.expedition);
     if (cue == null) return;
     unawaited(
       _discoveries.play(

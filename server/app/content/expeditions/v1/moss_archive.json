@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "content_version": "2026.08.18-story-art-v10",
+  "content_version": "2026.09.16-field-decisions-v11",
   "region": {
     "code": "moss_archive",
     "name": "이끼 기억서고",
     "short_name": "기억서고",
-    "description": "숨 쉬는 장부와 새벽 우편의 흔적을 따라, 끊긴 온실 밖 길을 되찾는 첫 던전이에요.",
+    "description": "배달되지 않은 편지가 남은 온실 서고. 봉투의 주소를 찾는다.",
     "recommended_stage": 2,
     "stat_cap": 7,
     "reward": {
@@ -25,17 +25,19 @@
     {
       "no": 1,
       "kind": "battle",
-      "title": "서가 앞 첫 걸음",
-      "summary": "입구 선반에서 장부 뭉치가 엉켜 길을 반쯤 막고 있어요.",
+      "title": "문턱의 장부",
+      "summary": "쏟아진 장부가 문을 막고 있다. 안쪽에서 종이 넘기는 소리가 난다.",
       "estimated_seconds": 75,
-      "tangles": ["tangled_ledger"],
+      "tangles": [
+        "tangled_ledger"
+      ],
       "weakness": "insight",
       "story": {
         "code": "archive_first_golden_thread",
         "chapter": 1,
         "phase": "setup",
-        "title": "장부 끝의 금빛 실",
-        "caption": "풀려난 장부의 마지막 장에서, 이 서고의 것이 아닌 금빛 실 한 가닥이 다음 서가를 가리켜요.",
+        "title": "문턱의 장부",
+        "caption": "장부 사이에서 봉투 하나가 떨어졌다. 우표는 붙었는데 소인이 없다.",
         "scene_key": "dungeon_gate",
         "codex_entry": "archive.clue.golden_thread"
       }
@@ -44,15 +46,15 @@
       "no": 2,
       "kind": "event",
       "title": "번진 이름들",
-      "summary": "젖은 표찰의 글자를 어떤 방식으로 되살릴지 골라요.",
+      "summary": "젖은 표찰에 주소가 남아 있다. 읽어 낼지, 등불부터 손볼지 정해야 한다.",
       "estimated_seconds": 45,
       "event_code": "wet_label_order",
       "story": {
         "code": "archive_address_without_name",
         "chapter": 2,
         "phase": "setup",
-        "title": "이름 없는 받는 이",
-        "caption": "되살린 표찰은 한 이름이 아니라 ‘마음정원의 친구들 앞으로’라는 오래된 주소였어요.",
+        "title": "지워진 주소",
+        "caption": "표찰의 글자가 거의 지워졌다. 남은 세 글자는 ‘온실 앞’.",
         "scene_key": "flooded_cave",
         "codex_entry": "archive.clue.shared_address"
       }
@@ -61,16 +63,19 @@
       "no": 3,
       "kind": "battle",
       "title": "압화 보관대",
-      "summary": "말린 꽃잎 표본이 바람에 흩어져 떼로 떠다녀요.",
+      "summary": "압화가 보관대에서 흩어졌다. 바람이 멎어도 꽃잎은 내려오지 않는다.",
       "estimated_seconds": 100,
-      "tangles": ["tangled_ledger", "drifting_pressings"],
+      "tangles": [
+        "tangled_ledger",
+        "drifting_pressings"
+      ],
       "weakness": "insight",
       "story": {
         "code": "archive_foreign_petal",
         "chapter": 3,
         "phase": "rising",
-        "title": "도감에 없는 꽃잎",
-        "caption": "압화 사이에서 이 온실 도감에 없는 금빛 꽃잎이 나와요. 누군가 바깥에서 우편을 보낸 흔적이에요.",
+        "title": "낯선 꽃잎",
+        "caption": "봉투에 끼어 있던 꽃잎. 서고의 표본 목록에는 같은 꽃이 없다.",
         "scene_key": "treasure_vault",
         "codex_entry": "archive.clue.foreign_petal"
       }
@@ -80,16 +85,18 @@
       "kind": "battle",
       "elite": true,
       "title": "뒤엉킨 서가",
-      "summary": "선반 세 칸이 통째로 엉켜 큰 매듭이 됐어요.",
+      "summary": "기울어진 서가 사이로 통로가 보인다. 묶인 선반부터 풀어야 한다.",
       "estimated_seconds": 130,
-      "tangles": ["shelf_snarl"],
+      "tangles": [
+        "shelf_snarl"
+      ],
       "weakness": "courage",
       "story": {
         "code": "archive_dawn_route_postcard",
         "chapter": 4,
         "phase": "turn",
-        "title": "새벽길 우편",
-        "caption": "큰 매듭 안에서 마른 우편이 깨어나요. 봉인 아래의 금빛 길은 우물정원을 거쳐 온실 밖 문으로 이어져요.",
+        "title": "부치지 못한 편지",
+        "caption": "봉투 뒤에 배달 경로가 적혀 있다. 서고, 우물, 보관고, 관측실 순서다.",
         "scene_key": "treasure_vault",
         "visual_asset": "archive_postcard_reveal_v1",
         "audio_cue": "story_postcard_reveal",
@@ -100,14 +107,14 @@
       "no": 5,
       "kind": "camp",
       "title": "메아리 우물 쉼터",
-      "summary": "물가에 앉아 숨을 고르고 오늘 본 것을 이야기해요.",
+      "summary": "마른 돌턱에 앉아 등불과 장비를 정리한다.",
       "estimated_seconds": 30,
       "story": {
         "code": "archive_two_knocks",
         "chapter": 5,
         "phase": "rising",
-        "title": "한 박자 늦은 두 번의 노크",
-        "caption": "우편을 물가에 놓자 우물 아래에서 두 번의 노크가 돌아와요. 바깥의 누군가도 아직 답장을 기다리고 있어요.",
+        "title": "우물 아래",
+        "caption": "돌 하나를 떨어뜨렸다. 물소리 뒤에 금속을 두드리는 소리가 두 번 났다.",
         "scene_key": "echo_well",
         "codex_entry": "archive.clue.two_knocks"
       }
@@ -116,15 +123,15 @@
       "no": 6,
       "kind": "event",
       "title": "엉킨 뿌리 목록",
-      "summary": "뿌리 사이에 끼인 목록을 어떻게 꺼낼지 골라요.",
+      "summary": "뿌리 사이에 배달 목록이 끼었다. 종이가 더 찢어지기 전에 꺼내야 한다.",
       "estimated_seconds": 50,
       "event_code": "root_catalogue",
       "story": {
         "code": "archive_librarian_confession",
         "chapter": 6,
         "phase": "truth",
-        "title": "사서가 닫아 둔 길",
-        "caption": "뿌리 사서는 오래전 백지바람이 주소를 지우자, 잘못 배달될까 두려워 우편길을 닫았다고 털어놓아요.",
+        "title": "잠근 사람",
+        "caption": "사서가 서랍을 열었다. “주소가 지워진 뒤로는 한 통도 못 보냈지.”",
         "scene_key": "root_tunnel",
         "codex_entry": "archive.record.blankwind_protocol"
       }
@@ -133,16 +140,19 @@
       "no": 7,
       "kind": "battle",
       "title": "기억탑 아래층",
-      "summary": "여러 엉킴이 한자리에 모여 마지막 길목을 지켜요.",
+      "summary": "계단 아래에 장부와 표본이 쌓여 있다. 이 길이 우물로 이어진다.",
       "estimated_seconds": 130,
-      "tangles": ["drifting_pressings", "shelf_snarl"],
+      "tangles": [
+        "drifting_pressings",
+        "shelf_snarl"
+      ],
       "weakness": "care",
       "story": {
         "code": "archive_shared_ledger",
         "chapter": 7,
         "phase": "climax",
-        "title": "혼자 들 수 없는 장부",
-        "caption": "탐험대가 장부의 네 귀퉁이를 함께 들자 빈 주소가 다시 나타나요. 마지막 확인은 장부지기가 품고 있어요.",
+        "title": "배달 목록",
+        "caption": "장부는 책상보다 컸다. 네 귀퉁이를 펴니 우물로 내려가는 계단이 표시돼 있었다.",
         "scene_key": "moon_tower",
         "codex_entry": "archive.record.four_corner_witness"
       }
@@ -151,7 +161,7 @@
       "no": 8,
       "kind": "boss",
       "title": "돌비늘 장부지기",
-      "summary": "분류하지 못한 기억 장부를 꼭 끌어안은 채 길을 막고 있어요.",
+      "summary": "장부지기가 마지막 문을 지킨다. 공격 예고를 보고 대원의 행동을 고른다.",
       "estimated_seconds": 150,
       "event_code": "ledger_keeper",
       "weakness": "care",
@@ -159,8 +169,8 @@
         "code": "archive_route_reopened",
         "chapter": 8,
         "phase": "resolution",
-        "title": "답장이 향할 첫 길",
-        "caption": "장부지기가 품을 열자 우편의 길이 완성돼요. 첫 목적지는 메아리 우물정원—이제 답장을 보낼 차례예요.",
+        "title": "첫 번째 배달길",
+        "caption": "장부지기가 문에서 비켜섰다. 메아리 우물정원으로 내려가는 계단에서 물소리가 들렸다.",
         "scene_key": "monster_den",
         "visual_asset": "archive_postcard_reveal_v1",
         "audio_cue": "story_postcard_reveal",
@@ -173,88 +183,381 @@
     "name": "숨 쉬는 목록실",
     "entrance": "entrance",
     "nodes": [
-      {"code": "entrance", "name": "기억 던전 입구", "type": "entrance", "x": 0.08, "y": 0.50, "cost": 0, "scene_key": "dungeon_gate", "scene_label": "폐허 던전", "scene_description": "버려진 온실 아래의 석문이 열렸어요. 횃불 사이 계단이 기억서고 깊은 곳으로 이어져요.", "depth_label": "지하 1층 · 관문", "threat_level": 1},
-      {"code": "wet_labels", "name": "침수 표찰 동굴", "type": "event", "x": 0.28, "y": 0.27, "cost": 1, "event_code": "wet_label_order", "scene_key": "flooded_cave", "scene_label": "침수 동굴", "scene_description": "수정빛 물길 위로 젖은 표찰이 흘러가요. 디딤돌 너머 두 갈래 동굴이 서로 다른 빛을 내요.", "depth_label": "지하 2층 · 수몰 구역", "threat_level": 2},
-      {"code": "root_catalogue", "name": "뿌리 목록 땅굴", "type": "event", "x": 0.29, "y": 0.72, "cost": 1, "event_code": "root_catalogue", "scene_key": "root_tunnel", "scene_label": "뿌리 땅굴", "scene_description": "굵은 뿌리가 오래된 갱도를 비틀고 있어요. 수레 자국을 따라가면 목록실의 뒤편으로 우회할 수 있어요.", "depth_label": "지하 2층 · 우회 갱도", "threat_level": 1},
-      {"code": "quiet_camp", "name": "메아리 우물 쉼터", "type": "camp", "x": 0.49, "y": 0.19, "cost": 1, "scene_key": "echo_well", "scene_label": "회복 쉼터", "scene_description": "달빛이 드는 우물가예요. 장부지기의 소굴에 들어가기 전 탐험대의 호흡과 결의를 가다듬을 수 있어요.", "depth_label": "지하 3층 · 안전 구역", "threat_level": 0},
-      {"code": "pressed_gallery", "name": "압화 보물고", "type": "discovery", "x": 0.50, "y": 0.81, "cost": 1, "scene_key": "treasure_vault", "scene_label": "보물고", "scene_description": "뿌리에 잠긴 금고 한가운데 오래된 보물상자가 빛나요. 주변 봉인을 살피면 숨은 표본도 찾을 수 있어요.", "depth_label": "지하 3층 · 봉인 보관실", "threat_level": 1},
-      {"code": "ledger_keeper", "name": "장부지기 소굴", "type": "guardian", "x": 0.69, "y": 0.50, "cost": 1, "event_code": "ledger_keeper", "scene_key": "monster_den", "scene_label": "장부지기의 뿌리 둥지", "scene_description": "돌비늘 장부지기가 뿌리 둥지에서 길을 막고 있어요. 흔적을 읽고 누구를 앞세울지 정해야 해요.", "depth_label": "지하 4층 · 수호 구역", "threat_level": 3},
-      {"code": "memory_drawer", "name": "기억탑 하층", "type": "objective", "x": 0.84, "y": 0.34, "cost": 1, "scene_key": "moon_tower", "scene_label": "등반 구역", "scene_description": "거대한 나무를 감싼 계단이 여러 층으로 솟아 있어요. 이번 탐험의 기억 서랍은 첫 번째 회랑에 잠들어 있어요.", "depth_label": "기억탑 1층 · 목표", "threat_level": 2},
-      {"code": "exit", "name": "귀환 땅굴", "type": "exit", "x": 0.93, "y": 0.67, "cost": 0, "scene_key": "root_tunnel", "scene_label": "귀환 통로", "scene_description": "희미한 바람과 정원 냄새가 돌아오는 좁은 땅굴이에요. 확보한 기억을 품고 출구까지 나아가요.", "depth_label": "지하 1층 · 출구", "threat_level": 0}
+      {
+        "code": "entrance",
+        "name": "기억 던전 입구",
+        "type": "entrance",
+        "x": 0.08,
+        "y": 0.5,
+        "cost": 0,
+        "scene_key": "dungeon_gate",
+        "scene_label": "폐허 던전",
+        "scene_description": "버려진 온실 아래의 석문이 열렸어요. 횃불 사이 계단이 기억서고 깊은 곳으로 이어져요.",
+        "depth_label": "지하 1층 · 관문",
+        "threat_level": 1
+      },
+      {
+        "code": "wet_labels",
+        "name": "침수 표찰 동굴",
+        "type": "event",
+        "x": 0.28,
+        "y": 0.27,
+        "cost": 1,
+        "event_code": "wet_label_order",
+        "scene_key": "flooded_cave",
+        "scene_label": "침수 동굴",
+        "scene_description": "수정빛 물길 위로 젖은 표찰이 흘러가요. 디딤돌 너머 두 갈래 동굴이 서로 다른 빛을 내요.",
+        "depth_label": "지하 2층 · 수몰 구역",
+        "threat_level": 2
+      },
+      {
+        "code": "root_catalogue",
+        "name": "뿌리 목록 땅굴",
+        "type": "event",
+        "x": 0.29,
+        "y": 0.72,
+        "cost": 1,
+        "event_code": "root_catalogue",
+        "scene_key": "root_tunnel",
+        "scene_label": "뿌리 땅굴",
+        "scene_description": "굵은 뿌리가 오래된 갱도를 비틀고 있어요. 수레 자국을 따라가면 목록실의 뒤편으로 우회할 수 있어요.",
+        "depth_label": "지하 2층 · 우회 갱도",
+        "threat_level": 1
+      },
+      {
+        "code": "quiet_camp",
+        "name": "메아리 우물 쉼터",
+        "type": "camp",
+        "x": 0.49,
+        "y": 0.19,
+        "cost": 1,
+        "scene_key": "echo_well",
+        "scene_label": "회복 쉼터",
+        "scene_description": "달빛이 드는 우물가예요. 장부지기의 소굴에 들어가기 전 탐험대의 호흡과 결의를 가다듬을 수 있어요.",
+        "depth_label": "지하 3층 · 안전 구역",
+        "threat_level": 0
+      },
+      {
+        "code": "pressed_gallery",
+        "name": "압화 보물고",
+        "type": "discovery",
+        "x": 0.5,
+        "y": 0.81,
+        "cost": 1,
+        "scene_key": "treasure_vault",
+        "scene_label": "보물고",
+        "scene_description": "뿌리에 잠긴 금고 한가운데 오래된 보물상자가 빛나요. 주변 봉인을 살피면 숨은 표본도 찾을 수 있어요.",
+        "depth_label": "지하 3층 · 봉인 보관실",
+        "threat_level": 1
+      },
+      {
+        "code": "ledger_keeper",
+        "name": "장부지기 소굴",
+        "type": "guardian",
+        "x": 0.69,
+        "y": 0.5,
+        "cost": 1,
+        "event_code": "ledger_keeper",
+        "scene_key": "monster_den",
+        "scene_label": "장부지기의 뿌리 둥지",
+        "scene_description": "돌비늘 장부지기가 뿌리 둥지에서 길을 막고 있어요. 흔적을 읽고 누구를 앞세울지 정해야 해요.",
+        "depth_label": "지하 4층 · 수호 구역",
+        "threat_level": 3
+      },
+      {
+        "code": "memory_drawer",
+        "name": "기억탑 하층",
+        "type": "objective",
+        "x": 0.84,
+        "y": 0.34,
+        "cost": 1,
+        "scene_key": "moon_tower",
+        "scene_label": "등반 구역",
+        "scene_description": "거대한 나무를 감싼 계단이 여러 층으로 솟아 있어요. 이번 탐험의 기억 서랍은 첫 번째 회랑에 잠들어 있어요.",
+        "depth_label": "기억탑 1층 · 목표",
+        "threat_level": 2
+      },
+      {
+        "code": "exit",
+        "name": "귀환 땅굴",
+        "type": "exit",
+        "x": 0.93,
+        "y": 0.67,
+        "cost": 0,
+        "scene_key": "root_tunnel",
+        "scene_label": "귀환 통로",
+        "scene_description": "희미한 바람과 정원 냄새가 돌아오는 좁은 땅굴이에요. 확보한 기억을 품고 출구까지 나아가요.",
+        "depth_label": "지하 1층 · 출구",
+        "threat_level": 0
+      }
     ],
     "edges": [
-      ["entrance", "wet_labels"],
-      ["entrance", "root_catalogue"],
-      ["wet_labels", "quiet_camp"],
-      ["root_catalogue", "pressed_gallery"],
-      ["quiet_camp", "ledger_keeper"],
-      ["pressed_gallery", "ledger_keeper"],
-      ["ledger_keeper", "memory_drawer"],
-      ["memory_drawer", "exit"]
+      [
+        "entrance",
+        "wet_labels"
+      ],
+      [
+        "entrance",
+        "root_catalogue"
+      ],
+      [
+        "wet_labels",
+        "quiet_camp"
+      ],
+      [
+        "root_catalogue",
+        "pressed_gallery"
+      ],
+      [
+        "quiet_camp",
+        "ledger_keeper"
+      ],
+      [
+        "pressed_gallery",
+        "ledger_keeper"
+      ],
+      [
+        "ledger_keeper",
+        "memory_drawer"
+      ],
+      [
+        "memory_drawer",
+        "exit"
+      ]
     ],
-    "initial_revealed": ["entrance", "wet_labels", "root_catalogue"]
+    "initial_revealed": [
+      "entrance",
+      "wet_labels",
+      "root_catalogue"
+    ]
   },
   "map_templates": [
     {
       "code": "archive_crossroads_b",
       "name": "엇갈린 압화 서가",
       "edges": [
-        ["entrance", "wet_labels"],
-        ["entrance", "root_catalogue"],
-        ["wet_labels", "quiet_camp"],
-        ["wet_labels", "pressed_gallery"],
-        ["root_catalogue", "quiet_camp"],
-        ["root_catalogue", "pressed_gallery"],
-        ["quiet_camp", "ledger_keeper"],
-        ["pressed_gallery", "ledger_keeper"],
-        ["ledger_keeper", "memory_drawer"],
-        ["memory_drawer", "exit"]
+        [
+          "entrance",
+          "wet_labels"
+        ],
+        [
+          "entrance",
+          "root_catalogue"
+        ],
+        [
+          "wet_labels",
+          "quiet_camp"
+        ],
+        [
+          "wet_labels",
+          "pressed_gallery"
+        ],
+        [
+          "root_catalogue",
+          "quiet_camp"
+        ],
+        [
+          "root_catalogue",
+          "pressed_gallery"
+        ],
+        [
+          "quiet_camp",
+          "ledger_keeper"
+        ],
+        [
+          "pressed_gallery",
+          "ledger_keeper"
+        ],
+        [
+          "ledger_keeper",
+          "memory_drawer"
+        ],
+        [
+          "memory_drawer",
+          "exit"
+        ]
       ]
     },
     {
       "code": "archive_ring_c",
       "name": "되울림 원형서고",
       "edges": [
-        ["entrance", "wet_labels"],
-        ["entrance", "root_catalogue"],
-        ["wet_labels", "quiet_camp"],
-        ["root_catalogue", "pressed_gallery"],
-        ["quiet_camp", "pressed_gallery"],
-        ["quiet_camp", "ledger_keeper"],
-        ["pressed_gallery", "ledger_keeper"],
-        ["ledger_keeper", "memory_drawer"],
-        ["memory_drawer", "exit"]
+        [
+          "entrance",
+          "wet_labels"
+        ],
+        [
+          "entrance",
+          "root_catalogue"
+        ],
+        [
+          "wet_labels",
+          "quiet_camp"
+        ],
+        [
+          "root_catalogue",
+          "pressed_gallery"
+        ],
+        [
+          "quiet_camp",
+          "pressed_gallery"
+        ],
+        [
+          "quiet_camp",
+          "ledger_keeper"
+        ],
+        [
+          "pressed_gallery",
+          "ledger_keeper"
+        ],
+        [
+          "ledger_keeper",
+          "memory_drawer"
+        ],
+        [
+          "memory_drawer",
+          "exit"
+        ]
       ]
     }
   ],
   "events": {
     "wet_label_order": {
-      "title": "번진 이름들",
-      "text": "비에 젖은 표찰들이 바닥에 붙어 있어요. 흐릿한 글자를 어떤 방식으로 되살릴까요?",
-      "bubble": "비에 젖은 표찰들이 바닥에 붙어 있어요.",
-      "tags": ["puzzle", "mystery"],
+      "title": "바닥에 붙은 표찰",
+      "text": "젖은 표찰이 바닥에 붙었다. 잉크가 더 번지기 전에 읽어야 한다. 선반 끝에는 등불용 기름병이 있다.",
+      "bubble": "젖은 표찰에 주소가 남아 있다.",
+      "tags": [
+        "puzzle",
+        "mystery"
+      ],
       "choices": [
-        {"code": "trace_ink", "label": "번진 잉크의 결을 따라간다", "stat": "insight", "difficulty": 8, "resolve_cost": 1},
-        {"code": "sort_slowly", "label": "숨을 맞추며 한 장씩 분류한다", "stat": "focus", "difficulty": 8, "resolve_cost": 1},
-        {"code": "mark_return", "label": "안전한 표식만 남기고 돌아선다", "stat": null, "difficulty": 0, "resolve_cost": 0, "safe": true}
+        {
+          "code": "trace_ink",
+          "label": "빛에 비춰 주소를 읽는다",
+          "stat": "insight",
+          "difficulty": 8,
+          "resolve_cost": 1,
+          "consequence": "성공하면 주소 조각과 발견물 획득",
+          "collects_loot": true,
+          "outcome_text": {
+            "flourish": "빛을 비스듬히 대니 눌러 쓴 글자가 드러났다. ‘온실 앞’.",
+            "clear": "빛을 비스듬히 대니 눌러 쓴 글자가 드러났다. ‘온실 앞’.",
+            "detour": "물을 닦는 동안 마지막 글자까지 번졌다. 빈 표찰을 남겨 두었다.",
+            "safe": "빛을 비스듬히 대니 눌러 쓴 글자가 드러났다. ‘온실 앞’."
+          },
+          "success_effect": {
+            "finding": "주소 조각"
+          }
+        },
+        {
+          "code": "sort_slowly",
+          "label": "등불을 채우고 표찰을 말린다",
+          "stat": "focus",
+          "difficulty": 8,
+          "resolve_cost": 1,
+          "consequence": "성공하면 길빛 2 회복. 발견물 없음",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "표찰은 말려 두었다. 남은 기름을 등불에 채웠다.",
+            "clear": "표찰은 말려 두었다. 남은 기름을 등불에 채웠다.",
+            "detour": "표찰을 떼다가 가장자리가 찢어졌다. 조각을 한데 모아 두었다.",
+            "safe": "표찰은 말려 두었다. 남은 기름을 등불에 채웠다."
+          },
+          "success_effect": {
+            "trail_light": 2
+          }
+        },
+        {
+          "code": "mark_return",
+          "label": "위치를 적고 지나간다",
+          "stat": null,
+          "difficulty": 0,
+          "resolve_cost": 0,
+          "safe": true,
+          "consequence": "소모 없음. 이번 발견물은 건너뜁니다.",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "서고 지도에 젖은 표찰의 위치를 표시했다.",
+            "clear": "서고 지도에 젖은 표찰의 위치를 표시했다.",
+            "detour": "서고 지도에 젖은 표찰의 위치를 표시했다.",
+            "safe": "서고 지도에 젖은 표찰의 위치를 표시했다."
+          },
+          "success_effect": {}
+        }
       ]
     },
     "root_catalogue": {
-      "title": "엉킨 뿌리 목록",
-      "text": "목록 서랍을 뿌리들이 단단히 감싸고 있어요. 억지로 끊지 않고 길을 만들 수 있을까요?",
-      "bubble": "뿌리들이 목록 서랍을 단단히 감쌌어요.",
-      "tags": ["care", "nature"],
+      "title": "열리지 않는 서랍",
+      "text": "뿌리가 서랍 손잡이를 감쌌다. 틈으로 종이 모서리와 기름병이 보인다.",
+      "bubble": "서랍 틈에 종이 한 장이 끼었다.",
+      "tags": [
+        "care",
+        "nature"
+      ],
       "choices": [
-        {"code": "loosen_roots", "label": "상처 나지 않게 뿌리를 풀어 준다", "stat": "care", "difficulty": 8, "resolve_cost": 1},
-        {"code": "open_path", "label": "앞에서 틈을 찾아 길을 연다", "stat": "courage", "difficulty": 8, "resolve_cost": 1},
-        {"code": "listen_first", "label": "뿌리의 떨림이 잦아들 때까지 기다린다", "stat": null, "difficulty": 0, "resolve_cost": 0, "safe": true}
+        {
+          "code": "loosen_roots",
+          "label": "뿌리 사이로 목록을 꺼낸다",
+          "stat": "care",
+          "difficulty": 8,
+          "resolve_cost": 1,
+          "consequence": "성공하면 배달 목록과 발견물 획득",
+          "collects_loot": true,
+          "outcome_text": {
+            "flourish": "목록을 펼쳤다. 우물 아래에도 배달함이 있었다.",
+            "clear": "목록을 펼쳤다. 우물 아래에도 배달함이 있었다.",
+            "detour": "종이가 뿌리에 걸렸다. 무리하지 않고 손을 뺐다.",
+            "safe": "목록을 펼쳤다. 우물 아래에도 배달함이 있었다."
+          },
+          "success_effect": {
+            "finding": "배달 목록"
+          }
+        },
+        {
+          "code": "open_path",
+          "label": "서랍을 받치고 기름병을 꺼낸다",
+          "stat": "courage",
+          "difficulty": 8,
+          "resolve_cost": 1,
+          "consequence": "성공하면 길빛 2 회복. 발견물 없음",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "기울어진 서랍을 받쳤다. 기름병은 새지 않았다.",
+            "clear": "기울어진 서랍을 받쳤다. 기름병은 새지 않았다.",
+            "detour": "받침이 미끄러졌다. 기름병은 다시 서랍 안으로 굴러갔다.",
+            "safe": "기울어진 서랍을 받쳤다. 기름병은 새지 않았다."
+          },
+          "success_effect": {
+            "trail_light": 2
+          }
+        },
+        {
+          "code": "listen_first",
+          "label": "서랍을 그대로 둔다",
+          "stat": null,
+          "difficulty": 0,
+          "resolve_cost": 0,
+          "safe": true,
+          "consequence": "소모 없음. 이번 발견물은 건너뜁니다.",
+          "collects_loot": false,
+          "outcome_text": {
+            "flourish": "서랍을 더 건드리지 않고 옆 통로로 돌아갔다.",
+            "clear": "서랍을 더 건드리지 않고 옆 통로로 돌아갔다.",
+            "detour": "서랍을 더 건드리지 않고 옆 통로로 돌아갔다.",
+            "safe": "서랍을 더 건드리지 않고 옆 통로로 돌아갔다."
+          },
+          "success_effect": {}
+        }
       ]
     },
     "ledger_keeper": {
       "title": "돌비늘 장부지기",
-      "text": "뿌리 둥지가 갈라지며 장부지기가 길을 막아요. 앞발이 빛나기 전에 약점을 읽고 수호 장벽을 풀어야 해요.",
+      "text": "뿌리 둥지가 갈라지며 장부지기가 길을 막아요. 앞발이 빛나기 전에 약점을 읽고 체력을 풀어야 해요.",
       "bubble": "뿌리 둥지가 갈라지며 장부지기가 길을 막아요.",
-      "tags": ["guardian", "social"],
+      "tags": [
+        "guardian",
+        "social"
+      ],
       "encounter": {
         "kind": "guardian",
         "enemy_name": "돌비늘 장부지기",
@@ -268,7 +571,12 @@
         "difficulty_code": "stage_8",
         "weak_element": "water",
         "resist_element": "steel",
-        "weakness_cycle": ["insight", "care", "courage", "focus"],
+        "weakness_cycle": [
+          "insight",
+          "care",
+          "courage",
+          "focus"
+        ],
         "boss_phases": [
           {
             "code": "index_guard",
@@ -276,12 +584,17 @@
             "threshold_bp": 10000,
             "weak_element": "water",
             "resist_element": "steel",
-            "weakness_cycle": ["insight", "care", "courage", "focus"],
+            "weakness_cycle": [
+              "insight",
+              "care",
+              "courage",
+              "focus"
+            ],
             "intent_power_bonus": 0,
             "focus_reward": 0,
             "tone": "rainy",
             "rule_name": "색인 복구",
-            "rule_summary": "약점을 맞히지 못한 라운드에는 수호 장벽이 2 회복돼요.",
+            "rule_summary": "약점을 맞히지 못한 라운드에는 체력이 2 회복돼요.",
             "phase_gate": "resolve_intent",
             "intro_caption": "푸른 색인 문양이 발끝부터 차오르기 시작했어요.",
             "intents": [
@@ -318,12 +631,17 @@
             "threshold_bp": 6600,
             "weak_element": "fire",
             "resist_element": "water",
-            "weakness_cycle": ["care", "courage", "focus", "insight"],
+            "weakness_cycle": [
+              "care",
+              "courage",
+              "focus",
+              "insight"
+            ],
             "intent_power_bonus": 1,
             "focus_reward": 1,
             "tone": "ember",
             "rule_name": "뿌리 대열",
-            "rule_summary": "마음 지키기 없이 넘기면 광역 공격 위력이 1 높아져요.",
+            "rule_summary": "방어 없이 넘기면 광역 공격 위력이 1 높아져요.",
             "phase_gate": "resolve_intent",
             "intro_caption": "장벽이 갈라지자 붉은 뿌리 봉인이 전장을 조여 와요. 약점과 공격 순서가 바뀌었어요.",
             "intents": [
@@ -366,7 +684,12 @@
             "threshold_bp": 3300,
             "weak_element": "lightning",
             "resist_element": "steel",
-            "weakness_cycle": ["focus", "insight", "courage", "care"],
+            "weakness_cycle": [
+              "focus",
+              "insight",
+              "courage",
+              "care"
+            ],
             "intent_power_bonus": 1,
             "focus_reward": 1,
             "tone": "sparkling",
@@ -427,9 +750,34 @@
         ]
       },
       "choices": [
-        {"code": "read_spaces", "label": "문양의 빈틈을 읽고 공명탄을 보낸다", "stat": "insight", "difficulty": 10, "resolve_cost": 1, "effect_key": "insight_arc", "guard_damage": 68},
-        {"code": "answer_together", "label": "마음을 엮어 뿌리 장벽을 해제한다", "stat": "care", "difficulty": 10, "resolve_cost": 1, "effect_key": "care_vines", "guard_damage": 62},
-        {"code": "leave_question", "label": "무기를 내리고 천천히 물러난다", "stat": null, "difficulty": 0, "resolve_cost": 0, "safe": true, "effect_key": "safe_guard", "guard_damage": 0}
+        {
+          "code": "read_spaces",
+          "label": "문양의 빈틈을 읽고 공명탄을 보낸다",
+          "stat": "insight",
+          "difficulty": 10,
+          "resolve_cost": 1,
+          "effect_key": "insight_arc",
+          "guard_damage": 68
+        },
+        {
+          "code": "answer_together",
+          "label": "마음을 엮어 뿌리 장벽을 해제한다",
+          "stat": "care",
+          "difficulty": 10,
+          "resolve_cost": 1,
+          "effect_key": "care_vines",
+          "guard_damage": 62
+        },
+        {
+          "code": "leave_question",
+          "label": "무기를 내리고 천천히 물러난다",
+          "stat": null,
+          "difficulty": 0,
+          "resolve_cost": 0,
+          "safe": true,
+          "effect_key": "safe_guard",
+          "guard_damage": 0
+        }
       ]
     }
   },
@@ -442,53 +790,53 @@
   "run_threads": [
     {
       "code": "archive_breathing_ledger",
-      "title": "숨을 쉬는 장부",
+      "title": "소인 없는 봉투",
       "seed_variants": [
-        "서고 전체가 아주 천천히 숨 쉬는 것처럼 바닥이 오르내려요.",
-        "선반 사이를 지나자 책장이 아니라 벽이 먼저 숨을 들이쉬어요."
+        "장부를 펼치자 봉투가 떨어졌다. 우표만 있고 소인이 없다.",
+        "반송함 아래 끼인 봉투를 꺼냈다. 봉한 자리는 아직 붙어 있다."
       ],
       "echo_variants": [
-        "처음 느낀 호흡이 표찰과 압화 사이에서 다시 이어져요.",
-        "숨이 멎는 자리마다 비어 있는 서랍이 하나씩 나타나요."
+        "봉투의 주소에서 ‘온실 앞’만 읽힌다. 같은 글씨가 분류표에도 있다.",
+        "분류대 모서리에 봉투 너비만큼 먼지가 비어 있다. 최근까지 여기에 있었던 것 같다."
       ],
       "payoff_variants": {
-        "careful": "기억 서랍을 닫자 서고의 호흡이 탐험대와 같은 박자로 잦아들어요.",
-        "bold": "활짝 연 서랍 사이로 서고가 크게 숨을 내쉬고, 새 표찰 하나가 날아와 앉아요.",
-        "relational": "나란히 선 탐험대의 숨을 따라 서고가 박자를 맞추고, 장부가 오늘의 페이지를 스스로 넘겨요."
+        "careful": "지워진 글씨에 옆으로 등불을 비췄다. 눌린 자국이 우물 방향을 가리킨다.",
+        "bold": "봉투 뒤에 적힌 약도를 따라 서가를 밀었다. 우물로 내려가는 계단이 나왔다.",
+        "relational": "사서에게 봉투를 보여 줬다. “그 주소, 우물 건너편이야.” 사서가 약도에 선을 하나 보탰다."
       }
     },
     {
       "code": "archive_upturned_drawer",
-      "title": "뒤집힌 표본 서랍",
+      "title": "거꾸로 낀 서랍",
       "seed_variants": [
-        "표본 서랍이 전부 뒤집혀 있는데, 이상하게 부서진 것은 하나도 없어요.",
-        "서랍 속 압화들이 바닥에 줄지어 놓여 있어요. 누군가 순서대로 꺼낸 것 같아요."
+        "분류대의 서랍 하나만 손잡이가 없다. 뒤판을 바깥으로 끼워 둔 것이다.",
+        "같은 크기의 서랍 네 개 중 하나에서만 종이 부딪히는 소리가 난다."
       ],
       "echo_variants": [
-        "뒤집힌 서랍마다 같은 잎맥 무늬의 빈자리가 남아 있어요.",
-        "안쪽 서가에서 사다리가 아직 흔들리고 있어요. 방금까지 누가 있었나 봐요."
+        "뒤판에 연필로 숫자 셋이 적혀 있다. 서가의 번호와 순서가 같다.",
+        "서랍 틈에서 꽃잎이 나왔다. 말랐는데도 자주색이 선명하다."
       ],
       "payoff_variants": {
-        "careful": "빈자리에 맞는 표본을 조용히 돌려놓자, 서랍들이 하나씩 스스로 제자리로 돌아가요.",
-        "bold": "마지막 서랍을 힘껏 바로 세우자 숨어 있던 아래 칸이 열리고, 찾던 잎맥 무늬가 거기 있어요.",
-        "relational": "뿌리 사서가 겸연쩍게 나타나요. 잃어버린 색인을 함께 찾아 주자, 처음으로 서가 안쪽 길을 내어 줘요."
+        "careful": "번호가 같은 표본을 대조했다. 꽃잎은 온실에서 옮겨 온 품종이었다.",
+        "bold": "서랍을 뒤집어 다시 끼웠다. 안쪽 봉투 묶음이 앞으로 쏟아졌다. 모두 온실에서 보낸 편지다.",
+        "relational": "사서에게 빈 손잡이를 보여 줬다. “못 열게 하려던 건 아닌데.” 사서가 서랍 뒤편의 잠금을 풀었다."
       }
     },
     {
       "code": "archive_dried_postcard",
-      "title": "말라붙은 온실 우편",
+      "title": "말려 둔 엽서",
       "seed_variants": [
-        "장부 갈피에서 말라붙은 우편 한 장이 떨어져요. 받는 이 칸만 또렷하게 비어 있어요.",
-        "우편함이 없는 서고에 우표 자국만 남은 봉투가 꽂혀 있어요."
+        "책갈피로 끼워 둔 엽서가 바삭하게 말랐다. 아래쪽에 물이 찼던 선이 남아 있다.",
+        "선반 위에 엽서 여러 장이 나란히 놓여 있다. 뒷면의 잉크가 한쪽으로 번졌다."
       ],
       "echo_variants": [
-        "우편에 눌린 꽃잎이 이 온실 도감에 없는 품종이에요.",
-        "소인의 문양이 관측실 낡은 지도의 귀퉁이 문양과 닮아 있어요."
+        "엽서 구석의 원 두 개는 우물 옆의 돌무늬와 닮았다.",
+        "말라붙은 봉투 안에 모래가 있다. 서고 바닥에는 없는 흰 모래다."
       ],
       "payoff_variants": {
-        "careful": "우편을 압화 사이에 조심히 보관해요. 답장할 주소를 찾는 날까지 서고가 맡아 주기로 해요.",
-        "bold": "봉투를 열자 씨앗 한 톨 크기로 접힌 지도가 나와요. 가장자리가 온실 벽 너머를 가리켜요.",
-        "relational": "뿌리 사서가 우편을 오래 들여다봐요. ‘두 번째 온실 얘기는… 다음에 해 주지.’ 처음 듣는 말이에요."
+        "careful": "돌무늬와 엽서 그림을 맞춰 봤다. 그림에서 지워진 부분은 우물 아래의 입구였다.",
+        "bold": "엽서에 그려진 우물로 가서 돌턱을 두드렸다. 아래에서 금속 소리가 돌아왔다.",
+        "relational": "사서는 엽서를 우편배달부가 두고 갔다고 했다. 마지막으로 간 곳도 우물이었다."
       }
     }
   ]

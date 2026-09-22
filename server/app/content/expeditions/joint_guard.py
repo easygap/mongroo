@@ -18,9 +18,9 @@
 `validate_joint_guard_content`가 이 균형을 매번 다시 센다.
 
 **겹마다도 네 결이 서로 달라야 한다.** 설계서 4.5.1의 표는 열(결)로는
-균형이 맞지만 행(겹)으로는 안 맞았다 — 첫 겹의 약점이 햇살결 둘·달빛결
+균형이 맞지만 행(겹)으로는 안 맞았다 — 첫 겹의 약점이 햇살 둘·달빛
 둘이라 나머지 네 결은 유리한 자리가 한 번도 없었다. `겉꿈 산책`은 첫 겹만
-걷는 난이도라 그 행이 곧 전부이고, R4 시뮬레이션에서 달빛결만 99.6%로
+걷는 난이도라 그 행이 곧 전부이고, R4 시뮬레이션에서 달빛만 99.6%로
 밴드를 벗어났다. 열 균형은 그대로 두고 행도 네 결이 서로 다르도록 다시 짰다.
 """
 
@@ -102,7 +102,7 @@ DECISIVE_MOMENTS: dict[str, dict[str, Any]] = {
             },
         ],
         "bypass": {
-            "text": "각자 마음 지키기를 골라 행동 하나씩으로 막아요.",
+            "text": "각자 방어를 골라 행동 하나씩으로 막아요.",
             "cost": "행동 1회씩",
         },
     },
@@ -140,10 +140,10 @@ DECISIVE_MOMENTS: dict[str, dict[str, Any]] = {
                 "effect": "focus_refund",
                 "text": "환급과 선충전으로 늘어난 비용을 상쇄해요.",
             },
-            {"effect": "reveal", "text": "약점을 밝혀 기본 공격의 값을 올려요."},
+            {"effect": "reveal", "text": "약점을 밝혀 공격의 값을 올려요."},
         ],
         "bypass": {
-            "text": "한 라운드를 기본 공격과 방어로 소화하고 지나보내요.",
+            "text": "한 라운드를 공격과 방어로 소화하고 지나보내요.",
             "cost": "라운드 1회",
         },
     },
@@ -524,7 +524,7 @@ def layer_encounter(
     }
 
 
-#: 짐승 의도 하나가 화면에서 어떻게 보이는가. `(성장결, 동작 원형, 접촉 재질)`.
+#: 짐승 의도 하나가 화면에서 어떻게 보이는가. `(성장 타입, 동작 원형, 접촉 재질)`.
 #:
 #: 이 표가 생기기 전까지 열두 의도 전부가 `guardian.enemy-wave` 하나를 나눠
 #: 썼다. `present_intent`의 docstring이 스스로를 `아직 전용 연출이 없는 일반
@@ -617,10 +617,10 @@ def validate_joint_guard_content() -> list[str]:
             weak = layer.get("weak_kel")
             resist = layer.get("resist_kel")
             if weak not in KEL_LABELS:
-                errors.append(f"{where}.weak_kel: 여섯 성장결 중 하나여야 합니다")
+                errors.append(f"{where}.weak_kel: 여섯 성장 타입 중 하나여야 합니다")
                 continue
             if resist not in KEL_LABELS:
-                errors.append(f"{where}.resist_kel: 여섯 성장결 중 하나여야 합니다")
+                errors.append(f"{where}.resist_kel: 여섯 성장 타입 중 하나여야 합니다")
                 continue
             if weak == resist:
                 errors.append(f"{where}: 약점과 내성이 같을 수 없습니다")
@@ -645,8 +645,8 @@ def validate_joint_guard_content() -> list[str]:
     #
     # 열(결) 균형만 보면 표가 맞아 보이지만, `겉꿈 산책`은 첫 겹만 걷는
     # 난이도라 그 행이 곧 전부다. 행이 한쪽으로 쏠리면 그 난이도에서만
-    # 특정 결이 유리해진다 - 실제로 첫 겹 약점이 햇살결 둘·달빛결 둘이라
-    # 달빛결만 승률 밴드를 벗어났다.
+    # 특정 결이 유리해진다 - 실제로 첫 겹 약점이 햇살 둘·달빛 둘이라
+    # 달빛만 승률 밴드를 벗어났다.
     for index in range(3):
         for axis in ("weak_kel", "resist_kel"):
             row = [

@@ -119,10 +119,10 @@ def starting_focus_for_party(
     configured_focus: int,
     max_focus: int,
 ) -> tuple[int, bool, int]:
-    """평균 Lv18 이정표를 표준 시작 집중력 3에만 한 번 적용한다.
+    """평균 Lv18 이정표를 표준 시작 기력 3에만 한 번 적용한다.
 
     커스텀 encounter와 기록서가 이미 바꾼 0~2 또는 4~5 값에는 중복 보너스를
-    얹지 않는다. 반환값은 ``(최종 집중력, 레벨 보너스 적용 여부, 평균 레벨)``이다.
+    얹지 않는다. 반환값은 ``(최종 기력, 레벨 보너스 적용 여부, 평균 레벨)``이다.
     """
 
     levels = owned_party_levels(profiles)

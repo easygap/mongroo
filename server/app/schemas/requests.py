@@ -184,7 +184,7 @@ class ExpeditionCombatCommand(BaseModel):
     action: str = Field(
         pattern="^(attack|skill|unique_1|unique_2|selected_1|selected_2|guard)$"
     )
-    # 일부 기록서는 무엇으로 바꿀지 함께 고른다(성장결·대상·교체할 책).
+    # 일부 기록서는 무엇으로 바꿀지 함께 고른다(성장 타입·대상·교체할 책).
     # 허용값은 책마다 다르고 서버가 판정한다. 앱은 규칙을 다시 계산하지 않는다.
     choice: str | None = Field(default=None, max_length=48)
 

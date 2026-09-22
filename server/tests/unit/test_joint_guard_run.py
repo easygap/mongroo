@@ -109,11 +109,11 @@ def test_opening_a_layer_continues_the_run():
 
 
 def test_focus_carries_across_layers():
-    """집중력은 판 전체가 나눠 쓰는 하나의 게이지다."""
+    """기력은 판 전체가 나눠 쓰는 하나의 게이지다."""
     state = _start()
     state["battle"]["focus"] = 5
     state = _open_the_layer(state)
-    # 기본 공격이 1을 벌어 상한에 걸린 채로 넘어온다.
+    # 공격이 1을 벌어 상한에 걸린 채로 넘어온다.
     assert int(state["battle"]["focus"]) == 5
 
 
@@ -276,7 +276,7 @@ def test_payload_reads_the_layer_matchup_and_reserves():
     payload = joint_guard_payload(_start())
     assert payload["layer"]["name"] == "겉꿈"
     assert payload["layer"]["count"] == 3
-    assert payload["layer"]["weak_kel_label"] == "햇살결"
+    assert payload["layer"]["weak_kel_label"] == "햇살"
     assert len(payload["front"]) == 3
     assert len(payload["reserves"]) == 3
     assert all(member["can_swap_in"] for member in payload["reserves"])

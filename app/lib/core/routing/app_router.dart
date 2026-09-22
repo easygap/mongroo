@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/auth_controller.dart';
+import '../../features/adventure/presentation/adventure_tab.dart';
 import '../../features/auth/presentation/account_screen.dart';
 import '../../features/auth/presentation/legal_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
@@ -158,6 +159,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ExpeditionScreen(),
       ),
       GoRoute(
+        path: '/patrol',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const AdventureScreen(initialActivity: 1),
+      ),
+      GoRoute(
+        path: '/field-notes',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const ExpeditionJournalScreen(),
+      ),
+      GoRoute(
         path: '/joint-guard',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const JointGuardScreen(),
@@ -179,6 +190,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             plantName: state.uri.queryParameters['name'],
           );
         },
+      ),
+      GoRoute(
+        path: '/museum',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const GalleryScreen(),
       ),
       GoRoute(
         path: '/gallery',
@@ -215,6 +231,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/garden',
+              redirect: (context, state) => state.uri.queryParameters['tab'] ==
+                      '3'
+                  ? '/explore${state.uri.queryParameters['activity'] == 'patrol' ? '?activity=patrol' : ''}'
+                  : null,
               builder: (context, state) => GardenScreen(
                 initialTab: int.tryParse(
                       state.uri.queryParameters['tab'] ?? '',
@@ -226,8 +246,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           ]),
           StatefulShellBranch(routes: [
             GoRoute(
-              path: '/museum',
-              builder: (context, state) => const GalleryScreen(),
+              path: '/explore',
+              redirect: (context, state) =>
+                  state.uri.queryParameters['activity'] == 'patrol'
+                      ? '/patrol'
+                      : null,
+              builder: (context, state) => const AdventureScreen(),
             ),
           ]),
           StatefulShellBranch(routes: [

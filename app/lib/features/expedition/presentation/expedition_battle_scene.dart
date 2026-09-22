@@ -32,6 +32,7 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
       locked: state.interactionLocked,
       fingerprintSeed: '${expedition.run.id}:${expedition.run.revision}',
       selectedMemberId: state.selectedMemberId,
+      presentedHp: state.actionCue == null ? const {} : state.presentedHp,
       onSelectMember:
           ref.read(expeditionControllerProvider.notifier).selectMember,
       onSubmit:
@@ -42,103 +43,119 @@ class _ImmersiveExpeditionBattle extends ConsumerWidget {
       locked: state.interactionLocked,
     );
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compactHud = constraints.maxWidth < 820;
-        final largeText = MediaQuery.textScalerOf(context).scale(1) >= 1.5;
-        final mobileDockHeight =
-            largeText || constraints.maxWidth < 340 ? 300.0 : 238.0;
-        // 좁은 화면에서는 상단 바가 두 줄이 된다. 넓은 화면은 상단 바를 무대
-        // 위에 겹치지 않고 Column으로 쌓으니 밀어낼 것이 없다.
-        // 폭 계산은 아래 Stack의 여백과 같다 - 바깥 4+4, Positioned 6+6,
-        // 패널 안쪽 4+4.
-        final topHudInset = compactHud
-            ? ExpeditionBattleTopBar.heightFor(constraints.maxWidth - 28) -
-                ExpeditionBattleTopBar.lineHeight
-            : 0.0;
-        final stage = _ImmersiveBattleStage(
-          node: node,
-          expedition: expedition,
-          actor: actor,
-          cue: state.actionCue,
-          paceScale: settings.pace.toDouble(),
-          shortEffects: settings.shortEffects,
-          audioMode: settings.audioMode,
-          bottomHudInset: compactHud ? mobileDockHeight - 12 : 0,
-          topHudInset: topHudInset,
-          onCueCompleted:
-              ref.read(expeditionControllerProvider.notifier).clearActionCue,
-        );
-        if (constraints.maxWidth >= 820) {
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1180),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    topBar,
-                    const SizedBox(height: 6),
-                    Expanded(
-                      child: Row(
+    final battleTheme = AppTheme.dark();
+    return Theme(
+        data: battleTheme,
+        child: ColoredBox(
+          key: const ValueKey('immersive-combat-background'),
+          color: battleTheme.scaffoldBackgroundColor,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compactHud = constraints.maxWidth < 820;
+              final largeText =
+                  MediaQuery.textScalerOf(context).scale(1) >= 1.5;
+              final mobileDockHeight = math.min(
+                  largeText ? 440.0 : 384.0, constraints.maxHeight * .55);
+              // 좁은 화면에서는 상단 바가 두 줄이 된다. 넓은 화면은 상단 바를 무대
+              // 위에 겹치지 않고 Column으로 쌓으니 밀어낼 것이 없다.
+              // 폭 계산은 아래 Stack의 여백과 같다 - 바깥 4+4, Positioned 6+6,
+              // 패널 안쪽 4+4.
+              final topHudInset = largeText
+                  ? 42.0
+                  : compactHud
+                      ? ExpeditionBattleTopBar.heightFor(
+                              constraints.maxWidth - 28) -
+                          ExpeditionBattleTopBar.lineHeight
+                      : 0.0;
+              final stage = _ImmersiveBattleStage(
+                node: node,
+                expedition: expedition,
+                actor: actor,
+                cue: state.actionCue,
+                paceScale: settings.pace.toDouble(),
+                shortEffects: settings.shortEffects,
+                audioMode: settings.audioMode,
+                bottomHudInset: compactHud ? mobileDockHeight - 12 : 0,
+                topHudInset: topHudInset,
+                onCueCompleted: ref
+                    .read(expeditionControllerProvider.notifier)
+                    .clearActionCue,
+                onContact: ref
+                    .read(expeditionControllerProvider.notifier)
+                    .presentCombatContact,
+              );
+              if (constraints.maxWidth >= 820) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1180),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(flex: 7, child: stage),
-                          const SizedBox(width: 14),
-                          SizedBox(
-                            width: 410,
-                            child: SingleChildScrollView(child: commandDock),
+                          topBar,
+                          const SizedBox(height: 6),
+                          Expanded(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(flex: 7, child: stage),
+                                const SizedBox(width: 14),
+                                SizedBox(
+                                  width: 410,
+                                  child:
+                                      SingleChildScrollView(child: commandDock),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
+                  ),
+                );
+              }
+
+              final scheme = Theme.of(context).colorScheme;
+              return Padding(
+                padding: EdgeInsets.zero,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    stage,
+                    Positioned(
+                      top: 4,
+                      left: 6,
+                      right: 6,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: scheme.surface.withAlpha(245),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: topBar,
+                      ),
+                    ),
+                    Positioned(
+                      left: 6,
+                      right: 6,
+                      bottom: 4,
+                      height: mobileDockHeight,
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: SingleChildScrollView(
+                          key:
+                              const ValueKey('immersive-combat-command-scroll'),
+                          reverse: false,
+                          child: commandDock,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ),
-          );
-        }
-
-        final scheme = Theme.of(context).colorScheme;
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(4, 4, 4, 6),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              stage,
-              Positioned(
-                top: 4,
-                left: 6,
-                right: 6,
-                child: PixelPanel(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  fill: scheme.surface.withAlpha(236),
-                  border: MongrooPalette.of(context).night,
-                  highlight: Colors.white.withAlpha(110),
-                  shadow: MongrooPalette.of(context).night.withAlpha(80),
-                  child: topBar,
-                ),
-              ),
-              Positioned(
-                left: 6,
-                right: 6,
-                bottom: 4,
-                height: mobileDockHeight,
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: SingleChildScrollView(
-                    key: const ValueKey('immersive-combat-command-scroll'),
-                    reverse: true,
-                    child: commandDock,
-                  ),
-                ),
-              ),
-            ],
+              );
+            },
           ),
-        );
-      },
-    );
+        ));
   }
 }
 
@@ -154,6 +171,7 @@ class _ImmersiveBattleStage extends StatelessWidget {
     required this.bottomHudInset,
     required this.topHudInset,
     required this.onCueCompleted,
+    required this.onContact,
   });
 
   final ExpeditionNode node;
@@ -166,6 +184,7 @@ class _ImmersiveBattleStage extends StatelessWidget {
   final double bottomHudInset;
   final double topHudInset;
   final VoidCallback onCueCompleted;
+  final ValueChanged<ExpeditionActionCue> onContact;
 
   @override
   Widget build(BuildContext context) {
@@ -178,11 +197,11 @@ class _ImmersiveBattleStage extends StatelessWidget {
       radius: 8,
       borderColor: const Color(0xFF0E0B08),
       child: PixelBattleBackdrop(
+        bottomInset: bottomHudInset,
         regionCode: expedition.region.code,
         borderRadius: BorderRadius.circular(8),
-        semanticLabel: '${node.sceneLabel} '
-            '${battle.isTangle ? '엉킴' : '수호전'}. '
-            '${battle.enemy.name} 장벽 ${battle.enemy.guard}/${battle.enemy.maxGuard}.',
+        semanticLabel: '${battle.isTangle ? '일반 전투' : '보스 전투'}. '
+            '${battle.enemy.name}, 체력 ${battle.enemy.guard}/${battle.enemy.maxGuard}.',
         child: ExpeditionEncounterStage(
           encounter: expedition.currentEvent?.encounter,
           battle: battle,
@@ -199,6 +218,7 @@ class _ImmersiveBattleStage extends StatelessWidget {
           bottomHudInset: bottomHudInset,
           topHudInset: topHudInset,
           onCueCompleted: onCueCompleted,
+          onContact: onContact,
         ),
       ),
     );

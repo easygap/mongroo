@@ -2,7 +2,7 @@
 
 **모든 기록서 효과는 정액이다.** 캐릭터 등급·tier·지원 능력치로 자라지 않는다.
 설계서 7.3~7.5가 책마다 정확한 숫자를 문장으로 정해 뒀고(`방어량 2 → 3`,
-`위력 +3`, `집중력 +1`), 그 숫자가 곧 값이다. 계수를 곱하면 문장이 거짓이 된다.
+`위력 +3`, `기력 +1`), 그 숫자가 곧 값이다. 계수를 곱하면 문장이 거짓이 된다.
 
 효과를 판정 코드 안에 흩뿌리지 않고 여기 모으는 이유는 두 가지다. 어떤 책이
 무엇을 바꾸는지 한 파일에서 읽히고, 전투 해결 코드에는 작은 호출 지점만 남는다.
@@ -19,27 +19,27 @@ from typing import Any, Iterable, Mapping, MutableMapping, Sequence
 # 전투 시작 전에 한 번만 적용되는 효과(activation_mode=opening).
 # 값은 설계서 문장 그대로다.
 OPENING_MODIFIERS: dict[str, dict[str, int]] = {
-    # 전투 시작 시 집중력 +1 (상한 5 유지)
+    # 전투 시작 시 기력 +1 (상한 5 유지)
     "first_breath": {"focus": 1},
-    # 전투 시작 집중력 +2 (상한 5 유지) / 반대급부는 1라운드 스킬 사용 불가
+    # 전투 시작 기력 +2 (상한 5 유지) / 반대급부는 1라운드 스킬 사용 불가
     "germination_gear": {"focus": 2, "first_round_skill_locked": 1},
-    # 라운드 제한 6 → 7 / 반대급부는 그 전투에서 집중력 최대치 −1
+    # 라운드 제한 6 → 7 / 반대급부는 그 전투에서 기력 최대치 −1
     "bellringer_chime": {"max_rounds": 1, "max_focus": -1},
 }
 
 # 행동 수치에 그대로 더해지는 효과(activation_mode=trigger).
 # 조건이 붙는 책(`final_resolve`처럼 장벽 비율을 보는 것)은 여기 없다.
 KIT_MODIFIERS: dict[str, dict[str, int]] = {
-    # 마음 지키기 방어량 2 → 3
+    # 방어 방어량 2 → 3
     "leaf_greave": {"guard": 1},
-    # 기본 공격 위력 +3
+    # 공격 위력 +3
     "clear_aim": {"basic_power": 3},
 }
 
 # 조건이 붙은 정액 보정. 조건을 만족하는 동안에만 더해지고 풀리면 사라진다.
 # 값이 자라지 않는 것은 무조건 보정과 같다.
 LOW_BARRIER_MODIFIERS: dict[str, dict[str, int]] = {
-    # 적 장벽 20% 이하일 때 기본 공격 위력 +5
+    # 적 장벽 20% 이하일 때 공격 위력 +5
     "final_resolve": {"basic_power": 5},
 }
 
@@ -58,7 +58,7 @@ PARTY_OPENING_MODIFIERS: dict[str, dict[str, int]] = {
     "ringcount_record": {"unique2_power": 4},
 }
 
-# 그 전투 내내 마음 지키기를 고를 수 없는 책(반대급부).
+# 그 전투 내내 방어를 고를 수 없는 책(반대급부).
 GUARD_LOCKED_BOOKS = frozenset({"ringcount_record"})
 
 # 장착자 한 명의 상성 배율을 갈아 끼우는 책. 기본값은 `MATCHUP_POWER_BP`
@@ -70,7 +70,7 @@ OATH_MATCHUP_BP: dict[str, dict[str, int]] = {
     "shadow_oath": {"weak": 17_000, "neutral": 6_000},
 }
 
-# 7.5.1 — command 기록서는 대원 행동 1회를 소비한다. 집중력 비용은 등급을 따르고
+# 7.5.1 — command 기록서는 대원 행동 1회를 소비한다. 기력 비용은 등급을 따르고
 # 전투당 한 번만 쓴다. 여기 있는 책만 실제로 누를 수 있는 행동이 된다.
 COMMAND_FOCUS_COST_BY_GRADE = {1: 0, 2: 1, 3: 2}
 
@@ -96,9 +96,9 @@ COMMAND_ACTIONS: dict[str, dict[str, Any]] = {
         "effect": "book_weakness_engrave",
         "effect_values": {"weakness_bonus": 3},
     },
-    # 전투 1회, 자신의 다음 공격 성장결을 확정 전에 고른 다른 결로 변경
+    # 전투 1회, 자신의 다음 공격 성장 타입을 확정 전에 고른 다른 결로 변경
     # 아홉 꼬리의 잔상 — 예고된 공격을 다른 대원이 받는다. 대신 그 대원은 그
-    # 라운드에 마음 지키기를 쓸 수 없다(설계서의 반대급부). 전체 공격은 넘길
+    # 라운드에 방어를 쓸 수 없다(설계서의 반대급부). 전체 공격은 넘길
     # 대상이라는 개념이 없어 전투 쪽에서 후보가 비고, 슬롯은 잠긴 채 보인다.
     "nine_tail_afterimage": {
         "effect": "book_intent_retarget",
@@ -115,12 +115,12 @@ COMMAND_ACTIONS: dict[str, dict[str, Any]] = {
     "resonance_tuner": {
         "effect": "book_kel_override",
         "effect_values": {},
-        # 사용자가 여섯 성장결 중 하나를 고른다. `지금과 다른 결`만 허용한다.
+        # 사용자가 여섯 성장 타입 중 하나를 고른다. `지금과 다른 결`만 허용한다.
         "choice_kind": "kel",
     },
 }
 
-# 여섯 성장결. 고를 수 있는 값의 단일 원본이다.
+# 여섯 성장 타입. 고를 수 있는 값의 단일 원본이다.
 CHOICE_KELS = ("sunny", "rainy", "ember", "moonlit", "sparkling", "mosaic")
 
 
@@ -134,7 +134,7 @@ def choice_kind(code: str) -> str | None:
 # 고를 것이 없을 때 슬롯에 붙는 사유. 파티가 한 명뿐이거나 예비 기록서가
 # 없으면 누를 수 있는 것처럼 보여 놓고 거절하는 대신 미리 잠근다.
 NOTHING_TO_CHOOSE = {
-    "kel": "바꿀 성장결이 없어요.",
+    "kel": "바꿀 성장 타입이 없어요.",
     "member": "넘길 다른 대원이 없어요.",
     "book": "바꿔 낄 다른 기록서가 없어요.",
 }
@@ -143,7 +143,7 @@ NOTHING_TO_CHOOSE = {
 def choice_options(kind: str | None) -> tuple[str, ...]:
     """후보가 전투 상황과 무관하게 고정된 종류만 여기서 답한다.
 
-    성장결 여섯은 언제나 같지만, 대원과 기록서는 그 전투의 파티와 출발 스냅샷을
+    성장 타입 여섯은 언제나 같지만, 대원과 기록서는 그 전투의 파티와 출발 스냅샷을
     봐야 안다. 그런 종류는 빈 튜플을 돌려주고 전투 쪽이 채운다.
     """
 
@@ -163,7 +163,7 @@ def validate_choice(
 
     `allowed`는 그 전투에서 실제로 고를 수 있었던 후보다. 앱에 내려보낸 목록과
     **같은 목록으로 판정해야** 화면에 보인 것을 골랐는데 거절당하는 일이 없다.
-    넘기지 않으면 종류가 고정 후보를 가진 경우(성장결)만 검사한다.
+    넘기지 않으면 종류가 고정 후보를 가진 경우(성장 타입)만 검사한다.
     """
 
     kind = choice_kind(code)
@@ -182,7 +182,7 @@ def validate_choice(
 
 
 _NOT_A_CANDIDATE = {
-    "kel": "그런 성장결은 없어요.",
+    "kel": "그런 성장 타입은 없어요.",
     "member": "지금 넘길 수 없는 대원이에요.",
     "book": "출발할 때 가져오지 않은 기록서예요.",
 }
@@ -261,12 +261,12 @@ def command_action(code: str) -> dict[str, Any] | None:
     return dict(action) if action is not None else None
 
 
-# 전투당 한 번만 터지는 트리거. 정해진 행동을 처음 골랐을 때 집중력을 더한다.
+# 전투당 한 번만 터지는 트리거. 정해진 행동을 처음 골랐을 때 기력을 더한다.
 # (코드, 어떤 행동에서, 몇 칸)
 FOCUS_TRIGGERS: dict[str, dict[str, Any]] = {
-    # 전투 1회, 방어를 고르면 집중력 1 추가 생성
+    # 전투 1회, 방어를 고르면 기력 1 추가 생성
     "bracing": {"on": "guard", "focus": 1},
-    # 전투 1회, 스킬 사용 후 집중력 1 환급
+    # 전투 1회, 스킬 사용 후 기력 1 환급
     "focus_knot": {"on": "skill", "focus": 1},
 }
 
@@ -283,7 +283,7 @@ IMPLEMENTED_CODES = (
     | frozenset(GUARD_CARRY)
 )
 
-# 네 스킬 슬롯. 기본 공격과 지키기는 `스킬`이 아니다.
+# 네 스킬 슬롯. 공격과 지키기는 `스킬`이 아니다.
 _SKILL_SLOTS = frozenset({"unique_1", "unique_2", "selected_1", "selected_2"})
 
 
@@ -294,13 +294,13 @@ def focus_trigger(
     fired: Mapping[str, Any] | None,
     member_id: int,
 ) -> tuple[int, str | None]:
-    """이번 행동에서 터지는 집중력 트리거를 찾는다.
+    """이번 행동에서 터지는 기력 트리거를 찾는다.
 
     `전투 1회`라서 이미 터진 책은 다시 세지 않는다. 어떤 책이 터졌는지는 전투
     상태에 남으므로 저장된 런을 이어서 해도 두 번 터지지 않는다.
 
-    돌려주는 값은 (더할 집중력, 터진 책 코드)다. 상한은 호출부가 적용한다 —
-    집중력 상한은 전투 상태가 알고 이 모듈은 모른다.
+    돌려주는 값은 (더할 기력, 터진 책 코드)다. 상한은 호출부가 적용한다 —
+    기력 상한은 전투 상태가 알고 이 모듈은 모른다.
     """
 
     lane = "skill" if action in _SKILL_SLOTS else action
@@ -394,7 +394,7 @@ def opening_modifiers(
 ) -> dict[str, Any]:
     """파티 전체의 전투 시작 보정을 모은다.
 
-    집중력은 파티가 나눠 쓰는 자원이라 캐릭터별이 아니라 전투 하나에 한 번
+    기력은 파티가 나눠 쓰는 자원이라 캐릭터별이 아니라 전투 하나에 한 번
     더해진다. 같은 책을 두 사람이 함께 들고 나갈 수 없으므로(출발 시 422)
     같은 효과가 두 번 더해지지 않는다.
     """
@@ -438,7 +438,7 @@ def opening_modifiers(
         "unique2_power": unique2_power,
         # 반대급부를 진 대원. 1라운드에 스킬을 고를 수 없다.
         "first_round_skill_locked": locked_members,
-        # 반대급부를 진 대원. 그 전투 내내 마음 지키기를 고를 수 없다.
+        # 반대급부를 진 대원. 그 전투 내내 방어를 고를 수 없다.
         "guard_locked": guard_locked,
         # 라운드가 넘어갈 때 방어를 이 만큼 남겨 둘 대원.
         "guard_carry": carry_members,

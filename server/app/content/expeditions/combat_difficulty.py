@@ -196,7 +196,7 @@ ENEMY_MECHANICS: Mapping[str, Mapping[str, Any]] = MappingProxyType(
                 "trigger": "on_unblocked",
                 "effect": "focus_drain",
                 "value": 1,
-                "counter": "피해를 모두 막으면 집중력이 줄지 않아요.",
+                "counter": "피해를 모두 막으면 기력이 줄지 않아요.",
             }
         ),
         "expose": MappingProxyType(
@@ -226,7 +226,7 @@ ENEMY_MECHANICS: Mapping[str, Mapping[str, Any]] = MappingProxyType(
                 "trigger": "no_guard_action",
                 "effect": "power_bonus",
                 "value": 1,
-                "counter": "한 명 이상 마음 지키기를 쓰면 추가 위력이 사라져요.",
+                "counter": "한 명 이상 방어를 쓰면 추가 위력이 사라져요.",
             }
         ),
         "repairing_index": MappingProxyType(
@@ -246,7 +246,7 @@ ENEMY_MECHANICS: Mapping[str, Mapping[str, Any]] = MappingProxyType(
                 "trigger": "no_guard_action",
                 "effect": "power_bonus",
                 "value": 1,
-                "counter": "한 명 이상 마음 지키기로 울림을 받아 내세요.",
+                "counter": "한 명 이상 방어로 울림을 받아 내세요.",
             }
         ),
         "reverse_winding": MappingProxyType(

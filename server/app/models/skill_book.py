@@ -85,7 +85,7 @@ class PlantSkillMastery(Base):
     5단계마다 캐릭터 상세의 회상 문장 한 줄이 열릴 뿐이고, 위력·비용·쿨타임에는
     절대 들어가지 않는다. 오래 쓴 스킬에 애착을 남기는 장치이지 성장 축이 아니다.
 
-    이 기록은 `마음 지키기 누적 30회` 같은 기록서 해금 조건의 근거로도 쓰인다.
+    이 기록은 `방어 누적 30회` 같은 기록서 해금 조건의 근거로도 쓰인다.
     조건을 세려고 별도 카운터를 만들지 않고 이미 남기는 숙련을 읽는다.
     """
 
@@ -96,7 +96,7 @@ class PlantSkillMastery(Base):
         primary_key=True,
         nullable=False,
     )
-    # 고유·감정·기록서·기본 공격·지키기가 같은 이름 공간을 쓴다.
+    # 고유·감정·기록서·공격·지키기가 같은 이름 공간을 쓴다.
     skill_code: Mapped[str] = mapped_column(
         sa.String(48), primary_key=True, nullable=False
     )

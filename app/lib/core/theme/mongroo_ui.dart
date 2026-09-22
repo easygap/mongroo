@@ -22,8 +22,8 @@ class MongrooPanel extends StatelessWidget {
     this.padding = const EdgeInsets.all(16),
     this.color,
     this.borderColor,
-    this.radius = 16,
-    this.shadowOffset = const Offset(0, 4),
+    this.radius = 10,
+    this.shadowOffset = Offset.zero,
   });
 
   final Widget child;
@@ -76,8 +76,8 @@ class MongrooTag extends StatelessWidget {
 
   /// 글자 앞에 그릴 것. 주면 `icon` 대신 이걸 쓴다.
   ///
-  /// 성장결처럼 **글리프가 아니라 그린 마크**를 앞에 둬야 하는 자리가 있다.
-  /// 예전에는 여섯 성장결이 `Icons.hub_outlined` 하나를 나눠 써서, 색과 글자를
+  /// 성장 타입처럼 **글리프가 아니라 그린 마크**를 앞에 둬야 하는 자리가 있다.
+  /// 예전에는 여섯 성장 타입이 `Icons.hub_outlined` 하나를 나눠 써서, 색과 글자를
   /// 못 읽으면 구분이 되지 않았다.
   final Widget? leading;
   final Color? backgroundColor;
@@ -112,8 +112,9 @@ class MongrooTag extends StatelessWidget {
           ? labelText
           : ConstrainedBox(
               constraints: BoxConstraints(
-                maxWidth:
-                    (resolvedMaxWidth - 16 - (icon == null && leading == null ? 0 : 19))
+                maxWidth: (resolvedMaxWidth -
+                        16 -
+                        (icon == null && leading == null ? 0 : 19))
                     .clamp(
                   24,
                   double.infinity,
@@ -227,6 +228,7 @@ class _MongrooPressableState extends State<MongrooPressable> {
       ),
     );
     return Semantics(
+      container: true,
       button: true,
       enabled: widget.onTap != null,
       label: widget.semanticLabel,
@@ -237,7 +239,6 @@ class _MongrooPressableState extends State<MongrooPressable> {
     );
   }
 }
-
 
 /// 보유 씨앗을 보여 주는 공용 배지.
 ///
@@ -271,7 +272,7 @@ class MongrooSeedToken extends StatelessWidget {
                   '$value',
                   style: const TextStyle(
                     color: AppTheme.onNight,
-                    fontFamily: AppTheme.pixelFont,
+                    fontFamily: AppTheme.bodyFont,
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
                     fontFeatures: [FontFeature.tabularFigures()],

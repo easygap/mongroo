@@ -216,7 +216,7 @@ def test_growth_traits_reveal_primary_then_secondary_without_judging_user():
 
     branching = build_growth_traits(nuanced, stage=3, branch="sadness")
     assert branching["reveal_state"] == "dominant_revealed"
-    assert branching["dominant"]["persona_name"] == "빗물결"
+    assert branching["dominant"]["persona_name"] == "빗방울"
     assert branching["secondary"] is None
     assert branching["temperament"]["revealed"] is False
 
@@ -224,7 +224,7 @@ def test_growth_traits_reveal_primary_then_secondary_without_judging_user():
     assert blooming["reveal_state"] == "secondary_revealed"
     assert blooming["secondary"]["emotion"] == "surprise"
     assert blooming["secondary"]["ratio"] == 0.2
-    assert blooming["title"] == "별빛 품은 빗물결"
+    assert blooming["title"] == "별빛 품은 빗방울"
     assert blooming["temperament"]["revealed"] is True
     assert blooming["fictional_character_profile"] is True
     assert blooming["user_personality_inference"] is False
@@ -263,7 +263,7 @@ def test_growth_traits_do_not_reveal_temperament_before_branch_is_stable():
     assert traits["dominant"] is None
     assert traits["secondary"] is None
     assert traits["temperament"]["revealed"] is False
-    assert "일기 분석이 더 모이면" in traits["next_reveal"]
+    assert "일기가 쌓이면" in traits["next_reveal"]
 
 
 def profile(**counts):
@@ -388,7 +388,7 @@ def test_legacy_museum_fallback_keeps_form_branch_and_persona_consistent():
     assert payload["final_form"] == "rainy"
     assert payload["growth_branch"] == "sadness"
     assert payload["growth_form"] == "rainy"
-    assert payload["growth_persona"]["persona_name"] == "빗물결"
+    assert payload["growth_persona"]["persona_name"] == "빗방울"
     assert payload["visual_key"] == "stage_5_rainy_sunny"
     assert payload["secondary_emotion"] == "joy"
     assert payload["dominant_form"] == "rainy"

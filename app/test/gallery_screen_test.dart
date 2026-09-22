@@ -112,7 +112,7 @@ const _branchedPlant = HarvestedPlant(
   finalForm: PlantFinalForm.rainy,
   secondaryForm: PlantGrowthForm.sunny,
   growthTraits: PlantGrowthTraits(
-    title: '햇살 한 줌 품은 빗물결',
+    title: '햇살 한 줌 품은 빗방울',
     traits: ['오래 귀 기울이는 결', '빛을 조심스럽게 나누는 결'],
     temperament: PlantTemperament(
       revealed: true,
@@ -194,7 +194,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('해님이'), findsOneWidget);
-    expect(find.text('햇살꽃 · 햇살결 · 해바라기'), findsOneWidget);
+    expect(find.text('햇살꽃 · 햇살 · 해바라기'), findsOneWidget);
     expect(find.byType(EmotionPlantView), findsWidgets);
     expect(
       tester.widgetList<EmotionPlantView>(find.byType(EmotionPlantView)).where(
@@ -213,7 +213,7 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('상세 시트가 다섯 성장 단계와 주결·보조결·기질·말걸음을 공개한다', (tester) async {
+  testWidgets('상세 시트가 다섯 성장 단계와 주 타입·보조 타입·기질·말투을 공개한다', (tester) async {
     await pumpMuseum(tester, _FakeGalleryRepository(plants: [_branchedPlant]));
 
     await tester.tap(find.text('빗별이'));
@@ -232,10 +232,10 @@ void main() {
     expect(stage4.form, PlantGrowthForm.rainy);
     expect(stage4.secondaryForm, PlantGrowthForm.sunny);
     expect(stage5.secondaryForm, PlantGrowthForm.sunny);
-    expect(find.text('주결'), findsOneWidget);
-    expect(find.text('보조결'), findsOneWidget);
+    expect(find.text('주 타입'), findsOneWidget);
+    expect(find.text('보조 타입'), findsOneWidget);
     expect(find.text('식물 캐릭터 기질'), findsOneWidget);
-    expect(find.text('말걸음'), findsOneWidget);
+    expect(find.text('말투'), findsOneWidget);
     expect(find.textContaining('섬세한 반응'), findsOneWidget);
     expect(find.textContaining('숨을 고르고 천천히'), findsOneWidget);
     expect(
@@ -260,7 +260,7 @@ void main() {
         everyElement(predicate<PlantStagePreview>(
           (preview) => preview.secondaryForm == null,
         )));
-    expect(find.textContaining('별도 보조결 없이'), findsOneWidget);
+    expect(find.textContaining('별도 보조 타입 없이'), findsOneWidget);
     expect(find.textContaining('대표 대사에 남은 말투'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

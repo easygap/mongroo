@@ -38,9 +38,9 @@ Map<String, dynamic> _battle() => {
         'weakness': 'insight',
         'weakness_label': '관찰',
         'weak_kel': 'sunny',
-        'weak_kel_label': '햇살결',
+        'weak_kel_label': '햇살',
         'resist_kel': 'rainy',
-        'resist_kel_label': '빗물결',
+        'resist_kel_label': '빗방울',
         'intent': {
           'code': 'page_snow',
           'name': '페이지 눈보라',
@@ -91,9 +91,9 @@ Map<String, dynamic> _run({int swapsLeft = 1, String status = 'active'}) => {
           'name': '겉꿈',
           'count': 3,
           'weak_kel': 'sunny',
-          'weak_kel_label': '햇살결',
+          'weak_kel_label': '햇살',
           'resist_kel': 'rainy',
-          'resist_kel_label': '빗물결',
+          'resist_kel_label': '빗방울',
           'warning': null,
         },
         'swaps_left': swapsLeft,
@@ -323,11 +323,11 @@ void main() {
     expect(find.byKey(const ValueKey('joint-guard-layer')), findsOneWidget);
     expect(find.text('겉꿈 · 1겹째 · 전체 3겹'), findsOneWidget);
     // 색만으로 구분하지 않는다.
-    expect(find.text('잘 통해요 햇살결'), findsOneWidget);
-    expect(find.text('잘 안 통해요 빗물결'), findsOneWidget);
+    expect(find.text('잘 통해요 햇살'), findsOneWidget);
+    expect(find.text('잘 안 통해요 빗방울'), findsOneWidget);
 
     // 글자도 못 읽는 경우까지 본다. 화살표는 통하고 안 통하고만 말했지
-    // **어느 성장결인지**는 이름으로만 있었다. 성장결마다 다른 마크가 붙는다.
+    // **어느 성장 타입인지**는 이름으로만 있었다. 성장 타입마다 다른 마크가 붙는다.
     final marks = tester
         .widgetList<Image>(find.byType(Image))
         .map((image) => image.image)

@@ -70,13 +70,7 @@ const _authUser = User(
 );
 
 void main() {
-  final mongrooSymbol = find.byWidgetPredicate(
-    (widget) =>
-        widget is Image &&
-        widget.image is AssetImage &&
-        (widget.image as AssetImage).assetName == MongrooBrandMark.assetPath,
-    description: '몽그루 심볼 이미지',
-  );
+  final mongrooSymbol = find.byType(MongrooBrandMark);
 
   Future<void> pumpAuth(
     WidgetTester tester,
@@ -140,7 +134,7 @@ void main() {
     expect(fields[1].autofillHints, contains(AutofillHints.password));
     expect(
       tester.widget<Text>(find.text('몽그루')).style?.fontFamily,
-      AppTheme.pixelFont,
+      AppTheme.bodyFont,
     );
   });
 
@@ -375,8 +369,7 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('320px 200% 글자에서도 가입 폼과 동의 항목이 넘치지 않는다',
-      (tester) async {
+  testWidgets('320px 200% 글자에서도 가입 폼과 동의 항목이 넘치지 않는다', (tester) async {
     // 동의 네 줄과 약관 링크가 한 화면에 몰려 있어 큰 글자에서 제일 위험하다.
     await pumpAuth(
       tester,

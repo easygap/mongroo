@@ -31,7 +31,13 @@ class AppShell extends StatelessWidget {
                     onSelected: _goBranch,
                   ),
                 ),
-                Expanded(child: navigationShell),
+                Expanded(
+                  child: Semantics(
+                    container: true,
+                    explicitChildNodes: true,
+                    child: navigationShell,
+                  ),
+                ),
               ],
             ),
           );
@@ -66,9 +72,9 @@ const _items = [
   _NavItem('기록', Icons.menu_book_outlined, Icons.menu_book_rounded),
   _NavItem('정원', Icons.cottage_outlined, Icons.cottage_rounded),
   _NavItem(
-    '박물관',
-    Icons.account_balance_outlined,
-    Icons.account_balance_rounded,
+    '탐험',
+    Icons.explore_outlined,
+    Icons.explore_rounded,
   ),
   _NavItem('회고', Icons.insights_outlined, Icons.insights_rounded),
 ];
@@ -84,8 +90,7 @@ class _GameDock extends StatelessWidget {
     final palette = MongrooPalette.of(context);
     return Material(
       color: palette.paper,
-      elevation: 12,
-      shadowColor: palette.night.withAlpha(42),
+      elevation: 0,
       child: DecoratedBox(
         decoration: BoxDecoration(
           border: Border(
@@ -130,7 +135,8 @@ class _DockDestination extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = MongrooPalette.of(context);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final foreground = selected ? palette.ink : palette.inkMuted;
+    final foreground =
+        selected ? Theme.of(context).colorScheme.primary : palette.inkMuted;
     return Semantics(
       button: true,
       selected: selected,
@@ -153,11 +159,10 @@ class _DockDestination extends StatelessWidget {
                     width: 38,
                     height: 30,
                     decoration: BoxDecoration(
-                      color: selected ? AppTheme.seed : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                      border: selected
-                          ? Border.all(color: palette.ink.withAlpha(28))
-                          : null,
+                      color: selected
+                          ? Theme.of(context).colorScheme.primaryContainer
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       selected ? item.selectedIcon : item.icon,
@@ -171,8 +176,8 @@ class _DockDestination extends StatelessWidget {
                     maxLines: 1,
                     style: TextStyle(
                       color: foreground,
-                      fontSize: 10,
-                      fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+                      fontSize: 11,
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
                       height: 1.2,
                     ),
                   ),
@@ -222,17 +227,7 @@ class _GameRail extends StatelessWidget {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              extended ? '마음은 저마다 자라요' : '·',
-              style: TextStyle(
-                color: AppTheme.onNightMuted,
-                fontFamily: AppTheme.pixelFont,
-                fontSize: 10,
-              ),
-            ),
-          ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -254,8 +249,7 @@ class _RailDestination extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = MongrooPalette.of(context);
-    final foreground = selected ? palette.night : AppTheme.onNightMuted;
+    final foreground = selected ? AppTheme.onNight : AppTheme.onNightMuted;
     final destination = Material(
       color: selected ? AppTheme.seed : Colors.transparent,
       borderRadius: BorderRadius.circular(12),
@@ -288,6 +282,7 @@ class _RailDestination extends StatelessWidget {
       ),
     );
     return Semantics(
+      container: true,
       button: true,
       selected: selected,
       label: item.label,
@@ -326,7 +321,7 @@ class _BrandMark extends StatelessWidget {
                     '몽그루',
                     style: TextStyle(
                       color: AppTheme.onNight,
-                      fontFamily: AppTheme.pixelFont,
+                      fontFamily: AppTheme.bodyFont,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),

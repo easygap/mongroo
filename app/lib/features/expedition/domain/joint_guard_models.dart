@@ -188,7 +188,7 @@ class JointGuardLayer {
   final int count;
 
   /// 이 겹에서 잘 통하는 결과 잘 안 통하는 결. 겹에 들어설 때 함께 공개된다.
-  /// 성장결 코드. 마크를 고르는 데 쓴다 - 이름만으로는 글자를 읽어야 안다.
+  /// 성장 타입 코드. 마크를 고르는 데 쓴다 - 이름만으로는 글자를 읽어야 안다.
   final String weakKel;
   final String weakKelLabel;
   final String resistKel;

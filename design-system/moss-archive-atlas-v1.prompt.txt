@@ -1,0 +1,14 @@
+Use case: stylized-concept.
+Asset type: production background for a portrait mobile exploration world map in the original Korean plant-character game Mongroo. Generate ONE finished 1024x1536 portrait game environment, no UI mockup.
+Art direction: carefully authored miniature pixel-art garden diorama, orthographic three-quarter top-down view, confident chunky pixel clusters, clean silhouette separation, limited jade / pine / chalk / muted ochre palette, tiny warm coral accents. Fresh cool daylight. Lived-in botanical archive reclaimed by moss, not generic fantasy castle. The visual clarity of a real navigable handheld game map. No blurred painting texture, no photorealism, no glossy 3D, no glowing magic particles, no text.
+Composition: terrain covers the entire frame, no floating island cutout or white border. A meandering worn stone footpath joins EIGHT clearly distinct small landmark clearings from bottom to top. Leave clear open ground around each landmark for a character and a tappable marker. Landmarks must occupy these approximate normalized coordinates, with x left-to-right and y top-to-bottom:
+1 at (0.28,0.82): a low archive entrance gate and a crate of paper ledgers.
+2 at (0.67,0.73): an outdoor sorting desk with hanging blank paper tags.
+3 at (0.34,0.63): a low glass-topped pressed-flower cabinet and pink dried flowers.
+4 at (0.70,0.53): two leaning mossy bookcases joined by tangled vines.
+5 at (0.29,0.43): a small stone well, a bench and a resting lantern.
+6 at (0.65,0.33): a root-wrapped card catalogue beside a short wooden bridge.
+7 at (0.31,0.23): a squat round archive tower with a wooden door.
+8 at (0.60,0.13): the tallest green-roofed archive pavilion with a large closed stone arch.
+Scale: the buildings are small toy-like readable landmarks; ground and navigable negative space take at least half the image. Varied asymmetric terrain shelves, ferns, mossy trunks, a narrow turquoise stream along the right edge, fallen leaves, a few paper scraps. Uppermost 6% and bottommost 7% mostly foliage/water suitable for UI overlays. All eight landmarks stay visibly separated.
+Constraints: absolutely NO characters, faces, lettering, numbers, sign writing, labels, pins, route dots, interface panels, controls, logos, watermarks, hearts, stars. Those are real game overlays added by code. Do not put extra dominant buildings between the eight landmarks.

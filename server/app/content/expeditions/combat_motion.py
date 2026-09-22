@@ -1,7 +1,7 @@
 """전투 모션과 VFX 대체 규칙의 서버 단일 원본.
 
 클라이언트는 스킬 이름을 해석하지 않는다. 서버가 여섯 모션 원형과 구간별
-시간을 확정해 내려주고, 전용 이펙트가 없을 때 사용할 성장결 family도 함께
+시간을 확정해 내려주고, 전용 이펙트가 없을 때 사용할 성장 타입 family도 함께
 스냅샷한다. 덕분에 저장 중인 전투는 카탈로그가 바뀌어도 같은 연출을 재현한다.
 """
 
@@ -111,7 +111,7 @@ KEL_FALLBACK_FAMILIES = {
 
 
 def kel_fallback_family(kel: str | None) -> str | None:
-    """성장결에 대응하는 안전한 VFX family를 돌려준다."""
+    """성장 타입에 대응하는 안전한 VFX family를 돌려준다."""
 
     return KEL_FALLBACK_FAMILIES.get(str(kel)) if kel is not None else None
 

@@ -121,7 +121,7 @@ class SkillSlotState {
   /// 슬롯에 보여 줄 이름. 감정 포인터와 기본 기록서는 고정 문구를 쓴다.
   String get label => switch (source) {
         'skillbook' => bookName ?? code ?? '기록서',
-        'emotion' => code == 'emotion.secondary' ? '보조 성장결' : '성장결 기본',
+        'emotion' => code == 'emotion.secondary' ? '보조 타입' : '성장 타입 기본',
         'default_book' => '현장 기록',
         _ => '아직 열리지 않음',
       };

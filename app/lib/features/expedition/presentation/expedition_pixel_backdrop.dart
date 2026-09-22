@@ -5,6 +5,14 @@ import 'package:flutter/material.dart';
 import 'expedition_pixel_art.dart';
 import 'expedition_pixel_assets.g.dart';
 
+String? expeditionCleanRegionBackdrop(String? region) => switch (region) {
+      'moss_archive' => 'assets/adventure/moss-encounter-v3.png',
+      'echo_well' => 'assets/adventure/echo-encounter-v3.png',
+      'heartwood_observatory' => 'assets/adventure/heartwood-encounter-v3.png',
+      'starlight_seed_vault' => 'assets/adventure/starlight-encounter-v3.png',
+      _ => null,
+    };
+
 /// 지역별 도트 전장 배경.
 ///
 /// 세로 무대(폰)와 가로 무대(넓은 화면)가 다른 원화를 쓴다. 한 장을 비율에
@@ -47,6 +55,7 @@ class PixelBattleBackdrop extends StatelessWidget {
     required this.child,
     this.tint,
     this.borderRadius = BorderRadius.zero,
+    this.bottomInset = 0,
   });
 
   final String? regionCode;
@@ -56,6 +65,7 @@ class PixelBattleBackdrop extends StatelessWidget {
   /// 꿈 같은 특별한 전장에 얹는 색. 알파가 세기다. 없으면 원화 그대로.
   final Color? tint;
   final BorderRadius borderRadius;
+  final double bottomInset;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -77,6 +87,7 @@ class PixelBattleBackdrop extends StatelessWidget {
                 portrait: portrait,
               );
               final native = ExpeditionPixelBackdrops.nativeSize(asset);
+              final clean = expeditionCleanRegionBackdrop(regionCode);
               // 배경이 무대를 덮는 배율이 곧 무대의 배율이다. 캐릭터와 적도
               // 같은 값을 읽어 도트 한 칸의 크기를 맞춘다.
               final scale = math.max(
@@ -88,16 +99,33 @@ class PixelBattleBackdrop extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.passthrough,
                   children: [
-                    Positioned.fill(
-                      child: RepaintBoundary(
-                        child: PixelCoverImage(
-                          asset: asset,
-                          imageKey: ValueKey('pixel-backdrop-$asset'),
-                          native: native,
-                          scale: scale,
+                    if (clean != null) ...[
+                      Positioned.fill(
+                          child: ColoredBox(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainer)),
+                      Positioned(
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          bottom: bottomInset.clamp(0, stage.height * .7),
+                          child: Image.asset(clean,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.topCenter,
+                              filterQuality: FilterQuality.medium,
+                              excludeFromSemantics: true)),
+                    ] else
+                      Positioned.fill(
+                        child: RepaintBoundary(
+                          child: PixelCoverImage(
+                            asset: asset,
+                            imageKey: ValueKey('pixel-backdrop-$asset'),
+                            native: native,
+                            scale: scale,
+                          ),
                         ),
                       ),
-                    ),
                     if (tint case final tint? when tint.a > 0)
                       Positioned.fill(
                         child: IgnorePointer(

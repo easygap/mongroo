@@ -2,9 +2,10 @@ part of 'expedition_screen.dart';
 
 // 귀환 결과와 획득 보상을 표시하고 다음 마음일기 행동으로 연결한다.
 class _ExpeditionSummary extends ConsumerWidget {
-  const _ExpeditionSummary({required this.expedition});
+  const _ExpeditionSummary({required this.expedition, required this.onExit});
 
   final ExpeditionSnapshot expedition;
+  final VoidCallback onExit;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,6 +29,10 @@ class _ExpeditionSummary extends ConsumerWidget {
     final storyStageNo = storyCue?['stage_no'] is num
         ? (storyCue!['stage_no'] as num).toInt()
         : null;
+    final decisions = (expedition.memory['outcomes'] as List? ?? const [])
+        .whereType<Map>()
+        .where((item) => (item['result_text'] as String? ?? '').isNotEmpty)
+        .toList();
     final audioEnabled = ref.watch(
       expeditionBattleSettingsProvider.select(
         (settings) => settings.audioEnabled,
@@ -48,6 +53,29 @@ class _ExpeditionSummary extends ConsumerWidget {
                     story: story,
                     audioEnabled: audioEnabled,
                   ),
+                  const SizedBox(height: 12),
+                ],
+                if (decisions.isNotEmpty) ...[
+                  Text('이번 탐험의 선택',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  for (final decision in decisions)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(decision['choice'] as String? ?? '',
+                                style: Theme.of(context).textTheme.titleSmall),
+                            const SizedBox(height: 4),
+                            Text(decision['result_text'] as String),
+                            if (decision['finding'] != null)
+                              Text('발견: ${decision['finding']}',
+                                  style:
+                                      Theme.of(context).textTheme.labelLarge),
+                          ]),
+                    ),
+                  const Divider(),
                   const SizedBox(height: 12),
                 ],
                 MongrooPanel(
@@ -72,8 +100,8 @@ class _ExpeditionSummary extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Text(
                         completed
-                            ? '길에서 고른 선택과 캐릭터의 활약이 탐험 기록에 남았어요.'
-                            : '무리하지 않고 돌아오는 것도 좋은 탐험 판단이에요.',
+                            ? '이번 탐험에서 얻은 보상을 확인해 보세요.'
+                            : '탐험을 마쳤어요. 지도에서 다시 출발할 수 있어요.',
                         textAlign: TextAlign.center,
                       ),
                       if (returnScene != null) ...[
@@ -219,20 +247,17 @@ class _ExpeditionSummary extends ConsumerWidget {
                             await ref
                                 .read(expeditionControllerProvider.notifier)
                                 .leaveSummary();
-                            if (expedition.run.mode == 'tutorial' &&
-                                context.mounted) {
-                              await Navigator.of(context).maybePop();
-                            }
+                            onExit();
                           },
                           icon: Icon(
                             expedition.run.mode == 'tutorial'
                                 ? Icons.home_outlined
-                                : Icons.list_alt_outlined,
+                                : Icons.map_outlined,
                           ),
                           label: Text(
                             expedition.run.mode == 'tutorial'
                                 ? '홈으로 돌아가 쉬기'
-                                : '탐험 목록으로',
+                                : '탐험 지도로',
                           ),
                         ),
                       ),
@@ -536,7 +561,7 @@ class _CenteredMessage extends StatelessWidget {
 /// 대원 목록에 붙는 마음결 이름.
 ///
 /// 예전에는 여기서만 쓰는 이름표(`빗결`·`반짝임`·`모자이크`)를 따로 들고
-/// 있었다. 홈·도감·박물관은 같은 결을 `빗물결`·`별빛결`·`모아결`로 부르는데
+/// 있었다. 홈·도감·박물관은 같은 결을 `빗방울`·`별빛`·`무지개`로 부르는데
 /// 편성 화면만 다른 말을 써서 같은 캐릭터가 다른 것처럼 읽혔다.
 String _formLabel(String form) =>
     PlantGrowthForm.fromCode(form)?.personalityName ??

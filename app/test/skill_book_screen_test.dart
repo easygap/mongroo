@@ -203,7 +203,7 @@ void main() {
     expect(find.byKey(const ValueKey('slot-B1')), findsOneWidget);
     expect(find.byKey(const ValueKey('slot-B2')), findsOneWidget);
     // 저장한 것이 없으면 안전 기본값이 읽힌다.
-    expect(find.text('성장결 기본'), findsWidgets);
+    expect(find.text('성장 타입 기본'), findsWidgets);
     expect(find.text('현장 기록'), findsOneWidget);
 
     // 아직 없는 책도 숨기지 않고 획득처를 함께 보여 준다.
@@ -256,7 +256,7 @@ void main() {
         'catalog': [
           _book('double_leaf', '겹잎',
               owned: false, acquireKind: 'unlock', priceSeeds: null,
-              unlockHint: '마음 지키기 30회'),
+              unlockHint: '방어 30회'),
         ],
         'presets': ['explore', 'guard', 'personal'],
         'unlock_progress': [
@@ -468,7 +468,7 @@ void main() {
           'code': 'double_leaf',
           'source': 'unlock',
           'name': '두 겹 잎방패',
-          'effect_summary': '마음 지키기 잔여 방어 1을 다음 라운드로 이월',
+          'effect_summary': '방어 잔여 방어 1을 다음 라운드로 이월',
           'grade': 2,
         },
       ],

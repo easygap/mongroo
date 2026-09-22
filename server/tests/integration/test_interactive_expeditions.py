@@ -62,7 +62,7 @@ async def _action(
 
 
 async def _fight_guardian(client, headers: dict, run: dict, key_prefix: str) -> dict:
-    """실제 AUTO처럼 집중력·쿨타임·상성을 읽어 합법 행동을 예약한다."""
+    """실제 AUTO처럼 기력·쿨타임·상성을 읽어 합법 행동을 예약한다."""
 
     turn = 1
     while (run.get("current_event") or {}).get("battle", {}).get("status") == "active":
@@ -199,7 +199,7 @@ async def _walk_to_exit(client, headers: dict, run: dict) -> dict:
         "sequence": run["last_combat_exchange"][-1]["sequence"],
         "type": "outcome",
         "outcome": "victory",
-        "caption": "수호 장벽이 부서지고 장부지기가 길을 열었어요!",
+        "caption": "장부지기를 물리쳤어요! 이제 다음으로 갈 수 있어요.",
     }
     run = await _action(
         client,

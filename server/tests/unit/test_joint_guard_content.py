@@ -244,7 +244,7 @@ def test_beast_telegraphs_describe_a_gesture_not_a_threat(monkeypatch):
 
 
 def test_player_action_text_may_say_gongyeok():
-    """`기본 공격`은 정상 어휘다. 금지어 목록이 이 말을 잡으면 안 된다."""
+    """`공격`은 정상 어휘다. 금지어 목록이 이 말을 잡으면 안 된다."""
     from app.content.expeditions.joint_guard import DECISIVE_MOMENTS as moments
 
     bypass = moments["deep_sleeptalk"]["bypass"]["text"]
@@ -314,7 +314,7 @@ def test_sleeptalk_starts_at_the_second_layer(beast_code):
 def test_deep_sleeptalk_raises_cost_instead_of_hitting():
     """비용을 올리는 순간은 때리지 않는다.
 
-    `깊은 잠꼬대`는 위력 0이고 다음 라운드 집중력 비용을 +1 한다. 이 순간이
+    `깊은 잠꼬대`는 위력 0이고 다음 라운드 기력 비용을 +1 한다. 이 순간이
     피해를 주는 쪽으로 바뀌면 `행동 봉쇄 금지` 계약과 부딪힌다.
     """
     schedule = round_schedule("ledger_keeper", 2)

@@ -36,7 +36,7 @@ class SplashScreen extends StatelessWidget {
                         style:
                             Theme.of(context).textTheme.displaySmall?.copyWith(
                                   color: foreground,
-                                  fontFamily: AppTheme.pixelFont,
+                                  fontFamily: AppTheme.bodyFont,
                                   letterSpacing: 0,
                                 ),
                       ),
@@ -99,7 +99,7 @@ class _PixelLoadingStatus extends StatelessWidget {
             '불러오는 중…',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: foreground,
-                  fontFamily: AppTheme.pixelFont,
+                  fontFamily: AppTheme.bodyFont,
                 ),
           ),
         ],

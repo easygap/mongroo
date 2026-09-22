@@ -464,7 +464,7 @@ class _MoodResonanceBanner extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 14, 0, 2),
       child: MongrooPressable(
         onTap: onTap,
-        semanticLabel: '마음결 기념품 보기, $status',
+        semanticLabel: '성장 기념품 보기, $status',
         borderRadius: BorderRadius.circular(18),
         child: Container(
           height: 122,
@@ -492,7 +492,7 @@ class _MoodResonanceBanner extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '마음결 기념품',
+                      '성장 기념품',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleLarge,

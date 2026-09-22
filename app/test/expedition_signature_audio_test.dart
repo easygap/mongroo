@@ -28,7 +28,7 @@ import 'package:mongroo/features/expedition/presentation/expedition_signature_au
   };
 }
 
-/// 여섯 성장결 스킬. 서버 `FORM_COMBAT_SKILLS`와 같은 코드여야 한다.
+/// 여섯 성장 타입 스킬. 서버 `FORM_COMBAT_SKILLS`와 같은 코드여야 한다.
 const _kelSkills = <String>[
   'sunny_radiant_heart',
   'rainy_frozen_tide',
@@ -68,7 +68,7 @@ void main() {
     expect(paths.toSet().length, paths.length, reason: '한 파일을 두 행동이 공유');
   });
 
-  test('여섯 성장결과 안내자 스킬이 모두 자기 소리를 갖는다', () {
+  test('여섯 성장 타입과 안내자 스킬이 모두 자기 소리를 갖는다', () {
     for (final code in [..._kelSkills, 'archive_lantern', 'archive_seal']) {
       expect(
         expeditionSkillSignatureAsset(code),
@@ -92,7 +92,7 @@ void main() {
     }
   });
 
-  testWidgets('여섯 성장결과 안내자의 스킬 아이콘을 번들에서 읽는다', (tester) async {
+  testWidgets('여섯 성장 타입과 안내자의 스킬 아이콘을 번들에서 읽는다', (tester) async {
     const assets = <String>[
       'assets/adventure/skill-icons/emotion/sunny-radiant-heart-v1.webp',
       'assets/adventure/skill-icons/emotion/rainy-frozen-tide-v1.webp',
@@ -111,7 +111,7 @@ void main() {
     }
   });
 
-  test('아이콘 지도가 여섯 성장결과 안내자 스킬을 덮는다', () {
+  test('아이콘 지도가 여섯 성장 타입과 안내자 스킬을 덮는다', () {
     for (final code in [..._kelSkills, 'archive_lantern', 'archive_seal']) {
       expect(
         expeditionDockSkillIconAsset(code),

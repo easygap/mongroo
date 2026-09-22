@@ -1050,7 +1050,7 @@ class ExpeditionBattleEvent {
   final bool weaknessHit;
 
   /// 이 행동이 실제로 쓴 스킬 코드. 슬롯(`action`)은 자리를, 이 값은 무엇을
-  /// 썼는지를 알려 준다. 같은 `selected_1`에 여섯 성장결 스킬이 번갈아 들어오기
+  /// 썼는지를 알려 준다. 같은 `selected_1`에 여섯 성장 타입 스킬이 번갈아 들어오기
   /// 때문에 고유한 소리를 고르려면 슬롯이 아니라 이 코드가 필요하다.
   /// 구버전 응답에는 없어 `null`이면 tier 대체음으로 떨어진다.
   final String? skillCode;

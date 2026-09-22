@@ -332,7 +332,7 @@ class _SessionCharacterBar extends StatelessWidget {
     final palette = MongrooPalette.of(context);
     final name = character?.name ?? '마음씨앗';
     final stageName = character?.stageName ?? '씨앗';
-    final dominant = character?.dominantLabel ?? '마음빛 관찰 중';
+    final dominant = character?.dominantLabel ?? '성격이 자라는 중';
     final secondary = character?.secondaryLabel;
     final temperament =
         character?.temperamentSummary ?? '일기를 들으며 말투와 성격을 알아 가는 중';
@@ -398,12 +398,12 @@ class _SessionCharacterBar extends StatelessWidget {
                             backgroundColor: palette.paperDeep,
                           ),
                           MongrooTag(
-                            label: '주결 · $dominant',
+                            label: '주 타입 · $dominant',
                             backgroundColor: scheme.primaryContainer,
                           ),
                           if (secondary != null)
                             MongrooTag(
-                              label: '보조결 · $secondary',
+                              label: '보조 타입 · $secondary',
                               backgroundColor: palette.sky,
                             ),
                         ],

@@ -40,6 +40,7 @@ class ExpeditionActionCue {
     this.contactMaterial,
     this.releaseRegionCode,
     this.skillCode,
+    this.targets = const [],
   });
 
   final int id;
@@ -80,6 +81,7 @@ class ExpeditionActionCue {
   /// 지금 쓰인 스킬(또는 적 공격)의 코드. 이 값으로 그 행동만의 소리를 고른다.
   /// 서버가 알려 주지 않는 구버전 응답에서는 `null`이고 공용음으로 떨어진다.
   final String? skillCode;
+  final List<ExpeditionBattleTarget> targets;
 
   bool get isGuardianExchange => combat?.kind == 'guardian';
   bool get isCombatRound =>
@@ -167,7 +169,7 @@ class ExpeditionActionCue {
         outfitKey: member.outfitKey,
         title: resolution.choice,
         effectKey: resolution.combat?.effectKey ?? 'echo_wave',
-        outcome: resolution.outcome,
+        outcome: resolution.displayText,
         combat: resolution.combat,
       );
 
@@ -232,6 +234,7 @@ class ExpeditionActionCue {
       contactMaterial: event.contactMaterial,
       releaseRegionCode: releaseRegionCode,
       skillCode: event.skillCode,
+      targets: event.targets,
     );
   }
 

@@ -38,6 +38,7 @@ from app.content.expeditions.combat_identity import (
     TIER_POWER_BP,
     basic_scale_bp,
     character_combat_stats,
+    combat_species_key,
     combat_effect_summary,
     combat_effect_values,
     combat_tier,
@@ -80,10 +81,10 @@ from app.core.korean import korean_subject, korean_topic
 # 사실만 전하고 재질을 과장하지 않는다.
 DEFAULT_CONTACT_MATERIAL = "stone"
 
-# 네 스킬 슬롯. 기본 공격과 마음 지키기는 어떤 제약에서도 남겨 둔다.
+# 네 스킬 슬롯. 공격과 방어는 어떤 제약에서도 남겨 둔다.
 SKILL_ACTIONS = frozenset({"unique_1", "unique_2", "selected_1", "selected_2"})
 
-# 고를 수 있는 성장결. 저장된 값이 깨져도 판정이 흔들리지 않게 좁힌다.
+# 고를 수 있는 성장 타입. 저장된 값이 깨져도 판정이 흔들리지 않게 좁힌다.
 ELEMENT_KEL_CHOICES = frozenset(CHOICE_KELS)
 
 # 전투당 1회를 쿨타임으로 표현한다. 최대 라운드보다 길면 그 전투에서 다시
@@ -180,7 +181,9 @@ def member_battle_kit(
 ) -> dict[str, Any]:
     element_kels = element_kel_map(kel_map_version)
     snapshot = profile.get("snapshot", {})
-    species_code = snapshot.get("species", {}).get("code", "archive_guide")
+    species_code = combat_species_key(
+        snapshot.get("species", {}).get("code", "archive_guide")
+    )
     form = snapshot.get("form", "mosaic")
     discipline = EMOTION_DISCIPLINES.get(form, EMOTION_DISCIPLINES["mosaic"])
     affinity = _member_affinity(profile)
@@ -200,7 +203,7 @@ def member_battle_kit(
     weak_kel = element_kels.get(str(current_weak_element))
     resist_kel = element_kels.get(str(current_resist_element))
     state_cooldowns = member_state or {}
-    # 다음 공격 한 번에만 실리는 성장결 덮어쓰기. 고유기(signature)는 품종의
+    # 다음 공격 한 번에만 실리는 성장 타입 덮어쓰기. 고유기(signature)는 품종의
     # 정체성이라 바꾸지 않는다.
     kel_override = (member_state or {}).get("kel_override")
     if kel_override not in ELEMENT_KEL_CHOICES:
@@ -271,7 +274,7 @@ def member_battle_kit(
             + stats[skill_affinity]
             + max(0, (int(combat_stats["offense"]) - 20) // 6)
             # 고리수 기록부 — 파티 전원의 고유 II에 실리는 정액. `또렷한 겨냥`이
-            # 기본 공격에 붙는 것과 같은 자리(raw_power)라 정액 계약이 같다.
+            # 공격에 붙는 것과 같은 자리(raw_power)라 정액 계약이 같다.
             + (party_unique2_power if slot == "unique_2" else 0)
         )
         power_scale = signature_scale if source == "signature" else 10_000
@@ -363,7 +366,7 @@ def member_battle_kit(
             "emotion_vfx_secondary": emotion_palette["secondary"],
             "damage_type_label": DAMAGE_TYPE_LABELS[skill["damage_type"]],
             # 전용 연출이 있는 것은 자기 코드를, 없는 것만 원소별 공용 키를
-            # 보낸다. 공용 키를 그대로 두면 앱이 새 연출을 만들어 두고도 성장결
+            # 보낸다. 공용 키를 그대로 두면 앱이 새 연출을 만들어 두고도 성장 타입
             # 공용 연출을 재생한다.
             #
             # 선택 슬롯은 코드로 못 가른다. 기록서를 장착하면 **코드만** 그 책
@@ -408,13 +411,13 @@ def member_battle_kit(
         unlock_level=7,
     )
     # 선택 슬롯은 출발 시점에 얼린 장착을 따른다. 스냅샷이 없는 예전 런은
-    # 지금까지와 같은 안전 기본값(성장결 기본 스킬 + 현장 기록서)으로 읽힌다.
+    # 지금까지와 같은 안전 기본값(성장 타입 기본 스킬 + 현장 기록서)으로 읽힌다.
     loadout_slots = (snapshot.get("skill_loadout") or {}).get("slots") or {}
     # 조율기가 무엇과 비교해 `지금과 다른 결`을 따지는지의 기준. 명령 스킬 자신의
     # 결이 아니라 **이 대원이 평소 때리는 결**이어야 한다. 둘은 감정 폼에 따라
     # 다를 수 있고, 다르면 사용자가 고른 결이 영문 없이 거절된다.
     default_kel = element_kels[str(discipline["primary_element"])]
-    # 무엇을 고를 수 있고 지금은 무엇인지. 성장결 여섯은 전투와 무관하게 같아서
+    # 무엇을 고를 수 있고 지금은 무엇인지. 성장 타입 여섯은 전투와 무관하게 같아서
     # 여기서 만들고, 대원·기록서처럼 그 전투를 봐야 아는 것은 호출부가 넘긴다.
     choices: dict[str, dict[str, Any]] = {
         "kel": {
@@ -462,7 +465,7 @@ def member_battle_kit(
         + book_modifiers.get("basic_power", 0)
     )
     basic_kel = element_kels[basic_element]
-    # 조율기로 고른 결은 기본 공격에도 실린다. 설계상 `다음 공격`이지 `다음
+    # 조율기로 고른 결은 공격에도 실린다. 설계상 `다음 공격`이지 `다음
     # 스킬`이 아니다.
     if kel_override:
         basic_kel = kel_override
@@ -497,8 +500,8 @@ def member_battle_kit(
         "kel_override": kel_override,
         "basic": {
             "code": "attack",
-            "name": f"{ELEMENT_LABELS[basic_element]} 공명 공격",
-            "description": "집중력 1을 얻고 현재 감정 속성으로 장벽을 공격해요.",
+            "name": "공격",
+            "description": "적을 공격하고 기력을 1 회복해요.",
             "available": True,
             "tier": tier,
             "tier_label": f"감정 공명 {tier}단계",
@@ -548,8 +551,8 @@ def member_battle_kit(
         "selected_skills": [selected_1, selected_2],
         "guard": {
             "code": "guard",
-            "name": "마음 지키기",
-            "description": "피해를 두 칸 막고 집중력 1을 얻어요.",
+            "name": "방어",
+            "description": "받는 피해를 2 줄이고 기력을 1 회복해요.",
             "available": True,
             "guard": 2
             + max(0, (int(combat_stats["vitality"]) - 12) // 10)
@@ -576,7 +579,7 @@ def member_battle_kit(
 
 
 def _focus_surcharge(state: dict[str, Any]) -> int:
-    """이번 라운드에만 걸린 집중력 추가 비용.
+    """이번 라운드에만 걸린 기력 추가 비용.
 
     합동 수호전의 `깊은 잠꼬대`가 다음 라운드 스킬 비용을 1 올린다. 라운드가
     넘어갈 때마다 새로 덮어쓰므로 한 라운드만 살아 있다.
@@ -587,11 +590,11 @@ def _focus_surcharge(state: dict[str, Any]) -> int:
 def _apply_focus_surcharge(kit: dict[str, Any], surcharge: int) -> dict[str, Any]:
     """올라간 비용을 슬롯에 그대로 적어 둔다.
 
-    비용을 여기 한 곳에서 올리면 화면에 보이는 숫자, 잠금 사유 `집중 부족`,
+    비용을 여기 한 곳에서 올리면 화면에 보이는 숫자, 잠금 사유 `기력 부족`,
     서버의 거절이 전부 같은 값을 쓴다. 세 곳에서 따로 더하면 화면은 쓸 수
     있다고 하는데 눌러 보면 거절당하는 상태가 생긴다.
 
-    집중력을 **버는** 행동은 올리지 않는다. 설계가 올린 것은 스킬의 비용이다.
+    기력을 **버는** 행동은 올리지 않는다. 설계가 올린 것은 스킬의 비용이다.
     """
     if surcharge <= 0:
         return kit
@@ -616,8 +619,8 @@ def _apply_state_locks(
     """기록서가 건 잠금을 슬롯에서 미리 읽히게 한다.
 
     이 잠금들은 지금까지 `_apply_action`의 거절로만 존재했다. 즉 눌러 봐야
-    알 수 있었는데, 이 화면의 다른 잠금은 전부 미리 말한다 - 집중력이 모자라면
-    `집중 부족`, 레벨이 모자라면 `Lv.N 해금`이다. 기록서가 건 것만 예외일
+    알 수 있었는데, 이 화면의 다른 잠금은 전부 미리 말한다 - 기력이 모자라면
+    `기력 부족`, 레벨이 모자라면 `Lv.N 해금`이다. 기록서가 건 것만 예외일
     이유가 없다(같은 파일의 `고를 것이 없어요`도 같은 이유로 미리 말한다).
 
     **이미 잠긴 슬롯은 건드리지 않는다.** 레벨이나 후보 없음처럼 더 오래가는
@@ -1059,7 +1062,7 @@ def new_guardian_battle(
                 f"{opening_caption} "
                 f"{opening.get('intro_caption', '첫 번째 봉인이 깨어났어요.')}"
             )
-    # opening 기록서는 첫 명령 전에 한 번만 적용된다. 집중력은 파티가 나눠 쓰는
+    # opening 기록서는 첫 명령 전에 한 번만 적용된다. 기력은 파티가 나눠 쓰는
     # 자원이라 전투 하나에 한 번 더해지고, 상한은 책 문장대로 그대로 지킨다.
     opening = opening_modifiers(profiles)
     max_focus = max(1, max_focus + int(opening["max_focus"]))
@@ -1469,7 +1472,7 @@ def _target_members(
 
 
 # 슬롯에 붙는 짧은 잠금 사유. 거절 문장과 같은 말을 쓰되 카드 배지 길이에
-# 맞춘다(`집중 부족`·`재사용 2`와 같은 자리다). 왜 잠겼는지 눌러 보기 전에
+# 맞춘다(`기력 부족`·`재사용 2`와 같은 자리다). 왜 잠겼는지 눌러 보기 전에
 # 읽히는 것이 목적이므로 원인을 지운 `사용 불가`로 뭉뜽그리지 않는다.
 SKILL_LOCK_WINDING = "태엽 감는 중"
 SKILL_LOCK_SWAPPING = "기록서 교체 중"
@@ -1594,7 +1597,7 @@ def _apply_member_command(
     }:
         raise CombatRuleError(
             "EXPEDITION_COMBAT_ACTION_INVALID",
-            "기본 공격, 고유 스킬, 선택 스킬, 마음 지키기 중 하나를 골라 주세요.",
+            "공격, 고유 스킬, 선택 스킬, 방어 중 하나를 골라 주세요.",
         )
     profile = profile_by_id.get(member_id)
     member_state = next(
@@ -1615,8 +1618,8 @@ def _apply_member_command(
             "EXPEDITION_COMBAT_MEMBER_DOWN",
             "지쳐서 물러난 대원은 이번 라운드에 행동할 수 없어요.",
         )
-    # 발아 시계의 태엽 — 집중력 +2를 받은 대가로 1라운드에 스킬을 쓸 수 없다.
-    # 기본 공격과 마음 지키기는 남겨 둔다. `집중력 0~5에서 최소 한 행동은 항상
+    # 발아 시계의 태엽 — 기력 +2를 받은 대가로 1라운드에 스킬을 쓸 수 없다.
+    # 공격과 방어는 남겨 둔다. `기력 0~5에서 최소 한 행동은 항상
     # 합법`이라는 밸런스 불변식을 반대급부가 깨뜨리면 안 되기 때문이다.
     if (
         action in SKILL_ACTIONS
@@ -1631,7 +1634,7 @@ def _apply_member_command(
     ):
         raise CombatRuleError(
             "EXPEDITION_COMBAT_FIRST_ROUND_SKILL_LOCKED",
-            "태엽을 감는 동안이라 첫 라운드에는 기본 공격과 마음 지키기만 쓸 수 있어요.",
+            "태엽을 감는 동안이라 첫 라운드에는 공격과 방어만 쓸 수 있어요.",
         )
     # 고리수 기록부 — 파티 전원이 고유 II를 +4 받는 대가로, 장착자는 그 전투
     # 내내 몸을 뺄 수 없다. 라운드가 아니라 전투 단위다.
@@ -1641,15 +1644,15 @@ def _apply_member_command(
     }:
         raise CombatRuleError(
             "EXPEDITION_COMBAT_GUARD_LOCKED",
-            "고리수를 세는 동안이라 이 전투에서는 마음 지키기를 쓸 수 없어요.",
+            "고리수를 세는 동안이라 이 전투에서는 방어를 쓸 수 없어요.",
         )
     # 아홉 꼬리의 잔상 — 예고를 넘겨받은 대원은 그 라운드에 몸을 뺄 수 없다.
     if action == "guard" and _retargeted_member_id(state) == member_id:
         raise CombatRuleError(
             "EXPEDITION_COMBAT_GUARD_BLOCKED",
-            "잔상을 대신 받은 대원이라 이번 라운드에는 마음 지키기를 쓸 수 없어요.",
+            "잔상을 대신 받은 대원이라 이번 라운드에는 방어를 쓸 수 없어요.",
         )
-    # 마음결 대백과 — 책을 바꿔 낀 라운드에는 스킬이 잠긴다. 기본 공격과 마음
+    # 마음결 대백과 — 책을 바꿔 낀 라운드에는 스킬이 잠긴다. 공격과 마음
     # 지키기는 남겨 `최소 한 행동은 항상 합법` 불변식을 지킨다.
     if (
         action in SKILL_ACTIONS
@@ -1658,7 +1661,7 @@ def _apply_member_command(
     ):
         raise CombatRuleError(
             "EXPEDITION_COMBAT_SKILL_BLOCKED",
-            "기록서를 바꿔 끼는 중이라 이번 라운드에는 기본 공격과 마음 지키기만 쓸 수 있어요.",
+            "기록서를 바꿔 끼는 중이라 이번 라운드에는 공격과 방어만 쓸 수 있어요.",
         )
     if member_id in pending["acted"]:
         raise CombatRuleError(
@@ -1666,7 +1669,7 @@ def _apply_member_command(
             "한 라운드에는 대원별 행동을 한 번만 정할 수 있어요.",
         )
 
-    # 행동 순서는 집중력 계산뿐 아니라 현재 전열이다. 첫 번째로 행동한 대원이
+    # 행동 순서는 기력 계산뿐 아니라 현재 전열이다. 첫 번째로 행동한 대원이
     # front 의도의 대상이 되므로, 순서 선택이 방어 판단에도 실제로 영향을 준다.
     party = state["party"]
     index = next(
@@ -1788,7 +1791,7 @@ def _apply_member_command(
                     if once_per_battle
                     else f"{korean_topic(action_name)} {remaining}턴 뒤 다시 사용할 수 있어요.",
                 )
-            # 고를 것이 있는 기록서는 무엇을 골랐는지 먼저 본다. 집중력을
+            # 고를 것이 있는 기록서는 무엇을 골랐는지 먼저 본다. 기력을
             # 쓰기 전에 막아야 잘못 고른 선택으로 자원이 사라지지 않는다.
             book = action_data.get("equipped_book")
             if book is not None:
@@ -1810,7 +1813,7 @@ def _apply_member_command(
             if focus < cost:
                 raise CombatRuleError(
                     "EXPEDITION_COMBAT_FOCUS_SHORTAGE",
-                    f"{actor_name}의 스킬에 필요한 집중력이 부족해요.",
+                    f"{actor_name}의 스킬에 필요한 기력이 부족해요.",
                 )
             focus -= cost
             # 집중의 매듭 — 스킬을 쓴 뒤 한 칸 돌려받는다. 비용을 낸 뒤에
@@ -1915,7 +1918,7 @@ def _apply_member_command(
                 member_state["kel_override"] = choice
         elif effect == "book_intent_retarget":
             # 예고된 공격을 이 라운드에 한해 다른 대원이 받는다. 넘겨받은 대원은
-            # 그 라운드에 마음 지키기를 쓸 수 없다 — 설계서의 반대급부다.
+            # 그 라운드에 방어를 쓸 수 없다 — 설계서의 반대급부다.
             if isinstance(choice, str) and choice.isdigit():
                 book_state(state)["intent_target"] = {
                     "round": round_number,
@@ -2363,7 +2366,7 @@ def _resolve_enemy_intent(
         if mechanic.get("effect") == "focus_drain":
             before = int(state.get("focus", 0))
             state["focus"] = max(0, before - mechanic_value)
-            mechanic_caption = f"{mechanic['name']}로 집중력이 {before - int(state['focus'])} 줄었어요."
+            mechanic_caption = f"{mechanic['name']}로 기력이 {before - int(state['focus'])} 줄었어요."
         elif mechanic.get("effect") == "expose":
             for target, result in zip(targets, target_events, strict=True):
                 if int(result["damage"]) <= 0:
@@ -2554,7 +2557,7 @@ def _enemy_cleared_events(state: dict[str, Any]) -> list[dict[str, Any]]:
     caption = (
         wave["release_caption"]
         if wave is not None
-        else "수호 장벽이 부서지고 장부지기가 길을 열었어요!"
+        else "장부지기를 물리쳤어요! 이제 다음으로 갈 수 있어요."
     )
     region_code = (wave or {}).get("region_code")
     return [

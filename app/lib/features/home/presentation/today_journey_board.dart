@@ -97,8 +97,8 @@ class NextUnlockCard extends StatelessWidget {
                           unlock.eligible ? '지금 받을 수 있어요' : '다음에 열리는 것',
                           style: TextStyle(
                             color: palette.inkMuted,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -107,7 +107,7 @@ class NextUnlockCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontFamily: AppTheme.pixelFont,
+                            fontFamily: AppTheme.bodyFont,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                           ),
@@ -152,7 +152,7 @@ class NextUnlockCard extends StatelessWidget {
                         unlock.progressLabel,
                         style: const TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w700,
                           fontFeatures: [FontFeature.tabularFigures()],
                         ),
                       ),
@@ -161,7 +161,7 @@ class NextUnlockCard extends StatelessWidget {
                   const SizedBox(height: 10),
                   Text(
                     '이번 주 · 기록 ${progress.weeklyRecordedDays}일 · 작은 행동 ${progress.weeklyCompletedQuests}회',
-                    style: TextStyle(color: palette.inkMuted, fontSize: 11),
+                    style: TextStyle(color: palette.inkMuted, fontSize: 12),
                   ),
                 ],
               ),
@@ -198,21 +198,21 @@ class _JourneyContent extends StatelessWidget {
     final questStatus = quest?.status;
     final recordStep = _JourneyStepData(
       icon: Icons.edit_note_rounded,
-      title: '이야기 남기기',
-      caption: noRecord ? '한 줄만 적어도 시작돼요' : '오늘 이야기가 화분에 닿았어요',
+      title: '일기 쓰기',
+      caption: noRecord ? '한 줄만 적어도 시작돼요' : '오늘 일기를 저장했어요',
       state: noRecord ? _StepState.active : _StepState.done,
       status: noRecord ? '지금' : '완료',
     );
     final analysisStep = _JourneyStepData(
       icon: Icons.auto_awesome_rounded,
-      title: '마음빛 읽기',
+      title: '오늘의 기분',
       caption: noRecord
-          ? '기록 뒤 식물이 자동으로 읽어요'
+          ? '일기를 쓰면 자동으로 정리해요'
           : analyzing
-              ? '글에서 마음의 결을 찾고 있어요'
+              ? '일기를 읽고 있어요'
               : feed.contextEmotionLabel == null
-                  ? '읽을 수 있는 만큼 천천히 살폈어요'
-                  : '${feed.contextEmotionLabel}의 단서를 찾았어요',
+                  ? '오늘 일기를 읽었어요'
+                  : '오늘 기록한 기분: ${feed.contextEmotionLabel}',
       state: noRecord
           ? _StepState.waiting
           : analyzing
@@ -228,9 +228,9 @@ class _JourneyContent extends StatelessWidget {
       icon: Icons.flag_outlined,
       title: '작은 행동',
       caption: feed.suspended
-          ? '오늘은 작은 행동 대신 돌봄을 먼저 봐요'
+          ? '도움을 받을 수 있는 곳을 확인해요'
           : questStatus == DailyQuestStatus.completed
-              ? '보상이 식물과 씨앗에 반영됐어요'
+              ? '경험치와 씨앗을 받았어요'
               : questStatus == DailyQuestStatus.skipped
                   ? '오늘은 쉬어 가기로 했어요'
                   : quest == null
@@ -261,44 +261,44 @@ class _JourneyContent extends StatelessWidget {
       questStatus,
     )) {
       (true, _, _, _) => (
-          '오늘은 돌봄을 먼저 봐요',
-          '작은 행동과 보상보다 지금 연결할 수 있는 지원을 앞에 두었어요.',
+          '도움이 필요할 때',
+          '상담과 긴급 도움을 받을 수 있는 곳을 안내해요.',
           '지원 안내 보기',
           Icons.health_and_safety_outlined,
           onSafety,
         ),
       (_, true, _, _) => (
-          '오늘 이야기부터 시작해요',
-          '감정을 고르지 않아도 돼요. 있었던 일을 적으면 식물이 다음 칸을 열어요.',
-          '오늘 이야기 남기기',
+          '오늘은 무슨 일이 있었나요?',
+          '기억에 남는 일을 적어 보세요. 한 줄도 괜찮아요.',
+          '오늘 일기 쓰기',
           Icons.edit_note_rounded,
           onRecord,
         ),
       (_, _, true, _) => (
-          '식물이 마음빛을 읽는 중',
-          '분석이 끝나면 외형 단서와 오늘의 작은 행동이 자연스럽게 이어져요.',
-          '읽는 동안 식물과 대화하기',
+          '일기를 읽고 있어요',
+          '다 읽으면 경험치를 받고 캐릭터가 자라요.',
+          '캐릭터와 대화하기',
           Icons.chat_bubble_outline_rounded,
           onChat,
         ),
       (_, _, _, DailyQuestStatus.assigned) => (
-          '이야기 다음의 작은 행동',
+          '오늘 해 볼 일',
           '하고 싶은 날만 이어 가세요. 건너뛰어도 기록과 성장은 그대로 남아요.',
           '오늘의 작은 행동 보기',
           Icons.flag_outlined,
           onQuest,
         ),
       (_, _, _, DailyQuestStatus.completed) => (
-          '오늘의 온실 루트 완료',
-          '남긴 이야기와 행동이 식물의 다음 장면, 그리고 다음 해금에 쌓였어요.',
-          '식물과 한마디 나누기',
+          '오늘 할 일을 마쳤어요',
+          '경험치와 씨앗을 받았어요. 모은 씨앗은 상점에서 쓸 수 있어요.',
+          '캐릭터와 대화하기',
           Icons.chat_bubble_outline_rounded,
           onChat,
         ),
       _ => (
           '오늘은 여기까지도 충분해요',
-          '쉬어 가기로 한 선택도 오늘의 기록을 지우지 않아요.',
-          '식물과 한마디 나누기',
+          '언제든 다시 와서 이어 할 수 있어요.',
+          '캐릭터와 대화하기',
           Icons.chat_bubble_outline_rounded,
           onChat,
         ),
@@ -320,7 +320,7 @@ class _JourneyContent extends StatelessWidget {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(10),
-                  child: Icon(icon, size: 20, color: palette.night),
+                  child: Icon(icon, size: 20, color: AppTheme.onNight),
                 ),
               ),
               const SizedBox(width: 12),
@@ -329,11 +329,11 @@ class _JourneyContent extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '오늘의 다음 한 칸',
+                      '오늘 할 일',
                       style: TextStyle(
                         color: palette.inkMuted,
                         fontSize: 12,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -381,7 +381,7 @@ class _JourneyContent extends StatelessWidget {
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
               backgroundColor: AppTheme.seed,
-              foregroundColor: palette.night,
+              foregroundColor: AppTheme.onNight,
             ),
             onPressed: action,
             icon: Icon(icon),
@@ -423,7 +423,7 @@ class _JourneyStamp extends StatelessWidget {
     final background = active
         ? palette.sky
         : done
-            ? AppTheme.seed
+            ? Theme.of(context).colorScheme.primaryContainer
             : Colors.transparent;
     return Semantics(
       label: '${data.title}, ${data.status}, ${data.caption}',
@@ -454,8 +454,8 @@ class _JourneyStamp extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: foreground,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                   height: 1.2,
                 ),
               ),
@@ -481,7 +481,7 @@ class _JourneyLoading extends StatelessWidget {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 12),
-              Text('오늘의 다음 한 칸을 살펴보고 있어요.'),
+              Text('오늘 할 일을 불러오고 있어요.'),
             ],
           ),
         ),
@@ -504,7 +504,7 @@ class _JourneyFallback extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            '오늘 이야기부터 시작해요',
+            '오늘은 무슨 일이 있었나요?',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 6),
@@ -516,11 +516,11 @@ class _JourneyFallback extends StatelessWidget {
           FilledButton.icon(
             style: FilledButton.styleFrom(
               backgroundColor: AppTheme.seed,
-              foregroundColor: palette.night,
+              foregroundColor: AppTheme.onNight,
             ),
             onPressed: onRecord,
             icon: const Icon(Icons.edit_note_rounded),
-            label: const Text('오늘 이야기 남기기'),
+            label: const Text('오늘 일기 쓰기'),
           ),
           TextButton(onPressed: onRetry, child: const Text('진행 상태 다시 불러오기')),
         ],

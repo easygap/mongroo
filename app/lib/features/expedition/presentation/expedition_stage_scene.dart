@@ -28,7 +28,7 @@ class _ImmersiveStageScene extends ConsumerWidget {
         ],
       ),
     );
-    if (leave != true) return;
+    if (leave != true || !context.mounted) return;
     HapticFeedback.mediumImpact();
     await ref.read(expeditionControllerProvider.notifier).retreat();
   }
@@ -73,16 +73,15 @@ class _ImmersiveStageScene extends ConsumerWidget {
     final bubbleText = event != null
         ? event.bubble
         : resting
-            ? '불가에 앉으니 길빛과 결의가 차올라요.'
+            ? '등불을 채우고 장비를 정리했다.'
             : resolution != null
                 // 결과 문장은 서버가 주므로 길이를 여기서 못 정한다. 뒤에
                 // 붙는 안내만 짧게 둔다(5.4의 `즉시 결과 18자 이하`).
-                ? '${resolution.outcome} 돌아갈 수 있어요.'
-                : '이 걸음의 일을 마쳤어요. 돌아갈 수 있어요.';
+                ? resolution.displayText
+                : '조사를 마쳤다.';
     // 길게 누르면 열리는 원고. 사건일 때만 있다.
-    final bubbleDetail = event != null && event.text != event.bubble
-        ? event.text
-        : null;
+    final bubbleDetail =
+        event != null && event.text != event.bubble ? event.text : null;
 
     return LayoutBuilder(
       builder: (context, constraints) => ListView(
@@ -116,7 +115,7 @@ class _ImmersiveStageScene extends ConsumerWidget {
                             child: LayoutBuilder(
                               builder: (context, tagConstraints) => MongrooTag(
                                 label:
-                                    '${node.depthLabel} · ${finished ? '걸음 완료' : node.sceneLabel}',
+                                    '${node.depthLabel} · ${finished ? '조사 완료' : node.sceneLabel}',
                                 icon: finished
                                     ? Icons.flag_circle_rounded
                                     : scene.icon,
@@ -220,6 +219,16 @@ class _ImmersiveStageScene extends ConsumerWidget {
                         ),
                       ),
                   ] else ...[
+                    if (resolution?.finding != null ||
+                        (resolution?.lightRecovered ?? 0) > 0)
+                      Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(
+                              resolution?.finding != null
+                                  ? '수첩에 기록: ${resolution!.finding}'
+                                  : '길빛 +${resolution!.lightRecovered}',
+                              key: const ValueKey('stage-decision-consequence'),
+                              style: Theme.of(context).textTheme.titleSmall)),
                     if (expedition.loot.isNotEmpty)
                       MongrooPanel(
                         padding: const EdgeInsets.symmetric(
@@ -258,7 +267,7 @@ class _ImmersiveStageScene extends ConsumerWidget {
                                 .read(expeditionControllerProvider.notifier)
                                 .extract(),
                         icon: const Icon(Icons.home_outlined),
-                        label: const Text('기록을 안고 귀환'),
+                        label: const Text('탐험 마치기'),
                       ),
                     // 이 걸음을 마쳤고 다음 걸음이 남았으면, 결과도 다음
                     // 출발도 이 무대 위에서 끝난다.
@@ -281,13 +290,11 @@ class _ImmersiveStageScene extends ConsumerWidget {
 /// 누른 채 끌면 그 자리에 스틱이 생기고, 스크린리더·키보드 사용자는 목적
 /// 랜드마크 버튼을 눌러 같은 서버 이동에 도달한다.
 class _StageWalkingField extends StatelessWidget {
-  const _StageWalkingField({
-    required this.expedition,
-    required this.story,
-    required this.locked,
-    required this.onRetreat,
-  });
-
+  const _StageWalkingField(
+      {required this.expedition,
+      required this.story,
+      required this.locked,
+      required this.onRetreat});
   final ExpeditionSnapshot expedition;
   final Map<String, dynamic> story;
   final bool locked;
@@ -295,233 +302,106 @@ class _StageWalkingField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final destination = expedition.nodes.firstWhere(
-      (node) => expedition.availableMoveCodes.contains(node.code),
-    );
-    final chapter = story['chapter'] is num
-        ? (story['chapter'] as num).toInt()
-        : expedition.run.stageNo;
+        (node) => expedition.availableMoveCodes.contains(node.code));
     final title = story['title'] as String? ?? destination.name;
-    final approach =
-        story['approach'] as String? ?? '랜드마크 사이의 길이 천천히 모습을 드러내요.';
     final objective =
         story['objective'] as String? ?? destination.sceneDescription;
-    final hint =
-        story['destination_hint'] as String? ?? '빛나는 표식에 닿으면 다음 장면이 시작돼요.';
-
-    final palette = MongrooPalette.of(context);
-    final destinationName =
-        story['destination_name'] as String? ?? destination.name;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 720;
-        // 필드가 화면의 주인공이다. 예전에는 글 상자 셋 사이에 1.45 비율로
-        // 눌려 앉아 있어 웹 페이지 안의 미니게임처럼 보였다. 폰에서는 rail·
-        // 머리줄·발치 안내를 뺀 높이를 전부 주고, 넓은 화면에서는 16:9로 앉힌다.
-        final fieldHeight = wide
-            ? math.min(560.0, math.min(constraints.maxWidth, 900) * 9 / 16)
-            : (constraints.maxHeight - 236).clamp(300.0, 640.0);
-        return ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.fromLTRB(wide ? 32 : 12, 8, wide ? 32 : 12, 28),
-          children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 900),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (expedition.run.stageNo != null) ...[
-                      _StageProgressRail(stageNo: expedition.run.stageNo!),
-                      const SizedBox(height: 2),
-                    ],
-                    SizedBox(
-                      height: 48,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Align(
-                              alignment: AlignmentDirectional.centerStart,
-                              child: LayoutBuilder(
-                                builder: (context, tagConstraints) =>
-                                    MongrooTag(
-                                  label:
-                                      // 장이 없는 판은 `던전`이라고 불렀는데,
-                                      // 모험 탭의 `발견한 던전`과 같은 말이라
-                                      // 어느 활동인지 흐려졌다. 이 화면이 이미
-                                      // 쓰는 말로 바꾼다.
-                                      '${chapter == null ? '현장' : '$chapter장'} · 직접 걷기',
-                                  icon: Icons.directions_walk_rounded,
-                                  maxWidth: tagConstraints.maxWidth,
-                                  backgroundColor:
-                                      scheme.secondaryContainer.withAlpha(138),
-                                ),
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            key: const ValueKey('stage-field-retreat'),
-                            onPressed: locked ? null : onRetreat,
-                            tooltip: '지금 안전하게 돌아가기',
-                            icon: const Icon(Icons.keyboard_return_outlined),
-                          ),
-                        ],
-                      ),
-                    ),
-                    PixelPanel(
-                      key: const ValueKey('stage-field-map'),
-                      padding: EdgeInsets.zero,
-                      fill: palette.night,
-                      border: palette.night,
-                      highlight: Colors.white.withAlpha(50),
-                      shadow: palette.night.withAlpha(110),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          SizedBox(
-                            height: fieldHeight,
-                            child: Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: _ExpeditionTileWorld(
-                                    expedition: expedition,
-                                    destination: destination,
-                                  ),
-                                ),
-                                // 이야기는 필드 위 도트 글상자 하나로 말한다.
-                                // 제목과 목표만 — 나머지는 발치 한 줄과
-                                // 스크린리더 문장이 든다.
-                                Positioned(
-                                  left: 8,
-                                  top: 8,
-                                  child: Semantics(
-                                    container: true,
-                                    liveRegion: true,
-                                    label: '$title. $approach $objective',
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        maxWidth: math.max(
-                                          150,
-                                          constraints.maxWidth * .56,
-                                        ),
-                                      ),
-                                      child: PixelPanel(
-                                        key: const ValueKey('stage-field-story'),
-                                        fill: palette.night.withAlpha(228),
-                                        border: const Color(0xFF0E0B08),
-                                        highlight: Colors.white.withAlpha(60),
-                                        shadow: Colors.black.withAlpha(110),
-                                        padding: const EdgeInsets.fromLTRB(
-                                          8,
-                                          4,
-                                          8,
-                                          5,
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              title,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: ExpeditionPixelArt.text(14),
-                                            ),
-                                            const SizedBox(height: 3),
-                                            Text(
-                                              objective,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: AppTheme.onNight,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // 발치 안내 두 줄: 어디로, 어떻게.
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(
-                                      Icons.location_on_rounded,
-                                      size: 16,
-                                      color: scheme.primary,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        '$destinationName · $hint',
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelMedium
-                                            ?.copyWith(
-                                              color: AppTheme.onNight,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Icon(
-                                      Icons.touch_app_rounded,
-                                      size: 15,
-                                      color: AppTheme.onNightMuted,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Expanded(
-                                      child: Text(
-                                        '화면을 누른 채 원하는 방향으로 끌어 걸어요 · $approach',
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color: AppTheme.onNightMuted,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+    final approach = story['approach'] as String? ?? '';
+    final hint = story['destination_hint'] as String? ?? '깃발이 있는 곳으로 이동하세요.';
+    void readObjective() => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        showDragHandle: true,
+        builder: (context) => SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+            child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 16),
+                  Text(objective),
+                  if (approach.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(approach)
                   ],
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+                  const SizedBox(height: 16),
+                  Text(hint),
+                ])));
+    return ColoredBox(
+        color: _atlasPaper,
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Padding(
+              padding: const EdgeInsets.fromLTRB(6, 4, 6, 6),
+              child: Row(children: [
+                IconButton(
+                    tooltip: '탐험 지도',
+                    onPressed: () => context.canPop()
+                        ? context.pop()
+                        : context.go('/explore'),
+                    icon: const Icon(Icons.arrow_back_rounded)),
+                Expanded(
+                    child: _StageProgressRail(
+                        stageNo: expedition.run.stageNo ?? 1, title: title)),
+                IconButton(
+                    key: const ValueKey('stage-field-retreat'),
+                    onPressed: locked ? null : onRetreat,
+                    tooltip: '탐험 중단',
+                    icon: const Icon(Icons.logout_rounded)),
+              ])),
+          Expanded(
+              child: LayoutBuilder(
+                  builder: (context, constraints) =>
+                      Stack(key: const ValueKey('stage-field-map'), children: [
+                        Positioned.fill(
+                            child: _ExpeditionTileWorld(
+                                expedition: expedition,
+                                destination: destination)),
+                        Positioned(
+                          left: 10,
+                          top: 10,
+                          child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                  maxWidth: math.max(
+                                      120, constraints.maxWidth - 148)),
+                              child: Material(
+                                  color: _atlasPaper,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      side: const BorderSide(color: _atlasInk)),
+                                  child: InkWell(
+                                      key: const ValueKey('stage-field-story'),
+                                      borderRadius: BorderRadius.circular(10),
+                                      onTap: readObjective,
+                                      child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 12),
+                                          child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(Icons.search_rounded,
+                                                    size: 20, color: _atlasInk),
+                                                const SizedBox(width: 6),
+                                                Flexible(
+                                                    child: Text('조사할 것',
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .labelLarge
+                                                            ?.copyWith(
+                                                                color:
+                                                                    _atlasInk))),
+                                              ]))))),
+                        ),
+                      ]))),
+          Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+              child: Text('끌어서 이동 · 방향키 지원',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelSmall)),
+        ]));
   }
 }
 
@@ -564,48 +444,59 @@ class _SceneSpeechBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
+        container: true,
         liveRegion: true,
+        button: detail != null,
+        onTap: detail == null ? null : () => _showDetail(context),
         label: [
           title,
           text,
-          if (detail != null) '길게 눌러 자세히 보기',
+          if (detail != null) '눌러서 기록 읽기',
         ].join('. '),
         child: GestureDetector(
+          onTap: detail == null ? null : () => _showDetail(context),
           onLongPress: detail == null ? null : () => _showDetail(context),
           child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: MongrooPalette.of(context).night.withAlpha(216),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withAlpha(40)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 9, 12, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppTheme.onNight.withAlpha(200),
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  text,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: AppTheme.onNight, height: 1.35),
-                ),
-              ],
+            decoration: BoxDecoration(
+              color: MongrooPalette.of(context).night.withAlpha(216),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withAlpha(40)),
             ),
-          ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 9, 12, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: AppTheme.onNight.withAlpha(200),
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    text,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: AppTheme.onNight, height: 1.35),
+                  ),
+                  if (detail != null) ...[
+                    const SizedBox(height: 6),
+                    Text('기록 읽기  ›',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppTheme.onNight,
+                            )),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       );
@@ -633,6 +524,7 @@ class _StageActorPicker extends StatelessWidget {
           if (member.id != party.first.id) const SizedBox(width: 6),
           Expanded(
             child: Semantics(
+              container: true,
               selected: member.id == selectedMemberId,
               button: true,
               label: '${member.name}에게 맡기기',
@@ -699,133 +591,99 @@ class _StageActorPicker extends StatelessWidget {
 
 /// 사건 선택 카드 — 어울리는 힘과 성공 예상 세 단어만 크게.
 class _StageChoiceCard extends StatelessWidget {
-  const _StageChoiceCard({
-    super.key,
-    required this.choice,
-    required this.preview,
-    required this.enabled,
-    required this.onPressed,
-  });
-
+  const _StageChoiceCard(
+      {super.key,
+      required this.choice,
+      required this.preview,
+      required this.enabled,
+      required this.onPressed});
   final ExpeditionChoice choice;
   final ExpeditionChoicePreview? preview;
   final bool enabled;
   final VoidCallback onPressed;
 
-  Future<void> _showDetail(BuildContext context) async {
-    final detail = preview;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(choice.label, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 10),
-              if (detail != null)
-                Text(
-                  detail.safe ? '판정 없이 안전하게 진행돼요. 잃는 것도 없어요.' : detail.label,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              if (!choice.safe) ...[
-                const SizedBox(height: 8),
-                Text(
-                  '뜻대로 되지 않으면 우회로가 열리고 결의를 ${choice.resolveCost} 써요. '
-                  '우회도 실패가 아니라 시간이 더 드는 안전한 해결이에요.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Future<void> _showDetail(BuildContext context) => showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (context) => SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+            child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(choice.label,
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 14),
+                  if (choice.consequence.isNotEmpty) Text(choice.consequence),
+                  if (preview != null && !choice.safe) ...[
+                    const SizedBox(height: 12),
+                    Text(preview!.label),
+                    const SizedBox(height: 8),
+                    Text('성공 예상 ${preview!.chance}%. 대원 능력에 1~4를 더해 판정합니다.'),
+                  ],
+                  const SizedBox(height: 8),
+                  Text(choice.safe
+                      ? '판정과 자원 소모 없이 지나갑니다.'
+                      : '실패하면 결의 ${preview?.failureResolveCost ?? choice.resolveCost} 소모. 발견물과 회복 효과는 얻지 못합니다.'),
+                ])),
+      );
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final outlook = preview?.outlook ?? (choice.safe ? '안전하게 진행돼요' : '');
-    final statLabel = preview?.statLabel;
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label:
-          '${choice.label}. ${statLabel != null ? '어울리는 힘 $statLabel. ' : ''}$outlook. 길게 눌러 자세히 보기',
-      child: Material(
-        color: scheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(
-            color: choice.safe
-                ? scheme.outlineVariant
-                : scheme.primary.withAlpha(120),
-          ),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
+    final chance = preview?.chance;
+    final forecast = choice.safe
+        ? '그냥 지나가기'
+        : chance == null
+            ? ''
+            : '성공 $chance%';
+    return Material(
+      color: scheme.surface,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: scheme.outlineVariant)),
+      clipBehavior: Clip.antiAlias,
+      child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        Expanded(
+            child: InkWell(
           onTap: enabled ? onPressed : null,
           onLongPress: () => _showDetail(context),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 11, 12, 11),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        choice.label,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 5),
-                      // 큰 글자에서는 태그가 줄을 바꾸고, 그래도 길면 말줄임한다.
-                      LayoutBuilder(
-                        builder: (context, tagConstraints) => Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: [
-                            if (statLabel != null)
-                              MongrooTag(
-                                label: '어울리는 힘 · $statLabel',
-                                icon: Icons.auto_awesome_outlined,
-                                maxWidth: tagConstraints.maxWidth,
-                                backgroundColor:
-                                    scheme.secondaryContainer.withAlpha(120),
-                              ),
-                            if (outlook.isNotEmpty)
-                              MongrooTag(
-                                label: outlook,
-                                icon: choice.safe
-                                    ? Icons.shield_outlined
-                                    : Icons.explore_outlined,
-                                maxWidth: tagConstraints.maxWidth,
-                                backgroundColor: outlook == '어려워 보여요'
-                                    ? scheme.errorContainer.withAlpha(110)
-                                    : scheme.tertiaryContainer.withAlpha(110),
-                              ),
-                          ],
-                        ),
-                      ),
+              padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(choice.label,
+                        style: Theme.of(context).textTheme.titleSmall),
+                    if (choice.consequence.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(choice.consequence,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: scheme.onSurfaceVariant)),
                     ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Icon(Icons.chevron_right_rounded, color: scheme.primary),
-              ],
-            ),
-          ),
-        ),
-      ),
+                    const SizedBox(height: 8),
+                    Text(
+                        [
+                          if (preview?.statLabel != null) preview!.statLabel!,
+                          forecast,
+                          if (!choice.safe)
+                            '실패 시 결의 −${preview?.failureResolveCost ?? choice.resolveCost}'
+                        ].where((s) => s.isNotEmpty).join(' / '),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: chance != null && chance == 0 && !choice.safe
+                                ? scheme.error
+                                : scheme.onSurfaceVariant)),
+                  ])),
+        )),
+        IconButton(
+            onPressed: () => _showDetail(context),
+            tooltip: '${choice.label} 판정 정보',
+            icon: const Icon(Icons.info_outline, size: 20)),
+      ]),
     );
   }
 }

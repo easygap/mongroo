@@ -1,7 +1,7 @@
 """캐릭터·감정 성장·레벨을 분리한 수호전 정체성 카탈로그.
 
 식물은 캐릭터의 생물학과 세계관이지 모든 공격의 재질이 아니다.  캐릭터 고유
-스킬은 품종 판타지, 선택 스킬과 기본 공격은 감정 성장 계열, 레벨은 tier와 계수만
+스킬은 품종 판타지, 선택 스킬과 공격은 감정 성장 계열, 레벨은 tier와 계수만
 담당한다. 이 세 축을 합성해도 원본 family와 판정 값은 서버가 결정한다.
 """
 
@@ -44,12 +44,12 @@ ELEMENT_LABELS = {
 }
 
 KEL_LABELS = {
-    "sunny": "햇살결",
-    "rainy": "빗물결",
-    "ember": "불씨결",
-    "moonlit": "달빛결",
-    "sparkling": "별빛결",
-    "mosaic": "모아결",
+    "sunny": "햇살",
+    "rainy": "빗방울",
+    "ember": "불씨",
+    "moonlit": "달빛",
+    "sparkling": "별빛",
+    "mosaic": "무지개",
 }
 
 EMOTION_VFX_PALETTES: Mapping[str, Mapping[str, str]] = MappingProxyType(
@@ -66,7 +66,7 @@ EMOTION_VFX_PALETTES: Mapping[str, Mapping[str, str]] = MappingProxyType(
 INITIAL_KEL_MAP_VERSION = 1
 CURRENT_KEL_MAP_VERSION = 1
 
-# 원소는 캐릭터의 시각·서사 정체성을 보존하고, 여섯 성장결만 약점·내성을
+# 원소는 캐릭터의 시각·서사 정체성을 보존하고, 여섯 성장 타입만 약점·내성을
 # 판정한다. 진행 중 전투를 재현할 수 있도록 과거 매핑은 수정·삭제하지 않는다.
 ELEMENT_KEL_BY_VERSION: Mapping[int, Mapping[str, str]] = MappingProxyType(
     {
@@ -271,7 +271,7 @@ SPECIES_SKILLS: dict[str, dict[str, Any]] = {
     "handsome-pot": _skill(
         "command_blade",
         "지휘검 일섬",
-        "지휘선과 같은 검격으로 장벽을 가르고 집중력을 한 칸 되찾아요.",
+        "지휘선과 같은 검격으로 장벽을 가르고 기력을 한 칸 되찾아요.",
         power=17,
         focus_cost=2,
         cooldown_turns=1,
@@ -385,7 +385,7 @@ SPECIES_SKILLS: dict[str, dict[str, Any]] = {
     "student-pot": _skill(
         "ink_formula_burst",
         "먹빛 공식탄",
-        "공중에 쓴 전투 공식이 탄환이 되어 날아가고 집중력을 두 칸 돌려줘요.",
+        "공중에 쓴 전투 공식이 탄환이 되어 날아가고 기력을 두 칸 돌려줘요.",
         power=14,
         focus_cost=2,
         cooldown_turns=1,
@@ -577,7 +577,7 @@ SPECIES_SECONDARY_SKILLS: dict[str, dict[str, Any]] = {
     "ninja-pot": _skill(
         "shadow_execution",
         "무영 처형",
-        "그림자 분신과 교차 베기한 뒤 집중력을 한 칸 되찾아요.",
+        "그림자 분신과 교차 베기한 뒤 기력을 한 칸 되찾아요.",
         power=14,
         focus_cost=3,
         cooldown_turns=3,
@@ -619,7 +619,7 @@ SPECIES_SECONDARY_SKILLS: dict[str, dict[str, Any]] = {
     "student-pot": _skill(
         "seal_rewrite",
         "봉인식 재작성",
-        "허공의 봉인식을 고쳐 써 공격하고 집중력을 두 칸 회복해요.",
+        "허공의 봉인식을 고쳐 써 공격하고 기력을 두 칸 회복해요.",
         power=12,
         focus_cost=3,
         cooldown_turns=3,
@@ -785,8 +785,8 @@ EMOTION_DISCIPLINES: dict[str, dict[str, Any]] = {
 # 조합을 데이터에서 구분한다.
 #
 # **2026-09-02까지 이 여섯이 `kel.*`를 가리키고 있었다.** 그건 아직 자기 연출이
-# 없는 행동이 떨어지는 성장결 공용 연출이라, `kel.sunny`는 아기화분의
-# `care-vines`고 `kel.mosaic`은 `fallback.echo-wave`와 같은 디렉터리다. 햇살결
+# 없는 행동이 떨어지는 성장 타입 공용 연출이라, `kel.sunny`는 아기화분의
+# `care-vines`고 `kel.mosaic`은 `fallback.echo-wave`와 같은 디렉터리다. 햇살
 # 캐릭터가 T3를 쓰면 자기 연출 위에 아기화분 덩굴이 겹쳐 나왔다는 뜻이다.
 # 전용 시트를 만들어 `fusion.*`로 옮겼고, 공용 연출은 원래 자리에 그대로 둔다.
 FUSION_LAYER_PROFILES: dict[str, dict[str, Any]] = {
@@ -847,7 +847,7 @@ FORM_COMBAT_SKILLS: dict[str, dict[str, Any]] = {
     "rainy": _skill(
         "rainy_frozen_tide",
         "얼어붙은 파도",
-        "낮게 밀려온 물결이 얼어붙으며 공격하고 집중력을 한 칸 되찾아요.",
+        "낮게 밀려온 물결이 얼어붙으며 공격하고 기력을 한 칸 되찾아요.",
         power=13,
         focus_cost=2,
         cooldown_turns=2,
@@ -919,8 +919,8 @@ FORM_COMBAT_SKILLS: dict[str, dict[str, Any]] = {
 
 FIELD_NOTE_SKILL = _skill(
     "field_note_echo",
-    "현장 기록: 되울림",
-    "기록한 파형을 먹빛 탄환으로 되돌려 보내고 집중력을 두 칸 회복해요.",
+    "메아리 기록",
+    "기록한 파형을 먹빛 탄환으로 되돌려 보내고 기력을 두 칸 회복해요.",
     power=10,
     focus_cost=2,
     cooldown_turns=3,
@@ -970,6 +970,14 @@ EMOTION_COMBAT_STAT_BONUSES: Mapping[str, Mapping[str, int]] = MappingProxyType(
 )
 
 
+def combat_species_key(species_code: str) -> str:
+    """Legacy starter plants use the sprout kit, never the NPC guide kit."""
+    return {
+        "basic_sprout": "baby-pot",
+        "mood_seed": "baby-pot",
+    }.get(species_code, species_code)
+
+
 def character_combat_stats(
     species_code: str,
     *,
@@ -977,10 +985,10 @@ def character_combat_stats(
     rarity: int,
     form: str,
 ) -> dict[str, Any]:
-    """캐릭터 체질·레벨·희귀도·감정 성장결을 합성한 전투 스탯."""
+    """캐릭터 체질·레벨·희귀도·감정 성장 타입을 합성한 전투 스탯."""
 
     profile = COMBAT_ROLE_PROFILES.get(
-        species_code, COMBAT_ROLE_PROFILES["archive_guide"]
+        combat_species_key(species_code), COMBAT_ROLE_PROFILES["archive_guide"]
     )
     safe_level = max(1, min(30, int(level)))
     safe_rarity = max(1, min(5, int(rarity)))
@@ -1255,7 +1263,16 @@ def combat_effect_summary(effect: str, values: Mapping[str, int]) -> str:
     )
     if conditional_intent < 0:
         parts.append(f"조건부 적 위력 {conditional_intent}")
-    return " · ".join(parts) if parts else effect.replace("_", " ")
+    if parts:
+        return " · ".join(parts)
+    # Internal effect identifiers are never player-facing copy. Effects whose
+    # extra damage is conditional still explain that condition without claiming
+    # it was triggered by this particular hit.
+    return {
+        "steady_read": "약점이 아닐 때 추가 피해",
+        "weakness_pierce": "약점 적중 시 추가 피해",
+        "last_stand": "체력이 낮을 때 추가 피해",
+    }.get(effect, "")
 
 
 def combat_tier(level: int) -> int:

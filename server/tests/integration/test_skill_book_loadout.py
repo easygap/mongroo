@@ -334,7 +334,7 @@ async def _add_shop_book(session_factory, code: str, price: int) -> int:
             code=f"skill_book_{code}",
             type="skill_book",
             name="또렷한 겨냥",
-            description="기본 공격 위력 +3",
+            description="공격 위력 +3",
             price_seeds=price,
             rarity=1,
             asset_manifest={"skill_book_code": code},
@@ -444,7 +444,7 @@ async def test_a_book_earned_elsewhere_cannot_be_bought_again(
 async def test_guard_uses_accumulate_and_unlock_double_leaf(
     client, user_tokens, session_factory
 ):
-    """마음 지키기를 30번 하면 `두 겹 잎방패`가 조건대로 열린다."""
+    """방어를 30번 하면 `두 겹 잎방패`가 조건대로 열린다."""
 
     from app.models.skill_book import PlantSkillMastery
     from app.services import skill_mastery

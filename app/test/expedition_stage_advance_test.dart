@@ -333,7 +333,42 @@ class _StubbedController extends ExpeditionController {
   ExpeditionUiState build() => initial;
 }
 
+class _ResumeRepository extends _FakeRepository {
+  @override
+  Future<List<ExpeditionRosterItem>> getRoster() async => [];
+
+  @override
+  Future<ExpeditionSnapshot?> getActive() async {
+    final json = _nextRunJson();
+    (json['region'] as Map<String, dynamic>)['code'] = 'echo_well';
+    return ExpeditionSnapshot.fromJson(json);
+  }
+
+  @override
+  Future<ExpeditionStageMap> getStageMap({String? regionCode}) async {
+    stageMapCalls.add(regionCode);
+    final json = _stageMapJson();
+    (json['region'] as Map<String, dynamic>)['code'] =
+        regionCode ?? 'heartwood_observatory';
+    return ExpeditionStageMap.fromJson(json);
+  }
+}
+
 void main() {
+  test('다시 접속하면 진행 중 탐험의 지역 지도를 복구한다', () async {
+    final repository = _ResumeRepository();
+    final container = ProviderContainer(overrides: [
+      expeditionRepositoryProvider.overrideWithValue(repository),
+      expeditionControllerProvider
+          .overrideWith(() => _StubbedController(const ExpeditionUiState())),
+    ]);
+    addTearDown(container.dispose);
+    await container.read(expeditionControllerProvider.notifier).load();
+    expect(repository.stageMapCalls, [null, 'echo_well']);
+    expect(container.read(expeditionControllerProvider).stageMap!.region.code,
+        'echo_well');
+  });
+
   testWidgets('걸음을 마치면 결과 페이지 대신 무대 위에 결과가 얹힌다', (tester) async {
     // 설계서 3.6: `스테이지 사이에는 불투명 로딩 카드나 흰 결과 페이지를
     // 끼우지 않는다.`
@@ -348,8 +383,8 @@ void main() {
     expect(find.text('계속 · 5장으로'), findsOneWidget);
     expect(find.text('경로'), findsOneWidget);
     expect(find.text('나가기'), findsOneWidget);
-    // 결과 페이지의 `탐험 목록으로`는 서지 않는다.
-    expect(find.text('탐험 목록으로'), findsNothing);
+    // 결과 페이지의 `탐험 지도로`는 서지 않는다.
+    expect(find.text('탐험 지도로'), findsNothing);
     // 이 걸음이 남긴 것도 같은 자리에서 읽힌다.
     expect(find.text('성장 +6'), findsOneWidget);
     expect(find.text('씨앗 +2'), findsOneWidget);
@@ -410,7 +445,7 @@ void main() {
     await _pumpScene(tester, stageNo: 8);
 
     expect(find.byKey(const ValueKey('stage-advance-panel')), findsNothing);
-    expect(find.text('탐험 목록으로'), findsOneWidget);
+    expect(find.text('탐험 지도로'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -423,7 +458,7 @@ void main() {
     await _pumpScene(tester, status: 'retreated');
 
     expect(find.byKey(const ValueKey('stage-advance-panel')), findsNothing);
-    expect(find.text('탐험 목록으로'), findsOneWidget);
+    expect(find.text('탐험 지도로'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -435,7 +470,7 @@ void main() {
     await _pumpScene(tester, withStageMap: false);
 
     expect(find.byKey(const ValueKey('stage-advance-panel')), findsNothing);
-    expect(find.text('탐험 목록으로'), findsOneWidget);
+    expect(find.text('탐험 지도로'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

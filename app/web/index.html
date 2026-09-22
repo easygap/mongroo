@@ -4,10 +4,10 @@
   <base href="$FLUTTER_BASE_HREF">
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="description" content="감정 기록, 식물 성장, 일일 퀘스트를 한곳에서 관리하는 앱, 몽그루">
+  <meta name="description" content="일기를 쓰고 식물을 키우며, 함께 온실 밖을 탐험하는 몽그루">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#EFEFEF">
-  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#20150D">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F7F7F7">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#101216">
   <meta name="color-scheme" content="light dark">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,8 +22,8 @@
   <title>몽그루</title>
   <style>
     @font-face {
-      font-family: "Galmuri11";
-      src: url("assets/assets/fonts/Galmuri11-Bold.ttf") format("truetype");
+      font-family: "WantedSans";
+      src: url("assets/assets/fonts/WantedSans-Bold.ttf") format("truetype");
       font-display: swap;
       font-style: normal;
       font-weight: 700;
@@ -31,16 +31,16 @@
 
     :root {
       color-scheme: light dark;
-      --brand-sprout: #b9ee84;
-      --brand-ink: #3b1f06;
-      --brand-paper: #efefef;
-      --canvas: #f2ede3;
+      --brand-sprout: #242424;
+      --brand-ink: #191d27;
+      --brand-paper: #ffffff;
+      --canvas: #f5f6f8;
       --surface: var(--brand-paper);
-      --paper-deep: #e9e1d3;
+      --paper-deep: #ebedf2;
       --ink: var(--brand-ink);
-      --muted: #75685d;
-      --edge: rgb(59 31 6 / 20%);
-      --shadow: rgb(59 31 6 / 10%);
+      --muted: #555e6d;
+      --edge: rgb(25 29 39 / 16%);
+      --shadow: rgb(25 29 39 / 8%);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Noto Sans KR",
         sans-serif;
       background: var(--canvas);
@@ -92,9 +92,7 @@
       margin: 0 auto 24px;
       place-items: center;
       border-radius: 28px;
-      box-shadow: 0 14px 30px var(--shadow);
-      transform: rotate(-2deg);
-      animation: loading-mark 2.6s ease-in-out infinite;
+
     }
 
     .loading-icon {
@@ -105,7 +103,7 @@
 
     .loading-title {
       margin: 0;
-      font-family: "Galmuri11", system-ui, sans-serif;
+      font-family: "WantedSans", system-ui, sans-serif;
       font-size: 24px;
       font-weight: 700;
       letter-spacing: 0;
@@ -151,7 +149,7 @@
       padding: 10px 20px;
       border: 1px solid var(--brand-ink);
       border-radius: 14px;
-      color: var(--brand-ink);
+      color: var(--brand-paper);
       background: var(--brand-sprout);
       font: inherit;
       font-size: 14px;
@@ -200,11 +198,11 @@
 
     @media (prefers-color-scheme: dark) {
       :root {
-        --canvas: #20150d;
-        --surface: #2d2016;
-        --paper-deep: #3b2a1e;
+        --canvas: #101216;
+        --surface: #191c22;
+        --paper-deep: #282d36;
         --ink: var(--brand-paper);
-        --muted: #d0c3b5;
+        --muted: #b8c0cf;
         --edge: rgb(248 245 239 / 18%);
         --shadow: rgb(0 0 0 / 30%);
       }
@@ -233,7 +231,10 @@
   <main id="app-loading" role="status" aria-live="polite" aria-atomic="true">
     <section class="loading-card" aria-labelledby="loading-title">
       <div class="loading-icon-shell" aria-hidden="true">
-        <img class="loading-icon" src="icons/Icon-192.png" alt="" width="96" height="96">
+        <svg class="loading-icon" viewBox="0 0 100 100" width="96" height="96" aria-hidden="true">
+          <path d="M16 80V45C16 18 49 18 49 45V80M49 45C49 18 82 18 82 45V80" fill="none" stroke="var(--ink)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M66 24Q62 3 90 7Q90 30 66 24Z" fill="#242424"/>
+        </svg>
       </div>
       <h1 class="loading-title" id="loading-title">몽그루</h1>
       <p class="loading-copy" id="loading-copy">

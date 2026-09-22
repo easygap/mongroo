@@ -88,7 +88,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
       if (!mounted) return;
       if (destination == _HarvestDestination.museum) {
-        context.go('/museum');
+        context.push('/museum');
       } else if (destination == _HarvestDestination.shop) {
         context.go('/garden?tab=1');
       } else if (destination == _HarvestDestination.plantNew) {
@@ -178,7 +178,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(width: 4),
           IconButton(
             tooltip: '마음 식물 박물관',
-            onPressed: () => context.go('/museum'),
+            onPressed: () => context.push('/museum'),
             icon: const Icon(Icons.account_balance_outlined),
           ),
           PopupMenuButton<String>(
@@ -241,7 +241,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ? null
                 : PlantStoryCard(
                     plant: currentPlant,
-                    onMuseum: () => context.go('/museum'),
+                    onMuseum: () => context.push('/museum'),
                   );
             final unlockCard = questFeed?.journey.nextUnlock == null
                 ? null
@@ -349,7 +349,7 @@ class _HarvestEndingSheet extends StatelessWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: MongrooTag(
-              label: '제5장 · 이야기 완성',
+              label: '성장 완료',
               icon: Icons.auto_stories_outlined,
               backgroundColor: palette.butter,
             ),
@@ -361,7 +361,7 @@ class _HarvestEndingSheet extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '${plant.species.name} · $formName\n함께 쌓은 마음빛과 마지막 모습이 박물관 표본으로 오래 남아요. 첫 수확이라면 같은 조건의 마음결 기념품도 열려요.',
+            '${plant.species.name} · $formName\n다 자란 캐릭터와 함께 쓴 일기를 박물관에서 볼 수 있어요. 처음 키운 타입이라면 기념품도 받을 수 있어요.',
             style: TextStyle(color: palette.inkMuted, height: 1.5),
           ),
           const SizedBox(height: 22),
@@ -370,7 +370,7 @@ class _HarvestEndingSheet extends StatelessWidget {
               _HarvestDestination.museum,
             ),
             icon: const Icon(Icons.account_balance_outlined),
-            label: const Text('박물관에서 첫 전시 보기'),
+            label: const Text('박물관 가기'),
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
@@ -378,7 +378,7 @@ class _HarvestEndingSheet extends StatelessWidget {
               _HarvestDestination.shop,
             ),
             icon: const Icon(Icons.redeem_outlined),
-            label: const Text('마음결 기념품 확인하기'),
+            label: const Text('성장 기념품 확인하기'),
           ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
@@ -392,7 +392,7 @@ class _HarvestEndingSheet extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(
               _HarvestDestination.stay,
             ),
-            child: const Text('잠시 여운 남기기'),
+            child: const Text('닫기'),
           ),
         ],
       ),
@@ -419,7 +419,7 @@ class _HomeWordmark extends StatelessWidget {
               '몽그루',
               style: TextStyle(
                 color: palette.ink,
-                fontFamily: AppTheme.pixelFont,
+                fontFamily: AppTheme.bodyFont,
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
               ),
@@ -449,7 +449,6 @@ class _HomeGreeting extends StatelessWidget {
     final palette = MongrooPalette.of(context);
     final today = DateTime.now();
     const weekdays = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'];
-    final name = nickname.trim();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -459,9 +458,7 @@ class _HomeGreeting extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          recordedToday == true
-              ? (name.isEmpty ? '마음빛 도착!' : '$name님, 마음빛 도착!')
-              : (name.isEmpty ? '오늘 마음은?' : '$name님, 오늘 마음은?'),
+          recordedToday == true ? '오늘 일기 완료' : '오늘은 어땠나요?',
           maxLines: 2,
           style: Theme.of(context).textTheme.headlineLarge,
         ),
@@ -471,11 +468,11 @@ class _HomeGreeting extends StatelessWidget {
           // 반응해요`라고 하면 없는 것을 가리킨다.
           hasPlant
               ? (recordedToday == true
-                  ? '이야기가 식물의 다음 모습과 작은 행동으로 이어져요.'
-                  : '한 줄만 남겨도 지금 키우는 식물이 반응해요.')
+                  ? '캐릭터가 조금 더 자랐어요. 오늘 해 볼 일도 확인해 보세요.'
+                  : '오늘 일을 적고 캐릭터를 키워 보세요.')
               : (recordedToday == true
-                  ? '적어 둔 이야기는 새로 심는 씨앗이 처음부터 읽어요.'
-                  : '새 씨앗을 심으면 오늘 적은 한 줄부터 함께 자라요.'),
+                  ? '새 씨앗을 심고 다음 캐릭터를 키워 보세요.'
+                  : '씨앗을 심으면 캐릭터를 키울 수 있어요.'),
           style: TextStyle(color: palette.inkMuted),
         ),
       ],
@@ -590,7 +587,7 @@ class _PlantCard extends StatelessWidget {
                             // 옮겼다. 단계는 왼쪽 칩이 이미 말한다.
                             Text(
                               '${plant.species.name} · '
-                              '${plant.stage >= 3 && plant.growthForm != null ? plant.personalityName : '관찰 중'}',
+                              '${plant.stage >= 3 && plant.growthForm != null ? plant.personalityName : '성장 중'}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(

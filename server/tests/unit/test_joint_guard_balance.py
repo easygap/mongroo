@@ -152,8 +152,8 @@ def test_roster_fills_the_rest_with_guides(real_members):
 def test_each_layer_uses_four_distinct_matchups():
     """겹마다 네 짐승의 상성이 서로 달라야 한다.
 
-    열(결) 균형만 맞추면 행이 쏠릴 수 있다. 실제로 첫 겹 약점이 햇살결
-    둘·달빛결 둘이라, 첫 겹만 걷는 `겉꿈 산책`에서 달빛결만 99.6%로 밴드를
+    열(결) 균형만 맞추면 행이 쏠릴 수 있다. 실제로 첫 겹 약점이 햇살
+    둘·달빛 둘이라, 첫 겹만 걷는 `겉꿈 산책`에서 달빛만 99.6%로 밴드를
     벗어났다.
     """
     for index in range(3):

@@ -6,7 +6,7 @@ part of 'expedition_screen.dart';
 /// NPC/몬스터/보물/아이템, 목적 이벤트를 독립 데이터로 두고 카메라 안쪽만
 /// 그린다. 그래서 맵 크기가 커져도 한 프레임의 페인트 비용은 뷰포트 크기에
 /// 비례한다.
-/// 캐릭터가 보는 쪽. 걷기 시트(`expedition-walker-v1.png`)의 줄 순서와 같다.
+/// 이동·상호작용·미니맵이 공유하는 방향.
 enum _WalkFacing { down, left, right, up }
 
 /// 한 칸 옮기는 데 걸리는 시간. 포켓몬의 걸음이 대략 이 언저리다.
@@ -15,10 +15,6 @@ const double _stepSeconds = .165;
 
 /// 손가락을 이만큼 끌어야 방향으로 친다. 누르기만 한 것과 가르는 값이다.
 const double _dragSlop = 12;
-
-/// 걷기 시트 한 칸.
-const double _walkerCellWidth = 96;
-const double _walkerCellHeight = 120;
 
 class _ExpeditionTileWorld extends ConsumerStatefulWidget {
   const _ExpeditionTileWorld({
@@ -35,7 +31,7 @@ class _ExpeditionTileWorld extends ConsumerStatefulWidget {
 }
 
 class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final Ticker _ticker;
   late _TileField _field;
 
@@ -68,12 +64,11 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
   bool _reduceMotion = false;
   bool _movePending = false;
   ExpeditionCombatAudio? _steps;
-  ui.Image? _atlas;
+  final FocusNode _walkFocus = FocusNode();
+  int? _activePointer;
+  bool _appActive = true;
 
   /// 아틀라스 조각 표. 굽기가 내놓은 JSON을 그대로 읽는다.
-  Map<String, Rect> _atlasSlots = const <String, Rect>{};
-
-  ui.Image? _walker;
 
   /// 지금 실내인가. 실내에서는 제단 판정을 하지 않는다.
   bool _inside = false;
@@ -122,120 +117,42 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _field = _buildField();
     _placeAtSpawn();
     _ticker = createTicker(_tick)..start();
-    unawaited(_loadAtlas());
     unawaited(_loadMonster());
+    _prepareStep();
+  }
+
+  void _prepareStep() {
+    if (!ref.read(expeditionBattleSettingsProvider).sfxEnabled) return;
+    _steps ??= ExpeditionCombatAudio(musicEnabled: false, sfxEnabled: true);
+    unawaited(_steps!.warmUp(sounds: [
+      ExpeditionCombatAudio.stepSoundFor(widget.destination.sceneKey),
+    ]));
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _appActive = state == AppLifecycleState.resumed;
+    _lastTick = Duration.zero;
+    if (_appActive) {
+      unawaited(_steps?.handleAppResumed());
+    } else {
+      _pointerUp();
+      unawaited(_steps?.handleAppPaused());
+    }
   }
 
   Future<void> _loadMonster() async {
-    final code = _fieldMonsters[widget.expedition.region.code] ?? 'tangled_ledger';
+    final code =
+        _fieldMonsters[widget.expedition.region.code] ?? 'tangled_ledger';
     final image = await ExpeditionPixelImages.load(
       expeditionPixelEnemyAsset(enemyKind: 'tangle', enemyCode: code),
     );
     if (!mounted || image == null) return;
     setState(() => _monster = image);
-  }
-
-  Future<void> _loadWalker() async {
-    // 품종 시트를 먼저 찾고 없으면 공용 시트로 떨어진다.
-    //
-    // 번들에 있는 것만 요청한다. 품종 시트는 대부분 아직 없어서, 그냥 넣어
-    // 보면 던전에 들어갈 때마다 404가 콘솔에 한 줄씩 남는다.
-    await BundledAssets.ensureLoaded();
-    final candidates = BundledAssets.filter(
-      expeditionWalkerAssetCandidates(
-        expeditionWalkerMember(widget.expedition.party)?.speciesCode,
-      ),
-    );
-    for (final path in candidates) {
-      try {
-        final bytes = await rootBundle.load(path);
-        final codec = await ui.instantiateImageCodec(
-          bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
-        );
-        final frame = await codec.getNextFrame();
-        codec.dispose();
-        if (!mounted) {
-          frame.image.dispose();
-          return;
-        }
-        setState(() {
-          _walker?.dispose();
-          _walker = frame.image;
-        });
-        return;
-      } catch (_) {
-        // 이 시트가 없으면 다음 후보로. 공용까지 실패하면 기존 토큰으로 그린다.
-        continue;
-      }
-    }
-  }
-
-  /// 조각 표를 읽는다.
-  ///
-  /// 굽는 쪽과 그리는 쪽이 배치를 각자 계산하면 언젠가 갈라진다. 실제로
-  /// 조각을 스물넷 더했을 때 화면이 새까맣게 나왔다.
-  Future<Map<String, Rect>> _loadAtlasSlots() async {
-    try {
-      final raw = await rootBundle.loadString(
-        'assets/adventure/overworld/expedition-tile-atlas-v2.json',
-      );
-      final manifest = json.decode(raw) as Map<String, dynamic>;
-      final regions = manifest['regions'] as Map<String, dynamic>;
-      final entries =
-          regions[widget.expedition.region.code] as Map<String, dynamic>?;
-      if (entries == null) return const <String, Rect>{};
-      return <String, Rect>{
-        for (final entry in entries.entries)
-          entry.key: Rect.fromLTWH(
-            ((entry.value as Map<String, dynamic>)['x'] as num).toDouble(),
-            (entry.value['y'] as num).toDouble(),
-            (entry.value['w'] as num).toDouble(),
-            (entry.value['h'] as num).toDouble(),
-          ),
-      };
-    } on Object catch (error) {
-      debugPrint('Expedition tile atlas manifest unreadable: $error');
-      return const <String, Rect>{};
-    }
-  }
-
-  Future<void> _loadAtlas() async {
-    try {
-      final bytes = await rootBundle.load(
-        'assets/adventure/overworld/expedition-tile-atlas-v2.png',
-      );
-      final codec = await ui.instantiateImageCodec(
-        bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
-      );
-      late final ui.FrameInfo frame;
-      try {
-        frame = await codec.getNextFrame();
-      } finally {
-        codec.dispose();
-      }
-      if (!mounted) {
-        frame.image.dispose();
-        return;
-      }
-      final slots = await _loadAtlasSlots();
-      if (!mounted) {
-        frame.image.dispose();
-        return;
-      }
-      setState(() {
-        _atlas?.dispose();
-        _atlas = frame.image;
-        if (slots.isNotEmpty) _atlasSlots = slots;
-      });
-      unawaited(_loadWalker());
-    } on Object catch (error) {
-      // The procedural fallback keeps the stage playable if an asset bundle is
-      // damaged, while CI verifies that a release bundle always has the atlas.
-      debugPrint('Expedition tile atlas could not be decoded: $error');
-    }
   }
 
   @override
@@ -274,10 +191,12 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
       !_movePending;
 
   /// 걸어도 되는가. 말풍선을 읽는 동안에는 멈춘다.
-  bool get _movementEnabled => _speech == null && _canReachServer;
+  bool get _movementEnabled => _appActive && _speech == null && _canReachServer;
 
   void _pointerDown(Offset local) {
     if (!_movementEnabled) return;
+    _walkFocus.requestFocus();
+    _held = null;
     setState(() {
       _stickCenter = local;
       _stickTouch = local;
@@ -291,14 +210,19 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
     // 끌린 방향에서 **더 큰 축 하나만** 고른다. 대각선을 허용하면 좁은 복도에서
     // 모서리에 걸려 멈춘 것처럼 느껴진다.
     final drag = local - center;
-    if (drag.distance < _dragSlop) return;
+    if (drag.distance < _dragSlop) {
+      _held = null;
+      return;
+    }
     _held = drag.dx.abs() >= drag.dy.abs()
         ? (drag.dx >= 0 ? _WalkFacing.right : _WalkFacing.left)
         : (drag.dy >= 0 ? _WalkFacing.down : _WalkFacing.up);
   }
 
   void _pointerUp() {
+    if (!mounted) return;
     _held = null;
+    _activePointer = null;
     setState(() {
       _stickCenter = null;
       _stickTouch = null;
@@ -308,9 +232,14 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     final direction = switch (event.logicalKey) {
       LogicalKeyboardKey.arrowUp || LogicalKeyboardKey.keyW => _WalkFacing.up,
-      LogicalKeyboardKey.arrowDown || LogicalKeyboardKey.keyS => _WalkFacing.down,
-      LogicalKeyboardKey.arrowLeft || LogicalKeyboardKey.keyA => _WalkFacing.left,
-      LogicalKeyboardKey.arrowRight || LogicalKeyboardKey.keyD =>
+      LogicalKeyboardKey.arrowDown ||
+      LogicalKeyboardKey.keyS =>
+        _WalkFacing.down,
+      LogicalKeyboardKey.arrowLeft ||
+      LogicalKeyboardKey.keyA =>
+        _WalkFacing.left,
+      LogicalKeyboardKey.arrowRight ||
+      LogicalKeyboardKey.keyD =>
         _WalkFacing.right,
       _ => null,
     };
@@ -332,7 +261,7 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
       if (_held == direction) _held = null;
       return KeyEventResult.handled;
     }
-    _held = direction;
+    if (_movementEnabled) _held = direction;
     return KeyEventResult.handled;
   }
 
@@ -341,7 +270,7 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
         ? 0.0
         : (elapsed - _lastTick).inMicroseconds / 1000000;
     _lastTick = elapsed;
-    if (rawSeconds <= 0) return;
+    if (rawSeconds <= 0 || !_appActive) return;
     // 프레임이 길게 끊겨도 걸음이 멈추지 않게 잘라 쓴다. 버리면 느린 기기에서
     // 한 발도 못 나간다.
     final seconds = math.min(rawSeconds, .12);
@@ -396,23 +325,22 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
     final key = _keyOf(object);
     final taken = _used.contains(key);
     final line = switch (object.kind) {
-      _TileObjectKind.npc => object.speech ??
-          '여기 기록은 아직 정리가 안 됐어요. 조심해서 지나가세요.',
+      _TileObjectKind.npc =>
+        object.speech ?? '여기 기록은 아직 정리가 안 됐어요. 조심해서 지나가세요.',
       // 상자·조각도 자리마다 다른 말을 할 수 있다. 같은 문장만 돌아오면
       // 세 번째 상자부터는 열 이유가 사라진다.
       _TileObjectKind.chest => taken
           ? '이미 열어 본 기록함이에요. 안은 비어 있어요.'
           : object.speech ?? '기록함을 열었어요. 눅눅한 종이 냄새가 올라와요.',
-      _TileObjectKind.item => taken
-          ? '아까 주운 자리예요.'
-          : object.speech ?? '기억 조각을 주웠어요. 손끝이 따뜻해져요.',
+      _TileObjectKind.item =>
+        taken ? '아까 주운 자리예요.' : object.speech ?? '기억 조각을 주웠어요. 손끝이 따뜻해져요.',
       _TileObjectKind.shelf => '서가가 기울어 있어요. 책등의 글씨는 지워졌어요.',
       _TileObjectKind.altar => '제단이 희미하게 빛나요. 여기서 다음 장면이 열려요.',
       _TileObjectKind.monster => '엉킴과 눈이 마주쳤어요. 여기서 붙습니다.',
       _TileObjectKind.pillar =>
         object.speech ?? '석주에 오래된 문양이 남아 있어요. 이끼가 홈을 따라 자랐어요.',
-      _TileObjectKind.crystal => object.speech ??
-          '기억 결정이 은은하게 울려요. 가까이 서면 오래된 장면이 스쳐요.',
+      _TileObjectKind.crystal =>
+        object.speech ?? '기억 결정이 은은하게 울려요. 가까이 서면 오래된 장면이 스쳐요.',
       _ => object.label,
     };
     HapticFeedback.selectionClick();
@@ -533,16 +461,22 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _walkFocus.dispose();
     _ticker.dispose();
-    _walker?.dispose();
     _steps?.dispose();
-    _atlas?.dispose();
     _field.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(
+        expeditionBattleSettingsProvider.select((value) => value.audioMode),
+        (previous, next) {
+      unawaited(_steps?.setChannels(sfx: next != ExpeditionAudioMode.muted));
+      _prepareStep();
+    });
     final scheme = Theme.of(context).colorScheme;
     final nearby = _field.nearestDiscoverable(_position);
     final facing = _movementEnabled ? _facingObject : null;
@@ -559,9 +493,9 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
       for (final puff in _puffs)
         (
           world: puff.world,
-          age: ((_now - puff.born).inMilliseconds /
-                  _puffDuration.inMilliseconds)
-              .clamp(0.0, 1.0),
+          age:
+              ((_now - puff.born).inMilliseconds / _puffDuration.inMilliseconds)
+                  .clamp(0.0, 1.0),
         ),
     ];
     return ClipRect(
@@ -579,16 +513,17 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
             final playerScreen = camera.project(_position);
             final visibleTiles = camera.visibleTileCount(_field);
             final visibleChunks = camera.visibleChunkCount(_field);
-            // 캐릭터 상자를 **타일에 비례**시킨다. 70px로 못 박아 두었더니
-            // 타일이 23px인 화면에서 캐릭터가 세 칸을 차지해 세계가 좁아
-            // 보였다. 96×120 칸 안에서 몸이 차지하는 폭이 60이므로, 몸이 딱
-            // 한 칸이 되려면 상자는 1.6칸이어야 한다.
+            // PlantView includes breathing room around its art; size the visible body for touch screens.
             final actorSize = Size(
-              camera.tilePixels * 1.6,
-              camera.tilePixels * 1.6 * _walkerCellHeight / _walkerCellWidth,
+              camera.tilePixels * 3.0,
+              camera.tilePixels * 3.6,
             );
             return Focus(
               autofocus: true,
+              focusNode: _walkFocus,
+              onFocusChange: (focused) {
+                if (!focused) _pointerUp();
+              },
               onKeyEvent: _onKey,
               child: Stack(
                 clipBehavior: Clip.hardEdge,
@@ -605,8 +540,6 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                       child: CustomPaint(
                         key: const ValueKey('tile-world-visible-layer'),
                         painter: _TileWorldPainter(
-                          atlas: _atlas,
-                          atlasSlots: _atlasSlots,
                           field: _field,
                           camera: camera,
                           player: _position,
@@ -623,23 +556,34 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                     left: playerScreen.dx - actorSize.width / 2,
                     // 시트의 발 밑선이 칸 아래쪽에 닿게 맞춘 값이다. 발이
                     // 칸 한가운데에 있으면 칸 위에 떠 있는 것으로 보인다.
-                    top: playerScreen.dy - actorSize.height * .725,
+                    top: playerScreen.dy - actorSize.height * .92,
                     width: actorSize.width,
                     height: actorSize.height,
                     child: IgnorePointer(
                       child: Semantics(
                         label: '월드 안의 현재 위치',
-                        child: _walker == null
-                            ? const SizedBox.shrink()
-                            : CustomPaint(
-                                painter: _WalkerPainter(
-                                  sheet: _walker!,
-                                  facing: _facing,
-                                  // 걷는 동안 1-2-3-2로 발을 번갈아 낸다.
-                                  // 멈추면 가운데(선 자세)다.
-                                  frame: _moving ? (_footfall == 0 ? 0 : 2) : 1,
-                                ),
-                              ),
+                        child: Builder(builder: (context) {
+                          final member =
+                              expeditionWalkerMember(widget.expedition.party);
+                          if (member == null) return const SizedBox.shrink();
+                          return Transform.translate(
+                            offset: Offset(
+                                0,
+                                _moving && !reduceMotion
+                                    ? -math.sin(_stride * math.pi).abs() * 3
+                                    : 0),
+                            child: PlantView(
+                              key: const ValueKey('field-party-leader'),
+                              stage: member.stage,
+                              form: PlantGrowthForm.fromCode(member.form),
+                              speciesCode: member.speciesCode,
+                              speciesName: member.speciesName,
+                              outfitKey: member.outfitKey,
+                              width: actorSize.width,
+                              height: actorSize.height,
+                            ),
+                          );
+                        }),
                       ),
                     ),
                   ),
@@ -647,8 +591,6 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                     child: IgnorePointer(
                       child: CustomPaint(
                         painter: _TileWorldPainter(
-                          atlas: _atlas,
-                          atlasSlots: _atlasSlots,
                           field: _field,
                           camera: camera,
                           player: _position,
@@ -671,15 +613,25 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                         key: const ValueKey('expedition-walk-surface'),
                         behavior: HitTestBehavior.translucent,
                         onPointerDown: _movementEnabled
-                            ? (e) => _pointerDown(e.localPosition)
+                            ? (e) {
+                                if (_activePointer != null) return;
+                                _activePointer = e.pointer;
+                                _pointerDown(e.localPosition);
+                              }
                             : null,
                         onPointerMove: _movementEnabled
-                            ? (e) => _pointerMove(e.localPosition)
+                            ? (e) {
+                                if (e.pointer == _activePointer) {
+                                  _pointerMove(e.localPosition);
+                                }
+                              }
                             : null,
-                        onPointerUp:
-                            _movementEnabled ? (_) => _pointerUp() : null,
-                        onPointerCancel:
-                            _movementEnabled ? (_) => _pointerUp() : null,
+                        onPointerUp: (e) {
+                          if (e.pointer == _activePointer) _pointerUp();
+                        },
+                        onPointerCancel: (e) {
+                          if (e.pointer == _activePointer) _pointerUp();
+                        },
                       ),
                     ),
                   ),
@@ -748,6 +700,7 @@ class _ExpeditionTileWorldState extends ConsumerState<_ExpeditionTileWorld>
                     child: Tooltip(
                       message: widget.destination.name,
                       child: Semantics(
+                        container: true,
                         button: true,
                         label: '${widget.destination.name} 접근성 바로가기',
                         child: PixelPanel(
@@ -859,7 +812,8 @@ class _InteractButton extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.touch_app_rounded, size: 17, color: scheme.onPrimary),
+                  Icon(Icons.touch_app_rounded,
+                      size: 17, color: scheme.onPrimary),
                   const SizedBox(width: 6),
                   Text(
                     '$label · $_action',
@@ -937,55 +891,6 @@ class _SpeechBubble extends StatelessWidget {
       ),
     );
   }
-}
-
-/// 걷기 시트에서 한 칸을 떠서 그린다.
-///
-/// 도트는 흐려지면 안 되므로 필터를 끈다. 위젯 크기에 맞춰 늘리되 가로세로
-/// 비율은 시트의 것을 지킨다 — 늘어난 캐릭터는 바로 눈에 띈다.
-class _WalkerPainter extends CustomPainter {
-  const _WalkerPainter({
-    required this.sheet,
-    required this.facing,
-    required this.frame,
-  });
-
-  final ui.Image sheet;
-  final _WalkFacing facing;
-  final int frame;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final source = Rect.fromLTWH(
-      frame * _walkerCellWidth,
-      facing.index * _walkerCellHeight,
-      _walkerCellWidth,
-      _walkerCellHeight,
-    );
-    final scale = math.min(
-      size.width / _walkerCellWidth,
-      size.height / _walkerCellHeight,
-    );
-    final width = _walkerCellWidth * scale;
-    final height = _walkerCellHeight * scale;
-    canvas.drawImageRect(
-      sheet,
-      source,
-      Rect.fromLTWH(
-        (size.width - width) / 2,
-        size.height - height,
-        width,
-        height,
-      ),
-      Paint()..filterQuality = FilterQuality.none,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _WalkerPainter oldDelegate) =>
-      oldDelegate.sheet != sheet ||
-      oldDelegate.facing != facing ||
-      oldDelegate.frame != frame;
 }
 
 enum _TileObjectKind {
@@ -1087,8 +992,7 @@ class _TileObject {
   int get tileY => (position.dy - .5).floor();
 
   /// 그림이 덮는 칸들.
-  Iterable<(int, int)> get coveredTiles =>
-      _coveredTiles(size, tileX, tileY);
+  Iterable<(int, int)> get coveredTiles => _coveredTiles(size, tileX, tileY);
 
   /// The sprite is anchored at its feet, not at its visual center.
   Rect get visualBounds => Rect.fromLTWH(
@@ -1280,44 +1184,44 @@ class _TilePalette {
 
   static _TilePalette forRegion(String code) => switch (code) {
         'echo_well' => const _TilePalette(
-            floorA: Color(0xFF334950),
-            floorB: Color(0xFF3E5960),
-            moss: Color(0xFF53726F),
-            water: Color(0xFF246A78),
-            stone: Color(0xFF526268),
+            floorA: Color(0xFFD7EDE7),
+            floorB: Color(0xFFC5DED9),
+            moss: Color(0xFF70A69A),
+            water: Color(0xFF73BDD0),
+            stone: Color(0xFF4E8279),
             metal: Color(0xFF947454),
             glow: Color(0xFF69D8EC),
-            voidColor: Color(0xFF101C22),
+            voidColor: Color(0xFF204D4A),
             actorGrade: Color(0x18004552)),
         'starlight_seed_vault' => const _TilePalette(
-            floorA: Color(0xFF353653),
-            floorB: Color(0xFF454567),
-            moss: Color(0xFF5D5680),
-            water: Color(0xFF303B75),
-            stone: Color(0xFF585A78),
+            floorA: Color(0xFFD0EBDF),
+            floorB: Color(0xFFB8D9CA),
+            moss: Color(0xFF68A690),
+            water: Color(0xFF80BBC5),
+            stone: Color(0xFF4E8270),
             metal: Color(0xFFA9885B),
             glow: Color(0xFF96D9FF),
-            voidColor: Color(0xFF14142B),
+            voidColor: Color(0xFF234D43),
             actorGrade: Color(0x180D0E55)),
         'heartwood_observatory' => const _TilePalette(
-            floorA: Color(0xFF4A3E34),
-            floorB: Color(0xFF58493A),
-            moss: Color(0xFF65724A),
-            water: Color(0xFF315E64),
-            stone: Color(0xFF655B4D),
+            floorA: Color(0xFFD5E2E5),
+            floorB: Color(0xFFC4D3D8),
+            moss: Color(0xFF849CAB),
+            water: Color(0xFF82B7CE),
+            stone: Color(0xFF637A8A),
             metal: Color(0xFFAD7A4D),
             glow: Color(0xFFFFC66D),
-            voidColor: Color(0xFF211712),
+            voidColor: Color(0xFF2D4555),
             actorGrade: Color(0x18A05018)),
         _ => const _TilePalette(
-            floorA: Color(0xFF5A5548),
-            floorB: Color(0xFF686252),
-            moss: Color(0xFF64713C),
-            water: Color(0xFF28636A),
-            stone: Color(0xFF716B5B),
+            floorA: Color(0xFFD8E5CB),
+            floorB: Color(0xFFC8D8B9),
+            moss: Color(0xFF80AC79),
+            water: Color(0xFF82BECA),
+            stone: Color(0xFF5F8964),
             metal: Color(0xFFA47B3D),
             glow: Color(0xFF63D8D4),
-            voidColor: Color(0xFF18201A),
+            voidColor: Color(0xFF234B39),
             actorGrade: Color(0x181C4B38)),
       };
 }
@@ -1723,8 +1627,7 @@ class _TileField {
       ]) {
         final a = leg[0];
         final b = leg[1];
-        final steps =
-            math.max((b.dx - a.dx).abs(), (b.dy - a.dy).abs()).ceil();
+        final steps = math.max((b.dx - a.dx).abs(), (b.dy - a.dy).abs()).ceil();
         for (var step = 0; step <= steps; step++) {
           final ratio = steps == 0 ? 0.0 : step / steps;
           final x = (a.dx + (b.dx - a.dx) * ratio).round();
@@ -1801,7 +1704,8 @@ class _TileField {
     // ── 지형 ──────────────────────────────────────────────────────────────
     //
     // 걷는 곳은 바닥, 바깥은 이끼다. 물은 방 밖 구석에만 둬서 눈요기로 쓴다.
-    final terrain = List<_TileTerrain>.filled(width * height, _TileTerrain.moss);
+    final terrain =
+        List<_TileTerrain>.filled(width * height, _TileTerrain.moss);
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
         if (open(x, y)) terrain[y * width + x] = _TileTerrain.floor;
@@ -1895,12 +1799,12 @@ class _TileField {
     /// 있는데, 그러면 둘이 붙어 하나로 보인다. 조각은 바닥에 떨어진 반짝임이라
     /// 무엇에든 붙어도 된다.
     bool claimsSpace(_TileObjectKind kind) => switch (kind) {
-      _TileObjectKind.shelf ||
-      _TileObjectKind.root ||
-      _TileObjectKind.item =>
-        false,
-      _ => true,
-    };
+          _TileObjectKind.shelf ||
+          _TileObjectKind.root ||
+          _TileObjectKind.item =>
+            false,
+          _ => true,
+        };
 
     /// 놓을 수 있는 자리인가. 실제로 놓기 전에 물어볼 수 있어야 한다 —
     /// 짝으로 세우는 석주는 한쪽만 서면 주랑이 아니라 남은 기둥이 된다.
@@ -2186,10 +2090,8 @@ class _TileField {
             collisionSize: const Size(.44, .32),
             speech: switch (regionCode) {
               'echo_well' => '물이 말을 되돌려줘요. 여기선 크게 말하지 않는 게 좋아요.',
-              'starlight_seed_vault' =>
-                '씨앗들이 아직 잠들지 못했어요. 이름표를 찾아 주면 좋을 텐데.',
-              'heartwood_observatory' =>
-                '나이테가 어긋난 자리가 있어요. 밟으면 소리가 달라요.',
+              'starlight_seed_vault' => '씨앗들이 아직 잠들지 못했어요. 이름표를 찾아 주면 좋을 텐데.',
+              'heartwood_observatory' => '나이테가 어긋난 자리가 있어요. 밟으면 소리가 달라요.',
               _ => '장부가 엉킨 자리는 돌아가세요. 억지로 풀면 더 엉켜요.',
             },
           );
@@ -2309,8 +2211,7 @@ class _TileField {
             collisionSize: const Size(.44, .32),
             speech: switch (regionCode) {
               'echo_well' => '우물물이 여기까지 올라와요. 발소리가 두 번 들리면 한 번은 물속 것이에요.',
-              'starlight_seed_vault' =>
-                '물에 별빛이 고여요. 씨앗들이 목을 축이러 내려오곤 해요.',
+              'starlight_seed_vault' => '물에 별빛이 고여요. 씨앗들이 목을 축이러 내려오곤 해요.',
               'heartwood_observatory' =>
                 '이 못은 관측소가 목이 마를 때 판 거예요. 나무는 물을 기억하거든요.',
               _ => '젖은 기록은 급히 넘기면 찢어져요. 물가에서는 천천히 걸어요.',
@@ -2365,10 +2266,8 @@ class _TileField {
             collisionSize: const Size(.44, .32),
             speech: switch (regionCode) {
               'echo_well' => '결정마다 메아리가 하나씩 잠들어 있어요. 두드리면 깨요.',
-              'starlight_seed_vault' =>
-                '떨어진 별빛이 굳어 결정이 됐다고 해요. 정말인지는 저도 몰라요.',
-              'heartwood_observatory' =>
-                '나이테 사이에서 자란 결정이에요. 나무의 꿈이 굳은 거래요.',
+              'starlight_seed_vault' => '떨어진 별빛이 굳어 결정이 됐다고 해요. 정말인지는 저도 몰라요.',
+              'heartwood_observatory' => '나이테 사이에서 자란 결정이에요. 나무의 꿈이 굳은 거래요.',
               _ => '결정은 함부로 캐면 빛이 죽어요. 눈으로만 담아 가세요.',
             },
           );
@@ -2520,8 +2419,7 @@ class _TileField {
     // 꾸미기를 어떻게 바꾸든 길은 남는다.
     final removed = <int>{};
     for (var attempt = 0; attempt < 120; attempt++) {
-      final startIndex =
-          spawn.dy.floor() * width + spawn.dx.floor();
+      final startIndex = spawn.dy.floor() * width + spawn.dx.floor();
       final goalIndex = goal.dy.floor() * width + goal.dx.floor();
       final queue = <int>[startIndex];
       final seen = <int>{startIndex};
@@ -2560,7 +2458,8 @@ class _TileField {
       // 엉킴이 사라지면 전투가 안 열리고, 문이 사라지면 안쪽 방에 못 든다.
       final removable = frontier.where((tile) {
         final kind = objects[blockers[tile]!].kind;
-        return kind != _TileObjectKind.monster && !objects[blockers[tile]!].warp;
+        return kind != _TileObjectKind.monster &&
+            !objects[blockers[tile]!].warp;
       });
       if (removable.isEmpty) break;
       // 사람은 마지막에 치운다. 서가와 사람이 같이 길을 막고 있으면 서가를
@@ -2769,8 +2668,7 @@ class _TileField {
     // 벽은 이제 지형이다. 물건 목록을 뒤지지 않고 칸에서 바로 본다.
     if (samples.any(
       (sample) =>
-          terrainAt(sample.dx.floor(), sample.dy.floor()) ==
-          _TileTerrain.wall,
+          terrainAt(sample.dx.floor(), sample.dy.floor()) == _TileTerrain.wall,
     )) {
       return true;
     }
@@ -2887,6 +2785,7 @@ class _TileField {
 }
 
 @visibleForTesting
+
 /// 드나들 수 있는 문과 실내 방이 제대로 서 있는지.
 @visibleForTesting
 Map<String, int> expeditionTileWorldTravelDiagnostics(
@@ -2990,8 +2889,7 @@ Map<String, int> expeditionTileWorldPlacementDiagnostics(
       }
       final backed = field.terrainAt(object.tileX, object.tileY - 1) !=
               _TileTerrain.floor ||
-          field.terrainAt(object.tileX, object.tileY + 1) !=
-              _TileTerrain.floor;
+          field.terrainAt(object.tileX, object.tileY + 1) != _TileTerrain.floor;
       if (backed) {
         wallBacked++;
       } else {
@@ -3028,9 +2926,8 @@ Map<String, int> expeditionTileWorldChunkDiagnostics(
   );
   try {
     return <String, int>{
-      'walkable': field.terrain
-          .where((cell) => cell == _TileTerrain.floor)
-          .length,
+      'walkable':
+          field.terrain.where((cell) => cell == _TileTerrain.floor).length,
       'chunkSize': _TileField.chunkSize,
       'chunkCount': field._chunks.length,
       'maxCellsPerChunk':
@@ -3066,11 +2963,8 @@ class _WorldCamera {
     required Size viewport,
     required double devicePixelRatio,
   }) {
-    // 세로 7.25칸을 기준으로 잡았더니 가로가 열 칸밖에 안 들어와 좁았다.
-    // BW2가 256×192 화면에 16px 타일로 **열여섯 칸**을 보여 준다. 가로를 기준
-    // 으로 바꿔 폰에서 그 정도가 들어오게 하고, 넓은 화면에서는 타일이 너무
-    // 커지지 않게 위를 막는다.
-    final tilePixels = (viewport.width / 15.5).clamp(20.0, 40.0);
+    // Keep the character and nearby interactions legible on a phone.
+    final tilePixels = (viewport.width / 9.5).clamp(30.0, 54.0);
     final visible = Offset(
       viewport.width / tilePixels,
       viewport.height / tilePixels,
@@ -3124,8 +3018,6 @@ class _WorldCamera {
 
 class _TileWorldPainter extends CustomPainter {
   const _TileWorldPainter({
-    required this.atlas,
-    required this.atlasSlots,
     required this.field,
     required this.camera,
     required this.player,
@@ -3147,38 +3039,9 @@ class _TileWorldPainter extends CustomPainter {
   /// 전투로 들어가는 와이프의 진행도. 0이면 없다.
   final double wipe;
 
-  static const double _atlasCell = 96;
-  static const double _atlasGutter = 2;
-
-  /// 굽기가 내놓은 조각 표. 이름 → 아틀라스 안의 자리.
-  final Map<String, Rect> atlasSlots;
-
-  /// 벽 윗면 네 갈래. 바닥처럼 열여섯을 다 두면 아틀라스만 커지고, 벽은 넓게
-  /// 이어지는 면이라 네 갈래로도 무늬가 안 잡힌다.
-  static const List<String> _wallTopSuffixes = ['a', 'b', 'c', 'd'];
-
-  static const List<String> _terrainSuffixes = [
-    'a',
-    'b',
-    'c',
-    'd',
-    'e',
-    'f',
-    'g',
-    'h',
-    'i',
-    'j',
-    'k',
-    'l',
-    'm',
-    'n',
-    'o',
-    'p',
-  ];
-
-  final ui.Image? atlas;
   final _TileField field;
   final _WorldCamera camera;
+
   /// 플레이어의 월드 좌표. 앞뒤 정렬과 발밑 그림자가 함께 쓴다.
   final Offset player;
 
@@ -3218,7 +3081,6 @@ class _TileWorldPainter extends CustomPainter {
       );
     }
     if (foreground) {
-      _paintLighting(canvas, size);
       _paintPuffs(canvas);
       _paintWipe(canvas, size);
     }
@@ -3234,7 +3096,8 @@ class _TileWorldPainter extends CustomPainter {
       final foot = camera.project(puff.world);
       final alpha = (1 - puff.age) * .55;
       for (final (dx, lift) in const [(-1.6, 1.0), (0.0, 1.6), (1.6, 1.0)]) {
-        final x = ((foot.dx + dx * unit * (1 + puff.age)) / unit).round() * unit;
+        final x =
+            ((foot.dx + dx * unit * (1 + puff.age)) / unit).round() * unit;
         final y =
             ((foot.dy - unit * lift * puff.age * 2.2) / unit).round() * unit;
         canvas.drawRect(
@@ -3272,245 +3135,54 @@ class _TileWorldPainter extends CustomPainter {
     final top = rect.top.floor().clamp(0, field.height - 1);
     final right = rect.right.ceil().clamp(0, field.width);
     final bottom = rect.bottom.ceil().clamp(0, field.height);
-    final image = atlas;
-    if (image == null) {
-      for (var y = top; y < bottom; y++) {
-        for (var x = left; x < right; x++) {
-          _paintTile(canvas, x, y);
-        }
-      }
-      return;
-    }
-
-    final baseTransforms = <ui.RSTransform>[];
-    final baseRects = <Rect>[];
-    final shoreTransforms = <ui.RSTransform>[];
-    final shoreRects = <Rect>[];
-    // 벽 앞면은 맨 나중에, 아래 칸을 덮으며 그린다. 이게 있어야 벽에 높이가
-    // 생긴다. 같은 무리에 섞어 그리면 옆 벽의 윗면이 앞면을 덮어 버린다.
-    final faceTransforms = <ui.RSTransform>[];
-    final faceRects = <Rect>[];
-    final scale = (camera.tilePixels + .7) / _atlasCell;
-
-    void addSprite(
-      List<ui.RSTransform> transforms,
-      List<Rect> rects,
-      String sprite,
-      Offset screen,
-    ) {
-      transforms.add(
-        ui.RSTransform.fromComponents(
-          rotation: 0,
-          scale: scale,
-          anchorX: 0,
-          anchorY: 0,
-          translateX: screen.dx,
-          translateY: screen.dy,
-        ),
-      );
-      rects.add(_atlasRect(sprite));
-    }
-
-    for (final chunk in field.chunksIn(rect)) {
-      for (final cell in chunk.cells) {
-        final x = cell.x;
-        final y = cell.y;
-        if (x < left || x >= right || y < top || y >= bottom) continue;
-        final screen = camera.project(Offset(x.toDouble(), y.toDouble()));
-        final terrain = cell.terrain;
-        final variant = cell.variant;
-        final base = switch (terrain) {
-          _TileTerrain.floor => 'floor_${_terrainSuffixes[variant]}',
-          _TileTerrain.moss => 'moss_${_terrainSuffixes[variant]}',
-          _TileTerrain.water => 'water_${_terrainSuffixes[variant]}',
-          // 벽 윗면도 위에서 내려다보는 수평면이라 네 갈래만 돌려 쓴다.
-          _TileTerrain.wall => 'wall_top_${_wallTopSuffixes[variant & 3]}',
+    final fill = Paint()..isAntiAlias = false;
+    final edge = Paint()
+      ..color = field.palette.voidColor
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    for (var y = top; y < bottom; y++) {
+      for (var x = left; x < right; x++) {
+        final point = camera.project(Offset(x.toDouble(), y.toDouble()));
+        final tile = Rect.fromLTWH(
+            point.dx, point.dy, camera.tilePixels + .5, camera.tilePixels + .5);
+        final terrain = field.terrainAt(x, y);
+        fill.color = switch (terrain) {
+          _TileTerrain.water => field.palette.water,
+          _TileTerrain.wall => field.palette.moss,
+          _ => field.palette.floorA,
         };
-        addSprite(baseTransforms, baseRects, base, screen);
-
-        // 다른 재질과 맞닿은 자리에 전환 조각을 얹는다.
-        void trim(String prefix) {
-          if (!cell.same(_TileCell.north)) {
-            addSprite(shoreTransforms, shoreRects, '${prefix}_n', screen);
-          }
-          if (!cell.same(_TileCell.east)) {
-            addSprite(shoreTransforms, shoreRects, '${prefix}_e', screen);
-          }
-          if (!cell.same(_TileCell.south)) {
-            addSprite(shoreTransforms, shoreRects, '${prefix}_s', screen);
-          }
-          if (!cell.same(_TileCell.west)) {
-            addSprite(shoreTransforms, shoreRects, '${prefix}_w', screen);
-          }
-          // 대각선은 양옆 변이 모두 같을 때만 그린다. 아니면 변 조각이 이미
-          // 그 자리를 덮고 있어 두 번 겹친다.
-          if (cell.cornerOnly(
-            _TileCell.northEast,
-            _TileCell.north,
-            _TileCell.east,
-          )) {
-            addSprite(shoreTransforms, shoreRects, '${prefix}_ne', screen);
-          }
-          if (cell.cornerOnly(
-            _TileCell.southEast,
-            _TileCell.south,
-            _TileCell.east,
-          )) {
-            addSprite(shoreTransforms, shoreRects, '${prefix}_se', screen);
-          }
-          if (cell.cornerOnly(
-            _TileCell.southWest,
-            _TileCell.south,
-            _TileCell.west,
-          )) {
-            addSprite(shoreTransforms, shoreRects, '${prefix}_sw', screen);
-          }
-          if (cell.cornerOnly(
-            _TileCell.northWest,
-            _TileCell.north,
-            _TileCell.west,
-          )) {
-            addSprite(shoreTransforms, shoreRects, '${prefix}_nw', screen);
-          }
-        }
-
-        switch (terrain) {
-          case _TileTerrain.water:
-            trim('shore');
-          case _TileTerrain.floor:
-            trim('edge');
-          case _TileTerrain.wall:
-            trim('rim');
-            // 아래가 벽이 아니면 그쪽이 화면을 향한 **앞면**이다.
-            if (!cell.same(_TileCell.south)) {
-              addSprite(
-                faceTransforms,
-                faceRects,
-                'wall',
-                screen + Offset(0, camera.tilePixels * .42),
-              );
-            }
-          case _TileTerrain.moss:
-            break;
-        }
+        canvas.drawRect(tile, fill);
       }
     }
-    // 도트는 **보간하지 않는다.** 땅만 medium으로 부드럽게 그리고 캐릭터는
-    // none으로 또렷하게 그리면 발밑이 흐려서 같은 세계에 서 있지 않아 보인다.
-    // 아틀라스를 24칸 격자로 구웠으니 늘릴 때도 최근접이라야 결이 산다.
-    final paint = Paint()
-      ..isAntiAlias = false
-      ..filterQuality = FilterQuality.none;
-    final cullRect = Offset.zero & camera.viewport;
-    canvas.drawAtlas(
-      image,
-      baseTransforms,
-      baseRects,
-      null,
-      BlendMode.srcOver,
-      cullRect,
-      paint,
-    );
-    if (shoreRects.isNotEmpty) {
-      canvas.drawAtlas(
-        image,
-        shoreTransforms,
-        shoreRects,
-        null,
-        BlendMode.srcOver,
-        cullRect,
-        paint,
-      );
-    }
-    if (faceRects.isNotEmpty) {
-      canvas.drawAtlas(
-        image,
-        faceTransforms,
-        faceRects,
-        null,
-        BlendMode.srcOver,
-        cullRect,
-        paint,
-      );
-    }
-  }
-
-  /// 조각의 자리. **표에서 읽는다.**
-  ///
-  /// 앞 판은 `지역 번호 × 64 + 칸 번호`로 계산하고 이름·번호 표를 코드에
-  /// 박아 두었다. 아틀라스에 조각을 스물넷 더하자 한 지역이 88칸이 되면서
-  /// 계산이 통째로 어긋났고, 화면이 새까맣게 나왔다. 굽는 쪽과 그리는 쪽이
-  /// 같은 숫자를 각자 들고 있으면 언젠가 반드시 갈라진다.
-  ///
-  /// 이제 굽기가 내놓는 표(`expedition-tile-atlas-v2.json`)를 그대로 읽는다.
-  Rect _atlasRect(String sprite) =>
-      atlasSlots[sprite] ??
-      Rect.fromLTWH(_atlasGutter, _atlasGutter, _atlasCell, _atlasCell);
-
-  void _paintTile(Canvas canvas, int x, int y) {
-    final p = camera.project(Offset(x.toDouble(), y.toDouble()));
-    final tile = Rect.fromLTWH(
-      p.dx,
-      p.dy,
-      camera.tilePixels + .7,
-      camera.tilePixels + .7,
-    );
-    final terrain = field.terrainAt(x, y);
-    if (terrain == _TileTerrain.water) {
-      canvas.drawRect(tile, Paint()..color = field.palette.water);
-      final ripple = Paint()
-        ..color = field.palette.glow.withAlpha(64)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.15;
-      final phase = ((x * 7 + y * 3) % 5) / 5;
-      canvas.drawArc(
-        Rect.fromCenter(
-          center: tile.center + Offset(0, phase * 4 - 2),
-          width: tile.width * .58,
-          height: tile.height * .25,
-        ),
-        .18,
-        2.45,
-        false,
-        ripple,
-      );
-      return;
-    }
-    final alternate = (x * 13 + y * 7) % 5;
-    canvas.drawRect(
-      tile,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            alternate == 0 ? field.palette.floorB : field.palette.floorA,
-            field.palette.floorB,
-          ],
-        ).createShader(tile),
-    );
-    final joint = Paint()
-      ..color = field.palette.voidColor.withAlpha(86)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    final inset = tile.deflate(1.2);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(inset, const Radius.circular(3.5)),
-      joint,
-    );
-    if (terrain == _TileTerrain.moss) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            tile.left + tile.width * .1,
-            tile.bottom - tile.height * .18,
-            tile.width * .32,
-            tile.height * .1,
-          ),
-          const Radius.circular(5),
-        ),
-        Paint()..color = field.palette.moss.withAlpha(135),
-      );
+    // Only material boundaries get a line. Adjacent cells form one quiet area.
+    for (var y = top; y < bottom; y++) {
+      for (var x = left; x < right; x++) {
+        final terrain = field.terrainAt(x, y);
+        if (terrain != _TileTerrain.wall && terrain != _TileTerrain.water) {
+          continue;
+        }
+        final point = camera.project(Offset(x.toDouble(), y.toDouble()));
+        final tile = Rect.fromLTWH(
+            point.dx, point.dy, camera.tilePixels, camera.tilePixels);
+        if (field.terrainAt(x, y - 1) != terrain) {
+          canvas.drawLine(tile.topLeft, tile.topRight, edge);
+        }
+        if (field.terrainAt(x - 1, y) != terrain) {
+          canvas.drawLine(tile.topLeft, tile.bottomLeft, edge);
+        }
+        if (field.terrainAt(x + 1, y) != terrain) {
+          canvas.drawLine(tile.topRight, tile.bottomRight, edge);
+        }
+        if (field.terrainAt(x, y + 1) != terrain) {
+          if (terrain == _TileTerrain.wall) {
+            canvas.drawRect(
+                Rect.fromLTWH(tile.left, tile.bottom - camera.tilePixels * .2,
+                    tile.width, camera.tilePixels * .2),
+                fill..color = field.palette.stone);
+          }
+          canvas.drawLine(tile.bottomLeft, tile.bottomRight, edge);
+        }
+      }
     }
   }
 
@@ -3527,9 +3199,7 @@ class _TileWorldPainter extends CustomPainter {
           width: w * .82,
           height: math.max(4, h * .12),
         ),
-        Paint()
-          ..color = Colors.black.withAlpha(82)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+        Paint()..color = field.palette.voidColor.withAlpha(38),
       );
     }
     // 엉킴은 전투에 나오는 그 도트로 선다. 필드의 적과 전투의 적이 같은
@@ -3552,21 +3222,6 @@ class _TileWorldPainter extends CustomPainter {
           width,
           height,
         ),
-        Paint()
-          ..isAntiAlias = false
-          ..filterQuality = FilterQuality.none,
-      );
-      return;
-    }
-    final image = atlas;
-    if (image != null) {
-      final bob = object.kind == _TileObjectKind.item
-          ? math.sin(pulse * math.pi * 2) * h * .1
-          : 0.0;
-      canvas.drawImageRect(
-        image,
-        _atlasRect(object.kind.name),
-        bounds.shift(Offset(0, bob)),
         Paint()
           ..isAntiAlias = false
           ..filterQuality = FilterQuality.none,
@@ -3610,8 +3265,8 @@ class _TileWorldPainter extends CustomPainter {
     canvas.drawRect(
         Rect.fromLTWH(shaft.left, shaft.top, shaft.width * .3, shaft.height),
         Paint()..color = Colors.white.withAlpha(28));
-    final cap =
-        Rect.fromLTWH(r.left + r.width * .12, r.top, r.width * .76, r.height * .1);
+    final cap = Rect.fromLTWH(
+        r.left + r.width * .12, r.top, r.width * .76, r.height * .1);
     canvas.drawRRect(RRect.fromRectAndRadius(cap, const Radius.circular(2)),
         Paint()..color = Color.lerp(stone, Colors.white, .18)!);
   }
@@ -3828,65 +3483,14 @@ class _TileWorldPainter extends CustomPainter {
   ///
   /// 등불은 넓고 따뜻하게, 결정은 좁고 차갑게. 광원이 한 종류뿐이면 방마다
   /// 같은 빛이라 어느 방에 있는지 빛으로는 읽히지 않는다.
-  List<SceneLight> _sceneLights() {
-    final visible = camera.worldRect.inflate(2);
-    final lights = <SceneLight>[];
-    var seed = 0;
-    for (final source in field.objectsIn(visible)) {
-      final lantern = source.kind == _TileObjectKind.lantern;
-      final crystal = source.kind == _TileObjectKind.crystal;
-      if (!lantern && !crystal) continue;
-      if (!visible.contains(source.position)) continue;
-      seed++;
-      lights.add(
-        SceneLight(
-          // 빛은 불이 붙은 자리에서 난다. 발밑에서 내면 조형물이 통째로
-          // 떠오른 것처럼 보인다.
-          center:
-              camera.project(source.position - Offset(0, lantern ? .85 : .6)),
-          radius: camera.tilePixels * (lantern ? 3.6 : 2.7),
-          color: lantern ? lighting.lantern : lighting.crystal,
-          intensity: lantern
-              ? lanternFlicker(pulse * .5, seed, still: reduceMotion)
-              : .8,
-        ),
-      );
-    }
-    // 걷는 사람이 드는 빛.
-    //
-    // 등불이 없는 복도가 완전히 어두우면 분위기가 아니라 길 잃음이 된다.
-    // 다만 **좁고 약해야** 한다. 처음에 세 칸 반경으로 넉넉히 줬더니 화면
-    // 절반이 늘 밝아서, 방을 밝히는 게 등불인지 사람인지 구분이 안 됐다.
-    lights.add(
-      SceneLight(
-        center: camera.project(player - const Offset(0, .5)),
-        radius: camera.tilePixels * 2,
-        color: lighting.lantern,
-        intensity: .3,
-      ),
-    );
-    return lights;
-  }
-
-  void _paintLighting(Canvas canvas, Size size) {
-    paintExpeditionLighting(
-      canvas,
-      Offset.zero & size,
-      lighting: lighting,
-      lights: _sceneLights(),
-    );
-  }
-
   @override
   bool shouldRepaint(covariant _TileWorldPainter oldDelegate) =>
-      oldDelegate.atlasSlots != atlasSlots ||
       oldDelegate.camera.origin != camera.origin ||
       oldDelegate.player != player ||
       oldDelegate.lighting != lighting ||
       oldDelegate.reduceMotion != reduceMotion ||
       oldDelegate.foreground != foreground ||
       oldDelegate.pulse != pulse ||
-      oldDelegate.atlas != atlas ||
       oldDelegate.monster != monster ||
       oldDelegate.wipe != wipe ||
       oldDelegate.puffs.length != puffs.length ||

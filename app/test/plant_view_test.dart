@@ -125,7 +125,7 @@ void main() {
       expect(
         find.bySemanticsLabel(
           '식물 모습: 새싹몬, ${plantStageName(stage)} 단계, '
-          '${stage == 1 ? '하트점 씨앗, ' : ''}포근한 토분, 성장 분기 관찰 중',
+          '${stage == 1 ? '하트점 씨앗, ' : ''}포근한 토분, 성격이 자라는 중',
         ),
         findsOneWidget,
       );
@@ -133,7 +133,7 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('4단계 주결과 보조결이 하나의 이미지 접근성 라벨로 노출된다', (tester) async {
+  testWidgets('4단계 주 타입과 보조 타입이 하나의 이미지 접근성 라벨로 노출된다', (tester) async {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(
       const MaterialApp(
@@ -151,7 +151,7 @@ void main() {
     );
 
     final plant = find.bySemanticsLabel(
-      '식물 모습: 해바라기, 개화 단계, 햇살 유리 육묘관, 빗방울꽃 주결, 반짝꽃 보조결',
+      '식물 모습: 해바라기, 개화 단계, 햇살 유리 육묘관, 빗방울꽃 주 타입, 반짝꽃 보조 타입',
     );
     expect(plant, findsOneWidget);
     expect(tester.getSemantics(plant).flagsCollection.isImage, isTrue);
@@ -232,7 +232,7 @@ void main() {
     expect(hashes.toSet(), hasLength(PlantGrowthForm.values.length));
   });
 
-  test('4단계부터 같은 주결에도 보조결 표식이 서로 다르게 그려진다', () async {
+  test('4단계부터 같은 주 타입에도 보조 타입 표식이 서로 다르게 그려진다', () async {
     final hashes = <int>[];
     for (final secondary in [
       PlantGrowthForm.rainy,
@@ -606,7 +606,7 @@ void main() {
     }
   });
 
-  testWidgets('2단계 감정 단서가 없으면 같은 화풍의 관찰 중 새싹을 사용한다', (tester) async {
+  testWidgets('2단계 감정 단서가 없으면 같은 화풍의 성장 중 새싹을 사용한다', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: MediaQuery(

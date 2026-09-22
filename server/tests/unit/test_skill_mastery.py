@@ -73,11 +73,11 @@ def test_unlock_conditions_only_list_books_we_can_actually_count():
 
 
 def test_double_leaf_matches_the_documented_condition():
-    """설계서 7.4의 `마음 지키기 누적 30회`를 그대로 옮겼는지 본다."""
+    """설계서 7.4의 `방어 누적 30회`를 그대로 옮겼는지 본다."""
 
     from app.content.expeditions.skill_books import SKILL_BOOK_CATALOG
 
     condition = next(item for item in MASTERY_UNLOCKS if item[0] == "double_leaf")
     assert condition[2] == "guard"
     assert condition[3] == 30
-    assert SKILL_BOOK_CATALOG["double_leaf"]["unlock_hint"] == "마음 지키기 누적 30회"
+    assert SKILL_BOOK_CATALOG["double_leaf"]["unlock_hint"] == "방어 누적 30회"

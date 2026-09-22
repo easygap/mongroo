@@ -46,7 +46,7 @@ ActivePlant _plant({
 const _nuancedTraits = PlantGrowthTraits(
   stage: 4,
   revealState: 'secondary_revealed',
-  title: '별빛 품은 빗물결',
+  title: '별빛 품은 빗방울',
   traits: ['물방울을 오래 바라보는 결', '뜻밖의 반짝임을 좇는 결'],
   temperament: PlantTemperament(
     revealed: true,
@@ -62,7 +62,7 @@ void main() {
     expect(plant.storyChapters, hasLength(5));
     expect(
         plant.storyChapters.where((chapter) => chapter.unlocked), hasLength(3));
-    expect(plant.currentStoryChapter.title, '햇빛 자리의 발견');
+    expect(plant.currentStoryChapter.title, '창가 쟁탈전');
     expect(plant.nextStoryChapter?.stage, 4);
   });
 
@@ -79,12 +79,12 @@ void main() {
   test('만개하면 마지막 장이 열리고 다음 장은 없다', () {
     final plant = _plant(stage: 5, form: PlantGrowthForm.mosaic);
 
-    expect(plant.currentStoryChapter.title, contains('초대장'));
+    expect(plant.currentStoryChapter.title, contains('선반'));
     expect(plant.nextStoryChapter, isNull);
     expect(plant.storyChapters.every((chapter) => chapter.unlocked), isTrue);
   });
 
-  test('4단계 이야기는 보조결과 공개된 식물 기질을 함께 담는다', () {
+  test('4단계의 보조 성격은 구체적인 행동으로 드러난다', () {
     final plant = _plant(
       stage: 4,
       form: PlantGrowthForm.rainy,
@@ -92,12 +92,12 @@ void main() {
       growthTraits: _nuancedTraits,
     );
 
-    expect(plant.currentStoryChapter.title, contains('놀람빛'));
-    expect(plant.currentStoryChapter.story, contains('뜻밖의 반짝임을 좇는 결'));
-    expect(plant.currentStoryChapter.story, contains('호기심 많은 시선'));
+    expect(plant.currentStoryChapter.title, '비 오는 날의 합주');
+    expect(plant.currentStoryChapter.story, contains('바닥에서 뭔가를 주웠지만'));
+    expect(plant.currentStoryChapter.story, isNot(contains('식물 기질')));
   });
 
-  test('5단계 이야기는 완성된 보조결·기질·캐릭터 이름을 보존한다', () {
+  test('5단계는 캐릭터 이름과 이사 사건, 보조 성격의 행동을 보존한다', () {
     final plant = _plant(
       stage: 5,
       form: PlantGrowthForm.rainy,
@@ -105,9 +105,9 @@ void main() {
       growthTraits: _nuancedTraits,
     );
 
-    expect(plant.currentStoryChapter.title, contains('별빛 품은 빗물결'));
-    expect(plant.currentStoryChapter.story, contains('놀람 보조결'));
-    expect(plant.currentStoryChapter.story, contains('대화 습관으로 완성'));
+    expect(plant.currentStoryChapter.title, contains('별빛 품은 빗방울'));
+    expect(plant.currentStoryChapter.story, contains('물받이를 챙겼다'));
+    expect(plant.currentStoryChapter.story, contains('바닥에서 뭔가를 주웠지만'));
   });
 
   testWidgets('카드에서 씨앗부터 만개까지 다섯 모습을 한눈에 보여 준다', (tester) async {
@@ -148,7 +148,7 @@ void main() {
       growthTraits: const PlantGrowthTraits(
         stage: 4,
         revealState: 'secondary_revealed',
-        title: '별빛 품은 빗물결',
+        title: '별빛 품은 빗방울',
         traits: [
           '작은 소리도 끝까지 기다렸다가 차분하게 대답하는 아주 긴 캐릭터 특성',
           '뜻밖의 반짝임을 발견하면 잎 끝을 빠르게 흔드는 호기심 많은 습관',
@@ -188,7 +188,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(
-      find.bySemanticsLabel(RegExp('주결 빗방울꽃, 보조결 반짝꽃')),
+      find.bySemanticsLabel(RegExp('주 타입 빗방울꽃, 보조 타입 반짝꽃')),
       findsOneWidget,
     );
     semantics.dispose();
@@ -204,15 +204,15 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('햇빛 자리의 발견'));
+    await tester.tap(find.text('창가 쟁탈전'));
     await tester.pumpAndSettle();
 
-    expect(find.text('마음빛 조합'), findsOneWidget);
+    expect(find.text('기록한 감정'), findsOneWidget);
     expect(find.text('50%'), findsOneWidget);
     expect(find.text('30%'), findsOneWidget);
     expect(find.text('20%'), findsOneWidget);
     expect(
-      find.textContaining('어떤 마음도 실패가 아니에요'),
+      find.textContaining('기록한 감정은 캐릭터의 모습과 성격만 바꿔요'),
       findsOneWidget,
     );
     expect(
@@ -239,9 +239,9 @@ void main() {
     await tester.tap(find.text(plant.currentStoryChapter.title));
     await tester.pumpAndSettle();
 
-    expect(find.text('마음빛 조합'), findsNothing);
+    expect(find.text('기록한 감정'), findsNothing);
     expect(find.text('50%'), findsNothing);
-    expect(find.textContaining('새싹에 첫 마음빛이'), findsOneWidget);
+    expect(find.textContaining('새싹의 색이 조금씩'), findsOneWidget);
   });
 
   testWidgets('씨앗 단계에서는 마음빛 비율과 새싹 외형을 미리 공개하지 않는다', (tester) async {
@@ -265,8 +265,8 @@ void main() {
     await tester.tap(find.text(plant.currentStoryChapter.title));
     await tester.pumpAndSettle();
 
-    expect(find.text('마음빛 조합'), findsNothing);
+    expect(find.text('기록한 감정'), findsNothing);
     expect(find.text('50%'), findsNothing);
-    expect(find.textContaining('씨앗 안에서는 아직 마음빛이'), findsOneWidget);
+    expect(find.textContaining('씨앗 단계에서는 아직 감정에 따른 차이가'), findsOneWidget);
   });
 }

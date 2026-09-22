@@ -41,11 +41,17 @@ class ExpeditionCombatSpriteLayer extends StatelessWidget {
     required this.action,
     required this.cue,
     required this.reduceMotion,
+    this.actorAnchor,
+    this.enemyAnchor,
+    this.stageBounds,
   });
 
   final Animation<double> action;
   final ExpeditionActionCue cue;
   final bool reduceMotion;
+  final Offset? actorAnchor;
+  final Offset? enemyAnchor;
+  final Rect? stageBounds;
 
   @override
   Widget build(BuildContext context) => RepaintBoundary(
@@ -66,6 +72,9 @@ class ExpeditionCombatSpriteLayer extends StatelessWidget {
                   tint: _combatHexColor(cue.emotionVfxPrimary),
                   secondaryTint: _combatHexColor(cue.emotionVfxSecondary),
                   intensity: cue.vfxIntensity,
+                  actorAnchor: actorAnchor,
+                  enemyAnchor: enemyAnchor,
+                  stageBounds: stageBounds,
                 ),
               );
               final fusion = cue.fusionEffect;
@@ -85,6 +94,9 @@ class ExpeditionCombatSpriteLayer extends StatelessWidget {
                     intensity: 1.08,
                     opacityScale: .26,
                     scale: 1.04,
+                    actorAnchor: actorAnchor,
+                    enemyAnchor: enemyAnchor,
+                    stageBounds: stageBounds,
                   ),
                 );
               }
@@ -99,6 +111,9 @@ class ExpeditionCombatSpriteLayer extends StatelessWidget {
                   end: ExpeditionCombatTimeline.enemyEffectEnd(cue),
                   reduceMotion: reduceMotion,
                   intensity: 1,
+                  actorAnchor: actorAnchor,
+                  enemyAnchor: enemyAnchor,
+                  stageBounds: stageBounds,
                 ),
               );
             }
@@ -121,6 +136,9 @@ class _EffectSequence extends StatelessWidget {
     this.secondaryTint,
     this.opacityScale = 1,
     this.scale = 1,
+    this.actorAnchor,
+    this.enemyAnchor,
+    this.stageBounds,
   });
 
   final ExpeditionCombatEffectSpec effect;
@@ -133,6 +151,9 @@ class _EffectSequence extends StatelessWidget {
   final Color? secondaryTint;
   final double opacityScale;
   final double scale;
+  final Offset? actorAnchor;
+  final Offset? enemyAnchor;
+  final Rect? stageBounds;
 
   @override
   Widget build(BuildContext context) {
@@ -166,7 +187,7 @@ class _EffectSequence extends StatelessWidget {
       excludeFromSemantics: true,
     );
     final safeIntensity = intensity.clamp(.8, 1.2).toDouble();
-    return Transform.scale(
+    final visual = Transform.scale(
       scale: scale * (1 + (safeIntensity - 1) * .08),
       child: Opacity(
         opacity: (edgeOpacity * opacityScale).clamp(0.0, 1.0),
@@ -176,7 +197,7 @@ class _EffectSequence extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   image,
-                  // 성장결 색은 흐림 없이 얇게 한 겹만 얹는다.
+                  // 성장 타입 색은 흐림 없이 얇게 한 겹만 얹는다.
                   Opacity(
                     opacity: .12,
                     child: Image.asset(
@@ -196,7 +217,54 @@ class _EffectSequence extends StatelessWidget {
               ),
       ),
     );
+    final bounds = stageBounds;
+    final actor = actorAnchor;
+    final enemy = enemyAnchor;
+    if (bounds == null || actor == null || enemy == null) return visual;
+    final rect = expeditionEffectRect(effect,
+        stageBounds: bounds, actor: actor, enemy: enemy);
+    return Positioned.fromRect(
+      rect: bounds,
+      child: ClipRect(
+        child: Stack(clipBehavior: Clip.none, children: [
+          Positioned.fromRect(
+            rect: rect.shift(-bounds.topLeft),
+            child: visual,
+          ),
+        ]),
+      ),
+    );
   }
+}
+
+/// Place authored pivots in the playable space, independent of HUD height.
+Rect expeditionEffectRect(
+  ExpeditionCombatEffectSpec effect, {
+  required Rect stageBounds,
+  required Offset actor,
+  required Offset enemy,
+}) {
+  final center = Offset.lerp(actor, enemy, .5)!;
+  final anchor = switch (effect.anchor) {
+    'actor_hand_r' || 'actor_center' || 'party_all' => actor,
+    'tangle_center' ||
+    'beast_center' ||
+    'guardian_center' ||
+    'guardian_foreleg_r' =>
+      enemy,
+    _ => center,
+  };
+  final aspect = effect.frameWidth / effect.frameHeight;
+  var width = math.min(stageBounds.width * .94, stageBounds.height * aspect);
+  if (effect.anchor == 'actor_hand_r') {
+    // The cast sheet travels from its left pivot towards the right contact.
+    width = math.min(width, (enemy.dx - actor.dx).abs() / .78);
+  } else if (effect.anchor == 'actor_center' || effect.anchor == 'party_all') {
+    width *= .72;
+  }
+  final height = width / aspect;
+  return Rect.fromLTWH(anchor.dx - width * effect.pivotX,
+      anchor.dy - height * effect.pivotY, width, height);
 }
 
 Color? _combatHexColor(String? value) {

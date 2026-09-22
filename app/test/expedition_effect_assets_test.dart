@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// 재생할 때가 되어서야 프레임을 못 찾는다. 단위 테스트도 위젯 테스트도 에셋을
 /// 실제로 열지 않으니 아무도 안 잡는다.
 ///
-/// 실제로 한 번 그랬다 — 모아결 기본 공격 시트를 새로 구워 manifest까지 넣고
+/// 실제로 한 번 그랬다 — 무지개 공격 시트를 새로 구워 manifest까지 넣고
 /// pubspec만 빠뜨렸다. 손으로 세 보다 알았다.
 void main() {
   test('manifest에 있는 연출 폴더는 pubspec에도 다 적혀 있다', () {

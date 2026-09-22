@@ -4,15 +4,15 @@ from app.ai.llm import FakeLlm
 
 GROWTH_PERSONA = {
     "persona_key": "gentle_listener",
-    "persona_name": "빗물결",
+    "persona_name": "빗방울",
     "trait": "섬세함·경청",
     "voice_line": "잎 끝의 물방울, 떨어질 때까지 지켜볼래.",
 }
 
 
-def test_greeting_uses_natural_korean_subject_particle():
-    assert greeting_line("sprout", "새싹몬").startswith("새싹몬이 ")
-    assert greeting_line("sunflower", "해바라기").startswith("해바라기가 ")
+def test_greetings_are_short_dialogue_without_self_narration():
+    assert greeting_line("sprout", "새싹몬") == "왔구나. 오늘 무슨 일 있었어?"
+    assert greeting_line("sunflower", "해바라기").startswith("안녕!")
     assert "이(가)" not in greeting_line("sprout", "새싹몬")
 
 
@@ -38,15 +38,15 @@ def test_growth_persona_is_added_to_prompt_without_replacing_species_identity():
     )
     system = messages[0]["content"]
     assert "가시니" in system and "무뚝뚝하지만 속정 깊은 선인장" in system
-    assert "빗물결" in system and "섬세함·경청" in system
+    assert "빗방울" in system and "섬세함·경청" in system
     assert GROWTH_PERSONA["voice_line"] in system
     assert "사용자를 진단하거나 평가" in system
 
 
-def test_growth_persona_greeting_uses_the_revealed_voice_line():
+def test_growth_persona_greeting_keeps_voice_without_reciting_lore():
     line = greeting_line("sprout", "초록이", GROWTH_PERSONA)
-    assert line.startswith("잎 끝의 물방울")
-    assert line.endswith("오늘 이야기도 들려줄래?")
+    assert line == "여기 있어. 천천히 얘기해도 돼."
+    assert GROWTH_PERSONA["voice_line"] not in line
 
 
 def test_growth_context_adds_secondary_temperament_and_stage_to_prompt():
@@ -54,7 +54,7 @@ def test_growth_context_adds_secondary_temperament_and_stage_to_prompt():
         "stage": 4,
         "growth_phase": "bloom",
         "growth_traits": {
-            "title": "별빛 품은 빗물결",
+            "title": "별빛 품은 빗방울",
             "secondary": {
                 "emotion": "surprise",
                 "emotion_name": "놀람",
@@ -70,7 +70,7 @@ def test_growth_context_adds_secondary_temperament_and_stage_to_prompt():
                 "focus": "잃거나 놓친 것",
                 "question_style": "가장 아쉬운 한 가지 묻기",
                 "secondary_modifier": "예상 밖의 단서를 놓치지 않는다",
-                "stage_expression": "보조결의 관찰 방식이 섞인다",
+                "stage_expression": "보조 타입의 관찰 방식이 섞인다",
             },
         },
     }
@@ -91,7 +91,8 @@ def test_growth_context_adds_secondary_temperament_and_stage_to_prompt():
     assert "고요한 움직임 · 깊이 느끼는 반응" in system
 
     greeting = greeting_line("cactus", "초록이", GROWTH_PERSONA, context)
-    assert "별빛도 꽃봉오리에 같이 번졌어" in greeting
+    assert "꽃봉오리" not in greeting
+    assert len(greeting) < 40
 
 
 async def test_fake_llm_varies_by_scene_species_growth_persona_and_secondary():
@@ -123,16 +124,16 @@ async def test_fake_llm_varies_by_scene_species_growth_persona_and_secondary():
         context,
     )
     reply = await FakeLlm().chat(messages)
-    # 개화(4단계)부터는 원화가 사람 형태라 다 자란 몸짓을 쓴다.
-    assert "가시를 세우지 않은 채" in reply
-    assert "찾지 못한 채 돌아서야 했던" in reply
-    assert "예상 밖의 작은 단서" in reply
+    assert "결국 못 찾았구나" in reply
+    assert "가시" not in reply
+    assert reply.count("?") == 1
+    assert len(reply) < 90
     assert "가장 아쉬움이 남은 지점" in reply
 
     angry_persona = {
         **GROWTH_PERSONA,
         "persona_key": "brave_guardian",
-        "persona_name": "불씨결",
+        "persona_name": "불씨",
         "trait": "강인함·솔직함",
     }
     angry_messages = build_chat_messages(
@@ -145,65 +146,56 @@ async def test_fake_llm_varies_by_scene_species_growth_persona_and_secondary():
         {"stage": 3, "growth_phase": "branching", "growth_traits": {}},
     )
     angry_reply = await FakeLlm().chat(angry_messages)
-    assert "큰 잎을 살짝 모으고" in angry_reply
-    assert "경계가 세게 건드려졌던" in angry_reply
+    assert "그 일에 화가 났구나" in angry_reply
+    assert "큰 잎" not in angry_reply
     assert "무엇을 지키고 싶었어" in angry_reply
     assert angry_reply != reply
 
 
 async def test_fake_llm_keeps_early_species_voice_before_growth_branch():
-    sprout = build_chat_messages("sprout", "콩이", "emotion_check", [], None)
-    cactus = build_chat_messages("cactus", "가시", "emotion_check", [], None)
+    sprout = build_chat_messages("sprout", "콩이", "greeting", [], None)
+    cactus = build_chat_messages("cactus", "가시", "greeting", [], None)
     sprout_reply = await FakeLlm().chat(sprout)
     cactus_reply = await FakeLlm().chat(cactus)
-    assert sprout_reply.startswith("새잎을 네 쪽으로")
-    assert cactus_reply.startswith("가시는 세워 둔 채")
+    assert sprout_reply.startswith("왔구나.")
+    assert cactus_reply.startswith("왔네.")
     assert sprout_reply != cactus_reply
 
 
-async def test_grown_stage_body_language_matches_the_humanoid_artwork():
-    """4단계부터 원화가 사람 형태라 화분·여린 줄기 몸짓이 그림과 어긋났다."""
-    growth_persona = {
-        "persona_key": "free_spirit",
-        "persona_name": "모아결",
-        "trait": "유연함·다채로움",
-        "voice_line": "오늘은 잎마다 다른 색이야.",
-    }
-    turn = [{"role": "user", "content": "오늘은 좀 지쳤어."}]
-
-    sprout_reply = await FakeLlm().chat(
-        build_chat_messages(
+async def test_replies_do_not_insert_body_language_or_growth_lore():
+    for stage in (1, 2, 4, 5):
+        messages = build_chat_messages(
             "sprout",
             "모아",
             "explore",
-            turn,
+            [{"role": "user", "content": "오늘은 좀 지쳤어."}],
             None,
-            growth_persona,
-            {"stage": 2, "growth_phase": "sprout", "growth_traits": {}},
+            GROWTH_PERSONA,
+            {"stage": stage, "growth_phase": "bloom", "growth_traits": {}},
         )
-    )
-    bloom_reply = await FakeLlm().chat(
-        build_chat_messages(
-            "sprout",
-            "모아",
-            "explore",
-            turn,
-            None,
-            growth_persona,
-            {"stage": 5, "growth_phase": "full_bloom", "growth_traits": {}},
-        )
-    )
+        reply = await FakeLlm().chat(messages)
+        assert "여린 줄기" not in reply
+        assert "몸을" not in reply
+        assert "꽃봉오리" not in reply
+        assert len(reply) < 90
 
-    assert sprout_reply.startswith("여린 줄기를")
-    assert not bloom_reply.startswith("여린 줄기를")
-    assert "여린 줄기" not in bloom_reply
 
-    # 다 자란 몸짓에는 화분에 담긴 어린 몸을 가리키는 말이 남지 않는다.
-    beats = ("greeting", "emotion_check", "explore", "reframe_option", "action")
-    for species in ("sprout", "cactus", "sunflower"):
-        for beat in beats:
-            grown = FakeLlm._species_touch(species, beat, 5)
-            assert grown, f"{species}/{beat} 몸짓이 비었습니다"
-            assert "여린" not in grown
-            assert "화분 가장자리" not in grown
-            assert "고개를 내밀었어" not in grown
+async def test_crying_emoticon_does_not_invent_a_lost_object():
+    messages = build_chat_messages(
+        "sprout",
+        "콩이",
+        "explore",
+        [{"role": "user", "content": "오늘은 너무 피곤해 ㅠㅠ"}],
+        None,
+        GROWTH_PERSONA,
+    )
+    reply = await FakeLlm().chat(messages)
+    assert "못 찾" not in reply
+
+
+def test_live_prompt_requires_specific_brief_nonjudgmental_dialogue():
+    system = build_chat_messages("sprout", "콩이", "explore", [], None)[0]["content"]
+    assert "사용자가 말하지 않은" in system
+    assert "보통 1~2문장" in system
+    assert "모든 답을 질문이나 조언으로 끝내지 않는다" in system
+    assert "진단, 처방" in system

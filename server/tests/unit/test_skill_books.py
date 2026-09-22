@@ -351,7 +351,7 @@ def test_book_effects_are_flat_and_never_scale():
         with_book = kit_with("leaf_greave", stats=stats, rarity=rarity, level=level)
         assert with_book["guard"]["guard"] - bare["guard"]["guard"] == 1
 
-    # 또렷한 겨냥 — 기본 공격 위력 +3. 정액이라 등급 계수를 타지 않는다.
+    # 또렷한 겨냥 — 공격 위력 +3. 정액이라 등급 계수를 타지 않는다.
     for stats, rarity, level in ((weak, 1, 9), (strong, 5, 30)):
         bare = member_battle_kit(
             _profile({"stats": stats, "rarity": rarity, "level": level})
@@ -383,11 +383,11 @@ def test_opening_books_change_the_battle_start_once():
 
     assert opening_modifiers(party())["focus"] == 0
     assert opening_modifiers(party("first_breath"))["focus"] == 1
-    # 발아 시계의 태엽 — 집중력 +2에 1라운드 스킬 사용 불가라는 반대급부.
+    # 발아 시계의 태엽 — 기력 +2에 1라운드 스킬 사용 불가라는 반대급부.
     gear = opening_modifiers(party("germination_gear"))
     assert gear["focus"] == 2
     assert gear["first_round_skill_locked"] == [1]
-    # 물결 종지기의 종 — 라운드 +1에 집중력 최대치 −1.
+    # 물결 종지기의 종 — 라운드 +1에 기력 최대치 −1.
     chime = opening_modifiers(party("bellringer_chime"))
     assert chime["max_rounds"] == 1
     assert chime["max_focus"] == -1
@@ -521,7 +521,7 @@ def _party_with(code: str | None) -> list[dict]:
 
 
 def test_germination_gear_locks_skills_in_the_first_round():
-    """집중력 +2를 받은 대원은 1라운드에 스킬을 쓸 수 없다."""
+    """기력 +2를 받은 대원은 1라운드에 스킬을 쓸 수 없다."""
 
     from app.content.expeditions.combat import (
         CombatRuleError,
@@ -563,7 +563,7 @@ def test_germination_gear_locks_skills_in_the_first_round():
 def test_book_locks_are_announced_on_the_slot_before_the_tap():
     """눌러 본 뒤 거절당하는 대신 슬롯에서 왜 못 쓰는지 먼저 읽힌다.
 
-    이 화면의 다른 잠금은 전부 미리 말한다 - 집중력이 모자라면 `집중 부족`,
+    이 화면의 다른 잠금은 전부 미리 말한다 - 기력이 모자라면 `기력 부족`,
     레벨이 모자라면 `Lv.N 해금`이다. 기록서가 건 잠금만 예외였다.
     """
 
@@ -576,7 +576,7 @@ def test_book_locks_are_announced_on_the_slot_before_the_tap():
 
     encounter = _encounter_fixture()
 
-    # 발아 시계 — 1라운드에 스킬 넷이 잠기고 기본 공격·지키기는 열려 있다.
+    # 발아 시계 — 1라운드에 스킬 넷이 잠기고 공격·지키기는 열려 있다.
     profiles = _party_with("germination_gear")
     battle = new_guardian_battle("gear", encounter, profiles)
     kit = guardian_battle_payload(battle, encounter, profiles)["party"][0]["kit"]
@@ -647,7 +647,7 @@ def test_germination_gear_lock_lifts_after_the_first_round():
 
 
 def test_bellringer_chime_pays_with_a_lower_focus_cap():
-    """라운드 +1을 받은 대신 그 전투의 집중력 최대치가 1 줄어든다."""
+    """라운드 +1을 받은 대신 그 전투의 기력 최대치가 1 줄어든다."""
 
     from app.content.expeditions.combat import new_guardian_battle, submit_guardian_action
 
@@ -659,7 +659,7 @@ def test_bellringer_chime_pays_with_a_lower_focus_cap():
     assert chimed["max_rounds"] == bare["max_rounds"] + 1
     assert chimed["max_focus"] == bare["max_focus"] - 1
 
-    # 줄어든 상한이 실제 판정에서도 지켜진다. 지키기로 집중력을 계속 모아도
+    # 줄어든 상한이 실제 판정에서도 지켜진다. 지키기로 기력을 계속 모아도
     # 원래 상한(5)까지 오르지 않는다.
     state = chimed
     for _ in range(3):
@@ -694,9 +694,9 @@ def _party_book(code: str) -> list[dict]:
 
 
 def _battle_with(code: str, encounter: dict, profiles: list[dict], focus: int):
-    """집중력에 여유를 둔 전투를 만든다.
+    """기력에 여유를 둔 전투를 만든다.
 
-    Lv30 파티는 시작 집중력이 이미 상한이라 +1이 상한에 먹혀 보이지 않는다.
+    Lv30 파티는 시작 기력이 이미 상한이라 +1이 상한에 먹혀 보이지 않는다.
     트리거가 실제로 더해지는지 보려면 여유가 있어야 한다.
     """
 
@@ -768,14 +768,14 @@ def test_focus_knot_refunds_one_focus_after_a_skill():
     )
     assert knotted["focus"] == bare["focus"] + 1
 
-    # 집중력이 모자라면 트리거가 있어도 쓸 수 없다.
+    # 기력이 모자라면 트리거가 있어도 쓸 수 없다.
     poor = _battle_with("poor", encounter, book_profiles, 0)
     try:
         submit_guardian_action(
             poor, {"member_id": 1, "action": "unique_1"}, encounter, book_profiles
         )
     except CombatRuleError as error:
-        assert "집중력" in error.message
+        assert "기력" in error.message
     else:  # pragma: no cover
         raise AssertionError("비용 판정이 트리거로 느슨해졌습니다")
 
@@ -820,7 +820,7 @@ def test_command_book_becomes_a_real_action_with_grade_priced_focus():
     assert slot["lock_reason"] is None
     assert slot["code"] == "short_cheer"
     assert slot["name"] == "짧은 격려"
-    # 1등급은 집중력 0으로 쓴다.
+    # 1등급은 기력 0으로 쓴다.
     assert slot["focus_cost"] == 0
     # 기록서는 피해를 주지 않는 지원 도구다.
     assert slot["power"] == 0
@@ -961,7 +961,7 @@ def test_reviving_root_costs_one_focus_as_a_grade_two_book():
         item for item in kit["selected_skills"] if item["slot"] == "selected_1"
     )
     assert slot["available"] is True
-    # 7.5.1 — 2등급 command는 집중력 1이다.
+    # 7.5.1 — 2등급 command는 기력 1이다.
     assert slot["focus_cost"] == 1
 
 
@@ -1106,7 +1106,7 @@ def test_choice_needing_books_are_declared_but_not_wired():
 
 
 def _kel_encounter() -> dict:
-    """성장결 약점이 실제로 있는 교전.
+    """성장 타입 약점이 실제로 있는 교전.
 
     기본 교전 fixture는 `weak_element`가 없어 모든 공격이 neutral이다. 조율기는
     상성을 바꾸는 책이라 바꿀 상성이 있어야 검증이 된다. 기본 캐릭터의 결이
@@ -1140,7 +1140,7 @@ def test_resonance_tuner_shows_what_there_is_to_choose():
 
 
 def test_resonance_tuner_rejects_a_missing_or_pointless_choice():
-    """고르지 않았거나 지금과 같은 결이면 집중력을 쓰기 전에 막는다."""
+    """고르지 않았거나 지금과 같은 결이면 기력을 쓰기 전에 막는다."""
 
     import pytest
 
@@ -1162,7 +1162,7 @@ def test_resonance_tuner_rejects_a_missing_or_pointless_choice():
         with pytest.raises(CombatRuleError) as caught:
             submit_guardian_action(state, command, encounter, profiles)
         assert caught.value.code == "EXPEDITION_COMBAT_CHOICE_REQUIRED"
-        # 막힌 명령은 집중력을 가져가지 않는다.
+        # 막힌 명령은 기력을 가져가지 않는다.
         assert int(state["focus"]) == before
 
 
@@ -1441,7 +1441,7 @@ def test_encyclopedia_swaps_the_first_slot_for_the_rest_of_the_battle():
 
 
 def test_encyclopedia_locks_skills_for_the_round_it_swapped():
-    """반대급부 — 바꿔 끼는 라운드에는 기본 공격과 마음 지키기만 남는다."""
+    """반대급부 — 바꿔 끼는 라운드에는 공격과 방어만 남는다."""
 
     import pytest
 
@@ -1700,7 +1700,7 @@ def test_ringcount_record_lifts_the_whole_party_and_costs_the_holder_their_guard
                 state, {"member_id": 1, "action": "guard"}, encounter, profiles
             )
         assert caught.value.code == "EXPEDITION_COMBAT_GUARD_LOCKED"
-        # 기본 공격은 언제나 남는다 — 최소 한 행동은 항상 합법이다.
+        # 공격은 언제나 남는다 — 최소 한 행동은 항상 합법이다.
         state = submit_guardian_action(
             state, {"member_id": 1, "action": "attack"}, encounter, profiles
         )
@@ -1726,7 +1726,7 @@ def test_shadow_oath_sharpens_weakness_and_dulls_neutral_without_touching_resist
     from app.content.expeditions.combat_identity import scaled_power
 
     # 비교 상대는 **행동 수치를 건드리지 않는** 책이어야 한다. `또렷한 겨냥`은
-    # 기본 공격 위력을 +3 하므로 여기서는 기준이 될 수 없다.
+    # 공격 위력을 +3 하므로 여기서는 기준이 될 수 없다.
     def basic(code: str, **kwargs) -> dict:
         return member_battle_kit(_b2_party(code)[0], **kwargs)["basic"]
 

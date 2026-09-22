@@ -981,7 +981,7 @@ async def test_harvest_form_claim_requires_matching_final_form(client, session_f
             "type": "harvest_form",
             "form": "sunny",
             "target": 1,
-            "label": "햇살결 식물을 1회 수확하면 받기",
+            "label": "햇살 식물을 1회 수확하면 받기",
         },
     )
     rainy_id = await _create_acquisition_item(
@@ -1002,7 +1002,7 @@ async def test_harvest_form_claim_requires_matching_final_form(client, session_f
     initial_by_code = {item["code"]: item for item in initial.json()["items"]}
     assert initial_by_code["deco_test_resonance_sunny"]["acquisition"] == {
         "type": "harvest_form",
-        "label": "햇살결 식물을 1회 수확하면 받기",
+        "label": "햇살 식물을 1회 수확하면 받기",
         "current": 0,
         "target": 1,
         "eligible": False,
@@ -1020,7 +1020,7 @@ async def test_harvest_form_claim_requires_matching_final_form(client, session_f
             Plant(
                 user_id=user_id,
                 species_id=active.species_id,
-                name="첫 햇살결",
+                name="첫 햇살",
                 exp=1000,
                 status="harvested",
                 planted_at=observed_at - timedelta(days=3),
@@ -1039,7 +1039,7 @@ async def test_harvest_form_claim_requires_matching_final_form(client, session_f
     rainy = by_code["deco_test_resonance_rainy"]["acquisition"]
     assert sunny == {
         "type": "harvest_form",
-        "label": "햇살결 식물을 1회 수확하면 받기",
+        "label": "햇살 식물을 1회 수확하면 받기",
         "current": 1,
         "target": 1,
         "eligible": True,

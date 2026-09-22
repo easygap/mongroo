@@ -58,7 +58,7 @@ class ExpeditionBattleSettings {
 
   /// 기기에 남길 설정만 직렬화한다.
   ///
-  /// **AUTO는 일부러 저장하지 않는다.** 품질 기준이 `자동 지휘는 초기 OFF`를
+  /// **AUTO는 일부러 저장하지 않는다.** 품질 기준이 `자동 전투는 초기 OFF`를
   /// 요구한다 — 지난번에 켜 뒀다는 이유로 이번 전투를 앱이 대신 지휘하기
   /// 시작하면, 사용자가 조작하지 않은 사이에 결과가 확정된다.
   String encode() => jsonEncode({
@@ -94,29 +94,43 @@ class ExpeditionBattleSettingsNotifier
   /// 저장된 설정을 다 읽기 전에는 저장하지 않는다. 앱을 켜자마자 기본값으로
   /// 덮어써 지난 선택을 지우는 일을 막는다.
   bool _restored = false;
+  bool _editedWhileRestoring = false;
+  bool _alive = true;
+  Future<void> _saveQueue = Future.value();
 
   @override
   ExpeditionBattleSettings build() {
+    ref.onDispose(() => _alive = false);
     unawaited(_restore());
     return const ExpeditionBattleSettings();
   }
 
   Future<void> _restore() async {
     final encoded = await ref.read(expeditionSettingsStoreProvider).load();
-    if (encoded != null) {
+    if (!_alive) return;
+    if (encoded != null && !_editedWhileRestoring) {
       try {
         // AUTO는 저장하지 않으므로 되살린 뒤에도 항상 꺼진 상태로 시작한다.
-        state = ExpeditionBattleSettings.decode(encoded);
+        state = ExpeditionBattleSettings.decode(encoded)
+            .copyWith(autoMode: state.autoMode);
       } on Object {
         // 이전 스키마나 손상된 값이면 기본 설정으로 계속 진행한다.
       }
     }
     _restored = true;
+    if (_editedWhileRestoring) _persist();
   }
 
   void _persist() {
-    if (!_restored) return;
-    unawaited(ref.read(expeditionSettingsStoreProvider).save(state.encode()));
+    if (!_restored) {
+      _editedWhileRestoring = true;
+      return;
+    }
+    final store = ref.read(expeditionSettingsStoreProvider);
+    final encoded = state.encode();
+    _saveQueue = _saveQueue.then((_) async {
+      await store.save(encoded);
+    }).catchError((Object _) {});
   }
 
   void cycleAutoMode() {

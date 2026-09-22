@@ -142,7 +142,7 @@ async def test_harvest_waits_for_pending_and_three_analyzed_diaries(
     assert active["harvestable"] is True
     assert active["growth_branch"] == "joy"
     assert active["growth_form"] == "sunny"
-    assert active["growth_persona"]["persona_name"] == "햇살결"
+    assert active["growth_persona"]["persona_name"] == "햇살"
     assert active["growth_profile"]["counts"]["sadness"] == 0
     assert active["growth_profile"]["counts"]["anger"] == 0
 
@@ -236,7 +236,7 @@ async def test_safety_skipped_diary_does_not_trap_a_mature_plant(
     )
     assert harvested.status_code == 200, harvested.text
     assert harvested.json()["plant"]["final_form"] == "mosaic"
-    assert harvested.json()["plant"]["growth_persona"]["persona_name"] == "모아결"
+    assert harvested.json()["plant"]["growth_persona"]["persona_name"] == "무지개"
 
 
 async def test_whitespace_only_legacy_diary_cannot_bypass_harvest_evidence(

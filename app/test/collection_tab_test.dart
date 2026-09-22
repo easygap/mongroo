@@ -272,7 +272,7 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('마음결 기념품을 일반 아이템과 나누고 수확 기억을 연다', (tester) async {
+  testWidgets('성장 기념품을 일반 아이템과 나누고 수확 기억을 연다', (tester) async {
     final collection = GardenCollection.fromJson({
       'seed_balance': 20,
       'items': const [],
@@ -306,7 +306,7 @@ void main() {
 
     await pumpCollection(tester, collection);
 
-    expect(find.text('마음결 기념품'), findsOneWidget);
+    expect(find.text('성장 기념품'), findsOneWidget);
     expect(find.textContaining('감정마다 가치와 획득 난이도는 같아요'), findsOneWidget);
     expect(find.text('빗방울 경청 풍경'), findsOneWidget);
     await tester.ensureVisible(find.text('빗방울 경청 풍경'));

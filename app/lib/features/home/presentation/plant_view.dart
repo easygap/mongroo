@@ -273,9 +273,9 @@ class _PlantViewState extends State<PlantView> with TickerProviderStateMixin {
     final visual = widget.growthVisual ??
         PlantGrowthVisual.fallback(speciesCode: widget.speciesCode);
     final branchLabel = clamped < 3 || revealedForm == null
-        ? '성장 분기 관찰 중'
+        ? '성격이 자라는 중'
         : clamped >= 4 && widget.secondaryForm != null
-            ? '${revealedForm.label} 주결, ${widget.secondaryForm!.label} 보조결'
+            ? '${revealedForm.label} 주 타입, ${widget.secondaryForm!.label} 보조 타입'
             : '${revealedForm.label}, ${revealedForm.personalityName}';
     final visualLabel = clamped == 1
         ? '${visual.seedLabel}, ${visual.vesselLabel}'

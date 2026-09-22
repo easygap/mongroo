@@ -81,7 +81,7 @@ class MoodEntryTile extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        fontFamily: AppTheme.pixelFont,
+                        fontFamily: AppTheme.bodyFont,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),

@@ -9,6 +9,12 @@ import 'package:mongroo/features/adventure/data/adventure_repository.dart';
 import 'package:mongroo/features/adventure/domain/adventure_models.dart';
 import 'package:mongroo/features/adventure/presentation/adventure_controller.dart';
 import 'package:mongroo/features/adventure/presentation/adventure_tab.dart';
+import 'package:mongroo/features/expedition/presentation/expedition_controller.dart';
+
+class _EmptyExpeditionController extends ExpeditionController {
+  @override
+  ExpeditionUiState build() => const ExpeditionUiState(loading: false);
+}
 
 class _AdventureRepository extends AdventureRepository {
   _AdventureRepository(this.value) : super(Dio());
@@ -287,7 +293,7 @@ AdventureState _adventureState({
                 'discovered': true,
                 'title': '비어 있는 나이테',
                 'text': '지금의 기록을 기다리고 있었어요.',
-                'detail': '호흡을 고르고 집중하기 · 성장 공명',
+                'detail': '호흡을 고르고 집중하기 · 성장 보너스',
                 'discovered_at': '2026-08-04T03:00:00Z',
               },
               {
@@ -318,6 +324,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          expeditionControllerProvider
+              .overrideWith(_EmptyExpeditionController.new),
           adventureRepositoryProvider.overrideWithValue(
             repository,
           ),
@@ -331,7 +339,7 @@ void main() {
             ),
             child: child!,
           ),
-          home: const Scaffold(body: AdventureTab()),
+          home: const Scaffold(body: AdventureTab(initialActivity: 2)),
         ),
       ),
     );
@@ -339,13 +347,15 @@ void main() {
     expectTapTargets(tester, screen: '모험 탭');
 
     await tester.scrollUntilVisible(
-      find.text('이번 주 탐험 약속'),
+      find.text('이번 주 기록'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
     expect(find.text('씨앗 +20'), findsOneWidget);
     expect(find.text('받기 완료'), findsOneWidget);
 
+    await tester.tap(find.byKey(const ValueKey('adventure-activity-1')));
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.text('오늘 잘 맞는 길'),
       500,
@@ -353,8 +363,10 @@ void main() {
     );
     expect(find.text('수집 예상 ×2'), findsOneWidget);
 
+    await tester.tap(find.byKey(const ValueKey('adventure-activity-2')));
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('탐험 기록장'),
+      find.text('순찰 기록'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
@@ -366,7 +378,7 @@ void main() {
     expect(find.text('발견한 던전 7회'), findsOneWidget);
     expect(find.text('비어 있는 나이테'), findsOneWidget);
     expect(find.textContaining('오래된 나이테 한 칸이 비어 있어'), findsOneWidget);
-    expect(find.text('성장 공명'), findsOneWidget);
+    expect(find.text('성장 보너스'), findsOneWidget);
     expect(find.text('첫 새소리의 자리'), findsOneWidget);
     expect(
       find.textContaining('가장 먼저 울린 새소리를 따라'),
@@ -375,7 +387,7 @@ void main() {
     expect(find.textContaining('모아 “서로 다른 흔적을 모으니'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('탐험 이야기 도감'),
+      find.text('순찰에서 찾은 이야기'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
@@ -389,7 +401,7 @@ void main() {
     expect(find.text('새벽 수관 회랑의 미발견 장면'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('쌓여 가는 탐험 발자국'),
+      find.text('탐험 이력'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
@@ -399,7 +411,7 @@ void main() {
     expect(find.text('칭호 1/5 · 씨앗과 XP는 따로 지급하지 않아요.'), findsOneWidget);
 
     await tester.scrollUntilVisible(
-      find.text('탐험 수집함'),
+      find.text('소지품'),
       500,
       scrollable: find.byType(Scrollable).first,
     );
@@ -450,11 +462,13 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          expeditionControllerProvider
+              .overrideWith(_EmptyExpeditionController.new),
           adventureRepositoryProvider.overrideWithValue(repository),
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
-          home: const Scaffold(body: AdventureTab()),
+          home: const Scaffold(body: AdventureTab(initialActivity: 1)),
         ),
       ),
     );
@@ -506,22 +520,31 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          expeditionControllerProvider
+              .overrideWith(_EmptyExpeditionController.new),
           adventureRepositoryProvider.overrideWithValue(repository),
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
-          home: const Scaffold(body: AdventureTab()),
+          home: const Scaffold(body: AdventureTab(initialActivity: 2)),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('직접 탐험'), findsNothing);
+    await tester.scrollUntilVisible(find.text('활동별 보상'), 600,
+        scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(find.text('활동별 보상'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('활동별 보상'));
+    await tester.pumpAndSettle();
     expect(find.text('직접 탐험'), findsOneWidget);
     // 지역마다 달라서 한 값으로 못 적는다. 폭으로 읽어 준다.
     expect(find.text('6~10 XP · 씨앗 2~5'), findsOneWidget);
     // 효율 표의 줄과 아래쪽 구역 제목이 **같은 이름**이다. 그 줄이 어느
     // 활동을 말하는지 화면 안에서 이어진다.
-    expect(find.text('발견한 던전'), findsNWidgets(2));
+    expect(find.text('발견한 던전'), findsOneWidget);
     expect(find.text('10 XP · 씨앗 4'), findsOneWidget);
     // 어느 줄도 그냥 `던전`이라고 하지 않는다.
     expect(find.text('던전'), findsNothing);

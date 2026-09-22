@@ -31,6 +31,11 @@ from app.content.expeditions.loot_budget import (
     select_within_budget,
 )
 from app.content.expeditions.skills import skill_definition
+from app.content.expeditions.decisions import (
+    decision_result,
+    failure_cost,
+    success_chance,
+)
 from app.content.expeditions.tangles import tangle_definition
 from app.content.expeditions.relationship_story import (
     relationship_beat,
@@ -75,7 +80,6 @@ from app.services import skill_mastery
 from app.services import rewards
 from app.services.adventure import ITEMS, character_stats
 from app.services.plants import growth_state_payload, level_from_exp, stage_from_exp
-from app.core.korean import korean_subject
 
 
 _CONTENT_PATH = (
@@ -361,21 +365,23 @@ def _base_map_node(
 
 
 _STAGE_FIELD_TONES = {
-    "moss_archive": "등불이 젖은 종이 냄새를 따라 하나씩 켜지고, 서가 사이의 흙길이 모습을 드러내요.",
-    "echo_well": "얕은 물결이 돌계단 가장자리를 두드리며, 오래 잠긴 메아리의 방향을 알려 줘요.",
-    "starlight_seed_vault": "서리 낀 유리와 금속 바닥 사이로 별빛이 번져, 얼어 있던 통로를 가늘게 밝혀요.",
-    "heartwood_observatory": "나이테 복도에 매달린 등불이 숨 쉬듯 흔들리고, 뿌리 난간 너머의 길이 이어져요.",
+    "moss_archive": "서가 사이로 좁은 길이 나 있다. 젖은 종이가 바닥에 붙었다.",
+    "echo_well": "돌계단 아래로 물이 흐른다. 벽 안쪽에서 소리가 돌아온다.",
+    "starlight_seed_vault": "금속 바닥에 서리가 끼었다. 난방관을 따라 안쪽으로 간다.",
+    "heartwood_observatory": "등불 아래 나무 계단이 이어진다. 위층 창문이 조금 열려 있다.",
 }
 
 _STAGE_KIND_APPROACHES = {
-    "battle": "길 끝에서 엉킴이 바닥을 긁는 소리가 들려요. 가까이 가면 탐험대가 직접 마주하게 돼요.",
-    "event": "목적지의 흔적은 가까이서 살펴봐야 읽혀요. 아직 답을 고르지 말고 먼저 그곳까지 걸어가요.",
-    "camp": "멀리 작은 불빛이 숨을 고를 자리를 비춰요. 불가에 닿으면 오늘의 이야기가 이어져요.",
-    "boss": "가장 깊은 랜드마크에서 수호자의 기척이 길 전체를 울려요. 준비가 됐을 때 그 앞에 서요.",
+    "battle": "길 끝의 적에게 다가가면 전투가 시작돼요.",
+    "event": "목적지에 닿으면 흔적을 조사할 수 있습니다.",
+    "camp": "쉼터에 닿으면 등불과 결의를 회복합니다.",
+    "boss": "수호자 앞에서 전투를 시작합니다. 준비를 마치고 다가가세요.",
 }
 
 
-def _stage_field_anchor(content: dict[str, Any], stage: dict[str, Any]) -> dict[str, Any]:
+def _stage_field_anchor(
+    content: dict[str, Any], stage: dict[str, Any]
+) -> dict[str, Any]:
     """스테이지 목적지를 실제 지역 지형의 랜드마크에 고정한다."""
 
     nodes = list(content["map"]["nodes"])
@@ -538,12 +544,15 @@ def _stage_arena(
                 ),
                 "threat_level": threat_level,
                 **({"event_code": event_code} if event_code else {}),
-            }
+            },
         ],
         "edges": [["stage_entry", "stage_den"]],
     }
-    return map_data, events, event_code, _stage_field_memory(
-        content, stage, destination
+    return (
+        map_data,
+        events,
+        event_code,
+        _stage_field_memory(content, stage, destination),
     )
 
 
@@ -1026,7 +1035,9 @@ def _choice_preview(choice: dict, member: ExpeditionPartyMember, effects: dict) 
         return {
             "member_id": member.id,
             "safe": True,
-            "label": "판정 없이 안전하게 진행",
+            "label": "자원 소모 없음",
+            "success_chance": 100,
+            "failure_resolve_cost": 0,
         }
     pending = effects.get("pending_skill") or {}
     applies = pending.get("member_id") == member.id
@@ -1059,6 +1070,10 @@ def _choice_preview(choice: dict, member: ExpeditionPartyMember, effects: dict) 
         "skill_bonus": bonus,
         "difficulty": difficulty,
         "forecast": "유리" if value >= difficulty else "도전",
+        "success_chance": success_chance(
+            value, difficulty, guaranteed=bool(applies and pending.get("force_clear"))
+        ),
+        "failure_resolve_cost": failure_cost(choice, pending if applies else {}),
         "label": (
             f"{_STAT_LABELS[effective_stat]} {value} · 기준 {difficulty}"
             + (
@@ -2061,13 +2076,7 @@ async def choose(
             else "detour"
         )
         if outcome == "detour":
-            resolve_loss = max(
-                0,
-                int(choice.get("resolve_cost", 1))
-                + (int(pending.get("resolve_cost_delta", 0)) if applies else 0),
-            )
-            if applies and pending.get("resolve_guard"):
-                resolve_loss = 0
+            resolve_loss = failure_cost(choice, pending if applies else {})
             run.resolve = max(0, run.resolve - resolve_loss)
     effects.pop("pending_skill", None)
     run.runtime_effects_snapshot = effects
@@ -2076,6 +2085,12 @@ async def choose(
     state.resolved_at = utcnow()
     state.outcome_code = outcome
     state.acting_member_id = member.id
+    result = decision_result(
+        choice, outcome, resolve=run.resolve, trail_light=run.trail_light
+    )
+    run.resolve = result["resolve"]
+    result["resource_changes"]["resolve"] = run.resolve - resolve_before
+    run.trail_light = result["trail_light"]
     state.story_snapshot = {
         "event_code": state.event_code,
         "title": event["title"],
@@ -2087,6 +2102,9 @@ async def choose(
         "resolve_before": resolve_before,
         "resolve_after": run.resolve,
         "skill_code": pending.get("skill_code") if applies else None,
+        "result_text": result["result_text"],
+        "finding": result["finding"],
+        "resource_changes": result["resource_changes"],
     }
     memory = dict(run.run_memory_snapshot)
     memory["outcomes"] = [
@@ -2100,7 +2118,7 @@ async def choose(
     run.run_memory_snapshot = memory
     # 우회로 끝나면 재료가 남지 않는다. 판정이 후보 수를 바꾸고, 후보 수가
     # 예산 안에서 고를 거리를 만든다.
-    if outcome != "detour":
+    if result["collects_loot"]:
         _add_field_loot(db, run, node_code=run.current_node_code)
     spotlights = [dict(item) for item in run.spotlight_snapshot]
     for item in spotlights:
@@ -2203,7 +2221,7 @@ async def resolve_combat_turn(
     effects.pop("pending_skill", None)
     run.runtime_effects_snapshot = effects
 
-    # 숙련은 성능을 바꾸지 않지만 `마음 지키기 30회` 같은 해금 조건의 근거다.
+    # 숙련은 성능을 바꾸지 않지만 `방어 30회` 같은 해금 조건의 근거다.
     # 방금 확정된 행동만 센다. 라운드를 다시 읽으면 두 번 세게 된다.
     await skill_mastery.record_skill_uses(
         db,
@@ -2241,7 +2259,7 @@ async def resolve_combat_turn(
         node_state.story_snapshot = {
             "event_code": node_state.event_code,
             "title": event["title"],
-            "choice": f"{resolved['round']}라운드 직접 지휘",
+            "choice": f"{resolved['round']}라운드 직접 전투",
             # 마침표까지 붙여 완결된 문장으로 보낸다. 앱이 이 뒤에 `이제 기록을
             # 안고 돌아갈 수 있어요.`를 이어 붙이는데, `_OUTCOME_LABELS`를
             # 고칠 때 이 자리가 빠져서 두 문장이 붙어 나갔다.
@@ -2250,12 +2268,12 @@ async def resolve_combat_turn(
             # 장벽을 깼다는 말을 쓰지 않는다. 수호짐승만 장벽으로 말한다.
             "outcome": (
                 (
-                    "엉킨 것을 남김없이 풀어냈어요."
+                    "모든 적을 물리쳤어요."
                     if resolved.get("enemy_kind") == "tangle"
-                    else "수호 장벽을 무너뜨렸어요."
+                    else "보스를 물리쳤어요."
                 )
                 if victory
-                else "봉인이 완성돼 긴급 귀환했어요."
+                else "더는 싸울 수 없어 돌아왔어요."
             ),
             "score": int(resolved["enemy_max_guard"]) - int(resolved["enemy_guard"]),
             "stat": resolved.get("weakness"),
@@ -2548,13 +2566,13 @@ async def _return_scene(db: AsyncSession, run: ExpeditionRun) -> dict[str, Any]:
     for member in members:
         outcome_count = outcome_counts.get(member.id, 0)
         if outcome_count:
-            contribution = f"사건 {outcome_count}건을 직접 풀었어요."
+            contribution = f"사건 {outcome_count}건 담당"
         elif member.signature_used or member.form_used:
-            contribution = "스킬로 탐험대의 길을 바꿔 줬어요."
+            contribution = "스킬로 조사 지원"
         elif member.is_guide:
-            contribution = "돌아오는 길까지 기록을 잘 챙겼어요."
+            contribution = "길 안내"
         else:
-            contribution = "탐험대 곁을 지키며 함께 돌아왔어요."
+            contribution = "탐험 동행"
         payload_members.append(
             {
                 "plant_id": member.plant_id,
@@ -2579,11 +2597,7 @@ async def _return_scene(db: AsyncSession, run: ExpeditionRun) -> dict[str, Any]:
     scene = {
         "code": f"{run.region_code}.homeward.{min(len(names), 3)}",
         "title": "함께 돌아온 탐험대",
-        "caption": (
-            f"{korean_subject(', '.join(names))} 고른 길과 기록을 안고 집으로 돌아왔어요."
-            if names
-            else "기록 안내자가 탐험의 흔적을 안고 돌아왔어요."
-        ),
+        "caption": f"탐험대 {len(payload_members)}명 귀환. 처리한 사건 {sum(outcome_counts.values())}건.",
         "members": payload_members,
     }
     if return_cue is not None:
@@ -2595,7 +2609,7 @@ async def _safe_return(db: AsyncSession, run: ExpeditionRun, reason: str) -> Non
     run.status = "safe_returned"
     run.completed_at = utcnow()
     run.summary_snapshot = {
-        "title": "안전하게 돌아왔어요",
+        "title": "탐험 종료",
         "reason": reason,
         "reward": None,
         "memory_count": len(run.run_memory_snapshot.get("outcomes", [])),
@@ -2930,9 +2944,7 @@ async def extract(
         # 찾은 것을 전부 주지 않는다. 지역마다 정해진 가치 예산 안에서만
         # 담아 오고 나머지는 기록으로 남는다(설계서 9.1).
         budget, slots = budget_of(run.map_snapshot["region"]["reward"])
-        candidates = [
-            loot for loot in loots if loot.disposition == "candidate"
-        ]
+        candidates = [loot for loot in loots if loot.disposition == "candidate"]
         try:
             selection = select_within_budget(
                 candidates,
@@ -2958,7 +2970,7 @@ async def extract(
     run.status = "completed"
     run.completed_at = utcnow()
     run.summary_snapshot = {
-        "title": "마음의 기록을 안고 돌아왔어요",
+        "title": "탐험 완료",
         "reward": reward_payload,
         "memory_count": len(run.run_memory_snapshot.get("outcomes", [])),
         "objective_secured": True,
@@ -3000,7 +3012,7 @@ async def retreat(
     run.status = "retreated"
     run.completed_at = utcnow()
     run.summary_snapshot = {
-        "title": "무리하지 않고 돌아왔어요",
+        "title": "탐험 중단",
         "reward": None,
         "memory_count": len(run.run_memory_snapshot.get("outcomes", [])),
         "return_scene": await _return_scene(db, run),

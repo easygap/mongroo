@@ -43,7 +43,7 @@ class PlantStoryCard extends StatelessWidget {
           '${plant.name}의 성장 이야기, ${current.stageLabel}, ${current.title}',
       child: MongrooPanel(
         padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
-        shadowOffset: const Offset(3, 3),
+        shadowOffset: Offset.zero,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -54,7 +54,7 @@ class PlantStoryCard extends StatelessWidget {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: MongrooTag(
-                        label: '${plant.name}의 연재 일지',
+                        label: '${plant.name}의 관찰 일지',
                         icon: Icons.auto_stories_outlined,
                         maxWidth: (constraints.maxWidth - 54).clamp(80, 420),
                         backgroundColor:
@@ -95,7 +95,7 @@ class PlantStoryCard extends StatelessWidget {
             Text(
               current.title,
               style: const TextStyle(
-                fontFamily: AppTheme.pixelFont,
+                fontFamily: AppTheme.bodyFont,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
@@ -121,7 +121,7 @@ class PlantStoryCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     next == null
-                        ? '마지막 장면은 박물관에서 오래 남길 수 있어요.'
+                        ? '박물관에서 이 식물의 기록을 볼 수 있습니다.'
                         : '${next.stageLabel}에서 「${next.title}」이 열려요.',
                     style: TextStyle(
                       color: palette.inkMuted,
@@ -222,7 +222,7 @@ class _PlantStorySheet extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '일기가 쌓일수록 외형과 성격이 갈라지고, 한 장씩 새로운 장면이 열려요.',
+            '성장 단계마다 달라진 모습과 행동을 기록합니다.',
             style: TextStyle(color: palette.inkMuted, height: 1.45),
           ),
           const SizedBox(height: 16),
@@ -276,11 +276,11 @@ class _CharacterGrowthCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = MongrooPalette.of(context);
     final traits = plant.growthTraits;
-    final dominant = plant.dominantForm?.label ?? '관찰 중';
+    final dominant = plant.dominantForm?.label ?? '성장 중';
     final secondary = plant.secondaryForm?.label;
     final summary = [
-      '주결 $dominant',
-      if (secondary != null) '보조결 $secondary',
+      '주 타입 $dominant',
+      if (secondary != null) '보조 타입 $secondary',
       if (plant.temperamentSummary.isNotEmpty) plant.temperamentSummary,
     ].join(', ');
     return Semantics(
@@ -325,13 +325,13 @@ class _CharacterGrowthCard extends StatelessWidget {
                 children: [
                   if (plant.dominantForm case final dominant?)
                     MongrooTag(
-                      label: '주결 · ${dominant.label}',
+                      label: '주 타입 · ${dominant.label}',
                       icon: _emotionIcon(dominant),
                       maxWidth: constraints.maxWidth,
                     ),
                   if (plant.secondaryForm case final secondary?)
                     MongrooTag(
-                      label: '보조결 · ${secondary.label}',
+                      label: '보조 타입 · ${secondary.label}',
                       icon: _emotionIcon(secondary),
                       maxWidth: constraints.maxWidth,
                     ),
@@ -498,8 +498,8 @@ class _SeedStageEmotionCard extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '씨앗 안에서는 아직 마음빛이 겉으로 드러나지 않아요. '
-              '새싹이 돋으면 일기에서 읽은 첫 단서가 보이기 시작해요.',
+              '씨앗 단계에서는 아직 감정에 따른 차이가 없어요. '
+              '새싹이 나면 잎의 색부터 조금씩 달라져요.',
               style: TextStyle(color: palette.inkMuted, height: 1.45),
             ),
           ),
@@ -526,8 +526,8 @@ class _SproutStageEmotionCard extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '새싹에 첫 마음빛이 번지고 있어요. 아직 한 가지 이름으로 정하지 않고, '
-              '기록이 더 쌓이면 줄기와 성격으로 천천히 드러나요.',
+              '새싹의 색이 조금씩 달라지고 있어요. '
+              '일기가 더 쌓이면 캐릭터의 모습과 성격이 정해져요.',
               style: TextStyle(color: palette.inkMuted, height: 1.45),
             ),
           ),
@@ -558,7 +558,7 @@ class _EmotionMixCard extends StatelessWidget {
               Icon(Icons.blur_circular_rounded, size: 18, color: palette.leaf),
               const SizedBox(width: 7),
               const Text(
-                '마음빛 조합',
+                '기록한 감정',
                 style: TextStyle(fontWeight: FontWeight.w900),
               ),
             ],
@@ -566,7 +566,7 @@ class _EmotionMixCard extends StatelessWidget {
           const SizedBox(height: 11),
           if (cues.isEmpty)
             Text(
-              '아직 읽힌 마음빛이 없어요. 일기가 쌓이면 이곳에 첫 단서가 나타나요.',
+              '아직 일기가 없어요. 일기를 쓰면 감정을 정리해 드려요.',
               style: TextStyle(color: palette.inkMuted, height: 1.45),
             )
           else
@@ -582,7 +582,7 @@ class _EmotionMixCard extends StatelessWidget {
               const SizedBox(width: 7),
               Expanded(
                 child: Text(
-                  '어떤 마음도 실패가 아니에요. 마음빛은 모습과 성격만 바꾸고 '
+                  '기록한 감정은 캐릭터의 모습과 성격만 바꿔요. '
                   '성장 속도·보상에는 영향을 주지 않아요.',
                   style: TextStyle(
                     color: palette.inkMuted,
@@ -610,7 +610,7 @@ class _EmotionCueBar extends StatelessWidget {
     final ratio = cue.ratio.clamp(0.0, 1.0).toDouble();
     final percent = (ratio * 100).round();
     return Semantics(
-      label: '${cue.form.emotionLabel} 마음빛 $percent퍼센트',
+      label: '${cue.form.emotionLabel} $percent퍼센트',
       child: ExcludeSemantics(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

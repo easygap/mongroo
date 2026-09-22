@@ -512,6 +512,7 @@ class ExpeditionSceneBackdrop extends StatefulWidget {
 class _ExpeditionSceneBackdropState extends State<ExpeditionSceneBackdrop>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ambient;
+  String? get _cleanAsset => expeditionCleanRegionBackdrop(widget.regionCode);
   String? _currentPrecacheSignature;
   String? _nextPrecacheSignature;
   Timer? _nextPrecacheTimer;
@@ -529,7 +530,7 @@ class _ExpeditionSceneBackdropState extends State<ExpeditionSceneBackdrop>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _precacheVisibleScenes();
-    if (MediaQuery.disableAnimationsOf(context)) {
+    if (_cleanAsset != null || MediaQuery.disableAnimationsOf(context)) {
       _ambient
         ..stop()
         ..value = .35;
@@ -561,6 +562,15 @@ class _ExpeditionSceneBackdropState extends State<ExpeditionSceneBackdrop>
   }
 
   void _precacheVisibleScenes() {
+    final clean = _cleanAsset;
+    if (clean != null) {
+      _nextPrecacheTimer?.cancel();
+      if (_currentPrecacheSignature != clean) {
+        _currentPrecacheSignature = clean;
+        precacheImage(AssetImage(clean), context).ignore();
+      }
+      return;
+    }
     final cacheWidth = expeditionSceneDecodeWidth(context);
     final currentAsset = _pixelAsset ?? widget.scene.assetPath;
     final currentSignature = '$currentAsset@$cacheWidth';
@@ -571,8 +581,7 @@ class _ExpeditionSceneBackdropState extends State<ExpeditionSceneBackdrop>
 
     final nextScenes = <String, ExpeditionSceneTheme>{
       for (final scene in widget.preloadScenes)
-        if (scene.assetPath != widget.scene.assetPath)
-          scene.assetPath: scene,
+        if (scene.assetPath != widget.scene.assetPath) scene.assetPath: scene,
     }.values.take(2).toList(growable: false);
     final nextSignature =
         '${nextScenes.map((scene) => scene.assetPath).join('|')}@$cacheWidth';
@@ -606,6 +615,25 @@ class _ExpeditionSceneBackdropState extends State<ExpeditionSceneBackdrop>
 
   @override
   Widget build(BuildContext context) {
+    final clean = _cleanAsset;
+    if (clean != null) {
+      return Semantics(
+          container: true,
+          image: true,
+          label: widget.semanticLabel,
+          child: ClipRRect(
+              borderRadius: widget.borderRadius,
+              child: RepaintBoundary(
+                  child: Stack(fit: StackFit.passthrough, children: [
+                Positioned.fill(
+                    child: Image.asset(clean,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                        excludeFromSemantics: true,
+                        filterQuality: FilterQuality.medium)),
+                widget.child,
+              ]))));
+    }
     final palette = MongrooPalette.of(context);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final pixelAsset = _pixelAsset;
@@ -635,59 +663,59 @@ class _ExpeditionSceneBackdropState extends State<ExpeditionSceneBackdrop>
                   ),
                 )
               else
-              Positioned.fill(
-                child: AnimatedBuilder(
-                  animation: _ambient,
-                  builder: (context, child) {
-                    final drift =
-                        reduceMotion ? 0.0 : (_ambient.value - .5) * 7;
-                    return Transform.translate(
-                      offset: Offset(drift, -drift * .28),
-                      child: Transform.scale(scale: 1.035, child: child),
-                    );
-                  },
-                  child: AnimatedSwitcher(
-                    duration: reduceMotion
-                        ? Duration.zero
-                        : const Duration(milliseconds: 360),
-                    switchInCurve: MongrooMotion.enter,
-                    switchOutCurve: Curves.easeIn,
-                    layoutBuilder: (currentChild, previousChildren) => Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ...previousChildren,
-                        if (currentChild != null) currentChild,
-                      ],
-                    ),
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: ScaleTransition(
-                        scale: Tween<double>(begin: .985, end: 1).animate(
-                          CurvedAnimation(
-                            parent: animation,
-                            curve: MongrooMotion.enter,
+                Positioned.fill(
+                  child: AnimatedBuilder(
+                    animation: _ambient,
+                    builder: (context, child) {
+                      final drift =
+                          reduceMotion ? 0.0 : (_ambient.value - .5) * 7;
+                      return Transform.translate(
+                        offset: Offset(drift, -drift * .28),
+                        child: Transform.scale(scale: 1.035, child: child),
+                      );
+                    },
+                    child: AnimatedSwitcher(
+                      duration: reduceMotion
+                          ? Duration.zero
+                          : const Duration(milliseconds: 360),
+                      switchInCurve: MongrooMotion.enter,
+                      switchOutCurve: Curves.easeIn,
+                      layoutBuilder: (currentChild, previousChildren) => Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          ...previousChildren,
+                          if (currentChild != null) currentChild,
+                        ],
+                      ),
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: ScaleTransition(
+                          scale: Tween<double>(begin: .985, end: 1).animate(
+                            CurvedAnimation(
+                              parent: animation,
+                              curve: MongrooMotion.enter,
+                            ),
                           ),
+                          child: child,
                         ),
-                        child: child,
                       ),
-                    ),
-                    child: Image(
-                      image: expeditionSceneImageProvider(
-                        context,
-                        widget.scene.assetPath,
+                      child: Image(
+                        image: expeditionSceneImageProvider(
+                          context,
+                          widget.scene.assetPath,
+                        ),
+                        key: ValueKey(widget.scene.assetPath),
+                        fit: BoxFit.cover,
+                        alignment: Alignment.center,
+                        filterQuality: FilterQuality.medium,
+                        gaplessPlayback: true,
+                        excludeFromSemantics: true,
+                        errorBuilder: (context, error, stackTrace) =>
+                            ColoredBox(color: palette.night),
                       ),
-                      key: ValueKey(widget.scene.assetPath),
-                      fit: BoxFit.cover,
-                      alignment: Alignment.center,
-                      filterQuality: FilterQuality.medium,
-                      gaplessPlayback: true,
-                      excludeFromSemantics: true,
-                      errorBuilder: (context, error, stackTrace) =>
-                          ColoredBox(color: palette.night),
                     ),
                   ),
                 ),
-              ),
               // 지역 색 보정. 원화 위, 가독성 그라디언트 아래에 둔다 — 글자
               // 대비를 만드는 층을 건드리면 안 되기 때문이다.
               if (pixelAsset == null &&

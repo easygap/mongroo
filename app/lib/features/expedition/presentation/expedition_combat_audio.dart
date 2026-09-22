@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:audioplayers/audioplayers.dart';
 
@@ -97,8 +98,13 @@ class ExpeditionCombatAudio {
     bool enabled = true,
     bool? musicEnabled,
     bool? sfxEnabled,
+    AudioPlayer Function()? playerFactory,
   })  : _musicEnabled = musicEnabled ?? enabled,
-        _sfxEnabled = sfxEnabled ?? enabled;
+        _sfxEnabled = sfxEnabled ?? enabled,
+        _activeMusic = (playerFactory ?? AudioPlayer.new)(),
+        _standbyMusic = (playerFactory ?? AudioPlayer.new)(),
+        _ambienceA = (playerFactory ?? AudioPlayer.new)(),
+        _ambienceB = (playerFactory ?? AudioPlayer.new)();
 
   /// 백그라운드 진입 fade out과 복귀 fade in 시간.
   /// 기준 문서의 `300ms fade out / 500ms fade in`을 그대로 따른다.
@@ -213,27 +219,20 @@ class ExpeditionCombatAudio {
   /// 진폭으로는 약 0.79배다.
   static const _ambienceDuck = 0.79;
 
-  Future<Map<ExpeditionCombatSound, AudioPool>>? _pools;
-
-  /// 효과음 pool 15개. **처음 소리를 낼 때** 굽는다.
-  ///
-  /// 예전에는 생성자가 무조건 구웠다. 그래서 음악만 드는 인스턴스(화면이 든
-  /// 지역 음악)나 발소리만 내는 인스턴스도 한 번도 안 쓸 pool 열다섯 개를
-  /// 만들었다 — 웹에서는 쓰지도 않을 wav를 그만큼 더 받는다는 뜻이다.
-  Future<Map<ExpeditionCombatSound, AudioPool>> get _ready =>
-      _pools ??= _loadPools();
+  final ExpeditionSignatureAudioCache _effects =
+      ExpeditionSignatureAudioCache(maxPools: 16, audioContext: _context);
   final Map<ExpeditionCombatSound, DateTime> _lastPlayedAt = {};
 
-  /// 품종·성장결·엉킴 저마다의 소리. 공용음과 달리 필요할 때 올린다.
+  /// 품종·성장 타입·엉킴 저마다의 소리. 공용음과 달리 필요할 때 올린다.
   final ExpeditionSignatureAudioCache _signatures =
       ExpeditionSignatureAudioCache(audioContext: _context);
 
   /// signature도 겹침 방지를 받아야 한다. 공용음은 enum이 키라서 같이 못 쓴다.
   final Map<String, DateTime> _lastSignatureAt = {};
-  AudioPlayer _activeMusic = AudioPlayer();
-  AudioPlayer _standbyMusic = AudioPlayer();
-  final AudioPlayer _ambienceA = AudioPlayer();
-  final AudioPlayer _ambienceB = AudioPlayer();
+  AudioPlayer _activeMusic;
+  AudioPlayer _standbyMusic;
+  final AudioPlayer _ambienceA;
+  final AudioPlayer _ambienceB;
   String? _ambienceRegion;
   ExpeditionMusicState? _musicState;
 
@@ -247,6 +246,9 @@ class ExpeditionCombatAudio {
   bool _backgrounded = false;
   bool _disposed = false;
   int _transitionGeneration = 0;
+  int _sfxGeneration = 0;
+  Future<void> _musicWork = Future.value();
+  (ExpeditionMusicState, String, double)? _requestedMusic;
 
   /// 마지막으로 요청받은 지역 음악 음량. 페이드가 이 값을 목표로 돌아온다.
   double _musicVolume = 0.18;
@@ -259,22 +261,20 @@ class ExpeditionCombatAudio {
   bool get _enabled => _sfxEnabled && !_backgrounded;
   bool get _musicPlayable => _musicEnabled && !_backgrounded;
 
-  static Future<Map<ExpeditionCombatSound, AudioPool>> _loadPools() async {
-    final pools = <ExpeditionCombatSound, AudioPool>{};
-    try {
-      for (final entry in _paths.entries) {
-        pools[entry.key] = await AudioPool.create(
-          source: AssetSource(entry.value),
-          minPlayers: 1,
-          maxPlayers: 2,
-          audioContext: _context,
-        );
-      }
-      return pools;
-    } on Object {
-      await Future.wait(pools.values.map((pool) => pool.dispose()));
-      return const {};
-    }
+  /// Prepare only this encounter's sounds while the player is choosing.
+  Future<void> warmUp({
+    Iterable<ExpeditionCombatSound> sounds = const [],
+    Iterable<String?> skillCodes = const [],
+    Iterable<String?> enemyCodes = const [],
+  }) async {
+    if (_disposed || !_enabled) return;
+    await Future.wait([
+      _effects.preload(sounds.map((sound) => _paths[sound]!).toSet()),
+      _signatures.preload({
+        ...skillCodes.map(expeditionSkillSignatureAsset).whereType<String>(),
+        ...enemyCodes.map(expeditionEnemySignatureAsset).whereType<String>(),
+      }),
+    ]);
   }
 
   Future<void> play(
@@ -282,13 +282,10 @@ class ExpeditionCombatAudio {
     double volume = 0.72,
   }) async {
     if (_disposed || !_enabled) return;
-    try {
-      final pools = await _ready;
-      if (_disposed) return;
-      await pools[sound]?.start(volume: volume);
-    } on Object {
-      // 시각·행틱 피드백은 계속 제공되므로 오디오 오류만 건너뛴다.
-    }
+    final generation = _sfxGeneration;
+    await _effects.play(_paths[sound]!,
+        volume: volume,
+        canPlay: () => !_disposed && _enabled && generation == _sfxGeneration);
   }
 
   /// 접촉 프레임의 재질 소리. 믹스 우선순위 1순위다.
@@ -311,9 +308,11 @@ class ExpeditionCombatAudio {
       return;
     }
     if (!_claimTransient(sound)) return;
+    final generation = _sfxGeneration;
     await play(sound, volume: volume);
     if (weakness && !_disposed && _enabled) {
       await Future<void>.delayed(const Duration(milliseconds: 42));
+      if (generation != _sfxGeneration) return;
       await play(ExpeditionCombatSound.weakness, volume: volume * .34);
     }
   }
@@ -376,7 +375,10 @@ class ExpeditionCombatAudio {
       return;
     }
     if (!_claimSignature(asset)) return;
-    await _signatures.play(asset, volume: safeTier == 3 ? _skillTop : _skillBed);
+    final generation = _sfxGeneration;
+    await _signatures.play(asset,
+        volume: safeTier == 3 ? _skillTop : _skillBed,
+        canPlay: () => !_disposed && _enabled && generation == _sfxGeneration);
     if (safeTier == 3 && ultimate && !_disposed && _enabled) {
       await Future<void>.delayed(const Duration(milliseconds: 56));
       await play(ExpeditionCombatSound.weakness, volume: .20);
@@ -399,7 +401,10 @@ class ExpeditionCombatAudio {
       return;
     }
     if (!_claimSignature(asset)) return;
-    await _signatures.play(asset, volume: volume);
+    final generation = _sfxGeneration;
+    await _signatures.play(asset,
+        volume: volume,
+        canPlay: () => !_disposed && _enabled && generation == _sfxGeneration);
   }
 
   /// 같은 signature가 120ms 안에 두 번 요청되면 한 번만 낸다.
@@ -445,6 +450,7 @@ class ExpeditionCombatAudio {
     double volume = 0.12,
   }) async {
     if (_disposed || !_musicPlayable) return;
+    regionCode ??= 'moss_archive';
     _ambienceVolume = volume;
     final target = _ambienceLevel(state);
     if (_ambienceRegion == regionCode) {
@@ -454,12 +460,18 @@ class ExpeditionCombatAudio {
     }
     try {
       for (final (player, layer) in [(_ambienceA, 'a'), (_ambienceB, 'b')]) {
+        if (_disposed || !_musicPlayable) return;
         await player.setReleaseMode(ReleaseMode.loop);
         await player.play(
           AssetSource(ambiencePath(regionCode, layer)),
-          volume: target,
+          volume: 0,
           ctx: _musicContext,
         );
+        if (_disposed || !_musicPlayable) {
+          await player.pause();
+          return;
+        }
+        await player.setVolume(target);
       }
       if (!_disposed) _ambienceRegion = regionCode;
     } on Object {
@@ -498,27 +510,66 @@ class ExpeditionCombatAudio {
     ExpeditionMusicState state, {
     String? regionCode,
     double volume = 0.18,
-  }) async {
-    if (_disposed || !_musicPlayable) return;
+  }) {
+    if (_disposed || !_musicPlayable) return Future.value();
+    final region = regionCode ?? 'moss_archive';
+    final level = volume.clamp(0.0, 1.0);
+    final request = (state, region, level);
+    if (_requestedMusic == request) return _musicWork;
+    _requestedMusic = request;
+    final generation = ++_transitionGeneration;
+    return _serializeMusic(() async {
+      if (!_currentTransition(generation)) return;
+      await _playMusic(state, region, level, generation);
+      if (generation == _transitionGeneration) _requestedMusic = null;
+    });
+  }
+
+  bool _currentTransition(int generation) =>
+      !_disposed && generation == _transitionGeneration;
+
+  Future<void> _serializeMusic(Future<void> Function() operation) {
+    return _musicWork =
+        _musicWork.then((_) => operation()).catchError((Object _) {
+      // A blocked audio device must never block the battle or the next request.
+    });
+  }
+
+  Future<void> _playMusic(ExpeditionMusicState state, String regionCode,
+      double volume, int generation) async {
     final regionChanged = _musicRegion != regionCode;
     // 배경은 곡보다 먼저 자리를 잡는다. 곡 상태가 바뀌면 duck도 따라간다.
     await playAmbience(regionCode, state: state, volume: _ambienceVolume);
-    if (_musicState == state && !regionChanged) return;
+    if (!_currentTransition(generation)) return;
     _musicVolume = volume;
-    final generation = ++_transitionGeneration;
     try {
+      await _standbyMusic.stop();
+      if (!_currentTransition(generation)) return;
+      if (_musicState == state && !regionChanged) {
+        await _fadeActiveMusic(
+            from: _activeMusic.volume,
+            to: volume,
+            duration: const Duration(milliseconds: 240),
+            generation: generation);
+        return;
+      }
       final path = musicPath(regionCode, state);
       if (_musicState == null) {
         await _activeMusic.setReleaseMode(ReleaseMode.loop);
         await _activeMusic.play(
           AssetSource(path),
-          volume: volume,
+          volume: 0,
           ctx: _musicContext,
         );
-        if (!_disposed && generation == _transitionGeneration) {
+        if (!_disposed) {
           _musicState = state;
           _musicRegion = regionCode;
         }
+        await _fadeActiveMusic(
+            from: 0,
+            to: volume,
+            duration: const Duration(milliseconds: 240),
+            generation: generation);
         return;
       }
 
@@ -528,6 +579,7 @@ class ExpeditionCombatAudio {
       final position = regionChanged
           ? Duration.zero
           : await _activeMusic.getCurrentPosition() ?? Duration.zero;
+      if (!_currentTransition(generation)) return;
       await _standbyMusic.setReleaseMode(ReleaseMode.loop);
       await _standbyMusic.play(
         AssetSource(path),
@@ -538,15 +590,18 @@ class ExpeditionCombatAudio {
         ),
         ctx: _musicContext,
       );
+      final previousVolume = _activeMusic.volume;
       for (var step = 1; step <= 8; step++) {
         if (_disposed || generation != _transitionGeneration) return;
         final progress = step / 8;
         await Future.wait([
-          _activeMusic.setVolume(volume * (1 - progress)),
-          _standbyMusic.setVolume(volume * progress),
+          _activeMusic
+              .setVolume(previousVolume * math.cos(progress * math.pi / 2)),
+          _standbyMusic.setVolume(volume * math.sin(progress * math.pi / 2)),
         ]);
         await Future<void>.delayed(const Duration(milliseconds: 30));
       }
+      if (!_currentTransition(generation)) return;
       await _activeMusic.stop();
       final previous = _activeMusic;
       _activeMusic = _standbyMusic;
@@ -572,6 +627,7 @@ class ExpeditionCombatAudio {
     if (nextMusic == _musicEnabled && nextSfx == _sfxEnabled) return;
     final wasPlayable = _musicPlayable;
     _musicEnabled = nextMusic;
+    if (_sfxEnabled != nextSfx) ++_sfxGeneration;
     _sfxEnabled = nextSfx;
     if (wasPlayable == _musicPlayable) return;
     await _applyMusicPlayback(resume: _musicPlayable);
@@ -584,6 +640,7 @@ class ExpeditionCombatAudio {
   Future<void> handleAppPaused() async {
     if (_disposed || _backgrounded) return;
     _backgrounded = true;
+    ++_sfxGeneration;
     await _applyMusicPlayback(resume: false);
   }
 
@@ -595,46 +652,53 @@ class ExpeditionCombatAudio {
     await _applyMusicPlayback(resume: true);
   }
 
-  Future<void> _applyMusicPlayback({required bool resume}) async {
+  Future<void> _applyMusicPlayback({required bool resume}) {
     final generation = ++_transitionGeneration;
-    try {
-      if (resume) {
-        if (_musicState == null) return;
-        // 배경도 함께 돌아온다. 곡만 살아나고 배경이 죽어 있으면 복귀한
-        // 장면이 원래보다 얇게 들린다.
-        await _resumeAmbience();
-        await _activeMusic.setVolume(0);
-        await _activeMusic.resume();
+    _requestedMusic = null;
+    return _serializeMusic(() async {
+      if (!_currentTransition(generation)) return;
+      try {
+        if (resume) {
+          if (_musicState == null) return;
+          // 배경도 함께 돌아온다. 곡만 살아나고 배경이 죽어 있으면 복귀한
+          // 장면이 원래보다 얇게 들린다.
+          await _resumeAmbience();
+          if (!_currentTransition(generation)) return;
+          await _activeMusic.setVolume(0);
+          await _activeMusic.resume();
+          await _fadeActiveMusic(
+            from: 0,
+            to: _musicVolume,
+            duration: foregroundFadeIn,
+            generation: generation,
+          );
+          return;
+        }
         await _fadeActiveMusic(
-          from: 0,
-          to: _musicVolume,
-          duration: foregroundFadeIn,
+          from: _activeMusic.volume,
+          to: 0,
+          duration: backgroundFadeOut,
           generation: generation,
         );
-        return;
+        if (!_currentTransition(generation)) return;
+        await Future.wait([
+          _activeMusic.pause(),
+          _standbyMusic.pause(),
+          _ambienceA.pause(),
+          _ambienceB.pause(),
+        ]);
+      } on Object {
+        // 오디오 장치 상태와 무관하게 설정과 화면은 즉시 바뀐다.
       }
-      await _fadeActiveMusic(
-        from: _musicVolume,
-        to: 0,
-        duration: backgroundFadeOut,
-        generation: generation,
-      );
-      await Future.wait([
-        _activeMusic.pause(),
-        _standbyMusic.pause(),
-        _ambienceA.pause(),
-        _ambienceB.pause(),
-      ]);
-    } on Object {
-      // 오디오 장치 상태와 무관하게 설정과 화면은 즉시 바뀐다.
-    }
+    });
   }
 
   Future<void> _resumeAmbience() async {
     if (_ambienceRegion == null) return;
     try {
       await Future.wait([_ambienceA.resume(), _ambienceB.resume()]);
-      await _setAmbienceVolume(_ambienceLevel(_musicState ?? ExpeditionMusicState.base));
+      await _setAmbienceVolume(
+          _ambienceLevel(_musicState ?? ExpeditionMusicState.base));
     } on Object {
       // 배경이 안 돌아와도 곡과 판정은 계속된다.
     }
@@ -657,14 +721,15 @@ class ExpeditionCombatAudio {
   }
 
   Future<void> dispose() async {
+    if (_disposed) return;
     _disposed = true;
     ++_transitionGeneration;
+    ++_sfxGeneration;
+    await _musicWork;
     await _signatures.dispose();
+    await _effects.dispose();
     try {
-      // 한 번도 소리를 안 냈으면 해제할 pool도 없다.
-      final pools = await (_pools ?? Future.value(const {}));
       await Future.wait([
-        ...pools.values.map((pool) => pool.dispose()),
         _activeMusic.dispose(),
         _standbyMusic.dispose(),
         _ambienceA.dispose(),

@@ -48,7 +48,7 @@ ActivePlant _plant({
         version: 1,
         stage: 4,
         revealState: 'temperament_revealed',
-        title: '별빛 품은 빗물결',
+        title: '별빛 품은 빗방울',
         traits: ['작은 상실을 오래 살피는', '뜻밖의 단서를 발견하는'],
         temperament: PlantTemperament(
           revealed: true,
@@ -66,7 +66,8 @@ ActivePlant _plant({
     );
 
 class _CharacterChatRepository extends ChatRepository {
-  _CharacterChatRepository({this.maxUserTurns = ChatSession.defaultMaxUserTurns})
+  _CharacterChatRepository(
+      {this.maxUserTurns = ChatSession.defaultMaxUserTurns})
       : super(Dio());
 
   /// 서버가 내려보내는 한도. 운영에서 바꿀 수 있는 값이다.
@@ -119,7 +120,7 @@ class _MutablePlantRepository extends PlantRepository {
 }
 
 void main() {
-  test('성장 단계·주결·보조결·기질이 서로 다른 시작 문장을 만든다', () {
+  test('성장 단계·주 타입·보조 타입·기질이 서로 다른 시작 문장을 만든다', () {
     final snapshot = ChatCharacterSnapshot.fromPlant(_plant());
 
     expect(snapshot.stageName, '개화');
@@ -127,7 +128,7 @@ void main() {
     expect(snapshot.secondaryLabel, '놀람');
     expect(snapshot.conversationProfile, same(_conversationProfile));
     expect(snapshot.suggestedStarters, hasLength(3));
-    expect(snapshot.suggestedStarters, contains(contains('꽃봉오리')));
+    expect(snapshot.suggestedStarters, contains('요즘 생각이 많아'));
     expect(snapshot.suggestedStarters, contains(contains('아쉬운')));
     expect(snapshot.suggestedStarters, contains(contains('놀랐던')));
     expect(snapshot.suggestedStarters, contains(contains('천천히')));
@@ -282,8 +283,8 @@ void main() {
     expect(find.byType(PlantStagePreview), findsWidgets);
     expect(find.byIcon(Icons.local_florist), findsNothing);
     expect(find.text('0 / 10'), findsOneWidget);
-    expect(find.text('주결 · 슬픔'), findsOneWidget);
-    expect(find.text('보조결 · 놀람'), findsOneWidget);
+    expect(find.text('주 타입 · 슬픔'), findsOneWidget);
+    expect(find.text('보조 타입 · 놀람'), findsOneWidget);
 
     final starter =
         ChatCharacterSnapshot.fromPlant(firstPlant).suggestedStarters.first;
@@ -308,7 +309,7 @@ void main() {
     expect(container.read(chatControllerProvider).character?.name, '모아');
     expect(find.text('모아'), findsOneWidget);
     expect(find.text('새별'), findsNothing);
-    expect(find.text('주결 · 슬픔'), findsOneWidget);
+    expect(find.text('주 타입 · 슬픔'), findsOneWidget);
 
     for (var turn = 1; turn <= ChatSession.defaultMaxUserTurns; turn++) {
       await container.read(chatControllerProvider.notifier).send('$turn번째 이야기');

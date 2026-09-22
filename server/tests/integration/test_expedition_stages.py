@@ -66,7 +66,7 @@ async def _enter_stage_field(client, headers: dict, run: dict, key: str) -> dict
 
 
 async def _fight_stage_battle(client, headers: dict, run: dict, key_prefix: str):
-    """일반 웨이브는 기본 공격, 수호전은 공개된 최적 합법 스킬로 진행한다."""
+    """일반 웨이브는 공격, 수호전은 공개된 최적 합법 스킬로 진행한다."""
 
     run = await _enter_stage_field(
         client, headers, run, f"{key_prefix}-field-arrival"
@@ -213,7 +213,7 @@ async def test_tangle_release_reads_as_untangling_not_a_broken_barrier(
     outcome = run["last_resolution"]["outcome"]
     assert outcome.endswith("."), outcome
     assert "장벽" not in outcome
-    assert "풀어냈어요" in outcome
+    assert outcome == "모든 적을 물리쳤어요."
 
 
 async def test_clearing_a_stage_opens_the_next_point(
@@ -333,7 +333,7 @@ async def test_battle_stage_walks_to_the_tangle_fight(
     assert run["run"]["phase"] == "exploring"
     assert run["current_event"] is None
     assert run["map"]["code"] == "stage_field_1"
-    assert run["memory"]["stage_field"]["title"] == "서가 앞 첫 걸음"
+    assert run["memory"]["stage_field"]["title"] == "문턱의 장부"
     run = await _enter_stage_field(
         client, headers, run, "stage-arena-field-arrival"
     )
@@ -439,11 +439,11 @@ async def test_boss_stage_runs_the_guardian_in_the_arena(
     assert any(event.get("action") in {"unique_1", "unique_2"} for event in exchanges)
     assert run["run"]["objective_secured"] is True
     # 이 문장 뒤에 앱이 다음 문장을 이어 붙인다. 마침표가 없으면 화면에서
-    # `수호 장벽을 무너뜨렸어요 이제 기록을 안고…`처럼 두 문장이 붙는다.
+    # `체력을 무너뜨렸어요 이제 기록을 안고…`처럼 두 문장이 붙는다.
     outcome = run["last_resolution"]["outcome"]
     assert outcome.endswith("."), outcome
     # 수호짐승은 장벽으로 말한다. 엉킴은 풀어 준다.
-    assert "장벽" in outcome
+    assert outcome == "보스를 물리쳤어요."
     completed = await _action(client, headers, run, "extract", {}, "stage-boss-extract")
     stage_result = completed["summary"]["progress"]["stage"]
     assert stage_result["stage_no"] == 8

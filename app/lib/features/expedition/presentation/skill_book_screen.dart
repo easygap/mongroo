@@ -251,7 +251,7 @@ class _SlotCard extends StatelessWidget {
               runSpacing: 8,
               children: [
                 _EquipButton(
-                  label: '성장결 기본',
+                  label: '성장 타입 기본',
                   slot: slot,
                   code: 'emotion.primary',
                   enabled: open && !saving,

@@ -36,6 +36,7 @@ class ExpeditionUiState {
     this.settlingResult = false,
     this.advancing = false,
     this.unlockedSkillBooks = const [],
+    this.presentedHp = const {},
   });
 
   final bool loading;
@@ -55,6 +56,9 @@ class ExpeditionUiState {
   final ExpeditionActionCue? actionCue;
   final ExpeditionSnapshot? pendingExpedition;
   final bool settlingResult;
+
+  /// Server HP revealed at contact while the remaining exchange still plays.
+  final Map<int, int> presentedHp;
 
   /// 마친 걸음에서 다음 걸음을 여는 중. [interactionLocked]에 넣지 않는다 —
   /// 이 값이 켜진 채로 [ExpeditionController.start]가 지나가야 하기 때문이다.
@@ -89,6 +93,7 @@ class ExpeditionUiState {
     bool? settlingResult,
     bool? advancing,
     List<ExpeditionUnlockedSkillBook>? unlockedSkillBooks,
+    Map<int, int>? presentedHp,
   }) =>
       ExpeditionUiState(
         loading: loading ?? this.loading,
@@ -124,6 +129,7 @@ class ExpeditionUiState {
         settlingResult: settlingResult ?? this.settlingResult,
         advancing: advancing ?? this.advancing,
         unlockedSkillBooks: unlockedSkillBooks ?? this.unlockedSkillBooks,
+        presentedHp: presentedHp ?? this.presentedHp,
       );
 }
 
@@ -157,7 +163,15 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
       final catalog = results[0] as ExpeditionCatalog;
       final roster = results[1] as List<ExpeditionRosterItem>;
       final expedition = results[2] as ExpeditionSnapshot?;
-      final stageMap = results[3] as ExpeditionStageMap;
+      var stageMap = results[3] as ExpeditionStageMap;
+      // A fresh session may receive the next unlocked region as its default
+      // map. Resume must show the region of the actual saved expedition.
+      if (expedition != null &&
+          expedition.run.isActive &&
+          stageMap.region.code != expedition.region.code) {
+        stageMap =
+            await repository.getStageMap(regionCode: expedition.region.code);
+      }
       final selected = state.selectedPlantIds
           .where(
               (id) => roster.any((item) => item.plantId == id && item.eligible))
@@ -181,6 +195,7 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
         tutorialCoachStep: _deriveTutorialStep(expedition),
         actionCue: null,
         pendingExpedition: null,
+        presentedHp: const {},
         settlingResult: false,
       );
       _queuedCues.clear();
@@ -426,7 +441,9 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
   Future<bool> advanceToNextStage() async {
     final finished = state.expedition;
     final region = state.stageMap?.region.code;
-    if (finished == null || finished.run.isActive || region == null) return false;
+    if (finished == null || finished.run.isActive || region == null) {
+      return false;
+    }
     if (state.advancing || state.interactionLocked) return false;
     state = state.copyWith(advancing: true, error: null);
     final repository = ref.read(expeditionRepositoryProvider);
@@ -679,6 +696,7 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
         state = state.copyWith(
           busyAction: null,
           actionCue: actionCues.first,
+          presentedHp: const {},
           pendingExpedition: expedition,
           settlingResult: false,
         );
@@ -846,7 +864,7 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
     }
     final pending = state.pendingExpedition;
     if (pending == null) {
-      state = state.copyWith(actionCue: null);
+      state = state.copyWith(actionCue: null, presentedHp: const {});
       return;
     }
     state = state.copyWith(
@@ -854,6 +872,7 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
       selectedMemberId: _defaultMember(pending),
       tutorialCoachStep: _deriveTutorialStep(pending),
       actionCue: null,
+      presentedHp: const {},
       pendingExpedition: null,
       settlingResult: true,
     );
@@ -864,6 +883,14 @@ class ExpeditionController extends Notifier<ExpeditionUiState> {
         return;
       }
       state = state.copyWith(settlingResult: false);
+    });
+  }
+
+  void presentCombatContact(ExpeditionActionCue cue) {
+    if (state.actionCue?.id != cue.id || !cue.playsEnemyAttack) return;
+    state = state.copyWith(presentedHp: {
+      ...state.presentedHp,
+      for (final target in cue.targets) target.memberId: target.hpAfter,
     });
   }
 }

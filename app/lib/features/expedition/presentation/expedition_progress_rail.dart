@@ -21,10 +21,11 @@ const double _routeDotSize = 44;
 /// 지금 몇 번째 걸음인지만 말하고, 누르면 경로를 편다. 지역명은 옆의
 /// 태그가 이미 말하므로 여기서 되풀이하지 않는다.
 class _StageProgressRail extends ConsumerWidget {
-  const _StageProgressRail({required this.stageNo});
+  const _StageProgressRail({required this.stageNo, this.title});
 
   /// 지금 걷고 있는 스테이지 번호.
   final int stageNo;
+  final String? title;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,7 +33,14 @@ class _StageProgressRail extends ConsumerWidget {
       expeditionControllerProvider.select((state) => state.stageMap),
     );
     final stages = stageMap?.stages ?? const <ExpeditionStage>[];
-    if (stageMap == null || stages.isEmpty) return const SizedBox.shrink();
+    if (stageMap == null || stages.isEmpty) {
+      return title == null
+          ? const SizedBox.shrink()
+          : Text(title!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium);
+    }
 
     final scheme = Theme.of(context).colorScheme;
     final total = stages.length;
@@ -46,48 +54,71 @@ class _StageProgressRail extends ConsumerWidget {
         HapticFeedback.selectionClick();
         _openStageRouteOverlay(context, stageNo: here);
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Row(
-          children: [
-            Expanded(
+      child: title != null
+          ? ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Flexible(
+                          child: Text(stageMap.region.shortName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelSmall)),
+                      const SizedBox(width: 8),
+                      Text('$here/$total',
+                          style: Theme.of(context).textTheme.labelSmall),
+                      const Icon(Icons.expand_more_rounded, size: 16),
+                    ]),
+                    Text(title!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium),
+                  ]))
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               child: Row(
                 children: [
-                  for (final stage in stages) ...[
-                    if (stage.no != stages.first.no)
-                      Expanded(
-                        child: Container(
-                          height: 2,
-                          color: stage.no <= here
-                              ? scheme.primary.withAlpha(150)
-                              : scheme.outlineVariant.withAlpha(140),
-                        ),
-                      ),
-                    _RailDot(stage: stage, here: stage.no == here),
-                  ],
+                  Expanded(
+                    child: Row(
+                      children: [
+                        for (final stage in stages) ...[
+                          if (stage.no != stages.first.no)
+                            Expanded(
+                              child: Container(
+                                height: 2,
+                                color: stage.no <= here
+                                    ? scheme.primary.withAlpha(150)
+                                    : scheme.outlineVariant.withAlpha(140),
+                              ),
+                            ),
+                          _RailDot(stage: stage, here: stage.no == here),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 9),
+                  // 설계서 5.3의 `작은 고정폭 숫자 묶음`. 걸음이 넘어갈 때 숫자가
+                  // 흔들리지 않도록 자릿수 폭을 고정한다.
+                  Text(
+                    '$here/$total',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: scheme.onSurfaceVariant,
+                      fontFeatures: const [ui.FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(width: 3),
+                  Icon(
+                    Icons.expand_more_rounded,
+                    size: 17,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ],
               ),
             ),
-            const SizedBox(width: 9),
-            // 설계서 5.3의 `작은 고정폭 숫자 묶음`. 걸음이 넘어갈 때 숫자가
-            // 흔들리지 않도록 자릿수 폭을 고정한다.
-            Text(
-              '$here/$total',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: scheme.onSurfaceVariant,
-                    fontFeatures: const [ui.FontFeature.tabularFigures()],
-                  ),
-            ),
-            const SizedBox(width: 3),
-            Icon(
-              Icons.expand_more_rounded,
-              size: 17,
-              color: scheme.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -487,7 +518,8 @@ class _RouteStagePoint extends StatelessWidget {
                     '${stage.no}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           fontWeight: FontWeight.w800,
-                          color: locked ? foreground.withAlpha(150) : foreground,
+                          color:
+                              locked ? foreground.withAlpha(150) : foreground,
                           height: 1.05,
                         ),
                   ),

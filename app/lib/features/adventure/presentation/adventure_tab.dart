@@ -9,22 +9,41 @@ import '../../../core/config/app_formats.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
 import '../../expedition/presentation/expedition_battle_dock.dart';
-import '../../expedition/presentation/expedition_pixel_art.dart';
-import '../../expedition/presentation/expedition_pixel_assets.g.dart';
-import '../../expedition/presentation/expedition_pixel_sprites.dart';
-import '../../home/presentation/plant_view.dart';
+import '../../expedition/presentation/expedition_screen.dart';
 import '../domain/adventure_models.dart';
 import 'adventure_controller.dart';
 import 'adventure_cue_audio.dart';
 
+class AdventureScreen extends StatelessWidget {
+  const AdventureScreen({super.key, this.initialActivity = 0});
+  final int initialActivity;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        body: SafeArea(
+          child: AdventureTab(
+            key: ValueKey(initialActivity),
+            initialActivity: initialActivity,
+            onExit: initialActivity == 0
+                ? null
+                : () =>
+                    context.canPop() ? context.pop() : context.go('/explore'),
+          ),
+        ),
+      );
+}
+
 class AdventureTab extends ConsumerStatefulWidget {
-  const AdventureTab({super.key});
+  const AdventureTab({super.key, this.initialActivity = 0, this.onExit});
+  final int initialActivity;
+  final VoidCallback? onExit;
 
   @override
   ConsumerState<AdventureTab> createState() => _AdventureTabState();
 }
 
 class _AdventureTabState extends ConsumerState<AdventureTab> {
+  late int _activity;
   Timer? _clock;
   DateTime _now = DateTime.now();
   late final AdventureCueAudio _cues;
@@ -32,9 +51,10 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
   @override
   void initState() {
     super.initState();
+    _activity = widget.initialActivity;
     _cues = AdventureCueAudio();
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _now = DateTime.now());
+      if (mounted && _activity == 1) setState(() => _now = DateTime.now());
     });
   }
 
@@ -64,158 +84,201 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
       },
     );
     final ui = ref.watch(adventureControllerProvider);
-    return ui.data.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => _LoadError(
-        onRetry: ref.read(adventureControllerProvider.notifier).load,
-      ),
-      data: (data) => RefreshIndicator(
-        onRefresh: ref.read(adventureControllerProvider.notifier).load,
-        child: LayoutBuilder(
-          builder: (context, constraints) => ListView(
-            key: const PageStorageKey('adventure-tab-scroll'),
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(
-              constraints.maxWidth >= 760 ? 24 : 14,
-              18,
-              constraints.maxWidth >= 760 ? 24 : 14,
-              48,
+    if (_activity == 0) {
+      return ExpeditionLobby(
+        onPatrol: () => context.push('/patrol'),
+        onJournal: () => context.push('/field-notes'),
+      );
+    }
+    return Column(children: [
+      Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Row(children: [
+            IconButton(
+              key: const ValueKey('adventure-activity-0'),
+              tooltip: '탐험 지도로',
+              onPressed: widget.onExit ?? () => setState(() => _activity = 0),
+              icon: const Icon(Icons.arrow_back_rounded),
             ),
-            children: [
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 960),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _AdventureHero(data: data),
-                      const SizedBox(height: 14),
-                      _DiaryGate(data: data),
-                      const SizedBox(height: 12),
-                      const _InteractiveExpeditionCallout(),
-                      const SizedBox(height: 22),
-                      _SectionTitle(
-                        icon: Icons.auto_graph_rounded,
-                        title: '오늘의 성장 효율',
-                        description: '마음 일기가 탐험보다 가장 큰 성장과 씨앗을 줘요.',
-                      ),
-                      const SizedBox(height: 10),
-                      _EconomyStrip(entries: data.economy),
-                      if (data.weeklyBoard.goals.isNotEmpty) ...[
-                        const SizedBox(height: 24),
-                        const _SectionTitle(
-                          icon: Icons.calendar_view_week_outlined,
-                          title: '이번 주 탐험 약속',
-                          description: '일기 기록을 중심으로 천천히 채우는 주간 씨앗 목표예요.',
-                        ),
-                        const SizedBox(height: 10),
-                        _WeeklyGoalBoard(
-                          board: data.weeklyBoard,
-                          busyAction: ui.busyAction,
-                          onClaim: _claimWeeklyGoal,
-                        ),
-                      ],
-                      if (data.character != null) ...[
-                        const SizedBox(height: 24),
-                        const _SectionTitle(
-                          icon: Icons.badge_outlined,
-                          title: '캐릭터 스테이터스',
-                          description: '감정은 능력의 방향만 바꾸고 총합은 같아요.',
-                        ),
-                        const SizedBox(height: 10),
-                        _CharacterStats(character: data.character!),
-                      ],
-                      const SizedBox(height: 24),
-                      const _SectionTitle(
-                        icon: Icons.route_outlined,
-                        title: '오늘의 순찰',
-                        description: '하루 한 번 길을 살펴보고 새 장소와 재료를 발견해요.',
-                      ),
-                      const SizedBox(height: 10),
-                      _PatrolSection(
-                        data: data,
-                        now: _now,
-                        busyAction: ui.busyAction,
-                        onStart: _startPatrol,
-                        onClaim: _claimPatrol,
-                      ),
-                      const SizedBox(height: 24),
-                      const _SectionTitle(
-                        icon: Icons.door_sliding_outlined,
-                        title: '발견한 던전',
-                        description: '순찰에서 찾은 장소는 하루 한 번 차분히 탐험할 수 있어요.',
-                      ),
-                      const SizedBox(height: 10),
-                      _DungeonGrid(
-                        dungeons: data.dungeons,
-                        enabled: data.diaryReady && !data.suspended,
-                        busyAction: ui.busyAction,
-                        onRun: _runDungeon,
-                      ),
-                      const SizedBox(height: 24),
-                      const _SectionTitle(
-                        icon: Icons.auto_stories_outlined,
-                        title: '탐험 기록장',
-                        description: '순찰과 발견한 던전에서 남긴 최근 발자국을 모아 봐요.',
-                      ),
-                      const SizedBox(height: 10),
-                      _AdventureJournalCard(journal: data.journal),
-                      if (data.storyCollection.chapters.isNotEmpty) ...[
-                        const SizedBox(height: 24),
-                        const _SectionTitle(
-                          icon: Icons.collections_bookmark_outlined,
-                          title: '탐험 이야기 도감',
-                          description: '만난 장면은 다시 읽고, 남은 이야기는 장소별로 찾아가요.',
-                        ),
-                        const SizedBox(height: 10),
-                        _StoryCollectionCard(collection: data.storyCollection),
-                      ],
-                      if (data.milestones.items.isNotEmpty) ...[
-                        const SizedBox(height: 24),
-                        const _SectionTitle(
-                          icon: Icons.military_tech_outlined,
-                          title: '쌓여 가는 탐험 발자국',
-                          description: '보상 경쟁 없이 오래 이어 온 기록을 칭호로 남겨요.',
-                        ),
-                        const SizedBox(height: 10),
-                        _MilestoneBoard(milestones: data.milestones),
-                      ],
-                      const SizedBox(height: 24),
-                      const _SectionTitle(
-                        icon: Icons.inventory_2_outlined,
-                        title: '탐험 수집함',
-                        description: '연구분을 남겨 두고 여분 표본만 하루 한 번 기증할 수 있어요.',
-                      ),
-                      const SizedBox(height: 10),
-                      _Inventory(
-                        items: data.inventory,
-                        donation: data.donation,
-                        busyAction: ui.busyAction,
-                        onDonate: _donateItem,
-                      ),
-                      const SizedBox(height: 24),
-                      const _SectionTitle(
-                        icon: Icons.science_outlined,
-                        title: '표본 연구대',
-                        description: '재료를 정리해 수집 효율을 높여요. 성장 보상은 마음 일기가 가장 커요.',
-                      ),
-                      const SizedBox(height: 10),
-                      _ResearchProgress(summary: data.researchSummary),
-                      const SizedBox(height: 12),
-                      _ResearchGrid(
-                        projects: data.researchProjects,
-                        busyAction: ui.busyAction,
-                        onComplete: _completeResearch,
-                      ),
-                    ],
-                  ),
-                ),
+            for (final (index, label) in [(1, '순찰'), (2, '수첩과 소지품')])
+              Expanded(
+                child: TextButton(
+                    key: ValueKey('adventure-activity-$index'),
+                    onPressed: () => setState(() => _activity = index),
+                    style: TextButton.styleFrom(
+                        foregroundColor: _activity == index
+                            ? Theme.of(context).colorScheme.onSurface
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                        backgroundColor: _activity == index
+                            ? Theme.of(context).colorScheme.surface
+                            : Colors.transparent,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6))),
+                    child: Text(label)),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
+          ])),
+      Expanded(
+          child: ui.data.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => _LoadError(
+                    onRetry:
+                        ref.read(adventureControllerProvider.notifier).load,
+                  ),
+              data: (data) => RefreshIndicator(
+                    onRefresh:
+                        ref.read(adventureControllerProvider.notifier).load,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => ListView(
+                        key: PageStorageKey('adventure-scroll-$_activity'),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          constraints.maxWidth >= 760 ? 24 : 14,
+                          18,
+                          constraints.maxWidth >= 760 ? 24 : 14,
+                          48,
+                        ),
+                        children: [
+                          Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 960),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (_activity == 1) ...[
+                                    _DiaryGate(data: data),
+                                    const SizedBox(height: 20),
+                                    const _SectionTitle(
+                                        icon: Icons.hiking_outlined,
+                                        title: '자동 순찰',
+                                        description: '길을 골라 대원을 보냅니다.'),
+                                    const SizedBox(height: 10),
+                                    _PatrolSection(
+                                        data: data,
+                                        now: _now,
+                                        busyAction: ui.busyAction,
+                                        onStart: _startPatrol,
+                                        onClaim: _claimPatrol),
+                                    const SizedBox(height: 24),
+                                    const _SectionTitle(
+                                        icon: Icons.door_sliding_outlined,
+                                        title: '발견한 장소',
+                                        description: '순찰 중 찾은 장소를 조사합니다.'),
+                                    const SizedBox(height: 10),
+                                    _DungeonGrid(
+                                        dungeons: data.dungeons,
+                                        enabled:
+                                            data.diaryReady && !data.suspended,
+                                        busyAction: ui.busyAction,
+                                        onRun: _runDungeon),
+                                  ],
+                                  if (_activity == 2) ...[
+                                    const SizedBox(height: 24),
+                                    const ExpeditionStoryJournal(),
+                                    if (data.weeklyBoard.goals.isNotEmpty) ...[
+                                      const SizedBox(height: 24),
+                                      const _SectionTitle(
+                                        icon: Icons.calendar_view_week_outlined,
+                                        title: '이번 주 기록',
+                                        description: '완료한 활동의 보상을 받습니다.',
+                                      ),
+                                      const SizedBox(height: 10),
+                                      _WeeklyGoalBoard(
+                                        board: data.weeklyBoard,
+                                        busyAction: ui.busyAction,
+                                        onClaim: _claimWeeklyGoal,
+                                      ),
+                                    ],
+                                    if (data.character != null) ...[
+                                      const SizedBox(height: 24),
+                                      const _SectionTitle(
+                                        icon: Icons.badge_outlined,
+                                        title: '대원 능력',
+                                        description:
+                                            '돌봄, 관찰, 용기, 집중에 따른 역할을 확인합니다.',
+                                      ),
+                                      const SizedBox(height: 10),
+                                      _CharacterStats(
+                                          character: data.character!),
+                                    ],
+                                    const SizedBox(height: 24),
+                                    const _SectionTitle(
+                                      icon: Icons.auto_stories_outlined,
+                                      title: '순찰 기록',
+                                      description: '대원을 보내 조사한 결과입니다.',
+                                    ),
+                                    const SizedBox(height: 10),
+                                    _AdventureJournalCard(
+                                        journal: data.journal),
+                                    if (data.storyCollection.chapters
+                                        .isNotEmpty) ...[
+                                      const SizedBox(height: 24),
+                                      const _SectionTitle(
+                                        icon:
+                                            Icons.collections_bookmark_outlined,
+                                        title: '순찰에서 찾은 이야기',
+                                        description: '장소별로 발견한 기록을 다시 읽습니다.',
+                                      ),
+                                      const SizedBox(height: 10),
+                                      _StoryCollectionCard(
+                                          collection: data.storyCollection),
+                                    ],
+                                    if (data.milestones.items.isNotEmpty) ...[
+                                      const SizedBox(height: 24),
+                                      const _SectionTitle(
+                                        icon: Icons.military_tech_outlined,
+                                        title: '탐험 이력',
+                                        description: '지금까지 달성한 기록입니다.',
+                                      ),
+                                      const SizedBox(height: 10),
+                                      _MilestoneBoard(
+                                          milestones: data.milestones),
+                                    ],
+                                    const SizedBox(height: 24),
+                                    const _SectionTitle(
+                                      icon: Icons.inventory_2_outlined,
+                                      title: '소지품',
+                                      description: '연구에 필요한 재료를 제외한 여분을 기증합니다.',
+                                    ),
+                                    const SizedBox(height: 10),
+                                    _Inventory(
+                                      items: data.inventory,
+                                      donation: data.donation,
+                                      busyAction: ui.busyAction,
+                                      onDonate: _donateItem,
+                                    ),
+                                    const SizedBox(height: 24),
+                                    const _SectionTitle(
+                                      icon: Icons.science_outlined,
+                                      title: '표본 연구',
+                                      description: '모은 재료로 새로운 조사 방법을 엽니다.',
+                                    ),
+                                    const SizedBox(height: 10),
+                                    _ResearchProgress(
+                                        summary: data.researchSummary),
+                                    const SizedBox(height: 12),
+                                    _ResearchGrid(
+                                      projects: data.researchProjects,
+                                      busyAction: ui.busyAction,
+                                      onComplete: _completeResearch,
+                                    ),
+                                    const SizedBox(height: 20),
+                                    ExpansionTile(
+                                        key: const PageStorageKey(
+                                            'adventure-economy'),
+                                        title: const Text('활동별 보상'),
+                                        children: [
+                                          _EconomyStrip(entries: data.economy)
+                                        ]),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ))),
+    ]);
   }
 
   Future<void> _startPatrol(String routeCode) async {
@@ -225,7 +288,7 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
     if (!mounted || !success) return;
     await HapticFeedback.selectionClick();
     unawaited(_playCue(AdventureCue.patrolDepart));
-    _showSuccess('순찰을 보냈어요. 돌아올 때까지 일상을 이어가도 좋아요.');
+    _showSuccess('순찰을 보냈습니다. 귀환 시간은 순찰 탭에서 확인할 수 있습니다.');
   }
 
   Future<void> _claimPatrol(int patrolId) async {
@@ -331,236 +394,6 @@ class _AdventureTabState extends ConsumerState<AdventureTab> {
 ///
 /// 탐험 화면들이 도트로 바뀌었는데 입구만 뿌연 그림이면 다른 앱의 광고처럼
 /// 보인다. 같은 규칙(도트 우선, 없으면 원화)이라 배너가 늦게 와도 빈칸이 없다.
-class _PatrolBanner extends StatelessWidget {
-  const _PatrolBanner();
-
-  static const _pixel = 'assets/adventure/pixel/banners/patrol-garden-path.png';
-
-  @override
-  Widget build(BuildContext context) {
-    final native = expeditionPixelAssetSizes[_pixel];
-    if (native != null) {
-      return PixelCoverImage(
-        asset: _pixel,
-        native: native,
-        alignment: Alignment.center,
-        minScale: 1,
-      );
-    }
-    return Image.asset(
-      'assets/adventure/patrol-garden-path.webp',
-      fit: BoxFit.cover,
-      semanticLabel: '새벽빛이 비치는 온실 바깥의 조용한 정원 순찰길',
-    );
-  }
-}
-
-/// 배너 위에 선 캐릭터. 도트 배너 위에는 도트로 선다.
-///
-/// 붓 그림 성장 원화를 도트 배경에 얹으면 오려 붙인 스티커처럼 보인다. 전투에
-/// 나오는 그 도트를 두 배로 세우고, 도트가 없는 품종만 성장 원화로 떨어진다.
-class _HeroCharacter extends StatelessWidget {
-  const _HeroCharacter({
-    required this.character,
-    required this.width,
-    required this.height,
-  });
-
-  final AdventureCharacter character;
-  final double width;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    final asset = expeditionPixelActorAsset(character.speciesCode);
-    if (asset == null) {
-      return PlantView(
-        stage: character.stage,
-        form: character.form,
-        speciesCode: character.speciesCode,
-        speciesName: character.speciesName,
-        outfitKey: character.outfit?.layerKey,
-        width: width,
-        height: height,
-      );
-    }
-    final native = expeditionPixelSpriteSize(asset, fallback: const Size(28, 58));
-    // 두 배가 안 들어가면 한 배. 소수 배율은 도트를 뭉갠다.
-    final scale = native.height * 2 <= height - 12 ? 2.0 : 1.0;
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Image.asset(
-          asset,
-          width: native.width * scale,
-          height: native.height * scale,
-          fit: BoxFit.fill,
-          filterQuality: FilterQuality.none,
-          isAntiAlias: false,
-          excludeFromSemantics: true,
-        ),
-      ),
-    );
-  }
-}
-
-class _AdventureHero extends StatelessWidget {
-  const _AdventureHero({required this.data});
-
-  final AdventureState data;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = MongrooPalette.of(context);
-    final character = data.character;
-    final textScale = MediaQuery.textScalerOf(context).scale(1);
-    final compact = MediaQuery.sizeOf(context).width < 520;
-    final largeText = textScale > 1.35;
-    if (largeText) {
-      return Semantics(
-        container: true,
-        label: '온실 밖 순찰길. 마음 일기를 쓴 뒤 캐릭터와 탐험을 떠나는 공간',
-        child: MongrooPanel(
-          padding: EdgeInsets.zero,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(
-                  height: 136,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      const _PatrolBanner(),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              palette.night.withAlpha(72),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      MongrooTag(
-                        label: data.diaryReady ? '오늘 탐험 가능' : '일기 후 개방',
-                        icon: data.diaryReady
-                            ? Icons.check_circle_outline
-                            : Icons.edit_note_outlined,
-                        backgroundColor:
-                            data.diaryReady ? palette.leaf : palette.paperDeep,
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        '온실 밖으로 한 걸음',
-                        style: Theme.of(context).textTheme.headlineLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        '기록으로 자란 캐릭터가 길과 물건을 찾아와요.',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-    return Semantics(
-      container: true,
-      label: '온실 밖 순찰길. 마음 일기를 쓴 뒤 캐릭터와 탐험을 떠나는 공간',
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: SizedBox(
-          height: (226 + ((textScale - 1).clamp(0, 1) * 84)).toDouble(),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              const _PatrolBanner(),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      palette.night.withAlpha(210),
-                      palette.night.withAlpha(104),
-                      Colors.transparent,
-                    ],
-                    stops: const [0, .58, 1],
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 20,
-                top: 22,
-                bottom: 20,
-                width: compact && !largeText ? 184 : 230,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    MongrooTag(
-                      label: data.diaryReady ? '오늘 탐험 가능' : '일기 후 개방',
-                      icon: data.diaryReady
-                          ? Icons.check_circle_outline
-                          : Icons.edit_note_outlined,
-                      backgroundColor:
-                          data.diaryReady ? palette.leaf : palette.paper,
-                    ),
-                    const Spacer(),
-                    Text(
-                      '온실 밖으로\n한 걸음',
-                      style:
-                          Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                color: AppTheme.onNight,
-                                fontFamily: AppTheme.pixelFont,
-                                height: 1.15,
-                              ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '기록으로 자란 캐릭터가 길과 물건을 찾아와요.',
-                      style: TextStyle(
-                        color: AppTheme.onNightMuted,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (character != null && !largeText)
-                Positioned(
-                  right: 8,
-                  bottom: -4,
-                  width: compact ? 118 : 142,
-                  height: compact ? 172 : 190,
-                  child: _HeroCharacter(
-                    character: character,
-                    width: compact ? 118 : 142,
-                    height: compact ? 172 : 190,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _DiaryGate extends StatelessWidget {
   const _DiaryGate({required this.data});
 
@@ -596,17 +429,17 @@ class _DiaryGate extends StatelessWidget {
                   children: [
                     Text(
                       data.suspended
-                          ? '오늘은 탐험보다 마음 돌봄을 먼저 해요'
+                          ? '지금은 순찰을 보낼 수 없습니다'
                           : ready
-                              ? '오늘의 마음 일기로 탐험이 열렸어요'
-                              : data.diaryMessage,
+                              ? '순찰을 보낼 수 있습니다'
+                              : '오늘 일기를 50자 이상 쓰면 자동 순찰을 보낼 수 있습니다.',
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       ready
-                          ? '일기 보상 40 XP · 씨앗 15개가 오늘 활동 중 가장 커요.'
-                          : '감정의 종류와 관계없이 같은 성장 보상을 받아요.',
+                          ? '돌아온 대원을 누르면 발견물을 받습니다.'
+                          : '직접 탐험은 지도에서 바로 출발할 수 있습니다.',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -636,60 +469,6 @@ class _DiaryGate extends StatelessWidget {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _InteractiveExpeditionCallout extends StatelessWidget {
-  const _InteractiveExpeditionCallout();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return MongrooPressable(
-      onTap: () => context.push('/expedition'),
-      semanticLabel: '직접 탐험 화면 열기',
-      borderRadius: BorderRadius.circular(16),
-      child: MongrooPanel(
-        shadowOffset: Offset.zero,
-        color: scheme.tertiaryContainer,
-        borderColor: scheme.tertiary.withAlpha(90),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: scheme.surface.withAlpha(210),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              alignment: Alignment.center,
-              child: Icon(Icons.explore_outlined, color: scheme.tertiary),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '캐릭터와 직접 탐험하기',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '탐험대를 꾸리고 지도에서 길과 사건의 답을 직접 골라요.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.chevron_right_rounded),
-          ],
-        ),
       ),
     );
   }
@@ -1576,7 +1355,7 @@ class _DungeonApproachSheet extends StatelessWidget {
                   MongrooPressable(
                     onTap: () => Navigator.of(context).pop(approach.code),
                     semanticLabel:
-                        '${approach.name}. ${approach.statLabel} ${approach.statValue}. ${approach.resonant ? '성장 공명 예상.' : ''} 수집 예상 ${approach.projectedQuantity}개',
+                        '${approach.name}. ${approach.statLabel} ${approach.statValue}. ${approach.resonant ? '성장 보너스 예상.' : ''} 수집 예상 ${approach.projectedQuantity}개',
                     child: MongrooPanel(
                       shadowOffset: Offset.zero,
                       borderColor: approach.resonant
@@ -1636,7 +1415,7 @@ class _DungeonApproachSheet extends StatelessWidget {
                                       ),
                                     MongrooTag(
                                       label: approach.resonant
-                                          ? '성장 공명 · 수집 ×${approach.projectedQuantity}'
+                                          ? '성장 보너스 · 수집 ×${approach.projectedQuantity}'
                                           : '수집 예상 ×${approach.projectedQuantity}',
                                       icon: approach.resonant
                                           ? Icons.auto_awesome_rounded
@@ -1776,7 +1555,7 @@ class _JournalEntryRow extends StatelessWidget {
                 if (entry.resonant) ...[
                   const SizedBox(height: 7),
                   MongrooTag(
-                    label: '성장 공명',
+                    label: '성장 보너스',
                     icon: Icons.auto_awesome_rounded,
                     backgroundColor: palette.leaf.withAlpha(38),
                     foregroundColor: palette.night,
@@ -1861,7 +1640,7 @@ class _StoryChapterTile extends StatelessWidget {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          key: ValueKey('story-chapter-${chapter.code}'),
+          key: PageStorageKey('story-chapter-${chapter.code}'),
           tilePadding: EdgeInsets.zero,
           childrenPadding: const EdgeInsets.only(bottom: 8),
           leading: Icon(

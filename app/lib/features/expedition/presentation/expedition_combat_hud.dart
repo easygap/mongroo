@@ -8,16 +8,16 @@ import 'expedition_pixel_art.dart';
 /// 전투 HUD의 공통 색. 무대가 도트이므로 HUD도 도트 판이다 — 유리·그림자
 /// 번짐·둥근 모서리를 쓰지 않는다.
 abstract final class ExpeditionCombatHudColors {
-  static const panel = Color(0xF21B1612);
-  static const border = Color(0xFF0C0907);
-  static const guardBar = Color(0xFFE2C46A);
-  static const enemyName = Color(0xFFFFF1D2);
-  static const warning = Color(0xFFFFB68A);
-  static const heal = Color(0xFF9FE7D2);
-  static const hurt = Color(0xFFFF8D78);
+  static const panel = Color(0xF21B1B1B);
+  static const border = Color(0xFF101216);
+  static const guardBar = Color(0xFFEEEEEE);
+  static const enemyName = Color(0xFFF8FAFF);
+  static const warning = Color(0xFFEEEEEE);
+  static const heal = Color(0xFFCDDBE9);
+  static const hurt = Color(0xFFFF91A6);
 }
 
-/// 서버가 확정한 수호 장벽 수치를 전투 진행률에 맞춰 표시한다.
+/// 서버가 확정한 체력 수치를 전투 진행률에 맞춰 표시한다.
 class ExpeditionEnemyGuardHud extends StatelessWidget {
   const ExpeditionEnemyGuardHud({
     super.key,
@@ -26,6 +26,7 @@ class ExpeditionEnemyGuardHud extends StatelessWidget {
     required this.before,
     required this.after,
     required this.progress,
+    this.contactProgress = .30,
     this.elite = false,
   });
 
@@ -34,15 +35,18 @@ class ExpeditionEnemyGuardHud extends StatelessWidget {
   final int before;
   final int after;
   final double progress;
+  final double contactProgress;
   final bool elite;
 
   @override
   Widget build(BuildContext context) {
-    final guard = ExpeditionCombatTimeline.guardValue(
+    final trail = ExpeditionCombatTimeline.guardValue(
       before: before,
       after: after,
       progress: progress,
+      contactProgress: contactProgress,
     );
+    final guard = progress >= contactProgress ? after : before;
     return PixelPanel(
       padding: const EdgeInsets.fromLTRB(6, 4, 6, 5),
       child: Column(
@@ -75,11 +79,23 @@ class ExpeditionEnemyGuardHud extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          PixelBar(
-            value: maxGuard <= 0 ? 0 : (guard / maxGuard).clamp(0, 1),
-            color: ExpeditionCombatHudColors.guardBar,
-            lowColor: ExpeditionCombatHudColors.guardBar,
-            height: 8,
+          Stack(
+            fit: StackFit.passthrough,
+            children: [
+              PixelBar(
+                value: maxGuard <= 0 ? 0 : (trail / maxGuard).clamp(0, 1),
+                color: ExpeditionCombatHudColors.hurt,
+                lowColor: ExpeditionCombatHudColors.hurt,
+                height: 8,
+              ),
+              PixelBar(
+                value: maxGuard <= 0 ? 0 : (guard / maxGuard).clamp(0, 1),
+                color: ExpeditionCombatHudColors.guardBar,
+                lowColor: ExpeditionCombatHudColors.guardBar,
+                track: Colors.transparent,
+                height: 8,
+              ),
+            ],
           ),
         ],
       ),
@@ -111,14 +127,13 @@ class ExpeditionTelegraphChip extends StatelessWidget {
             const SizedBox(width: 5),
             Expanded(
               child: Text(
-                '$attackName 예고 · $text',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                '$attackName\n$text',
+                softWrap: true,
                 textScaler: TextScaler.noScaling,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: AppTheme.onNight,
                       height: 1.3,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                     ),
               ),
             ),
@@ -158,14 +173,17 @@ class ExpeditionAttackCallout extends StatelessWidget {
     super.key,
     required this.attackName,
     required this.progress,
+    this.contactProgress = .65,
   });
 
   final String attackName;
   final double progress;
+  final double contactProgress;
 
   @override
   Widget build(BuildContext context) => Opacity(
-        opacity: ExpeditionCombatTimeline.floatingOpacity(progress, .55, .83),
+        opacity: ExpeditionCombatTimeline.floatingOpacity(progress,
+            (contactProgress - .28).clamp(0.0, 1.0), contactProgress + .10),
         child: PixelPanel(
           fill: const Color(0xF2431C22),
           padding: const EdgeInsets.fromLTRB(8, 3, 8, 3),

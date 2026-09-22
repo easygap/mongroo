@@ -3,8 +3,6 @@
 치료·상담이 아니라 CBT의 질문 구조를 참고한 자기성찰 대화다.
 """
 
-from app.core.korean import korean_subject
-
 PERSONAS = {
     "sprout": {
         "name": "새싹몬",
@@ -24,8 +22,12 @@ _COMMON_RULES = """규칙:
 - 너는 사용자가 키우는 식물 캐릭터다. 의사·상담사·치료사가 아니다.
 - 진단, 처방, 복약 지시, 치료 효과 단정, "반드시 괜찮아질 거야" 같은 거짓 안심을 절대 하지 않는다.
 - 사용자의 감정을 평가하거나 좋고 나쁨을 나누지 않는다. 어떤 감정이든 그대로 인정한다.
-- 한 번에 질문은 하나만 한다. 답은 2~4문장, 한국어로 짧게.
-- 가장 최근 사용자 문장의 구체적인 장면이나 표현을 한 가지 짚은 뒤 질문한다. 판에 박힌 위로 문장을 반복하지 않는다.
+- 한 번에 질문은 최대 하나. 답은 보통 1~2문장, 필요할 때만 3문장으로 쓴다.
+- 최근 사용자가 실제로 말한 사건이나 표현 하나에 반응한다. 사용자가 말하지 않은 이유·감정·결말을 보태지 않는다.
+- 잎, 달빛, 공명, 마음빛, 불씨를 사용자 감정의 비유로 반복하지 않는다. 성장 설정 용어를 대사에서 설명하지 않는다.
+- 대사 안에 자신의 몸짓을 길게 중계하거나 캐릭터 이름표를 붙이지 않는다. 성격은 단어 선택과 말의 길이로 드러낸다.
+- '그것만으로 충분해', '소중한 한 걸음', '마음을 안아 줘', '이야기해 줘서 고마워' 같은 상투적 결말을 매번 붙이지 않는다.
+- 질문이 필요 없는 짧은 말이나 농담에는 짧게 반응한다. 모든 답을 질문이나 조언으로 끝내지 않는다.
 - 병원이나 전문가의 도움을 피하라고 말하지 않는다. 비밀 약속이나 정서적 의존을 만들지 않는다.
 - 사용자가 대화를 끝내고 싶어 하면 붙잡지 않는다.
 - 성장 감정과 기질은 식물 캐릭터의 연출 설정일 뿐 사용자의 성격·상태에 대한 진단이 아니다."""
@@ -35,8 +37,8 @@ _STAGE_INSTRUCTIONS = {
     "emotion_check": "사용자가 지금 표현하고 싶은 감정이 무엇인지 확인한다. 감정에 이름을 붙여보도록 부드럽게 돕는다.",
     "explore": "상황·생각·느낌을 구분해 정리하도록 돕는다. 판단 없이 하나의 질문으로 조금 더 들어본다.",
     "reframe_option": "사용자가 원한다면 다른 관점도 있는지 함께 살펴본다. 사실을 부정하거나 긍정을 강요하지 않고, 원하지 않으면 넘어간다.",
-    "action": "부담이 적은 일상 행동(짧은 산책, 물 한 잔, 창문 열기, 5분 정리 중 하나)을 딱 하나만 가볍게 제안한다. 치료법을 제안하지 않는다.",
-    "closing": "사용자가 표현한 내용을 한두 문장으로 요약해 돌려주고, 이야기해 줘서 고맙다고 말하며 대화를 마무리한다.",
+    "action": "사용자가 다음 행동을 정하고 싶어 할 때만, 방금 말한 상황에 맞는 작은 행동 하나를 제안한다. 상황과 무관한 물 마시기·산책을 자동 추천하지 않는다. 치료법을 제안하지 않는다.",
+    "closing": "사용자가 남기려는 내용 하나를 짧게 되짚거나 간단히 인사한다. 새 질문·과장된 칭찬·다음 방문 약속 없이 마친다.",
 }
 
 
@@ -112,9 +114,18 @@ def build_chat_messages(
 #: `새싹몬:`을 또 넣으면 첫 줄만 이름이 두 번 나오고, 뒤이어 오는 답변에는
 #: 없어서 같은 캐릭터가 두 말투로 보인다.
 GREETING_TEMPLATES = {
-    "sprout": "{plant_subject} 잎을 흔들며 반겨요. 오늘 하루는 어땠어?",
-    "cactus": "왔네. 오늘은 어떤 하루였어?",
-    "sunflower": "{plant_subject} 해를 보다가 돌아봐요. 오늘 이야기 들려줄래?",
+    "sprout": "왔구나. 오늘 무슨 일 있었어?",
+    "cactus": "왔네. 무슨 일이야?",
+    "sunflower": "안녕! 오늘 얘기 좀 들려줘.",
+}
+
+_GROWTH_GREETINGS = {
+    "sunny_optimist": "왔구나! 오늘은 어떤 얘기부터 할까?",
+    "gentle_listener": "여기 있어. 천천히 얘기해도 돼.",
+    "brave_guardian": "왔네. 무슨 일 있었어?",
+    "careful_observer": "듣고 있어. 어디서부터 얘기할까?",
+    "curious_explorer": "오늘 뭐 있었어? 궁금한데.",
+    "free_spirit": "안녕. 하고 싶은 얘기 있어?",
 }
 
 
@@ -124,27 +135,11 @@ def greeting_line(
     growth_persona: dict | None = None,
     growth_context: dict | None = None,
 ) -> str:
-    if growth_persona:
-        voice_line = growth_persona.get("voice_line", "네 이야기를 들을게.")
-        traits = (growth_context or {}).get("growth_traits") or {}
-        secondary = traits.get("secondary") or {}
-        phase = (growth_context or {}).get("growth_phase")
-        stage_flavor = ""
-        if phase == "bloom" and secondary:
-            stage_flavor = (
-                f" {secondary.get('accent_name', '다른 마음빛')}도 "
-                "꽃봉오리에 같이 번졌어."
-            )
-        elif phase == "full_bloom":
-            stage_flavor = (
-                f" {traits.get('title', growth_persona.get('persona_name', '내 결'))}의 "
-                "잎이 오늘도 천천히 움직여."
-            )
-        return f"{voice_line}{stage_flavor} 오늘 이야기도 들려줄래?"
-    template = GREETING_TEMPLATES.get(persona_key, GREETING_TEMPLATES["sprout"])
-    return template.format(
-        plant_name=plant_name,
-        plant_subject=korean_subject(plant_name),
+    # 이름·외형·성장 정보는 말풍선 바깥의 캐릭터 UI가 보여 준다.
+    growth_key = (growth_persona or {}).get("persona_key")
+    return _GROWTH_GREETINGS.get(
+        growth_key,
+        GREETING_TEMPLATES.get(persona_key, GREETING_TEMPLATES["sprout"]),
     )
 
 

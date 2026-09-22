@@ -281,8 +281,7 @@ class ExpeditionUnlockedSkillBook {
   String get sourceLabel => source == 'challenge' ? '도전 달성' : '조건 달성';
 
   /// 안내 한 줄. 보유해도 자동 장착되지 않으므로 다음 행동까지 알려 준다.
-  String get notice =>
-      '${koreanObject(name)} 서고에 담았어요. 기록서 화면에서 장착할 수 있어요.';
+  String get notice => '${koreanObject(name)} 서고에 담았어요. 기록서 화면에서 장착할 수 있어요.';
 
   factory ExpeditionUnlockedSkillBook.fromJson(Map<String, dynamic> json) {
     final code = json['code'] as String? ?? '';
@@ -591,6 +590,7 @@ class ExpeditionChoice {
     required this.effectKey,
     required this.guardDamage,
     required this.previews,
+    this.consequence = '',
   });
 
   final String code;
@@ -603,6 +603,7 @@ class ExpeditionChoice {
   final String? effectKey;
   final int guardDamage;
   final List<ExpeditionChoicePreview> previews;
+  final String consequence;
 
   ExpeditionChoicePreview? previewFor(int memberId) {
     for (final preview in previews) {
@@ -616,6 +617,7 @@ class ExpeditionChoice {
         code: json['code'] as String? ?? '',
         label: json['label'] as String? ?? '',
         safe: json['safe'] == true,
+        consequence: json['consequence'] as String? ?? '',
         stat: json['stat'] as String?,
         resolveCost: _asInt(json['resolve_cost']),
         effectKey: json['effect_key'] as String?,
@@ -664,6 +666,9 @@ class ExpeditionResolution {
     required this.actorName,
     required this.skillCode,
     required this.combat,
+    this.resultText = '',
+    this.finding,
+    this.lightRecovered = 0,
   });
 
   final String eventCode;
@@ -674,6 +679,10 @@ class ExpeditionResolution {
   final String actorName;
   final String? skillCode;
   final ExpeditionCombatFeedback? combat;
+  final String resultText;
+  final String? finding;
+  final int lightRecovered;
+  String get displayText => resultText.isEmpty ? outcome : resultText;
 
   factory ExpeditionResolution.fromJson(Map<String, dynamic> json) =>
       ExpeditionResolution(
@@ -681,6 +690,9 @@ class ExpeditionResolution {
         title: json['title'] as String? ?? '',
         choice: json['choice'] as String? ?? '',
         outcome: json['outcome'] as String? ?? '',
+        resultText: json['result_text'] as String? ?? '',
+        finding: json['finding'] as String?,
+        lightRecovered: _asInt(_map(json['resource_changes'])['trail_light']),
         score: _asInt(json['score']),
         actorName: json['actor_name'] as String? ?? '탐험대원',
         skillCode: json['skill_code'] as String?,
@@ -747,6 +759,8 @@ class ExpeditionChoicePreview {
     required this.statLabel,
     required this.value,
     required this.difficulty,
+    this.successChance,
+    this.failureResolveCost,
   });
 
   final int memberId;
@@ -756,6 +770,11 @@ class ExpeditionChoicePreview {
   final String? statLabel;
   final int value;
   final int difficulty;
+  final int? successChance;
+  final int? failureResolveCost;
+  int get chance =>
+      successChance ??
+      (safe ? 100 : ((value + 5 - difficulty).clamp(0, 4) * 25));
 
   /// 성공 예상 3단 표현. 정확한 수치는 길게 누르기 상세에서 보여 준다.
   String get outlook {
@@ -768,6 +787,9 @@ class ExpeditionChoicePreview {
 
   factory ExpeditionChoicePreview.fromJson(Map<String, dynamic> json) =>
       ExpeditionChoicePreview(
+        failureResolveCost: json['failure_resolve_cost'] == null
+            ? null
+            : _asInt(json['failure_resolve_cost']),
         memberId: _asInt(json['member_id']),
         label: json['label'] as String? ?? '',
         forecast: json['forecast'] as String?,
@@ -775,6 +797,9 @@ class ExpeditionChoicePreview {
         statLabel: json['stat_label'] as String?,
         value: _asInt(json['value']),
         difficulty: _asInt(json['difficulty']),
+        successChance: json['success_chance'] is num
+            ? (json['success_chance'] as num).toInt().clamp(0, 100)
+            : null,
       );
 }
 

@@ -254,7 +254,7 @@ void main() {
     expect(repository.lastCreateTags, isEmpty);
     expect(repository.lastCreateContent, contains('새로운 팀원'));
     await tester.pumpAndSettle();
-    expect(find.text('이야기가 화분에 닿았어요'), findsOneWidget);
+    expect(find.text('일기를 저장했어요'), findsOneWidget);
     await tester.tap(find.text('목록으로 돌아가기'));
     await tester.pumpAndSettle();
     expect(find.byType(MoodRecordScreen), findsNothing);
@@ -272,8 +272,8 @@ void main() {
     await tester.tap(find.text('저장하기'));
     await tester.pumpAndSettle();
 
-    expect(find.text('식물 변화 보기'), findsOneWidget);
-    await tester.tap(find.text('식물 변화 보기'));
+    expect(find.text('캐릭터 보기'), findsOneWidget);
+    await tester.tap(find.text('캐릭터 보기'));
     await tester.pumpAndSettle();
     expect(find.text('홈'), findsOneWidget);
   });
@@ -356,25 +356,25 @@ void main() {
     await tester.tap(find.text('저장하기'));
     await tester.pumpAndSettle();
 
-    expect(find.text('이야기가 화분에 닿았어요'), findsOneWidget);
+    expect(find.text('일기를 저장했어요'), findsOneWidget);
     expect(tester.takeException(), isNull);
     final sheetScroll = find.ancestor(
-      of: find.text('이야기가 화분에 닿았어요'),
+      of: find.text('일기를 저장했어요'),
       matching: find.byType(SingleChildScrollView),
     );
     expect(sheetScroll, findsOneWidget);
     await tester.drag(sheetScroll, const Offset(0, -180));
     await tester.pump();
-    expect(find.text('식물 변화 보기'), findsOneWidget);
+    expect(find.text('캐릭터 보기'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('감정 선택 없이 일기 본문 중심으로 안내한다', (tester) async {
     await _pumpRecordScreen(tester, repository: FakeMoodRepository());
 
-    expect(find.text('오늘 기록'), findsOneWidget);
-    expect(find.text('오늘의 일기'), findsOneWidget);
-    expect(find.text('오늘을 글로 남겨요'), findsOneWidget);
+    expect(find.text('일기 쓰기'), findsOneWidget);
+    expect(find.byKey(const ValueKey('mood-diary-field')), findsOneWidget);
+    expect(find.text('오늘은 어땠나요?'), findsOneWidget);
     expect(find.text('마음 날씨'), findsNothing);
     expect(find.text('감정 단서'), findsNothing);
   });
@@ -531,7 +531,7 @@ void main() {
       textScale: 2,
     );
 
-    expect(find.text('오늘의 일기'), findsOneWidget);
+    expect(find.byKey(const ValueKey('mood-diary-field')), findsOneWidget);
     // ListView라 화면 밖 버튼은 아직 만들어지지 않는다. 끝까지 굴려서 꺼낸다.
     // 본문 입력 칸도 스크롤 가능해서 Scrollable이 여럿이다. 바깥 것을 집는다.
     await tester.scrollUntilVisible(

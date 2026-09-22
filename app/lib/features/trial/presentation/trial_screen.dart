@@ -560,7 +560,7 @@ class _TrialDiaryState extends State<_TrialDiary> {
               labelText: '짧은 마음 기록',
               alignLabelWithHint: true,
               hintText: '오늘 기억에 남은 순간과 그때의 느낌을 적어 보세요.',
-              helperText: '10자 이상이면 캐릭터가 마음의 결을 받아요.',
+              helperText: '10자 이상 적으면 저장할 수 있어요.',
               // 안내와 글자 수가 한 줄을 나눠 쓴다. 기본 한 줄로 두면
               // `0/280`에 밀려 `…마음의 결을 받…`에서 끊긴다.
               helperMaxLines: 2,
@@ -646,7 +646,7 @@ class _TrialGrowth extends StatelessWidget {
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     // 이름은 본편 표에서 읽는다. 체험만 `햇살형`이라고 부르면 가입한 뒤에
-    // 같은 것을 `햇살결`로 다시 배워야 한다.
+    // 같은 것을 `햇살`로 다시 배워야 한다.
     final formLabel = progress.growth.personalityName;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

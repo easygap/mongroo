@@ -3,9 +3,9 @@
   "short_name": "몽그루",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#EFEFEF",
-  "theme_color": "#B9EE84",
-  "description": "감정 기록, 식물 성장, 일일 퀘스트를 한곳에서 관리하는 앱",
+  "background_color": "#F7F7F7",
+  "theme_color": "#202020",
+  "description": "일기를 쓰고 식물을 키우며, 함께 온실 밖을 탐험하는 몽그루",
   "orientation": "any",
   "prefer_related_applications": false,
   "icons": [

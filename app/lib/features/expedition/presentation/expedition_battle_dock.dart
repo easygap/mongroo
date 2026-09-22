@@ -6,7 +6,6 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/text/korean_particles.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
 import '../../home/domain/plant.dart';
@@ -14,7 +13,6 @@ import '../../home/presentation/plant_view.dart';
 import '../domain/expedition_models.dart';
 import 'expedition_combat_audio.dart';
 import 'expedition_combat_effects.dart';
-import 'expedition_combat_sprites.dart';
 import 'expedition_controller.dart';
 import 'expedition_pixel_art.dart';
 import 'expedition_pixel_sprites.dart';
@@ -41,6 +39,18 @@ const expeditionCombatActionOrder = <String>[
 
 const expeditionSkillDetailHoldDuration = Duration(milliseconds: 350);
 
+/// Open sheets suspend automatic commands without changing the chosen mode.
+final expeditionAutoPauseProvider = StateProvider.autoDispose<int>((ref) => 0);
+
+Future<T?> _withPausedAuto<T>(WidgetRef ref, Future<T?> Function() open) async {
+  final pause = ref.read(expeditionAutoPauseProvider.notifier);
+  pause.state++;
+  try {
+    return await open();
+  } finally {
+    if (pause.mounted) pause.state--;
+  }
+}
 
 /// 전투 화면 상단 정보 바 — 라운드 진행과 표준 장비 토글, 긴급 귀환.
 class ExpeditionBattleTopBar extends ConsumerWidget {
@@ -53,136 +63,76 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
   final ExpeditionBattle battle;
   final bool locked;
 
-  /// 상태 태그와 조작이 한 줄에 같이 들어가는 최소 폭.
-  ///
-  /// 실측 폭의 합이다 - R 태그 96, 보스 태그 182, AUTO·연속 148, 버튼 48+48에
-  /// 사이 여백까지 546. 그 아래에서는 조작을 아랫줄로 내린다.
-  static const double oneLineWidth = 560;
-
-  /// 한 줄일 때의 높이.
+  static const double oneLineWidth = 280;
   static const double lineHeight = 48;
-
-  /// 두 줄이 될 때 늘어나는 높이 - 상태 줄 34에 사이 여백 4.
-  static const double compactExtraHeight = 38;
-
-  /// 주어진 폭에서 이 바가 실제로 차지하는 높이.
-  ///
-  /// 무대 위에 겹쳐 놓는 장벽 HUD가 이 값만큼 내려가야 한다.
-  static double heightFor(double width) =>
-      width >= oneLineWidth ? lineHeight : lineHeight + compactExtraHeight;
+  static const double compactExtraHeight = 0;
+  static double heightFor(double width) => lineHeight;
 
   Future<void> _confirmRetreat(BuildContext context, WidgetRef ref) async {
-    final leave = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('지금 긴급 귀환할까요?'),
-        content: const Text(
-          '지금 물러나면 아직 확정하지 않은 발견물과 보상을 가져갈 수 없어요.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('계속 지휘'),
-          ),
-          FilledButton.tonal(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('긴급 귀환'),
-          ),
-        ],
-      ),
-    );
-    if (leave != true) return;
+    final leave = await _withPausedAuto(
+        ref,
+        () => showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('탐험을 그만할까요?'),
+                content: const Text(
+                  '이번 탐험에서 아직 받지 않은 보상은 사라져요.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('계속하기'),
+                  ),
+                  FilledButton.tonal(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('탐험 그만하기'),
+                  ),
+                ],
+              ),
+            ));
+    if (leave != true || !context.mounted) return;
     HapticFeedback.mediumImpact();
     await ref.read(expeditionControllerProvider.notifier).retreat();
   }
 
-  Future<void> _openSettings(BuildContext context) => showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        builder: (context) => const _BattleSettingsSheet(),
-      );
+  Future<void> _openSettings(BuildContext context, WidgetRef ref) async =>
+      _withPausedAuto(
+          ref,
+          () => showModalBottomSheet<void>(
+                context: context,
+                showDragHandle: true,
+                builder: (context) => const _BattleSettingsSheet(),
+              ));
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(expeditionBattleSettingsProvider);
     final notifier = ref.read(expeditionBattleSettingsProvider.notifier);
-    final scheme = Theme.of(context).colorScheme;
     final autoLabel = switch (settings.autoMode) {
-      ExpeditionAutoMode.off => 'AUTO',
-      ExpeditionAutoMode.assist => 'AUTO·보조',
-      ExpeditionAutoMode.continuous => 'AUTO·연속',
+      ExpeditionAutoMode.off => '자동',
+      ExpeditionAutoMode.assist => '이번 전투',
+      ExpeditionAutoMode.continuous => '계속 자동',
     };
-    final wave = battle.wave;
-    final bossPhase = battle.bossPhase;
-    final threat = battle.threat;
-
-    // 상태 태그는 남는 폭을 나눠 쓰고 넘치면 말줄임한다. 조작을 밀어내면
-    // 안 되는 쪽은 태그가 아니라 버튼이다.
+    final progress = battle.bossPhase != null
+        ? '${battle.round}턴 · 보스 ${battle.bossPhase!.index}단계'
+        : battle.wave != null && battle.wave!.count > 1
+            ? '${battle.round}턴 · ${battle.wave!.index}/${battle.wave!.count}'
+            : '${battle.round} / ${battle.maxRounds}턴';
     final statusTags = <Widget>[
-      MongrooTag(
-        label: 'R ${battle.round}/${battle.maxRounds}',
-        icon: Icons.sports_martial_arts_rounded,
-        backgroundColor: scheme.errorContainer.withAlpha(130),
+      Flexible(
+        child: Text(progress,
+            key: ValueKey(battle.bossPhase != null
+                ? 'seq-dock-boss-phase'
+                : battle.wave != null && battle.wave!.count > 1
+                    ? 'seq-dock-wave'
+                    : 'seq-dock-round'),
+            style: Theme.of(context).textTheme.labelMedium),
       ),
-      if (wave != null && wave.count > 1) ...[
-        const SizedBox(width: 6),
-        Flexible(
-          child: Semantics(
-            label: '${wave.count}번의 엉킴 중 ${wave.index}번째',
-            child: MongrooTag(
-              key: const ValueKey('seq-dock-wave'),
-              // 바로 위 시맨틱스가 이미 `엉킴`이라고 읽어 준다. 눈에 보이는
-              // 쪽만 `웨이브`였다 - 설계 문서 말이지 화면 말이 아니다.
-              label: '엉킴 ${wave.index}/${wave.count}',
-              icon: Icons.blur_on_rounded,
-              backgroundColor: scheme.tertiaryContainer.withAlpha(130),
-              maxWidth: 140,
-            ),
-          ),
-        ),
-      ],
-      if (bossPhase != null) ...[
-        const SizedBox(width: 6),
-        Flexible(
-          child: Semantics(
-            liveRegion: true,
-            label:
-                '${bossPhase.count}단계 보스 중 ${bossPhase.index}단계 ${bossPhase.name}',
-            child: MongrooTag(
-              key: const ValueKey('seq-dock-boss-phase'),
-              label: 'P${bossPhase.index}/${bossPhase.count} · ${bossPhase.name}',
-              icon: bossPhase.isFinal
-                  ? Icons.warning_amber_rounded
-                  : Icons.change_circle_outlined,
-              backgroundColor: bossPhase.isFinal
-                  ? scheme.errorContainer.withAlpha(160)
-                  : scheme.secondaryContainer.withAlpha(140),
-              maxWidth: 220,
-            ),
-          ),
-        ),
-      ],
-      if (threat != null && threat.tier > 0 && bossPhase == null) ...[
-        const SizedBox(width: 6),
-        Flexible(
-          child: Semantics(
-            label:
-                '위협 ${threat.tier}단계 ${threat.name}, 권장 레벨 ${threat.recommendedLevel}',
-            child: MongrooTag(
-              key: const ValueKey('seq-dock-threat'),
-              label: '위협 ${threat.tier} · ${threat.name}',
-              icon: Icons.shield_moon_outlined,
-              backgroundColor: scheme.tertiaryContainer.withAlpha(130),
-              maxWidth: 220,
-            ),
-          ),
-        ),
-      ],
     ];
 
     // AUTO만 전장에 남긴다. 매 턴 고쳐 잡는 지휘 판단이라 한 번에 닿아야 한다.
     final autoChip = Semantics(
-      label: '자동 지휘 $autoLabel. 눌러서 끔, 보조, 연속 순서로 바꿔요',
+      label: '자동 전투 $autoLabel. 눌러서 끄기, 이번 전투, 계속 자동 순서로 바꿔요',
       child: SizedBox(
         // 옆의 설정·후퇴 아이콘 버튼은 48이다. 이 칩만 44라서 Android 핵심 앱
         // 품질 지침의 48dp에 못 미쳤다 - 매 턴 고쳐 잡는 지휘 판단이라 가장
@@ -209,7 +159,7 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
           '소리 ${settings.audioLabel}',
       child: IconButton(
         key: const ValueKey('seq-dock-settings'),
-        onPressed: () => _openSettings(context),
+        onPressed: () => _openSettings(context, ref),
         tooltip: '전투 설정',
         constraints: const BoxConstraints.tightFor(width: 48, height: 48),
         icon: const Icon(Icons.tune_rounded),
@@ -218,52 +168,31 @@ class ExpeditionBattleTopBar extends ConsumerWidget {
     final retreatButton = IconButton(
       key: const ValueKey('seq-dock-retreat'),
       onPressed: locked ? null : () => _confirmRetreat(context, ref),
-      tooltip: '긴급 귀환',
+      tooltip: '탐험 그만하기',
       constraints: const BoxConstraints.tightFor(width: 48, height: 48),
-      icon: const Icon(Icons.directions_run_rounded),
+      icon: const Icon(Icons.close_rounded),
     );
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= oneLineWidth) {
-          return SizedBox(
-            height: lineHeight,
-            child: Row(
-              children: [
-                Expanded(child: Row(children: statusTags)),
-                const SizedBox(width: 6),
-                autoChip,
-                const SizedBox(width: 6),
-                settingsButton,
-                retreatButton,
-              ],
-            ),
-          );
-        }
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              height: compactExtraHeight - 4,
-              child: Row(children: statusTags),
-            ),
-            const SizedBox(height: 4),
-            SizedBox(
-              height: lineHeight,
-              child: Row(
-                children: [
-                  autoChip,
-                  const SizedBox(width: 6),
-                  settingsButton,
-                  const Spacer(),
-                  retreatButton,
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
+    return LayoutBuilder(builder: (context, constraints) {
+      final large = MediaQuery.textScalerOf(context).scale(1) >= 1.5;
+      final controls = Row(children: [
+        retreatButton,
+        if (!large)
+          Expanded(child: Row(children: statusTags))
+        else
+          const Spacer(),
+        autoChip,
+        settingsButton,
+      ]);
+      return large
+          ? Column(mainAxisSize: MainAxisSize.min, children: [
+              Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+                  child: Row(children: statusTags)),
+              SizedBox(height: lineHeight, child: controls),
+            ])
+          : SizedBox(height: lineHeight, child: controls);
+    });
   }
 }
 
@@ -290,7 +219,7 @@ class _BattleSettingsSheet extends ConsumerWidget {
             Text('전투 설정', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 4),
             Text(
-              '어느 설정에서도 판정과 결과는 그대로예요.',
+              '속도와 소리를 바꿔도 전투 결과는 달라지지 않아요.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -299,8 +228,8 @@ class _BattleSettingsSheet extends ConsumerWidget {
             _BattleSettingRow(
               itemKey: const ValueKey('seq-dock-pace'),
               icon: Icons.speed_rounded,
-              title: '연출 배속',
-              description: '판정과 프레임은 건너뛰지 않고 타임라인만 줄여요.',
+              title: '전투 속도',
+              description: '전투 장면을 재생하는 속도예요.',
               value: '${settings.pace}배',
               semanticsLabel: '연출 배속 ${settings.pace}배, 눌러서 바꿔요',
               onTap: notifier.togglePace,
@@ -308,8 +237,8 @@ class _BattleSettingsSheet extends ConsumerWidget {
             _BattleSettingRow(
               itemKey: const ValueKey('seq-dock-short'),
               icon: Icons.bolt_outlined,
-              title: '짧은 연출',
-              description: '시동과 여운을 줄이되 판정 정보는 그대로 보여 줘요.',
+              title: '효과 줄이기',
+              description: '화면 흔들림과 움직임을 줄여요.',
               value: settings.shortEffects ? '켜짐' : '꺼짐',
               semanticsLabel:
                   '짧은 연출 ${settings.shortEffects ? '켜짐' : '꺼짐'}, 눌러서 바꿔요',
@@ -327,6 +256,16 @@ class _BattleSettingsSheet extends ConsumerWidget {
               value: settings.audioLabel,
               semanticsLabel: '탐험 소리 ${settings.audioLabel}, 눌러서 다음 단계',
               onTap: notifier.cycleAudioMode,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '기술을 길게 누르면 자세한 설명을 볼 수 있어요.\n'
+              '키보드: 1–6 기술 선택 · ← → 대원 선택\n'
+              '마우스: 우클릭으로 기술 설명',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    height: 1.6,
+                  ),
             ),
           ],
         ),
@@ -357,8 +296,10 @@ class _BattleSettingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
+      container: true,
       button: true,
       label: semanticsLabel,
+      onTap: onTap,
       child: ExcludeSemantics(
         child: ListTile(
           key: itemKey,
@@ -390,6 +331,7 @@ class ExpeditionSequentialCommandDock extends ConsumerStatefulWidget {
     required this.selectedMemberId,
     required this.onSelectMember,
     required this.onSubmit,
+    this.presentedHp = const {},
   });
 
   final ExpeditionBattle battle;
@@ -407,6 +349,7 @@ class ExpeditionSequentialCommandDock extends ConsumerStatefulWidget {
   final int? selectedMemberId;
   final void Function(int memberId) onSelectMember;
   final Future<bool> Function(ExpeditionCombatCommand command) onSubmit;
+  final Map<int, int> presentedHp;
 
   @override
   ConsumerState<ExpeditionSequentialCommandDock> createState() =>
@@ -414,13 +357,16 @@ class ExpeditionSequentialCommandDock extends ConsumerStatefulWidget {
 }
 
 class _ExpeditionSequentialCommandDockState
-    extends ConsumerState<ExpeditionSequentialCommandDock> {
+    extends ConsumerState<ExpeditionSequentialCommandDock>
+    with WidgetsBindingObserver {
   Timer? _autoTimer;
   int? _selectedMemberId;
   String? _fingerprint;
   bool _submitting = false;
   bool _detailsOpen = false;
-  bool _skillIconsPrecached = false;
+  bool _appActive = true;
+  String? _pendingAction;
+  final _commands = ExpeditionCombatAudio(musicEnabled: false);
 
   ExpeditionBattle get _battle => widget.battle;
 
@@ -428,31 +374,18 @@ class _ExpeditionSequentialCommandDockState
       widget.locked ||
       _submitting ||
       _detailsOpen ||
+      !_appActive ||
       !_battle.isActive;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_commands.setChannels(
+        sfx: ref.read(expeditionBattleSettingsProvider).sfxEnabled));
+    unawaited(_commands.warmUp(sounds: const [ExpeditionCombatSound.command]));
     _fingerprint = _battleFingerprint();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleAuto());
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_skillIconsPrecached) return;
-    _skillIconsPrecached = true;
-    // 지금 이 전투에 나오는 아이콘만 올린다. 지도 전체를 올리면 대원 셋이
-    // 최대 열두 칸을 쓰는 자리를 위해 마흔 장을 디코드하게 되고, 품종이나
-    // 성장결이 늘 때마다 그 값이 조용히 커진다.
-    final assets = <String>{
-      for (final member in _battle.party)
-        for (final action in member.kit.combatSkills)
-          if (_dockSkillIconAssets[action.code] case final asset?) asset,
-    };
-    for (final asset in assets) {
-      unawaited(precacheImage(AssetImage(asset), context));
-    }
   }
 
   @override
@@ -472,12 +405,38 @@ class _ExpeditionSequentialCommandDockState
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _autoTimer?.cancel();
+    unawaited(_commands.dispose());
     super.dispose();
   }
 
-  String _battleFingerprint() =>
-      '${widget.fingerprintSeed}:'
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _appActive = state == AppLifecycleState.resumed;
+    if (_appActive) {
+      unawaited(_commands.handleAppResumed());
+      _scheduleAuto();
+    } else {
+      _autoTimer?.cancel();
+      unawaited(_commands.handleAppPaused());
+    }
+  }
+
+  void _commandSound({double volume = .32}) {
+    unawaited(_commands.setChannels(
+        sfx: ref.read(expeditionBattleSettingsProvider).sfxEnabled));
+    unawaited(_commands.play(ExpeditionCombatSound.command, volume: volume));
+  }
+
+  void _cycleMember(int direction) {
+    if (_locked || _awaiting.isEmpty) return;
+    final index =
+        _awaiting.indexWhere((member) => member.memberId == _actor?.memberId);
+    _selectMember(_awaiting[(index + direction) % _awaiting.length].memberId);
+  }
+
+  String _battleFingerprint() => '${widget.fingerprintSeed}:'
       '${_battle.round}:${_battle.pendingRound?.acted.join(',') ?? ''}';
 
   List<ExpeditionBattleMember> get _awaiting => _battle.awaitingParty;
@@ -564,14 +523,14 @@ class _ExpeditionSequentialCommandDockState
     // 잠긴 이유는 레벨만이 아니다. 서버가 사유를 보냈으면 그것을 쓴다 —
     // `넘길 다른 대원이 없어요`를 `Lv.9 해금`으로 바꿔 말하면 거짓말이 된다.
     if (!action.available) {
-      return action.lockReason ?? 'Lv.${action.unlockLevel} 해금';
+      return action.lockReason ?? '${action.unlockLevel}레벨부터 사용';
     }
     if (actionCode == 'attack' || actionCode == 'guard') return null;
     if (action.cooldownRemaining > 0) {
       return '재사용 ${action.cooldownRemaining}';
     }
     final cost = action.focusCost;
-    return _battle.focus < cost ? '집중 부족' : null;
+    return _battle.focus < cost ? '기력 부족' : null;
   }
 
   String _effectKeyFor(ExpeditionBattleMember member, String actionCode) {
@@ -591,27 +550,52 @@ class _ExpeditionSequentialCommandDockState
     if (_locked) return;
     if (!_awaiting.any((member) => member.memberId == memberId)) return;
     HapticFeedback.selectionClick();
+    _commandSound(volume: .22);
     setState(() => _selectedMemberId = memberId);
     widget.onSelectMember(memberId);
   }
 
   Future<void> _submit(String actionCode) async {
     final actor = _actor;
-    if (actor == null || _locked) return;
+    if (actor == null ||
+        _locked ||
+        ModalRoute.of(context)?.isCurrent == false) {
+      return;
+    }
     if (_lockReason(actor, actionCode) != null) return;
 
     // 무엇으로 바꿀지 함께 묻는 기록서는 고르는 단계를 먼저 거친다. 고르지 않고
     // 보내면 서버가 되돌려보내고 아무 일도 일어나지 않으므로, 여기서 미리 묻는다.
     final action = _actionFor(actor, actionCode);
+    Tooltip.dismissAllToolTips();
     String? choice;
     if (action.needsChoice) {
-      choice = await _askChoice(action);
+      _autoTimer?.cancel();
+      final fingerprint = _battleFingerprint();
+      setState(() => _detailsOpen = true);
+      try {
+        choice = await _askChoice(action);
+      } finally {
+        if (mounted) setState(() => _detailsOpen = false);
+      }
       if (choice == null || !mounted) return;
+      if (fingerprint != _battleFingerprint() ||
+          _locked ||
+          _actor?.memberId != actor.memberId ||
+          _lockReason(actor, actionCode) != null) {
+        return;
+      }
     }
 
     _autoTimer?.cancel();
-    HapticFeedback.mediumImpact();
-    setState(() => _submitting = true);
+    HapticFeedback.selectionClick();
+    _commandSound();
+    setState(() {
+      _submitting = true;
+      _pendingAction = action.name;
+    });
+    // Winning the last encounter can remove this dock before onSubmit returns.
+    final settings = ref.read(expeditionBattleSettingsProvider.notifier);
     try {
       final accepted = await widget.onSubmit(
         ExpeditionCombatCommand(
@@ -621,10 +605,15 @@ class _ExpeditionSequentialCommandDockState
         ),
       );
       if (accepted) {
-        ref.read(expeditionBattleSettingsProvider.notifier).finishAssist();
+        settings.finishAssist();
       }
     } finally {
-      if (mounted) setState(() => _submitting = false);
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+          _pendingAction = null;
+        });
+      }
     }
   }
 
@@ -682,7 +671,7 @@ class _ExpeditionSequentialCommandDockState
     );
   }
 
-  /// AUTO 판단. 현재 공개된 의도·약점·집중력만 읽고 미래 정보를 쓰지 않는다.
+  /// AUTO 판단. 현재 공개된 의도·약점·기력만 읽고 미래 정보를 쓰지 않는다.
   String _autoActionFor(ExpeditionBattleMember member) {
     final targeted = _targetedMemberIds();
     final danger = targeted.contains(member.memberId) &&
@@ -707,9 +696,18 @@ class _ExpeditionSequentialCommandDockState
   void _scheduleAuto() {
     _autoTimer?.cancel();
     final autoMode = ref.read(expeditionBattleSettingsProvider).autoMode;
-    if (autoMode == ExpeditionAutoMode.off || _locked) return;
+    if (autoMode == ExpeditionAutoMode.off ||
+        _locked ||
+        ref.read(expeditionAutoPauseProvider) > 0) {
+      return;
+    }
     _autoTimer = Timer(const Duration(milliseconds: 450), () {
-      if (!mounted || _locked) return;
+      if (!mounted ||
+          _locked ||
+          ref.read(expeditionAutoPauseProvider) > 0 ||
+          ModalRoute.of(context)?.isCurrent == false) {
+        return;
+      }
       final mode = ref.read(expeditionBattleSettingsProvider).autoMode;
       if (mode == ExpeditionAutoMode.off) return;
       final actor = _actor;
@@ -727,6 +725,7 @@ class _ExpeditionSequentialCommandDockState
     ExpeditionBattleMember member,
     String actionCode,
   ) async {
+    if (_detailsOpen) return;
     _autoTimer?.cancel();
     if (mounted) setState(() => _detailsOpen = true);
     final action = _actionFor(member, actionCode);
@@ -873,7 +872,7 @@ class _ExpeditionSequentialCommandDockState
                       if (action.kelLabels.isNotEmpty)
                         MongrooTag(
                           label: matchupLabel(action.kelLabels.join(' · ')),
-                          // 여섯 성장결이 `Icons.hub_outlined` 하나를 나눠
+                          // 여섯 성장 타입이 `Icons.hub_outlined` 하나를 나눠
                           // 썼다. 색과 글자를 못 읽으면 구분이 안 됐다.
                           //
                           // 코드 없이 이름만 온 응답이면 예전 글리프로 돌아간다.
@@ -898,7 +897,7 @@ class _ExpeditionSequentialCommandDockState
                     Text(
                       action.fusionVfxFamily == null
                           ? '연출 · 이 캐릭터만의 움직임과 효과가 나와요'
-                          : '연출 · 고유 움직임 위에 지금 성장결의 빛이 겹쳐요',
+                          : '연출 · 고유 움직임 위에 지금 성장 타입의 빛이 겹쳐요',
                       style: Theme.of(context).textTheme.labelMedium,
                     ),
                   ],
@@ -908,7 +907,7 @@ class _ExpeditionSequentialCommandDockState
                   Text(
                     switch (source) {
                       'signature' => '출처 · 캐릭터 고유',
-                      'emotion' => '출처 · 현재 성장결',
+                      'emotion' => '출처 · 현재 성장 타입',
                       'skillbook' => '출처 · 기록서',
                       _ => '출처 · $source',
                     },
@@ -945,82 +944,97 @@ class _ExpeditionSequentialCommandDockState
     final enemy = _battle.enemy;
     final mechanic = enemy.intent.mechanic;
     final bossRule = _battle.bossPhase;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(enemy.name, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              _DiscoverySheetLine(
-                icon: enemy.weakElement != null
-                    ? _dockElementIcon(enemy.weakElement!)
-                    : _dockAffinityIcon(enemy.weakness),
-                title: '확인한 약점',
-                value: enemy.weakKelLabel ??
-                    enemy.weakElementLabel ??
-                    enemy.weaknessLabel,
-              ),
-              if (mechanic != null) ...[
-                _DiscoverySheetLine(
-                  icon: Icons.extension_outlined,
-                  title: '공격 기믹 · ${mechanic.name}',
-                  value: mechanic.counter,
+    await _withPausedAuto(
+        ref,
+        () => showModalBottomSheet<void>(
+              context: context,
+              showDragHandle: true,
+              isScrollControlled: true,
+              constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * .85),
+              builder: (context) => SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(enemy.name,
+                          style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 12),
+                      _DiscoverySheetLine(
+                        icon: enemy.weakElement != null
+                            ? _dockElementIcon(enemy.weakElement!)
+                            : _dockAffinityIcon(enemy.weakness),
+                        title: '확인한 약점',
+                        value: enemy.weakKelLabel ??
+                            enemy.weakElementLabel ??
+                            enemy.weaknessLabel,
+                      ),
+                      if (mechanic != null) ...[
+                        _DiscoverySheetLine(
+                          icon: Icons.extension_outlined,
+                          title: '대응 방법 · ${mechanic.name}',
+                          value: mechanic.counter,
+                        ),
+                      ],
+                      if (bossRule?.ruleSummary case final rule?)
+                        _DiscoverySheetLine(
+                          icon: Icons.change_circle_outlined,
+                          title: bossRule?.ruleName ?? '현재 단계 규칙',
+                          value: rule,
+                        ),
+                      if (bossRule?.phaseGate == 'resolve_intent' &&
+                          bossRule?.phaseGateReady == false)
+                        const _DiscoverySheetLine(
+                          icon: Icons.visibility_outlined,
+                          title: '다음 단계 조건',
+                          value: '이번 공격을 넘기면 다음 단계로 진행돼요.',
+                        ),
+                      if (enemy.resistKelLabel ?? enemy.resistElementLabel
+                          case final resistance?)
+                        _DiscoverySheetLine(
+                          icon: _dockElementIcon(enemy.resistElement ?? ''),
+                          title: '확인한 내성',
+                          value: resistance,
+                        ),
+                      _DiscoverySheetLine(
+                        icon: Icons.visibility_outlined,
+                        title: '다음 행동',
+                        value:
+                            '${enemy.intent.name} · ${enemy.intent.targetLabel} · 위력 ${enemy.intent.power}',
+                      ),
+                      const Divider(height: 24),
+                      const _DiscoverySheetLine(
+                        icon: Icons.menu_book_outlined,
+                        title: '몬스터 도감',
+                        value: '전투가 끝나면 도감에서 볼 수 있어요',
+                        locked: true,
+                      ),
+                      const _DiscoverySheetLine(
+                        icon: Icons.redeem_outlined,
+                        title: '숨은 보상',
+                        value: '직접 얻으면 확인할 수 있어요',
+                        locked: true,
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-              if (bossRule?.ruleSummary case final rule?)
-                _DiscoverySheetLine(
-                  icon: Icons.change_circle_outlined,
-                  title: bossRule?.ruleName ?? '현재 페이즈 규칙',
-                  value: rule,
-                ),
-              if (bossRule?.phaseGate == 'resolve_intent' &&
-                  bossRule?.phaseGateReady == false)
-                const _DiscoverySheetLine(
-                  icon: Icons.visibility_outlined,
-                  title: '봉인 경계',
-                  value: '현재 예고를 한 번 해결하면 다음 봉인을 열 수 있어요.',
-                ),
-              if (enemy.resistKelLabel ?? enemy.resistElementLabel
-                  case final resistance?)
-                _DiscoverySheetLine(
-                  icon: _dockElementIcon(enemy.resistElement ?? ''),
-                  title: '확인한 내성',
-                  value: resistance,
-                ),
-              _DiscoverySheetLine(
-                icon: Icons.visibility_outlined,
-                title: '다음 행동',
-                value:
-                    '${enemy.intent.name} · ${enemy.intent.targetLabel} · 위력 ${enemy.intent.power}',
               ),
-              const Divider(height: 24),
-              const _DiscoverySheetLine(
-                icon: Icons.menu_book_outlined,
-                title: '상세 생태 기록',
-                value: '??? · 전투 후 도감에서 공개',
-                locked: true,
-              ),
-              const _DiscoverySheetLine(
-                icon: Icons.redeem_outlined,
-                title: '숨은 보상',
-                value: '??? · 실제 발견 후 공개',
-                locked: true,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+            ));
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(
+        expeditionBattleSettingsProvider.select((value) => value.autoMode),
+        (previous, next) => _scheduleAuto());
+    ref.listen(
+        expeditionAutoPauseProvider, (previous, next) => _scheduleAuto());
+    ref.listen(
+        expeditionBattleSettingsProvider.select((value) => value.audioMode),
+        (previous, next) => unawaited(_commands.setChannels(
+            sfx: ref.read(expeditionBattleSettingsProvider).sfxEnabled)));
     final battle = _battle;
     final actor = _actor;
     final targeted = _targetedMemberIds();
@@ -1028,353 +1042,215 @@ class _ExpeditionSequentialCommandDockState
     // 한 차례가 풀리는 동안 뜨는 문장이다. 상대가 엉킴인지 수호짐승인지와
     // 무관하게 같은 자리라, 이름을 붙이면 `전투` 스테이지에서 `수호전이
     // 진행되고 있어요`가 뜬다.
-    final prompt = locked || actor == null
-        ? '한 차례가 진행되고 있어요…'
-        : '${koreanTopic(actor.name)} 무엇을 할까요?';
+    final prompt = _submitting
+        ? '${_pendingAction ?? '행동'} 준비 중…'
+        : locked || actor == null
+            ? '전투 중…'
+            : '스킬 선택';
     Widget promptLine() => Semantics(
           liveRegion: true,
           child: Text(
             prompt,
             key: const ValueKey('seq-dock-prompt'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            // 한두 마디짜리 게임 라벨이라 도트 글꼴을 쓴다(MASTER.md의 허용
-            // 범위). `뽀또는 무엇을 할까요?`는 포켓몬의 그 줄이다.
-            style: ExpeditionPixelArt.text(
-              15,
-              color: MongrooPalette.of(context).ink,
-              shadow: Colors.transparent,
-              shadowOffset: 0,
-            ),
+            style: Theme.of(context).textTheme.labelLarge,
           ),
         );
 
     // 독은 도트 무대 아래에 붙는 도트 판이다 — 둥근 카드와 번진 그림자 대신
     // 두 칸 테두리와 한 칸 그림자. 포켓몬의 흰 글상자가 이 자리다.
     final palette = MongrooPalette.of(context);
-    return PixelPanel(
-      key: const ValueKey('seq-command-dock'),
-      padding: const EdgeInsets.fromLTRB(6, 5, 6, 6),
-      fill: palette.paper.withAlpha(246),
-      border: palette.night,
-      highlight: Colors.white.withAlpha(120),
-      shadow: palette.night.withAlpha(90),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _IntentLine(
-            battle: battle,
-            onTap: _showBattleDiscovery,
-          ),
-          // 같은 라운드에 예고가 더 있으면 주 예고 **바로 아래**에 이어 붙인다.
-          // 합동 수호전의 잠꼬대가 여기 온다. 예고가 하나뿐인 전투에서는 이
-          // 목록이 비어 있어 화면이 달라지지 않는다.
-          for (final extra in battle.enemy.extraIntents)
-            _ExtraIntentLine(key: ValueKey('seq-dock-extra-${extra.code}'), intent: extra),
-          const SizedBox(height: 7),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final narrow = constraints.maxWidth < 300 ||
-                  MediaQuery.textScalerOf(context).scale(1) >= 1.5;
-              final beads = _FocusBeads(
-                focus: battle.focus,
-                maxFocus: battle.maxFocus,
-              );
-              final chips = Row(
-                children: [
-                  for (final member in battle.party) ...[
-                    if (member.memberId != battle.party.first.memberId)
-                      const SizedBox(width: 6),
-                    Expanded(
-                      child: _DockMemberChip(
-                        key: ValueKey('seq-member-${member.memberId}'),
-                        member: member,
-                        plant: _plantOf(member.memberId),
-                        isActor: !locked && member.memberId == actor?.memberId,
-                        acted: battle.hasActed(member.memberId),
-                        awaiting: _awaiting.any(
-                          (item) => item.memberId == member.memberId,
-                        ),
-                        targeted: targeted.contains(member.memberId),
-                        targetKind: battle.enemy.intent.target,
-                        onTap: locked
-                            ? null
-                            : () => _selectMember(member.memberId),
-                      ),
-                    ),
-                  ],
-                ],
-              );
-              if (narrow) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    beads,
-                    const SizedBox(height: 7),
-                    chips,
-                    const SizedBox(height: 8),
-                    promptLine(),
-                  ],
-                );
-              }
-              return Column(
+    return CallbackShortcuts(
+        bindings: {
+          for (final (index, key) in const [
+            LogicalKeyboardKey.digit1,
+            LogicalKeyboardKey.digit2,
+            LogicalKeyboardKey.digit3,
+            LogicalKeyboardKey.digit4,
+            LogicalKeyboardKey.digit5,
+            LogicalKeyboardKey.digit6
+          ].indexed)
+            SingleActivator(key, includeRepeats: false): () =>
+                unawaited(_submit(expeditionCombatActionOrder[index])),
+          const SingleActivator(LogicalKeyboardKey.arrowLeft,
+              includeRepeats: false): () => _cycleMember(-1),
+          const SingleActivator(LogicalKeyboardKey.arrowRight,
+              includeRepeats: false): () => _cycleMember(1),
+        },
+        child: Focus(
+            autofocus: true,
+            child: Container(
+              key: const ValueKey('seq-command-dock'),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: palette.paper,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(child: promptLine()),
-                      const SizedBox(width: 8),
-                      beads,
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  chips,
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 6),
-          if (actor != null)
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final wrap = constraints.maxWidth < 340 ||
-                    MediaQuery.textScalerOf(context).scale(1) >= 1.5;
-                final cards = [
-                  for (final actionCode in expeditionCombatActionOrder)
-                    _DockActionCard(
-                      key: ValueKey('seq-dock-card-$actionCode'),
-                      action: _actionFor(actor, actionCode),
-                      actionCode: actionCode,
-                      effectKey: _effectKeyFor(actor, actionCode),
-                      weakness: actionCode != 'guard' &&
-                          _isWeak(_actionFor(actor, actionCode)),
-                      resistance: actionCode != 'guard' &&
-                          _isResisted(_actionFor(actor, actionCode)),
-                      expectedDamage: _expectedDamage(actor, actionCode),
-                      lockReason: _lockReason(actor, actionCode),
-                      enabled:
-                          !locked && _lockReason(actor, actionCode) == null,
-                      onPressed: () => unawaited(_submit(actionCode)),
-                      onLongPress: () =>
-                          unawaited(_showActionDetails(actor, actionCode)),
-                    ),
-                ];
-                if (wrap) {
-                  return GridView.count(
-                    key: const ValueKey('seq-dock-action-grid'),
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 6,
-                    crossAxisSpacing: 6,
-                    childAspectRatio: 1.65,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: cards,
-                  );
-                }
-                return Row(
-                  key: const ValueKey('seq-dock-action-row'),
-                  children: [
-                    for (var index = 0; index < cards.length; index++) ...[
-                      if (index > 0) const SizedBox(width: 6),
-                      Expanded(child: cards[index]),
-                    ],
-                  ],
-                );
-              },
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// 적 의도와 약점을 한 줄로 읽는 안내선. 확정 전에 항상 공개하며,
-/// 누르면 발견 정보 시트가 열린다.
-class _IntentLine extends StatelessWidget {
-  const _IntentLine({required this.battle, required this.onTap});
-
-  final ExpeditionBattle battle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final intent = battle.enemy.intent;
-    final textScale = MediaQuery.textScalerOf(context).scale(1);
-    final weakLabel = battle.enemy.weakKelLabel ??
-        battle.enemy.weakElementLabel ??
-        battle.enemy.weaknessLabel;
-    final resistLabel =
-        battle.enemy.resistKelLabel ?? battle.enemy.resistElementLabel;
-    final mechanic = intent.mechanic;
-    final matchupTag = MongrooTag(
-      label:
-          resistLabel == null ? '↑ $weakLabel' : '↑ $weakLabel  ↓ $resistLabel',
-      icon: _dockElementIcon(
-        battle.enemy.weakElement ?? battle.enemy.weakness,
-      ),
-      backgroundColor: _dockElementColor(
-        context,
-        battle.enemy.weakElement ?? battle.enemy.weakness,
-      ).withAlpha(38),
-      maxWidth: textScale >= 1.5 ? 180 : null,
-    );
-    // 폭이 좁으면 공격 이름을 뺀다. 무대 위 예고판이 `종잇장 회오리 예고 ·
-    // 낱장들이 맨 앞 대원 쪽으로 몰려가요.`로 이름과 상황을 이미 말하고,
-    // 이 줄에서 꼭 읽어야 하는 것은 **누구를 얼마나**다. 넷을 다 넣으면
-    // 390px에서 `종잇장 회오리 · 행동 순서 맨…`으로 끊겨 대상이 사라졌다.
-    Widget intentSummaryFor(bool compact) => Row(
-          children: [
-            Icon(
-              expeditionIntentTargetIcon(intent.target),
-              size: 17,
-              color: scheme.error,
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                compact
-                    ? '${intent.targetLabel} · 위력 ${intent.power}'
-                    : '${intent.name} · ${intent.targetLabel} · '
-                        '위력 ${intent.power}'
-                        '${mechanic == null ? '' : ' · ${mechanic.name}'}',
-                maxLines: textScale >= 1.35 ? 2 : 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelMedium,
-              ),
-            ),
-          ],
-        );
-    // `잔향 읽기`를 쓴 전투에서만 서버가 다음 라운드 예고를 열어 준다.
-    // 이 책이 파는 것이 이 한 줄이라, 없으면 아무것도 그리지 않는다.
-    final next = battle.enemy.nextIntent;
-    final nextLine = next == null
-        ? null
-        : Row(
-            key: const ValueKey('seq-dock-next-intent'),
-            children: [
-              Icon(Icons.update_rounded, size: 15, color: scheme.onSurfaceVariant),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  '다음 라운드 · ${next.name} · ${next.targetLabel} · '
-                  '위력 ${next.power}',
-                  maxLines: textScale >= 1.35 ? 2 : 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                ),
-              ),
-            ],
-          );
-
-    return Semantics(
-      button: true,
-      label: '적 의도 ${intent.name}, ${intent.targetLabel}, 위력 ${intent.power}. '
-          '${mechanic == null ? '' : '기믹 ${mechanic.name}, ${mechanic.counter}. '}'
-          '${next == null ? '' : '다음 라운드는 ${next.name}, ${next.targetLabel}, '
-              '위력 ${next.power}. '}'
-          '약점 $weakLabel${resistLabel == null ? '' : ', 내성 $resistLabel'}. '
-          '눌러서 발견 정보 보기',
-      child: PixelPanel(
-        fill: scheme.errorContainer.withAlpha(150),
-        border: scheme.error.withAlpha(190),
-        highlight: Colors.white.withAlpha(90),
-        shadow: scheme.error.withAlpha(50),
-        padding: EdgeInsets.zero,
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            key: const ValueKey('seq-dock-intent'),
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final head = textScale >= 1.5
-                      ? Column(
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final narrow = constraints.maxWidth < 270 ||
+                          MediaQuery.textScalerOf(context).scale(1) >= 1.5;
+                      final beads = _FocusBeads(
+                        focus: battle.focus,
+                        maxFocus: battle.maxFocus,
+                      );
+                      final chips = Row(
+                        children: [
+                          for (final member in battle.party) ...[
+                            if (member.memberId != battle.party.first.memberId)
+                              const SizedBox(width: 6),
+                            Expanded(
+                              child: _DockMemberChip(
+                                key: ValueKey('seq-member-${member.memberId}'),
+                                member: member,
+                                presentedHp:
+                                    widget.presentedHp[member.memberId],
+                                plant: _plantOf(member.memberId),
+                                isActor: !locked &&
+                                    member.memberId == actor?.memberId,
+                                acted: battle.hasActed(member.memberId),
+                                awaiting: _awaiting.any(
+                                  (item) => item.memberId == member.memberId,
+                                ),
+                                targeted: targeted.contains(member.memberId),
+                                targetKind: battle.enemy.intent.target,
+                                onTap: locked
+                                    ? null
+                                    : () => _selectMember(member.memberId),
+                              ),
+                            ),
+                          ],
+                        ],
+                      );
+                      if (narrow) {
+                        return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            intentSummaryFor(false),
-                            const SizedBox(height: 5),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: matchupTag,
-                            ),
-                          ],
-                        )
-                      : Row(
-                          children: [
-                            Expanded(
-                              child:
-                                  intentSummaryFor(constraints.maxWidth < 420),
-                            ),
-                            const SizedBox(width: 6),
-                            matchupTag,
+                            beads,
+                            const SizedBox(height: 7),
+                            chips,
+                            const SizedBox(height: 8),
+                            promptLine(),
                           ],
                         );
-                  if (nextLine == null) return head;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [head, const SizedBox(height: 5), nextLine],
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 주 예고 아래에 한 줄 더 붙는 예고.
-///
-/// 스크린리더가 `주 의도` 다음에 `잠꼬대`를 읽도록 역할 이름을 앞에 붙인다.
-/// 위력과 대상은 주 예고와 같은 어휘를 쓰므로 다시 배울 것이 없다.
-class _ExtraIntentLine extends StatelessWidget {
-  const _ExtraIntentLine({super.key, required this.intent});
-
-  final ExpeditionBattleIntent intent;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Semantics(
-      label: '잠꼬대. ${intent.name}. ${intent.telegraph}',
-      child: ExcludeSemantics(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(
-                Icons.bedtime_outlined,
-                size: 14,
-                color: scheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  '${intent.name} · ${intent.telegraph}',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: scheme.onSurfaceVariant,
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(child: promptLine()),
+                              beads,
+                              IconButton(
+                                key: const ValueKey('seq-dock-intent'),
+                                tooltip: '상대 정보',
+                                onPressed: _showBattleDiscovery,
+                                icon: const Icon(Icons.info_outline_rounded,
+                                    size: 20),
+                                constraints: const BoxConstraints.tightFor(
+                                    width: 48, height: 48),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          chips,
+                        ],
+                      );
+                    },
                   ),
-                ),
+                  if (battle.enemy.nextIntent case final next?)
+                    Padding(
+                      key: const ValueKey('seq-dock-next-intent'),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Text(
+                        '다음 턴: ${next.name} · ${next.targetLabel} · 피해 ${next.power}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  for (final extra in battle.enemy.extraIntents)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Text(
+                        '${extra.name} · ${extra.telegraph}',
+                        key: ValueKey('seq-dock-extra-${extra.code}'),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  const SizedBox(height: 6),
+                  if (actor != null)
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final wrap = constraints.maxWidth < 600 ||
+                            MediaQuery.textScalerOf(context).scale(1) >= 1.5;
+                        final cards = [
+                          for (final actionCode in expeditionCombatActionOrder)
+                            _DockActionCard(
+                              key: ValueKey('seq-dock-card-$actionCode'),
+                              action: _actionFor(actor, actionCode),
+                              actionCode: actionCode,
+                              effectKey: _effectKeyFor(actor, actionCode),
+                              weakness: actionCode != 'guard' &&
+                                  _isWeak(_actionFor(actor, actionCode)),
+                              resistance: actionCode != 'guard' &&
+                                  _isResisted(_actionFor(actor, actionCode)),
+                              expectedDamage:
+                                  _expectedDamage(actor, actionCode),
+                              lockReason: _lockReason(actor, actionCode),
+                              enabled: !locked &&
+                                  _lockReason(actor, actionCode) == null,
+                              onPressed: () => unawaited(_submit(actionCode)),
+                              onLongPress: () => unawaited(
+                                  _showActionDetails(actor, actionCode)),
+                            ),
+                        ];
+                        if (wrap) {
+                          return Column(
+                            key: const ValueKey('seq-dock-action-grid'),
+                            children: [
+                              for (var index = 0;
+                                  index < cards.length;
+                                  index += 2)
+                                Padding(
+                                  padding:
+                                      EdgeInsets.only(top: index == 0 ? 0 : 6),
+                                  child: IntrinsicHeight(
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        Expanded(child: cards[index]),
+                                        const SizedBox(width: 6),
+                                        Expanded(child: cards[index + 1]),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
+                        }
+                        return Row(
+                          key: const ValueKey('seq-dock-action-row'),
+                          children: [
+                            for (var index = 0;
+                                index < cards.length;
+                                index++) ...[
+                              if (index > 0) const SizedBox(width: 6),
+                              Expanded(child: cards[index]),
+                            ],
+                          ],
+                        );
+                      },
+                    ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ),
-    );
+            )));
   }
 }
-
 
 class _DiscoverySheetLine extends StatelessWidget {
   const _DiscoverySheetLine({
@@ -1423,7 +1299,7 @@ class _DiscoverySheetLine extends StatelessWidget {
       );
 }
 
-/// 공유 집중력 구슬. 전투 중 상시 노출하는 자원은 HP와 이것 둘뿐이다.
+/// 팀 기력 구슬. 전투 중 상시 노출하는 자원은 HP와 이것 둘뿐이다.
 class _FocusBeads extends StatelessWidget {
   const _FocusBeads({required this.focus, required this.maxFocus});
 
@@ -1432,47 +1308,14 @@ class _FocusBeads extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = MongrooPalette.of(context);
-    final scheme = Theme.of(context).colorScheme;
     return Semantics(
-      label: '공유 집중력 $focus/$maxFocus',
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.bolt_rounded, size: 17, color: palette.butter),
-          const SizedBox(width: 4),
-          // 집중력은 네모 칸이다. 동그란 구슬은 도트 판 위에서 혼자 부드럽다.
-          for (var index = 0; index < maxFocus; index++)
-            Padding(
-              padding: const EdgeInsets.only(right: 3),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: index < focus
-                      ? palette.butter
-                      : scheme.outlineVariant.withAlpha(90),
-                  border: Border.all(
-                    color: palette.night.withAlpha(index < focus ? 200 : 110),
-                    width: 2,
-                  ),
-                ),
-              ),
-            ),
-          const SizedBox(width: 3),
-          Text(
-            '$focus/$maxFocus',
-            textScaler: TextScaler.noScaling,
-            style: ExpeditionPixelArt.text(
-              12,
-              color: palette.ink,
-              shadow: Colors.transparent,
-              shadowOffset: 0,
-            ),
-          ),
-        ],
-      ),
+      label: '기력 $focus/$maxFocus',
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.bolt_rounded, size: 16),
+        const SizedBox(width: 2),
+        Text('기력 $focus/$maxFocus',
+            style: Theme.of(context).textTheme.labelMedium),
+      ]),
     );
   }
 }
@@ -1492,7 +1335,7 @@ class _ChoiceOptionTile extends StatelessWidget {
   final String label;
   final bool isCurrent;
 
-  /// `지금 이것`을 뭐라고 부를지. 성장결·대원·기록서가 각각 다르게 읽힌다.
+  /// `지금 이것`을 뭐라고 부를지. 성장 타입·대원·기록서가 각각 다르게 읽힌다.
   final String currentLabel;
   final VoidCallback? onTap;
 
@@ -1552,6 +1395,7 @@ class _DockMemberChip extends StatelessWidget {
     required this.targeted,
     required this.targetKind,
     required this.onTap,
+    this.presentedHp,
   });
 
   final ExpeditionBattleMember member;
@@ -1562,13 +1406,15 @@ class _DockMemberChip extends StatelessWidget {
   final bool targeted;
   final String targetKind;
   final VoidCallback? onTap;
+  final int? presentedHp;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final shownHp = presentedHp ?? member.hp;
     final hp =
-        member.maxHp <= 0 ? 0.0 : (member.hp / member.maxHp).clamp(0.0, 1.0);
-    final down = !member.isAlive;
+        member.maxHp <= 0 ? 0.0 : (shownHp / member.maxHp).clamp(0.0, 1.0);
+    final down = shownHp <= 0;
     final statusLabel = down
         ? '지쳐서 물러남'
         : acted
@@ -1580,7 +1426,7 @@ class _DockMemberChip extends StatelessWidget {
       selected: isActor,
       button: onTap != null && awaiting,
       label:
-          '${member.name}, 체력 ${member.hp}/${member.maxHp}, $statusLabel${targeted ? ', 적의 다음 공격 대상' : ''}',
+          '${member.name}, 체력 $shownHp/${member.maxHp}, $statusLabel${targeted ? ', 적의 다음 공격 대상' : ''}',
       child: Opacity(
         opacity: down
             ? .55
@@ -1589,105 +1435,115 @@ class _DockMemberChip extends StatelessWidget {
                 : 1,
         child: PixelPanel(
           fill: isActor ? scheme.primaryContainer : scheme.surface,
-          border: targeted
-              ? scheme.error
-              : isActor
-                  ? scheme.primary
-                  : MongrooPalette.of(context).night.withAlpha(150),
+          border: down ? scheme.error : scheme.outlineVariant,
           highlight: Colors.white.withAlpha(110),
           shadow: MongrooPalette.of(context).night.withAlpha(70),
           padding: EdgeInsets.zero,
           child: Material(
             type: MaterialType.transparency,
             child: InkWell(
-            onTap: awaiting ? onTap : null,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(4, 3, 4, 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      if (plant case final plant?)
-                        _DockPortrait(plant: plant),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          member.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
-                              ?.copyWith(fontWeight: FontWeight.w800),
+              onTap: awaiting ? onTap : null,
+              child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 48),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 3, 4, 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            if (plant case final plant?)
+                              _DockPortrait(plant: plant),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                member.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                            if (targeted)
+                              Icon(
+                                expeditionIntentTargetIcon(targetKind),
+                                size: 13,
+                                color: scheme.error,
+                              )
+                            else if (acted)
+                              Icon(
+                                Icons.check_circle_rounded,
+                                size: 13,
+                                color: scheme.primary,
+                              ),
+                          ],
                         ),
-                      ),
-                      if (targeted)
-                        Icon(
-                          expeditionIntentTargetIcon(targetKind),
-                          size: 13,
-                          color: scheme.error,
-                        )
-                      else if (acted)
-                        Icon(
-                          Icons.check_circle_rounded,
-                          size: 13,
-                          color: scheme.primary,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: LinearProgressIndicator(
-                          value: hp,
-                          minHeight: 5,
-                          borderRadius: BorderRadius.circular(99),
-                          color:
-                              hp > .35 ? const Color(0xFF69B77B) : scheme.error,
-                        ),
-                      ),
-                      if (member.guard > 0) ...[
-                        const SizedBox(width: 3),
-                        Icon(
-                          Icons.shield_rounded,
-                          size: 12,
-                          color: scheme.primary,
-                        ),
-                        Text(
-                          '${member.guard}',
-                          textScaler: TextScaler.noScaling,
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: LinearProgressIndicator(
+                                value: hp,
+                                minHeight: 5,
+                                borderRadius: BorderRadius.circular(99),
+                                color: hp > .35 ? scheme.primary : scheme.error,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$shownHp/${member.maxHp}',
+                              textScaler: TextScaler.noScaling,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700),
+                            ),
+                            if (member.guard > 0) ...[
+                              const SizedBox(width: 3),
+                              Icon(
+                                Icons.shield_rounded,
+                                size: 12,
+                                color: scheme.primary,
+                              ),
+                              Text(
+                                '${member.guard}',
+                                textScaler: TextScaler.noScaling,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(fontWeight: FontWeight.w800),
+                              ),
+                            ],
+                            if ((member.statuses['exposed'] ?? 0) > 0) ...[
+                              const SizedBox(width: 3),
+                              Icon(
+                                Icons.gps_fixed_rounded,
+                                size: 12,
+                                color: scheme.error,
+                              ),
+                              Text(
+                                '빈틈',
+                                textScaler: TextScaler.noScaling,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(
+                                      color: scheme.error,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
-                      if ((member.statuses['exposed'] ?? 0) > 0) ...[
-                        const SizedBox(width: 3),
-                        Icon(
-                          Icons.gps_fixed_rounded,
-                          size: 12,
-                          color: scheme.error,
-                        ),
-                        Text(
-                          '빈틈',
-                          textScaler: TextScaler.noScaling,
-                          style:
-                              Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: scheme.error,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  )),
             ),
-          ),
           ),
         ),
       ),
@@ -1777,29 +1633,34 @@ class _DockActionCard extends StatefulWidget {
 
 class _DockActionCardState extends State<_DockActionCard> {
   bool _pressed = false;
+  bool _focused = false;
+
+  @override
+  void didUpdateWidget(covariant _DockActionCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.enabled) {
+      _pressed = false;
+      Tooltip.dismissAllToolTips();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final color = _dockActionColor(context, widget.actionCode);
+    final energy = widget.action.focusCost > 0
+        ? '기력 −${widget.action.focusCost}'
+        : '기력 +${widget.action.focusDelta}';
     final line = widget.lockReason ??
-        switch (widget.actionCode) {
-          'guard' =>
-            '방어 +${widget.action.guard} · 집중 +${widget.action.focusDelta}',
-          'attack' => widget.weakness
-              ? '예상 ${widget.expectedDamage} · 약점'
-              : widget.resistance
-                  ? '예상 ${widget.expectedDamage} · 내성'
-                  : '예상 ${widget.expectedDamage} · 집중 +${widget.action.focusDelta}',
-          _ => widget.weakness
-              ? '예상 ${widget.expectedDamage} · 약점'
-              : widget.resistance
-                  ? '예상 ${widget.expectedDamage} · 내성'
-                  : '예상 ${widget.expectedDamage} · 집중 -${widget.action.focusCost}',
-        };
+        (widget.actionCode == 'guard'
+            ? '방어 ${widget.action.guard} · $energy'
+            : '피해 ${widget.expectedDamage} · $energy');
     return Semantics(
+      container: true,
       button: true,
       enabled: widget.enabled,
+      excludeSemantics: true,
+      onTap: widget.enabled ? widget.onPressed : null,
+      onLongPress: widget.onLongPress,
       label: '${widget.action.name}, $line. 탭하면 실행해요. 길게 누르면 상세 보기',
       customSemanticsActions: {
         CustomSemanticsAction(label: '상세 보기'): widget.onLongPress,
@@ -1819,115 +1680,77 @@ class _DockActionCardState extends State<_DockActionCard> {
         },
         child: AnimatedScale(
           scale: widget.enabled && _pressed ? .96 : 1,
-          duration: const Duration(milliseconds: 150),
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : const Duration(milliseconds: 80),
           curve: Curves.easeOutCubic,
-          child: PixelPanel(
-            fill: widget.lockReason != null
-                ? scheme.surfaceContainerHighest.withAlpha(210)
-                : scheme.surface.withAlpha(238),
-            border: widget.weakness && widget.lockReason == null
-                ? scheme.error
-                : widget.resistance && widget.lockReason == null
-                    ? scheme.outline
-                    : MongrooPalette.of(context).night.withAlpha(160),
-            highlight: Colors.white.withAlpha(110),
-            shadow: MongrooPalette.of(context).night.withAlpha(80),
-            padding: EdgeInsets.zero,
-            child: Material(
-              type: MaterialType.transparency,
+          child: Material(
+            color: widget.lockReason != null
+                ? scheme.surfaceContainerHighest
+                : scheme.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(
+                  width: _focused ? 2 : 1,
+                  color:
+                      _focused || (widget.weakness && widget.lockReason == null)
+                          ? scheme.primary
+                          : scheme.outlineVariant),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Tooltip(
+              message: !widget.enabled && widget.lockReason == null
+                  ? ''
+                  : '${widget.action.name} · 길게 누르거나 우클릭해 설명',
+              excludeFromSemantics: true,
+              triggerMode: TooltipTriggerMode.manual,
+              waitDuration: const Duration(milliseconds: 700),
+              showDuration: const Duration(milliseconds: 1000),
               child: InkWell(
-              onTap: widget.enabled ? widget.onPressed : null,
-              onHighlightChanged: widget.enabled
-                  ? (value) => setState(() => _pressed = value)
-                  : null,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  minWidth: 48,
-                  minHeight: 58,
-                ),
-                child: Opacity(
-                  opacity: widget.lockReason != null ? .58 : 1,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      ExcludeSemantics(
-                        child: _DockActionVisual(
-                          action: widget.action,
-                          actionCode: widget.actionCode,
-                          effectKey: widget.effectKey,
-                          color: color,
+                onTap: widget.enabled ? widget.onPressed : null,
+                onSecondaryTap: widget.onLongPress,
+                onFocusChange: (value) => setState(() => _focused = value),
+                onHighlightChanged: widget.enabled
+                    ? (value) => setState(() => _pressed = value)
+                    : null,
+                child: ConstrainedBox(
+                  constraints:
+                      const BoxConstraints(minWidth: 48, minHeight: 72),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.action.name,
+                          key: ValueKey(
+                              'battle-action-name-${widget.actionCode}'),
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    fontSize: 14,
+                                    height: 1.25,
+                                    fontWeight: FontWeight.w600,
+                                    color: widget.lockReason == null
+                                        ? scheme.onSurface
+                                        : scheme.onSurfaceVariant,
+                                  ),
                         ),
-                      ),
-                      if (widget.actionCode != 'attack' &&
-                          widget.actionCode != 'guard' &&
-                          widget.action.focusCost > 0)
-                        Positioned(
-                          top: 3,
-                          left: 3,
-                          child: _DockActionBadge(
-                            icon: Icons.bolt_rounded,
-                            label: '${widget.action.focusCost}',
-                            color: color,
-                          ),
+                        const SizedBox(height: 6),
+                        Text(
+                          line,
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    fontSize: 12,
+                                    height: 1.3,
+                                    color: scheme.onSurfaceVariant,
+                                  ),
                         ),
-                      if (widget.weakness && widget.lockReason == null)
-                        Positioned(
-                          top: 3,
-                          right: 3,
-                          child: Icon(
-                            Icons.arrow_upward_rounded,
-                            size: 17,
-                            color: scheme.error,
-                          ),
-                        )
-                      else if (widget.resistance && widget.lockReason == null)
-                        Positioned(
-                          top: 3,
-                          right: 3,
-                          child: Icon(
-                            Icons.arrow_downward_rounded,
-                            size: 17,
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        )
-                      else if (widget.lockReason != null)
-                        Positioned(
-                          top: 3,
-                          right: 3,
-                          child: widget.action.cooldownRemaining > 0
-                              ? _DockActionBadge(
-                                  icon: Icons.timer_outlined,
-                                  label: '${widget.action.cooldownRemaining}',
-                                  color: scheme.onSurfaceVariant,
-                                )
-                              : Icon(
-                                  Icons.lock_outline_rounded,
-                                  size: 16,
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                        ),
-                      if (widget.lockReason != null)
-                        Positioned(
-                          left: 2,
-                          right: 2,
-                          bottom: 2,
-                          child: Text(
-                            widget.lockReason!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            textScaler: TextScaler.noScaling,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(fontSize: 8, height: 1),
-                          ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
             ),
           ),
         ),
@@ -1952,34 +1775,31 @@ class _DockActionVisual extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) {
-    if (actionCode == 'attack' || actionCode == 'guard') {
-      // 예전에는 머티리얼 기본 글리프였다. 손그림 화면에 안드로이드 아이콘이
-      // 둘 섞여 있었다 - 설계서 4.2가 이 두 자리에도 전용 glyph를 요구한다.
-      return _DockImageIcon(
-        asset: expeditionActionIconAsset(actionCode),
-        size: size,
-      );
-    }
-    if (_dockSkillIconAssets[action.code] case final asset?) {
-      return _DockImageIcon(asset: asset, size: size);
-    }
-    return _DockEffectThumbnail(effectKey: effectKey, size: size);
-  }
+  Widget build(BuildContext context) => SizedBox.square(
+      dimension: size,
+      child: Icon(
+          switch (actionCode) {
+            'attack' => Icons.arrow_outward_rounded,
+            'guard' => Icons.shield_outlined,
+            'selected_2' => Icons.menu_book_outlined,
+            _ => _dockElementIcon(action.element ?? ''),
+          },
+          color: color,
+          size: size * .84));
 }
 
-/// 성장결 마크의 번들 경로.
+/// 성장 타입 마크의 번들 경로.
 ///
 /// 위젯 안에 문자열로 묻어 두면 실기에서 한둘 보고 나머지는 못 본 채 지나간다.
 /// 밖으로 빼서 여섯을 한 번에 짚을 수 있게 한다.
 String expeditionKelIconAsset(String kel) =>
     'assets/adventure/skill-icons/kel/$kel-v1.webp';
 
-/// 기본 공격·마음 지키기 글리프의 번들 경로.
+/// 공격·방어 글리프의 번들 경로.
 String expeditionActionIconAsset(String action) =>
     'assets/adventure/skill-icons/action/$action-v1.webp';
 
-/// 마크가 있는 성장결. `kel_fallback_family`가 쓰는 여섯과 같다.
+/// 마크가 있는 성장 타입. `kel_fallback_family`가 쓰는 여섯과 같다.
 const expeditionKelsWithIcons = <String>[
   'sunny',
   'rainy',
@@ -1990,46 +1810,6 @@ const expeditionKelsWithIcons = <String>[
 ];
 
 /// 아이콘 자리에 들어가는 그림 한 장. 벨트의 라운드 사각형 틀을 그대로 쓴다.
-class _DockImageIcon extends StatelessWidget {
-  const _DockImageIcon({required this.asset, required this.size});
-
-  final String asset;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) => SizedBox.square(
-        dimension: size,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: MongrooPalette.of(context).night.withAlpha(150),
-              width: 2,
-            ),
-          ),
-          // 아이콘 원화는 붓 그림이다. 절반 해상도로 디코드해 보간 없이 두 배로
-          // 키우면 무대와 같은 굵기의 도트 아이콘이 된다.
-          child: Padding(
-            padding: const EdgeInsets.all(2),
-            child: Image.asset(
-              asset,
-              cacheWidth: (size / 2).round(),
-              fit: BoxFit.fill,
-              filterQuality: FilterQuality.none,
-              isAntiAlias: false,
-              excludeFromSemantics: true,
-            ),
-          ),
-        ),
-      );
-}
-
-/// 성장결 마크. 태그 글자 앞에 붙는다.
-///
-/// 색이나 글자를 못 읽어도 갈리도록 성장결마다 다른 모양을 쓴다 - 해·물방울·
-/// 불꽃·초승달·별·육각 타일. 예고 아이콘에 이미 같은 계약이 걸려 있다.
-///
-/// 합동 수호전 머리말의 `잘 통해요`·`잘 안 통해요`도 같은 것을 쓴다. 거기도
-/// 성장결 이름이 글자로만 있었다.
 class ExpeditionKelMarks extends StatelessWidget {
   const ExpeditionKelMarks({super.key, required this.kels});
 
@@ -2062,78 +1842,6 @@ class ExpeditionKelMarks extends StatelessWidget {
   }
 }
 
-class _DockActionBadge extends StatelessWidget {
-  const _DockActionBadge({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface.withAlpha(235),
-          border: Border.all(color: color.withAlpha(180)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 9, color: color),
-              Text(
-                label,
-                textScaler: TextScaler.noScaling,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 9,
-                  height: 1,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-}
-
-class _DockEffectThumbnail extends StatelessWidget {
-  const _DockEffectThumbnail({required this.effectKey, required this.size});
-
-  final String effectKey;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) => SizedBox.square(
-        dimension: size,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: expeditionCombatEffectColor(effectKey).withAlpha(24),
-            border: Border.all(
-              color: MongrooPalette.of(context).night.withAlpha(150),
-              width: 2,
-            ),
-          ),
-          child: Image.asset(
-            expeditionCombatEffectAsset(effectKey, 6),
-            cacheWidth: (size / 2).round(),
-            fit: BoxFit.cover,
-            alignment: effectKey == 'safe_guard'
-                ? Alignment.centerLeft
-                : Alignment.centerRight,
-            filterQuality: FilterQuality.none,
-            isAntiAlias: false,
-            gaplessPlayback: true,
-            excludeFromSemantics: true,
-          ),
-        ),
-      );
-}
-
 Color _dockActionColor(BuildContext context, String action) {
   final scheme = Theme.of(context).colorScheme;
   return switch (action) {
@@ -2144,10 +1852,6 @@ Color _dockActionColor(BuildContext context, String action) {
   };
 }
 
-/// 이 행동의 전용 아이콘. 없으면 `null`이고 호출부가 효과 시트 조각을 쓴다.
-///
-/// 지도 자체는 비공개로 둔다. 밖에서 필요한 것은 `이 코드에 그림이 있는가`
-/// 하나뿐이고, 지도를 열면 다른 화면이 제 나름의 대체 규칙을 만들기 시작한다.
 String? expeditionDockSkillIconAsset(String? code) =>
     code == null ? null : _dockSkillIconAssets[code];
 
@@ -2215,7 +1919,7 @@ const _dockSkillIconAssets = <String, String>{
       'assets/adventure/skill-icons/archive-guide/archive-lantern-v1.webp',
   'archive_seal':
       'assets/adventure/skill-icons/archive-guide/archive-seal-v1.webp',
-  // 여섯 성장결 스킬. 품종이 아니라 마음이 정하는 자리라 품종 폴더가 아니라
+  // 여섯 성장 타입 스킬. 품종이 아니라 마음이 정하는 자리라 품종 폴더가 아니라
   // `emotion/`에 둔다. 누구든 선택 I에 이 중 하나를 끼우므로 아이콘이 없으면
   // 모든 사용자가 전투마다 대체 그림 한 칸을 본다.
   'sunny_radiant_heart':
