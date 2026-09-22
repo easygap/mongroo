@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/error/api_exception.dart';
-import '../../../core/text/korean_particles.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
 import '../domain/garden_models.dart';
 import 'garden_controller.dart';
 import 'garden_item_visual.dart';
+import 'garden_unlock_dialog.dart';
 
 enum _ShopFilter { all, resonance, growth, wardrobe, room, decoration }
 
@@ -78,20 +78,11 @@ class _ShopTabState extends ConsumerState<ShopTab> {
     final result =
         await ref.read(shopControllerProvider.notifier).purchase(item.id);
     if (result == null || !context.mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          duration: const Duration(seconds: 3),
-          content: Text('${koreanObject(item.name)} 모음에 추가했어요.'),
-          action: _canUseInRoom(item)
-              ? SnackBarAction(
-                  label: '방에서 사용',
-                  onPressed: () => _openRoom(ref),
-                )
-              : null,
-        ),
-      );
+    final useNow = await showGardenUnlock(context,
+        item: result.userItem.item,
+        seedBalance: result.seedBalance,
+        actionLabel: _canUseInRoom(item) ? '방에서 사용' : null);
+    if (useNow == true && mounted) _openRoom(ref);
   }
 
   Future<void> _claim(
@@ -102,20 +93,11 @@ class _ShopTabState extends ConsumerState<ShopTab> {
     final result =
         await ref.read(shopControllerProvider.notifier).claim(item.id);
     if (result == null || !context.mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          duration: const Duration(seconds: 3),
-          content: Text('${koreanObject(item.name)} 해금했어요.'),
-          action: _canUseInRoom(item)
-              ? SnackBarAction(
-                  label: '방에 놓기',
-                  onPressed: () => _openRoom(ref),
-                )
-              : null,
-        ),
-      );
+    final useNow = await showGardenUnlock(context,
+        item: result.userItem.item,
+        seedBalance: result.seedBalance,
+        actionLabel: _canUseInRoom(item) ? '방에 놓기' : null);
+    if (useNow == true && mounted) _openRoom(ref);
   }
 
   void _openRoomThemePreview(BuildContext context, ShopItem item) {
@@ -919,14 +901,22 @@ class _RoomThemePreviewSheetState extends ConsumerState<RoomThemePreviewSheet> {
     final result =
         await ref.read(shopControllerProvider.notifier).purchase(item.id);
     if (result == null || !mounted) return;
-    _showMessage('${koreanObject(item.name)} 모음에 추가했어요. 이제 바로 적용할 수 있어요.');
+    final useNow = await showGardenUnlock(context,
+        item: result.userItem.item,
+        seedBalance: result.seedBalance,
+        actionLabel: '이 방으로 바꾸기');
+    if (useNow == true && mounted) await _applyTheme(item);
   }
 
   Future<void> _claim(ShopItem item) async {
     final result =
         await ref.read(shopControllerProvider.notifier).claim(item.id);
     if (result == null || !mounted) return;
-    _showMessage('${koreanObject(item.name)} 해금했어요. 이제 바로 적용할 수 있어요.');
+    final useNow = await showGardenUnlock(context,
+        item: result.userItem.item,
+        seedBalance: result.seedBalance,
+        actionLabel: '이 방으로 바꾸기');
+    if (useNow == true && mounted) await _applyTheme(item);
   }
 
   Future<void> _applyTheme(ShopItem item) async {

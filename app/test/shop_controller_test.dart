@@ -187,6 +187,18 @@ Future<ProviderContainer> _container(GardenRepository repository) async {
 }
 
 void main() {
+  test('퀘스트 등 다른 화면에서 받은 씨앗은 재조회 없이 구매 잔액에 반영된다', () async {
+    final repository = _DependencyRepository();
+    final container = await _container(repository);
+    addTearDown(container.dispose);
+    final calls = repository.getShopCalls;
+    container.read(authControllerProvider.notifier).updateSeedBalance(520);
+    expect(
+        container.read(shopControllerProvider).catalog.valueOrNull?.seedBalance,
+        520);
+    expect(repository.getShopCalls, calls);
+  });
+
   test('조건을 달성한 상품은 claim하고 보유 목록과 카탈로그를 함께 갱신한다', () async {
     final repository = _ClaimRepository(eligible: true);
     final container = await _container(repository);

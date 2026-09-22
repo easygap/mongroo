@@ -178,7 +178,8 @@ class _PlantViewState extends State<PlantView> with TickerProviderStateMixin {
       };
 
   void _syncMotion({bool restart = false}) {
-    final disabled = MediaQuery.disableAnimationsOf(context);
+    final disabled = MediaQuery.disableAnimationsOf(context) ||
+        !TickerMode.valuesOf(context).enabled;
     if (disabled) {
       _idleController
         ..stop()
@@ -324,7 +325,9 @@ class _PlantViewState extends State<PlantView> with TickerProviderStateMixin {
       pose: _spritePose,
       outfitKey: widget.outfitKey,
     );
-    if (widget.preferRasterAssets &&
+    if (!animationsDisabled &&
+        TickerMode.valuesOf(context).enabled &&
+        widget.preferRasterAssets &&
         (assetCandidates.isNotEmpty || layeredCandidates.isNotEmpty)) {
       final dpr = MediaQuery.devicePixelRatioOf(context);
       final cacheWidth = (contentWidth * dpr).round().clamp(128, 1024).toInt();
@@ -484,8 +487,9 @@ class PlantGrowthAssetResolver {
     // 단계를 가리지 않으면 2·3·4단계 칸까지 현재 단계(`full_bloom`) 그림을
     // 집어서 네 칸이 같은 그림이 된다.
     final visualStage = visual?.phaseStage ?? 0;
-    final serverPhase =
-        visualStage == 0 || visualStage == clamped ? _slug(visual?.phase ?? '') : '';
+    final serverPhase = visualStage == 0 || visualStage == clamped
+        ? _slug(visual?.phase ?? '')
+        : '';
     final phase = serverPhase.isEmpty ? _phases[clamped]! : serverPhase;
     final slugs = <String>{
       _renderableSpeciesSlug(_slug(speciesCode)),

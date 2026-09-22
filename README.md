@@ -67,6 +67,21 @@
   </tr>
 </table>
 
+## 씨앗을 모아 새 친구를 만나요
+
+오늘의 할 일을 마치면 경험치와 씨앗을 받아요. 모은 씨앗으로 새 캐릭터를 해금하고, 다시 씨앗부터 함께 키울 수 있습니다.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/rewards-2026-09-22/quest.gif" alt="퀘스트를 마치면 씨앗이 잔액으로 날아가고 보유 수량이 올라가는 실제 화면"></td>
+    <td width="50%"><img src="docs/screenshots/rewards-2026-09-22/unlock.gif" alt="씨앗으로 캐릭터를 구매하고 해금 연출과 함께 새 모습을 확인하는 실제 화면"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>퀘스트 보상 받기</strong></td>
+    <td align="center"><strong>새 캐릭터 해금</strong></td>
+  </tr>
+</table>
+
 ## 내 방도 꾸며 보세요
 
 기록과 활동으로 모은 씨앗은 상점에서 씁니다. 방 테마, 소품, 의상, 새 캐릭터를 직접 골라 얻을 수 있어요. 가격과 필요한 조건을 미리 보여 주며 확률 뽑기는 없습니다.
@@ -105,6 +120,7 @@ Flutter · FastAPI · MySQL
 
 - [화면·글꼴·한국어 표현의 적용 기준](design-system/2026-09-22-interface-research.md)
 - [이번 버전의 검수 결과](docs/release-review-2026-09-22.md)
+- [보상·해금 연출과 도감 성능 점검](docs/game-feedback-review-2026-09-22.md)
 - [전투와 캐릭터 성장](docs/combat_system_design_v8.md)
 - [배포 안내](docs/deployment.md)
 - [Wanted Sans 출처와 라이선스](app/assets/fonts/README-WantedSans.md)

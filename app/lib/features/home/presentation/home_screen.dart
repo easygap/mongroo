@@ -16,6 +16,7 @@ import '../domain/plant.dart';
 import 'home_controller.dart';
 import 'plant_story_card.dart';
 import 'plant_view.dart';
+import 'reward_feedback.dart';
 import 'species_picker_dialog.dart';
 import 'today_journey_board.dart';
 
@@ -358,6 +359,18 @@ class _HarvestEndingSheet extends StatelessWidget {
           Text(
             '${plant.name}의 이야기를 보관했어요',
             style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 16),
+          MilestoneReveal(
+            child: Center(
+                child: PlantStagePreview(
+              stage: plant.stage,
+              form: plant.growthForm,
+              speciesCode: plant.species.code,
+              speciesName: plant.species.name,
+              growthVisual: plant.growthVisual,
+              size: 136,
+            )),
           ),
           const SizedBox(height: 8),
           Text(

@@ -5,6 +5,7 @@ import 'tap_target.dart';
 import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/garden/domain/garden_models.dart';
 import 'package:mongroo/features/garden/presentation/collection_tab.dart';
+import 'package:mongroo/features/home/presentation/plant_view.dart';
 
 void main() {
   Future<void> pumpCollection(
@@ -90,10 +91,12 @@ void main() {
     expectTapTargets(tester, screen: '도감');
 
     expect(find.text('선인장'), findsOneWidget);
-    expect(find.text('상점에서 첫 꾸미기 아이템을 만나 보세요.'), findsOneWidget);
     expect(find.textContaining('성장 캐릭터 1/1'), findsOneWidget);
     expect(find.textContaining('전체 수집 1/1'), findsOneWidget);
     expect(find.text('성장 캐릭터 도감'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('상점에서 첫 꾸미기 아이템을 만나 보세요.'), 400);
+    expect(find.text('상점에서 첫 꾸미기 아이템을 만나 보세요.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('사람형 완전체 원화도 같은 성장 캐릭터 도감에 노출한다', (tester) async {
@@ -152,10 +155,12 @@ void main() {
     expect(find.text('이 문장은 잠긴 상태에서 보이면 안 된다.'), findsNothing);
     expect(find.text('여우비'), findsOneWidget);
     expect(find.text('그림싹'), findsNothing);
-    expect(find.text('씨앗부터 여섯 감정의 성인 모습까지 성장'), findsOneWidget);
-    expect(find.text('아직 비밀이에요'), findsOneWidget);
+    expect(find.text('눌러서 성장 모습 보기'), findsOneWidget);
     expect(find.text('성장 캐릭터 도감'), findsOneWidget);
     expect(find.textContaining('성장 캐릭터 1/2'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('아직 비밀이에요'), 300);
+    expect(find.text('아직 비밀이에요'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('여우비'), -300);
 
     await tester.ensureVisible(find.text('여우비'));
     await tester.pumpAndSettle();
@@ -262,6 +267,7 @@ void main() {
       textScaler: const TextScaler.linear(2),
     );
 
+    await tester.scrollUntilVisible(find.text('별여우 신사'), 300);
     expect(find.text('별여우 신사'), findsOneWidget);
     expect(find.text('구미호 화분 보유 · 0/1'), findsOneWidget);
     final node = tester.getSemantics(
@@ -307,7 +313,7 @@ void main() {
     await pumpCollection(tester, collection);
 
     expect(find.text('성장 기념품'), findsOneWidget);
-    expect(find.textContaining('감정마다 가치와 획득 난이도는 같아요'), findsOneWidget);
+    expect(find.textContaining('감정마다 하나씩 있어요'), findsOneWidget);
     expect(find.text('빗방울 경청 풍경'), findsOneWidget);
     await tester.ensureVisible(find.text('빗방울 경청 풍경'));
     await tester.tap(find.text('빗방울 경청 풍경'));
@@ -316,6 +322,33 @@ void main() {
     expect(find.text('식물의 기억'), findsOneWidget);
     expect(find.text('빗소리를 들으면 잎이 조용히 기울어요.'), findsOneWidget);
     expect(find.textContaining('성장 속도나 보상에는 영향을 주지 않아요'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('도감은 화면 밖 캐릭터를 만들지 않고 스크롤할 때 필요한 카드만 만든다', (tester) async {
+    final collection = GardenCollection.fromJson({
+      'seed_balance': 0,
+      'items': const [],
+      'catalog_items': const [],
+      'species': List.generate(
+          80,
+          (i) => {
+                'id': i + 1,
+                'code': 'test_$i',
+                'name': '테스트 캐릭터 $i',
+                'rarity': 1,
+                'unlock_price': 0,
+                'is_unlocked': true,
+              }),
+    });
+    await pumpCollection(tester, collection);
+    expect(find.text('테스트 캐릭터 0'), findsOneWidget);
+    expect(find.text('테스트 캐릭터 79'), findsNothing);
+    expect(find.byType(PlantStagePreview).evaluate().length, lessThan(100));
+    await tester.scrollUntilVisible(find.text('테스트 캐릭터 79'), 600,
+        maxScrolls: 60);
+    expect(find.text('테스트 캐릭터 79'), findsOneWidget);
+    expect(find.text('테스트 캐릭터 0'), findsNothing);
+    expect(find.byType(PlantStagePreview).evaluate().length, lessThan(100));
     expect(tester.takeException(), isNull);
   });
 }

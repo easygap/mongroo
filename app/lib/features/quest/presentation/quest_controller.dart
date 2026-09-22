@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/error/api_exception.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../garden/presentation/garden_controller.dart';
 import '../../home/presentation/home_controller.dart';
 import '../data/quest_repository.dart';
 import '../domain/daily_quest.dart';
@@ -55,6 +56,10 @@ class QuestController extends Notifier<QuestUiState> {
 
   Future<QuestCompletionResult?> complete(int userQuestId) async {
     if (state.busyQuestIds.contains(userQuestId)) return null;
+    final quest = state.feed.valueOrNull?.items
+        .where((entry) => entry.id == userQuestId)
+        .firstOrNull;
+    if (quest != null && !quest.canComplete) return null;
     _setBusy(userQuestId, true);
     try {
       final key = _completionKeys.putIfAbsent(userQuestId, () => _uuid.v4());
@@ -71,6 +76,10 @@ class QuestController extends Notifier<QuestUiState> {
         // 퀘스트 경험치는 서버의 활성 식물에 즉시 반영된다. 홈 캐시도
         // 무효화해야 탭을 돌아갔을 때 성장도와 단계가 오래된 값으로 남지 않는다.
         ref.invalidate(homeControllerProvider);
+      }
+      // 완료 횟수로 열리는 상품도 함께 갱신한다. 상점을 쓰지 않았다면 깨우지 않는다.
+      if (ref.exists(shopControllerProvider)) {
+        ref.invalidate(shopControllerProvider);
       }
       final feed = state.feed.valueOrNull;
       if (feed != null) {

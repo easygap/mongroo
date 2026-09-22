@@ -6,6 +6,7 @@ import '../../../core/error/api_exception.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/mongroo_ui.dart';
 import '../../home/presentation/today_journey_board.dart';
+import '../../home/presentation/reward_feedback.dart';
 import '../domain/daily_quest.dart';
 import 'quest_controller.dart';
 import 'quest_widgets.dart';
@@ -26,17 +27,17 @@ class QuestScreen extends ConsumerWidget {
     final openPlant = await showModalBottomSheet<bool>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
+      useSafeArea: true,
+      constraints: const BoxConstraints(maxWidth: 560),
       builder: (context) => SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.auto_awesome,
-                  size: 42, color: Theme.of(context).colorScheme.primary),
-              const SizedBox(height: 12),
               const Text(
-                '작은 행동 완료!',
+                '오늘 할 일 하나 완료!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: AppTheme.pixelFont,
@@ -46,12 +47,32 @@ class QuestScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                reward == null
-                    ? '오늘의 작은 행동을 마쳤어요.'
-                    : '경험치 +${reward.totalExp} · 씨앗 +${reward.totalSeeds}\n'
-                        '보상이 지금 키우는 식물에 반영됐어요.',
+                userQuest.quest.title,
                 textAlign: TextAlign.center,
               ),
+              if (reward != null) ...[
+                const SizedBox(height: 20),
+                RewardReceipt(reward: reward),
+                if (reward.stageChanged) ...[
+                  const SizedBox(height: 16),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      MilestoneReveal(
+                        sound: false,
+                        child: SizedBox.square(
+                          dimension: 48,
+                          child: Icon(Icons.local_florist_outlined, size: 28),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Flexible(
+                          child: Text('캐릭터가 한 단계 자랐어요!',
+                              style: TextStyle(fontWeight: FontWeight.w800))),
+                    ],
+                  ),
+                ],
+              ],
               if (result.journey.nextUnlock case final unlock?) ...[
                 const SizedBox(height: 12),
                 Text(
@@ -81,7 +102,7 @@ class QuestScreen extends ConsumerWidget {
                       ),
                       onPressed: () => Navigator.of(context).pop(true),
                       icon: const Icon(Icons.spa_outlined),
-                      label: const Text('식물 변화 보기'),
+                      label: const Text('캐릭터 보기'),
                     ),
                   ),
                 ],

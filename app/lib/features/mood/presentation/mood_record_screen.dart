@@ -11,8 +11,10 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../garden/presentation/garden_controller.dart';
 import '../../home/data/plant_repository.dart';
 import '../../home/domain/plant.dart';
+import '../../home/domain/reward_result.dart';
 import '../../home/presentation/home_controller.dart';
 import '../../home/presentation/plant_view.dart';
+import '../../home/presentation/reward_feedback.dart';
 import '../../quest/presentation/quest_controller.dart';
 import '../../report/presentation/report_controller.dart';
 import '../data/mood_repository.dart';
@@ -330,15 +332,8 @@ class _MoodRecordScreenState extends ConsumerState<MoodRecordScreen> {
 
     final reward = result.reward;
     final plantNote = result.mood.analysisInProgress
-        ? ' · 식물이 일기의 마음을 읽는 중'
-        : ' · 식물 성장에 반영됐어요';
-    final rewardParts = <String>[
-      if (reward != null && reward.totalExp > 0) '경험치 +${reward.totalExp}',
-      if (reward != null && reward.totalSeeds > 0) '씨앗 +${reward.totalSeeds}',
-    ];
-    final rewardNote = rewardParts.isEmpty
-        ? (_isEdit ? '기록을 수정했어요.' : '기록을 저장했어요.')
-        : '${rewardParts.join(' · ')} 획득!';
+        ? '글에 담긴 감정을 살펴보고 있어요. 끝나면 캐릭터에 반영돼요.'
+        : '기록에 담긴 감정을 캐릭터에 반영했어요.';
     final stageAfter = reward?.plant?.stage;
     final stageChanged = reward?.stageChanged ?? false;
     // 단계 상승은 드물고, 품종 외형은 보상 축약 응답에 없으므로 성공 시트가
@@ -352,7 +347,8 @@ class _MoodRecordScreenState extends ConsumerState<MoodRecordScreen> {
       useSafeArea: true,
       constraints: const BoxConstraints(maxWidth: 560),
       builder: (context) => _RecordSavedSheet(
-        message: '$rewardNote$plantNote',
+        message: plantNote,
+        reward: reward,
         stageAfter: stageChanged ? stageAfter : null,
         isEdit: _isEdit,
       ),
@@ -511,11 +507,13 @@ class _RecordSavedSheet extends StatelessWidget {
   const _RecordSavedSheet({
     required this.message,
     required this.isEdit,
+    required this.reward,
     this.stageAfter,
   });
 
   final String message;
   final bool isEdit;
+  final RewardResult? reward;
   final int? stageAfter;
 
   @override
@@ -536,6 +534,12 @@ class _RecordSavedSheet extends StatelessWidget {
             message,
             style: TextStyle(color: scheme.onSurfaceVariant, height: 1.5),
           ),
+          if (reward case final earned?) ...[
+            if (earned.totalSeeds > 0 || earned.totalExp > 0) ...[
+              const SizedBox(height: 20),
+              RewardReceipt(reward: earned),
+            ],
+          ],
           if (stageAfter case final stage?) ...[
             const SizedBox(height: 14),
             Container(
@@ -667,7 +671,8 @@ class _StageUpDialog extends StatelessWidget {
                       ),
                     ),
                     Expanded(
-                      child: _StageMoment(
+                      child: MilestoneReveal(
+                          child: _StageMoment(
                         label: '지금',
                         stage: stage,
                         form: form,
@@ -676,7 +681,7 @@ class _StageUpDialog extends StatelessWidget {
                         growthVisual: growthVisual,
                         outfitKey: outfitKey,
                         highlighted: true,
-                      ),
+                      )),
                     ),
                   ],
                 ),

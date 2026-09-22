@@ -42,6 +42,17 @@ class ShopController extends Notifier<ShopUiState> {
 
   @override
   ShopUiState build() {
+    ref.listen(authControllerProvider.select((s) => s.user?.seedBalance),
+        (_, balance) {
+      final catalog = state.catalog.valueOrNull;
+      if (catalog == null || balance == null || catalog.seedBalance == balance) {
+        return;
+      }
+      state = state.copyWith(
+          catalog: AsyncData(
+        ShopCatalog(items: catalog.items, seedBalance: balance),
+      ));
+    });
     Future.microtask(load);
     return const ShopUiState();
   }

@@ -7,6 +7,7 @@ import 'package:mongroo/core/theme/app_theme.dart';
 import 'package:mongroo/features/quest/data/quest_repository.dart';
 import 'package:mongroo/features/quest/domain/daily_quest.dart';
 import 'package:mongroo/features/quest/presentation/quest_screen.dart';
+import 'package:mongroo/features/quest/presentation/quest_controller.dart';
 
 import 'tap_target.dart';
 
@@ -126,7 +127,12 @@ void main() {
 
     expect(repository.completeCalls, 1);
     expect(find.text('작은 행동을 마쳤나요?'), findsNothing);
-    expect(find.text('작은 행동 완료!'), findsOneWidget);
+    expect(find.text('오늘 할 일 하나 완료!'), findsOneWidget);
+    final container =
+        ProviderScope.containerOf(tester.element(find.byType(QuestScreen)));
+    expect(await container.read(questControllerProvider.notifier).complete(7),
+        isNull);
+    expect(repository.completeCalls, 1);
   });
 
   testWidgets('건너뛰기는 불이익을 설명하고 쉼 상태를 구분한다', (tester) async {

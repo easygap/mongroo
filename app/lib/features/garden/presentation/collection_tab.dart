@@ -59,92 +59,77 @@ class CollectionCatalogView extends StatelessWidget {
         .where((item) => !item.isMoodResonance)
         .toList(growable: false);
 
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-      children: [
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _CollectionHeader(data: data),
-                const SizedBox(height: 20),
-                const Text(
-                  '성장 캐릭터 도감',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '모든 캐릭터는 씨앗에서 시작해 일기의 감정을 먹고 다섯 단계로 자라요.',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 12),
+    return LayoutBuilder(builder: (context, constraints) {
+      final horizontal =
+          ((constraints.maxWidth - 1100) / 2).clamp(16.0, double.infinity);
+      return CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(horizontal, 16, horizontal, 32),
+            sliver: SliverMainAxisGroup(slivers: [
+              SliverToBoxAdapter(child: _CollectionHeader(data: data)),
+              const _CatalogHeading(
+                title: '성장 캐릭터 도감',
+                description: '일기를 쓰며 씨앗부터 다섯 단계로 키워 보세요.',
+              ),
+              _ResponsiveCards(
+                count: standaloneSpecies.length + lineageItems.length,
+                extent: 244,
+                emptyMessage: '등록된 성장 캐릭터가 아직 없어요.',
+                builder: (index) => index < standaloneSpecies.length
+                    ? _SpeciesCard(entry: standaloneSpecies[index])
+                    : _CharacterLineageCard(
+                        item: lineageItems[index - standaloneSpecies.length]),
+              ),
+              if (resonanceItems.isNotEmpty) ...[
+                const _CatalogHeading(
+                    title: '성장 기념품',
+                    description: '첫 수확을 기념하는 소품이에요. 감정마다 하나씩 있어요.'),
                 _ResponsiveCards(
-                  count: standaloneSpecies.length + lineageItems.length,
+                  count: resonanceItems.length,
                   extent: 244,
-                  emptyMessage: '등록된 성장 캐릭터가 아직 없어요.',
-                  builder: (index) {
-                    if (index < standaloneSpecies.length) {
-                      return _SpeciesCard(entry: standaloneSpecies[index]);
-                    }
-                    return _CharacterLineageCard(
-                      item: lineageItems[index - standaloneSpecies.length],
-                    );
-                  },
-                ),
-                if (resonanceItems.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  const Text(
-                    '성장 기념품',
-                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '각 마음꽃의 첫 수확을 기억하는 여섯 소품이에요. 감정마다 가치와 획득 난이도는 같아요.',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _ResponsiveCards(
-                    count: resonanceItems.length,
-                    extent: 244,
-                    emptyMessage: '첫 마음꽃을 수확하면 기념품이 열려요.',
-                    builder: (index) => _CatalogItemCard(
-                      item: resonanceItems[index],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                const Text(
-                  '아이템 도감',
-                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '방 테마와 꾸미기 아이템의 수집 현황이에요.',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _ResponsiveCards(
-                  count: visibleItems.length,
-                  emptyMessage: '상점에서 첫 꾸미기 아이템을 만나 보세요.',
+                  emptyMessage: '처음 수확하면 기념품이 열려요.',
                   builder: (index) =>
-                      _CatalogItemCard(item: visibleItems[index]),
+                      _CatalogItemCard(item: resonanceItems[index]),
                 ),
               ],
-            ),
+              const _CatalogHeading(
+                  title: '아이템 도감', description: '지금까지 모은 방 테마와 꾸미기 아이템이에요.'),
+              _ResponsiveCards(
+                count: visibleItems.length,
+                emptyMessage: '상점에서 첫 꾸미기 아이템을 만나 보세요.',
+                builder: (index) => _CatalogItemCard(item: visibleItems[index]),
+              ),
+            ]),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
+}
+
+class _CatalogHeading extends StatelessWidget {
+  const _CatalogHeading({required this.title, required this.description});
+  final String title;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) => SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 24, bottom: 12),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title,
+                style:
+                    const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text(description,
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ]),
+        ),
+      );
 }
 
 class _CollectionHeader extends StatelessWidget {
@@ -223,34 +208,35 @@ class _ResponsiveCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (count == 0) {
-      return Card(
+      return SliverToBoxAdapter(
+          child: Card(
         child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Text(emptyMessage, textAlign: TextAlign.center),
+            padding: const EdgeInsets.all(22),
+            child: Text(emptyMessage, textAlign: TextAlign.center)),
+      ));
+    }
+    return SliverLayoutBuilder(builder: (context, constraints) {
+      final scale = MediaQuery.textScalerOf(context).scale(1);
+      final baseColumns = switch (constraints.crossAxisExtent) {
+        < 480 => 2,
+        < 760 => 3,
+        _ => 4,
+      };
+      final columns = scale > 1.4 ? (baseColumns - 1).clamp(1, 4) : baseColumns;
+      return SliverGrid(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columns,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          mainAxisExtent: extent + (scale - 1).clamp(0, 2) * 60,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => builder(index),
+          childCount: count,
+          addAutomaticKeepAlives: false,
         ),
       );
-    }
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final columns = switch (constraints.maxWidth) {
-          < 480 => 2,
-          < 760 => 3,
-          _ => 4,
-        };
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            mainAxisExtent: extent,
-          ),
-          itemCount: count,
-          itemBuilder: (context, index) => builder(index),
-        );
-      },
-    );
+    });
   }
 }
 
@@ -326,10 +312,8 @@ class _SpeciesCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  entry.isUnlocked
-                      ? '공통 씨앗에서 여섯 마음 루트로 성장'
-                      : '해금하면 씨앗부터 함께 키울 수 있어요',
-                  maxLines: 1,
+                  entry.isUnlocked ? '눌러서 성장 모습 보기' : '해금하면 함께 키울 수 있어요',
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style:
                       TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
@@ -470,8 +454,8 @@ class _CharacterLineageCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  locked ? '해금하면 씨앗부터 함께 키울 수 있어요' : '씨앗부터 여섯 감정의 성인 모습까지 성장',
-                  maxLines: 1,
+                  locked ? '해금하면 함께 키울 수 있어요' : '눌러서 성장 모습 보기',
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style:
                       TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),

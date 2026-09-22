@@ -246,9 +246,10 @@ class _MongrooPressableState extends State<MongrooPressable> {
 /// 아이콘의 분홍 배지를 써서 같은 값이 다른 물건처럼 보였다. 화폐 표기는
 /// 한 곳에서만 만든다.
 class MongrooSeedToken extends StatelessWidget {
-  const MongrooSeedToken({super.key, required this.value});
+  const MongrooSeedToken({super.key, required this.value, this.animate = true});
 
   final int value;
+  final bool animate;
 
   @override
   Widget build(BuildContext context) {
@@ -268,14 +269,21 @@ class MongrooSeedToken extends StatelessWidget {
               Icon(Icons.eco_rounded, size: 16, color: palette.butter),
               const SizedBox(width: 4),
               ExcludeSemantics(
-                child: Text(
-                  '$value',
-                  style: const TextStyle(
-                    color: AppTheme.onNight,
-                    fontFamily: AppTheme.bodyFont,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    fontFeatures: [FontFeature.tabularFigures()],
+                child: TweenAnimationBuilder<int>(
+                  tween: IntTween(begin: value, end: value),
+                  duration: !animate || MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : const Duration(milliseconds: 320),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, shown, _) => Text(
+                    '$shown',
+                    style: const TextStyle(
+                      color: AppTheme.onNight,
+                      fontFamily: AppTheme.bodyFont,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
                   ),
                 ),
               ),
