@@ -111,7 +111,7 @@ void main() {
 
   test('README가 소개하는 캐릭터 수가 실제 종 수와 같다', () {
     final readme = File('../README.md').readAsStringSync();
-    final match = RegExp(r'(\d+)종 캐릭터').firstMatch(readme);
+    final match = RegExp(r'(\d+)\s*종(?:의)?\s*캐릭터').firstMatch(readme);
     expect(match, isNotNull, reason: 'README에 캐릭터 수가 없다');
     expect(int.parse(match!.group(1)!), species.length);
   });
