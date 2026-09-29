@@ -35,7 +35,7 @@ v1 지도는 장소마다 돌·잎·꽃·반사광을 높은 밀도로 채웠다
 
 ## 적용한 이미지
 
-내장 imagegen 도구의 generate/edit 모드를 사용했다. CLI/API 키 경로는 사용하지 않았다. v1 파일은 비교용으로 보존하고 런타임 참조는 아래 v2로 교체했다.
+내장 imagegen 도구의 generate/edit 모드를 사용했다. CLI/API 키 경로는 사용하지 않았다. 당시에는 v1 파일을 비교용으로 보존하고 런타임 참조를 아래 v2로 교체했다. 현재 쓰지 않는 두 버전의 원화는 [이전 커밋](https://github.com/easygap/mongroo/tree/b0f4ce04041a9f79b7ac6928247aef1925089809/design-system/art-history)에서 볼 수 있다.
 
 - `app/assets/adventure/moss-archive-atlas-v2.png`
 - `app/assets/adventure/echo-well-atlas-v2.png`

@@ -1,15 +1,21 @@
-# 서체 출처
+# 앱에 사용하는 글꼴
 
-## Gothic A1
+## Wanted Sans
 
-- 용도: 앱 본문과 입력문의 한글 서체
-- 출처: `google/fonts` 저장소 `ofl/gothica1`
-- 고정 리비전: `2796410152d4f9524b68ed46e69c1b60f8e0f7c3`
-- 라이선스: SIL Open Font License 1.1 (`LICENSE-GothicA1.txt`)
-- `GothicA1-Regular.ttf` SHA-256: `211151BEA98098C579610AB1114BB1BFE909057207DB561F357B896D076C21AC`
-- `GothicA1-Bold.ttf` SHA-256: `2E883FA0AE548000996258B4101F2BB732A28B197264F49621A2CB16D6E9F126`
+앱 본문·제목·버튼·입력창에 사용합니다. 한국어와 영문을 함께 지원하며, 외부 서버에 연결하지 않아도 표시되도록 글꼴 파일을 앱에 포함했습니다.
+
+- 출처: [Wanted Sans 1.0.3](https://github.com/wanteddev/wanted-sans/releases/tag/v1.0.3)
+- 원본: [WantedSans-1.0.3.zip](https://github.com/wanteddev/wanted-sans/releases/download/v1.0.3/WantedSans-1.0.3.zip)
+- 포함한 굵기: Regular 400, Medium 500, SemiBold 600, Bold 700, ExtraBold 800
+- 제작: Wanted Lab, Hyung-jin Kil, Han-bin Kang
+- 라이선스: [SIL Open Font License 1.1](LICENSE-WantedSans.txt)
+
+2026년 9월 22일에 원본 TTF를 수정 없이 가져왔습니다. Flutter의 라이선스 안내에도 등록했습니다.
 
 ## Galmuri11
 
-- 용도: 브랜드 타이틀과 게임 레이블
-- 라이선스: SIL Open Font License 1.1 (`LICENSE-Galmuri.txt`)
+도트 스타일의 게임 표시에 사용하는 글꼴입니다.
+
+- 포함한 굵기: Bold 700
+- 제작: Lee Minseo
+- 라이선스: [SIL Open Font License 1.1](LICENSE-Galmuri.txt)

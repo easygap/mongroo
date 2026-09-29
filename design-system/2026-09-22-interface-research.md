@@ -35,7 +35,7 @@
 
 ## 글꼴과 문구
 
-Wanted Sans Regular·Medium·SemiBold·Bold·ExtraBold를 수정 없이 번들에 넣었다. 제작자 표기와 OFL은 `app/assets/fonts/README-WantedSans.md`에 있다. 메뉴·안내·버튼은 본문 글꼴을 쓰며 피해 숫자 같은 제한된 게임 연출에만 별도 글꼴을 허용한다.
+Wanted Sans Regular·Medium·SemiBold·Bold·ExtraBold를 수정 없이 번들에 넣었다. 제작자 표기와 OFL은 [글꼴 안내](../app/assets/fonts/README.md)에 있다. 메뉴·안내·버튼은 본문 글꼴을 쓰며 피해 숫자 같은 제한된 게임 연출에만 별도 글꼴을 허용한다.
 
 | 이전 표현 | 현재 표현 |
 | --- | --- |

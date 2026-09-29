@@ -1,128 +1,70 @@
-<h1 align="center">몽그루</h1>
-<p align="center"><strong>일기를 쓰며 캐릭터를 키우고, 함께 탐험하는 게임</strong></p>
+**한국어** · [English](docs/i18n/README.en.md) · [日本語](docs/i18n/README.ja.md) · [简体中文](docs/i18n/README.zh-CN.md)
+
+# 몽그루
+
+**일기를 쓰며 캐릭터를 키우고, 함께 탐험하는 게임입니다.**
+
+오늘 있었던 일을 적으면 캐릭터가 조금씩 자랍니다. 키운 캐릭터와 탐험을 떠나고, 새 캐릭터를 모으거나 방을 꾸밀 수도 있어요.
 
 <p align="center">
-  오늘 있었던 일을 적고, 자라난 캐릭터와 낯선 곳으로 떠나 보세요.<br>
-  방을 꾸미고 새로운 캐릭터를 모으는 재미도 있어요.
+  <img src="docs/screenshots/release-2026-09-22/home.png" width="320" alt="방 안의 캐릭터와 성장 상태를 보여 주는 몽그루 홈 화면">
+  <img src="docs/screenshots/release-2026-09-22/battle.png" width="320" alt="적의 공격 예고를 보며 캐릭터의 행동을 고르는 전투 화면">
 </p>
 
-<table>
-  <tr>
-    <td width="33%"><img src="docs/screenshots/release-2026-09-22/home.png" alt="일기로 키운 캐릭터와 성장 상태가 보이는 홈 화면"></td>
-    <td width="33%"><img src="docs/screenshots/release-2026-09-22/explore.png" alt="그림 지도에서 목적지를 고르는 탐험 화면"></td>
-    <td width="33%"><img src="docs/screenshots/release-2026-09-22/battle.png" alt="적의 다음 공격을 보고 스킬을 고르는 전투 화면"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>일기로 키우고</strong></td>
-    <td align="center"><strong>지도를 따라 떠나고</strong></td>
-    <td align="center"><strong>함께 싸워요</strong></td>
-  </tr>
-</table>
+현재 출시를 준비하고 있으며, 앱스토어 배포본은 아직 없습니다. 앱 화면과 대화는 한국어로 제공됩니다. 이 소개는 위에서 언어를 골라 읽을 수 있어요.
 
-<sub>2026년 9월 22일 버전을 브라우저에서 직접 실행한 화면입니다. 캡처에는 테스트 계정을 사용했습니다.</sub>
+## 일기는 짧게 써도 괜찮아요
 
-## 어떤 게임인가요?
+기억에 남는 일을 편하게 적어 보세요. 일기를 저장하면 경험치를 받고 캐릭터가 자랍니다. 슬프거나 화난 날의 일기를 썼다고 경험치나 보상이 줄어들지는 않아요.
 
-몽그루는 일기와 캐릭터 육성, 탐험을 함께 즐기는 게임입니다. 기분을 점수로 고를 필요 없이 오늘 있었던 일을 적으면 됩니다. 글에 담긴 감정에 따라 캐릭터의 모습과 성격이 달라지고, 키운 캐릭터로 탐험대를 꾸릴 수 있어요.
-
-- **키우기** — 씨앗부터 다 자랄 때까지, 18종 캐릭터의 여러 모습을 만나요.
-- **탐험하기** — 네 지역의 32개 스테이지를 걷고, 길에서 만난 사건을 해결해요.
-- **전투하기** — 적의 다음 공격과 약점을 보고 공격·방어·스킬을 골라요.
-- **꾸미고 모으기** — 씨앗으로 방과 의상을 꾸미고, 다 키운 캐릭터는 박물관에 남겨요.
-
-## 한 줄부터 시작해요
-
-기억에 남는 일을 편하게 적어 보세요. 일기를 저장하면 경험치를 받고 캐릭터가 자랍니다. 슬픈 날이나 화난 날의 기록도 성장에 불이익을 주지 않아요.
+지난 일기는 달력에서 날짜를 눌러 다시 읽고 고칠 수 있습니다. 일주일이나 한 달 동안 어떤 기분으로 지냈는지도 모아서 볼 수 있어요.
 
 <p align="center">
-  <img src="docs/screenshots/release-2026-09-22/diary.png" width="340" alt="오늘 있었던 일을 자유롭게 적는 일기 작성 화면">
+  <img src="docs/screenshots/release-2026-09-22/diary.png" width="320" alt="오늘 있었던 일을 자유롭게 적는 일기 화면">
+  <img src="docs/screenshots/release-2026-09-22/calendar.png" width="320" alt="날짜별 기분을 확인하고 지난 일기를 찾아보는 기록 달력">
 </p>
 
-남긴 일기는 달력에서 다시 읽고 고칠 수 있습니다. 주간·월간 돌아보기에서는 자주 기록한 감정과 지난 일기를 함께 볼 수 있어요.
+## 18종의 캐릭터를 키우고 모아요
 
-## 같은 씨앗도 다르게 자라요
+캐릭터는 씨앗부터 다 자랄 때까지 다섯 단계를 거칩니다. 일기에 담긴 감정에 따라 여섯 타입으로 나뉘고, 모습과 말투도 달라져요. 어떤 감정을 적느냐에 따라 성장 속도나 보상이 달라지지는 않습니다.
 
-캐릭터는 다섯 단계를 거칩니다. 어떤 감정이 쌓였는지에 따라 여섯 타입으로 나뉘고, 모습과 말투가 달라져요. 특정 감정을 적는다고 더 빨리 자라거나 더 좋은 보상을 받지는 않습니다.
+다 키운 캐릭터는 박물관에 남기고 새 씨앗을 심을 수 있어요. 모은 캐릭터로 탐험대를 꾸리고, 서로 다른 스킬을 써 보세요.
 
 <p align="center">
-  <img src="docs/screenshots/release-2026-09-22/growth.png" width="420" alt="앱의 성장 도감에서 여섯 감정별 캐릭터 모습을 비교하는 화면">
+  <img src="docs/screenshots/release-2026-09-22/growth.png" width="420" alt="감정에 따라 달라지는 캐릭터의 여섯 가지 모습을 모아 놓은 성장 도감">
 </p>
 
-다 자란 캐릭터를 박물관에 보낸 뒤에는 새 씨앗을 심을 수 있습니다. 모은 캐릭터로 탐험대를 바꾸거나 서로 다른 스킬을 써 보는 재미도 있어요.
+## 퀘스트를 깨고, 원하는 캐릭터를 골라요
 
-## 직접 걷고, 보고, 선택해요
-
-탐험은 그림 지도에서 시작합니다. 이끼 기억서고, 메아리 우물정원, 별빛 씨앗 보관고, 마음나무 관측실을 차례로 방문해요. 필드에서는 캐릭터를 직접 움직여 길을 찾고, 장소마다 다른 이야기와 보상을 만납니다.
-
-전투에서는 적이 누구를 공격할지 먼저 보여 줍니다. 스킬의 피해와 필요한 기력을 보고 행동을 고르세요. 스킬을 길게 누르면 자세한 설명을 볼 수 있어요.
-
-<table>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/release-2026-09-22/battle.png" alt="체력과 다음 공격 예고, 여섯 행동이 함께 보이는 전투 화면"></td>
-    <td width="50%"><img src="docs/screenshots/release-2026-09-22/settings.png" alt="전투 속도, 효과 줄이기, 음악과 효과음을 바꾸는 설정 화면"></td>
-  </tr>
-  <tr>
-    <td align="center">공격이 닿는 순간에 맞춰 움직임·소리·체력이 반응해요.</td>
-    <td align="center">자동 전투와 배속을 쓸 수 있고, 움직임과 소리도 조절할 수 있어요.</td>
-  </tr>
-</table>
-
-## 씨앗을 모아 새 친구를 만나요
-
-오늘의 할 일을 마치면 경험치와 씨앗을 받아요. 모은 씨앗으로 새 캐릭터를 해금하고, 다시 씨앗부터 함께 키울 수 있습니다.
-
-<table>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/rewards-2026-09-22/quest.gif" alt="퀘스트를 마치면 씨앗이 잔액으로 날아가고 보유 수량이 올라가는 실제 화면"></td>
-    <td width="50%"><img src="docs/screenshots/rewards-2026-09-22/unlock.gif" alt="씨앗으로 캐릭터를 구매하고 해금 연출과 함께 새 모습을 확인하는 실제 화면"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>퀘스트 보상 받기</strong></td>
-    <td align="center"><strong>새 캐릭터 해금</strong></td>
-  </tr>
-</table>
-
-## 내 방도 꾸며 보세요
-
-기록과 활동으로 모은 씨앗은 상점에서 씁니다. 방 테마, 소품, 의상, 새 캐릭터를 직접 골라 얻을 수 있어요. 가격과 필요한 조건을 미리 보여 주며 확률 뽑기는 없습니다.
+오늘 할 일을 완료하면 경험치와 게임 재화인 **씨앗**을 받습니다. 씨앗을 모아 새 캐릭터나 꾸미기 아이템을 살 수 있어요. 가격과 구매 조건을 보고 직접 고르는 방식이며, 확률형 뽑기는 없습니다.
 
 <p align="center">
-  <img src="docs/screenshots/release-2026-09-22/garden.png" width="390" alt="방과 소품을 고르고 캐릭터를 꾸미는 정원 화면">
+  <img src="docs/screenshots/rewards-2026-09-22/quest.gif" width="320" alt="퀘스트 보상을 받으면 씨앗이 보유 수량 표시로 날아가며 숫자가 오르는 장면">
+  <img src="docs/screenshots/rewards-2026-09-22/unlock.gif" width="320" alt="모은 씨앗으로 캐릭터를 구매하고 새 캐릭터가 등장하는 장면">
 </p>
 
-## 먼저 체험할 수 있어요
+## 키운 캐릭터와 탐험을 떠나요
 
-로그인 화면에서 **회원가입 없이 3분 체험**을 누르면 일기와 캐릭터 성장을 살펴볼 수 있습니다. 체험 기록은 서버에 보내지 않고 현재 기기에만 저장해요. 가입 후 계정으로 자동으로 옮겨지지는 않습니다.
+네 지역, 32개 스테이지가 준비돼 있습니다. 지도에서 목적지를 고른 뒤 캐릭터를 직접 움직여 길을 찾고, 곳곳의 이야기를 만나 보세요.
 
-몽그루는 현재 출시를 준비하고 있습니다. 아래 방법으로 로컬에서 실행할 수 있으며, 앱스토어 배포본은 아직 제공하지 않습니다.
+전투에서는 적의 다음 공격을 보고 공격·방어·스킬을 고릅니다. 스킬을 길게 누르면 자세한 설명을 볼 수 있어요. 자동 전투와 배속을 사용할 수 있고, 음악·효과음·화면 움직임도 설정에서 조절할 수 있습니다.
 
-<details>
-<summary><strong>직접 실행하기</strong></summary>
+<p align="center">
+  <img src="docs/screenshots/release-2026-09-22/explore.png" width="340" alt="탐험할 지역과 목적지를 고르는 지도">
+</p>
 
-Flutter와 Python 환경이 필요합니다. 저장소 루트에서 데모 서버를 실행한 뒤 앱을 실행하세요.
+## 내 취향대로 방을 꾸며요
 
-```powershell
-scripts\start_demo.ps1 -AiMode fake
+방 테마를 바꾸고 소품과 의상을 골라 보세요. 캐릭터를 키우며 모은 씨앗으로 하나씩 장만할 수 있습니다.
 
-cd app
-flutter pub get
-flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
-```
+<p align="center">
+  <img src="docs/screenshots/release-2026-09-22/garden.png" width="320" alt="캐릭터가 지낼 방의 테마와 소품을 고르는 꾸미기 화면">
+</p>
 
-위 명령은 외부 AI 서비스 없이 동작하는 데모 설정입니다. 실제 AI 연결과 환경별 실행 방법은 [앱 실행 안내](app/README.md), 서버 운영은 [배포 안내](docs/deployment.md)를 참고하세요.
+## 가입 전에 먼저 둘러보세요
 
-</details>
+앱을 실행한 뒤 로그인 화면에서 **회원가입 없이 3분 체험**을 누르면 일기 쓰기와 캐릭터 성장을 체험할 수 있습니다. 체험 기록은 서버로 보내지 않고 사용 중인 기기에만 저장합니다. 나중에 가입해도 계정으로 자동 이전되지는 않아요.
 
-<details>
-<summary><strong>프로젝트 구성과 검수 자료</strong></summary>
+화면과 GIF는 테스트 계정으로 직접 플레이하며 촬영했습니다.
 
-Flutter · FastAPI · MySQL
-
-- [화면·글꼴·한국어 표현의 적용 기준](design-system/2026-09-22-interface-research.md)
-- [이번 버전의 검수 결과](docs/release-review-2026-09-22.md)
-- [보상·해금 연출과 도감 성능 점검](docs/game-feedback-review-2026-09-22.md)
-- [전투와 캐릭터 성장](docs/combat_system_design_v8.md)
-- [배포 안내](docs/deployment.md)
-- [Wanted Sans 출처와 라이선스](app/assets/fonts/README-WantedSans.md)
-
-</details>
+[직접 실행하기](app/README.md) · [버그 제보](https://github.com/easygap/mongroo/issues)

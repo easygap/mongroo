@@ -1,54 +1,60 @@
-# Flutter 앱
+# 몽그루 실행 안내
 
-몽그루의 Android/Web 클라이언트다. 프로젝트 설명과 서버 실행 방법은
-[루트 README](../README.md)에 있다.
+내 PC에서 몽그루를 실행하는 방법입니다. 게임 소개는 [메인 README](../README.md)에서 볼 수 있습니다.
 
-## 실행
+## Windows에서 처음 실행하기
+
+Git, Flutter 3.44.6, Python 3.12, Docker Desktop이 필요합니다. Docker Desktop을 켠 뒤 PowerShell에서 진행하세요.
 
 ```powershell
+git clone https://github.com/easygap/mongroo.git
+cd mongroo
+
+# 처음 한 번: Python 환경, DB, 기본 설정 준비
+powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1
+
+# 데모 서버와 일기 처리 실행
+powershell -ExecutionPolicy Bypass -File scripts/start_demo.ps1 -AiMode fake
+
+# Chrome에서 게임 열기
+cd app
 flutter pub get
-
-# Android 에뮬레이터
-flutter run
-
-# Chrome
 flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
 ```
 
-Android 에뮬레이터에서는 API 주소를 지정하지 않으면
-`http://10.0.2.2:8000/api/v1`을 사용한다. 다른 기기나 서버에 연결할 때는 빌드
-명령에 `--dart-define=API_BASE_URL=...`을 붙인다. Web은 주소를 생략하면 현재
-origin의 `/api/v1`을 사용하므로 공식 컨테이너처럼 API를 같은 origin으로 프록시하는
-배포에서는 별도 주소가 필요 없다.
+위 설정은 외부 AI 서비스에 연결하지 않는 로컬 데모입니다. 앱이 열리면 **회원가입 없이 3분 체험**으로 먼저 둘러보거나, 데모 계정을 만들어 플레이할 수 있습니다. 체험 기록은 사용 중인 기기에만 저장되며 가입한 계정으로 자동 이전되지 않습니다.
+
+다음부터는 서버 실행과 `flutter run`만 진행하면 됩니다. 데모를 끝낼 때는 저장소 최상위 폴더에서 `scripts/stop_demo.ps1`을 실행하세요.
+
+## Android에서 실행하기
+
+Android SDK와 에뮬레이터가 준비돼 있다면 `app/`에서 다음 명령으로 실행합니다.
 
 ```powershell
-dart analyze
+flutter run
+```
+
+Android 에뮬레이터의 기본 API 주소는 `http://10.0.2.2:8000/api/v1`입니다. 실제 휴대폰이나 다른 서버에 연결하려면 해당 기기에서 접속할 수 있는 주소를 `--dart-define=API_BASE_URL=...`로 지정하세요. Web에서 주소를 생략하면 게임을 연 도메인의 `/api/v1`에 연결합니다.
+
+## 빌드와 배포
+
+```powershell
+flutter analyze
 flutter test
 flutter build web --wasm --no-web-resources-cdn --dart-define=API_BASE_URL=https://api.example.com/api/v1
 ```
 
-한글 본문과 Flutter Web 기본 대체 서체는 앱에 포함된 Gothic A1으로
-해결한다. 공개 빌드에서는 `--no-web-resources-cdn`을 유지해 운영 CSP와
-오프라인 환경에서도 외부 폰트·엔진 요청이 생기지 않게 한다.
+앱 본문은 Wanted Sans를 사용합니다. 글꼴 파일을 앱에 포함했으며, Flutter Web의 기본 대체 글꼴도 로컬 파일로 연결했습니다. 공개 Web 빌드에서는 `--no-web-resources-cdn`을 유지합니다. 사용한 글꼴의 출처와 라이선스는 [글꼴 안내](assets/fonts/README.md)에 있습니다.
 
-공개 Web은 HTTPS가 필요하다. API 주소, CORS, Android 서명 설정은
-[배포 문서](../docs/deployment.md)에 적어 두었다.
-공개 Web/AAB에는 운영자명·주소·개인정보 문의 이메일·데이터 호스팅 고지도
-`--dart-define`으로 넣어야 한다. 약관·개인정보·민감정보 동의 버전도 서버 설정과
-같게 넣어야 하며, 공식 Docker/릴리스 workflow는 누락 시 실패한다.
+공개 Web은 HTTPS가 필요합니다. 운영자명·주소·개인정보 문의 이메일·데이터 저장 위치, 약관·개인정보 처리방침·민감정보 동의 버전도 빌드에 포함해야 합니다. 공식 Docker 빌드와 릴리스 작업은 필수 설정이 빠지면 중단됩니다. API 주소, CORS, AI 연결, Android 서명과 운영 설정은 [배포 안내](../docs/deployment.md)를 확인하세요.
 
-로그인 화면의 `회원가입 없이 3분 체험`은 `/trial` 공개 경로를 사용한다. 체험
-진행은 서버 API나 임시 계정을 만들지 않고 `flutter_secure_storage`에만 저장하며,
-가입 사용자는 계정 화면에서 같은 가이드를 다시 실행할 수 있다.
+## 코드와 관련 자료
 
-## 코드 위치
+| 위치 | 내용 |
+| --- | --- |
+| `lib/core/` | API 연결, 화면 이동, 로그인 상태, 테마 |
+| `lib/features/` | 기능별 화면과 데이터 처리 |
+| `assets/` | 캐릭터, 방, 탐험, 효과음, 글꼴 |
+| `test/` | 단위·위젯 테스트 |
 
-```text
-lib/core/       API, 라우팅, 세션, 테마
-lib/features/   화면별 data/domain/presentation 코드
-assets/         캐릭터, 방, 식물 이미지
-test/           단위·위젯 테스트
-```
-
-화면 캡처는 앱 안에 넣지 않고 [docs/screenshots](../docs/screenshots/README.md)에
-Android와 Web을 나눠 보관한다.
+[화면 캡처](../docs/screenshots/README.md) · [게임 구조](../docs/combat_system_design_v8.md) · [화면·글꼴 기준](../design-system/2026-09-22-interface-research.md) · [출시 검수](../docs/release-review-2026-09-22.md) · [보상·성능 검수](../docs/game-feedback-review-2026-09-22.md)

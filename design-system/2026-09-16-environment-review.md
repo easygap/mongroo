@@ -35,7 +35,7 @@ v2는 점묘 질감을 줄이면서 구조적 디테일까지 없앴다. 같은 
 | 별빛 씨앗 보관고 | [starlight-atlas-v3.png](../app/assets/adventure/starlight-atlas-v3.png) | [starlight-encounter-v3.png](../app/assets/adventure/starlight-encounter-v3.png) |
 | 마음나무 관측실 | [heartwood-atlas-v3.png](../app/assets/adventure/heartwood-atlas-v3.png) | [heartwood-encounter-v3.png](../app/assets/adventure/heartwood-encounter-v3.png) |
 
-프롬프트는 이 문서와 같은 폴더의 동명 `.prompt.txt` 파일에 있다. 이끼 기억서고의 재질 보정은 `moss-archive-atlas-v3-refinement.prompt.txt`에 기록했다. 거절된 v1·v2 12장은 `art-history/`로 이동해 보존하고 앱 번들에서 약 26.7 MiB를 제외했다.
+프롬프트는 이 문서와 같은 폴더의 동명 `.prompt.txt` 파일에 있다. 이끼 기억서고의 재질 보정은 `moss-archive-atlas-v3-refinement.prompt.txt`에 기록했다. 당시 제외한 v1·v2 원화 12장은 현재 빌드나 재생성에 쓰지 않아 저장소에서도 정리했다. 비교가 필요하면 [이전 커밋의 원화](https://github.com/easygap/mongroo/tree/b0f4ce04041a9f79b7ac6928247aef1925089809/design-system/art-history)를 확인할 수 있다.
 
 ## 인터랙션
 
